@@ -1,0 +1,156 @@
+{
+  "common": {
+    "appName": "Boardly",
+    "tagline": "随时随地，一起玩。",
+    "seeAll": "查看全部",
+    "invite": "邀请",
+    "cancel": "取消",
+    "ok": "确定",
+    "retry": "重试",
+    "errorTitle": "出错了",
+    "errorSubtitle": "请检查网络连接后重试。",
+    "emptyTitle": "这里还没有内容"
+  },
+  "updates": {
+    "title": "更新已就绪",
+    "message": "Boardly 新版本已下载完成。现在重启应用以更新吗？",
+    "restart": "重启",
+    "later": "稍后"
+  },
+  "tabs": {
+    "home": "首页",
+    "games": "游戏",
+    "friends": "好友",
+    "profile": "我的"
+  },
+  "home": {
+    "greeting": "嗨，{{name}}！",
+    "quickStart": "快速开始",
+    "quickPlay": "快速游戏",
+    "quickPlaySubtitle": "随机加入一场游戏",
+    "yourTables": "我的牌桌",
+    "friendsOnline": "在线好友",
+    "playersCount": "{{current}} / {{max}} 位玩家",
+    "joinWithCode": "输入代码加入",
+    "noTables": "还没有牌桌 — 开一桌吧！"
+  },
+  "join": {
+    "title": "加入牌桌",
+    "nameLabel": "你的名字",
+    "codeLabel": "牌桌代码",
+    "cta": "加入牌桌",
+    "hostedBy": "房主：{{name}}",
+    "openTable": "打开牌桌",
+    "alreadyMessage": "你已经在一个{{game}}牌桌中。离开后才能加入这一桌。",
+    "leaveAndJoin": "离开并加入",
+    "backToMine": "回到我的牌桌"
+  },
+  "games": {
+    "title": "游戏",
+    "playersRange": "{{min}} - {{max}} 位玩家",
+    "filters": {
+      "all": "全部",
+      "strategy": "策略",
+      "party": "聚会",
+      "classic": "经典",
+      "custom": "自定义"
+    },
+    "tags": {
+      "classic": "经典",
+      "card": "卡牌",
+      "strategy": "策略",
+      "party": "聚会"
+    }
+  },
+  "friends": {
+    "title": "好友",
+    "tabs": {
+      "friends": "好友",
+      "requests": "请求",
+      "recent": "最近"
+    },
+    "status": {
+      "online": "在线",
+      "inGame": "游戏中",
+      "away": "离开",
+      "offline": "离线"
+    }
+  },
+  "lobby": {
+    "tableCode": "牌桌代码",
+    "host": "房主",
+    "ready": "已准备",
+    "waiting": "等待中",
+    "playersCount": "{{current}} / {{max}} 位玩家",
+    "startGame": "开始游戏",
+    "shareInvite": "分享邀请链接",
+    "codeCopied": "牌桌代码已复制！",
+    "shareMessage": "来 Boardly 加入我的{{game}}牌桌！代码：{{code}}\n{{link}}",
+    "imReady": "我准备好了！",
+    "unready": "取消准备",
+    "stay": "留下",
+    "leaveTitle": "离开这个牌桌？",
+    "leaveMessage": "牌桌开着时，你可以用代码重新加入。",
+    "leaveConfirm": "离开牌桌",
+    "closeTitle": "关闭这个牌桌？",
+    "closeMessage": "牌桌将对所有人关闭。",
+    "closeConfirm": "关闭牌桌",
+    "closedTitle": "该牌桌已关闭",
+    "closedSubtitle": "向朋友要一个新邀请，或自己开一桌。"
+  },
+  "table": {
+    "inProgress": "进行中",
+    "waiting": "等待中",
+    "finished": "已结束",
+    "closed": "已关闭"
+  },
+  "game": {
+    "you": "你",
+    "yourTurn": "轮到你了！",
+    "turn": "轮到 {{name}}",
+    "youWin": "你赢了！🎉",
+    "winner": "{{name}} 获胜！",
+    "draw": "平局！",
+    "backHome": "返回首页"
+  },
+  "profile": {
+    "title": "我的",
+    "settings": "设置",
+    "language": "语言",
+    "appearance": "外观",
+    "theme": {
+      "light": "浅色",
+      "dark": "深色",
+      "system": "跟随系统"
+    },
+    "gamesPlayed": "游戏场次",
+    "wins": "胜场",
+    "friends": "好友"
+  },
+  "auth": {
+    "loginTitle": "欢迎回来！",
+    "registerTitle": "创建账号",
+    "username": "用户名",
+    "password": "密码",
+    "loginCta": "登录",
+    "registerCta": "注册",
+    "noAccount": "第一次来 Boardly？",
+    "haveAccount": "已经有账号了？",
+    "registerLink": "创建一个",
+    "loginLink": "去登录",
+    "logout": "退出登录"
+  },
+  "errors": {
+    "invalid_credentials": "用户名或密码错误",
+    "username_taken": "该用户名已被使用",
+    "invalid_username": "用户名需为 3-30 个字符",
+    "invalid_password": "密码至少需要 6 个字符",
+    "room_not_found": "找不到牌桌 — 请检查代码",
+    "room_full": "该牌桌已满",
+    "game_started": "该游戏已经开始",
+    "not_host": "只有房主才能开始游戏",
+    "unauthorized": "请重新登录",
+    "already_in_room": "你已经在另一个牌桌中",
+    "not_all_ready": "还有人未准备好"
+  }
+}

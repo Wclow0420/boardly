@@ -1,0 +1,41 @@
+# Compose project name — shown as the stack name in Docker Desktop
+# (defaults to the folder name "backend" otherwise).
+name: boardly
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: boardly-db
+    environment:
+      POSTGRES_USER: boardly
+      POSTGRES_PASSWORD: boardly
+      POSTGRES_DB: boardly
+    ports:
+      - "5439:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U boardly -d boardly"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: .
+    image: boardly-api
+    container_name: boardly-backend
+    environment:
+      DATABASE_URL: postgresql://boardly:boardly@db:5432/boardly
+      FLASK_APP: wsgi.py
+      APP_ENV: development
+      SECRET_KEY: dev-secret-change-me
+    ports:
+      - "5005:5005"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/srv/app
+
+volumes:
+  pgdata:

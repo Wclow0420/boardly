@@ -1,0 +1,156 @@
+{
+  "common": {
+    "appName": "Boardly",
+    "tagline": "Main bersama. Bila-bila masa.",
+    "seeAll": "Lihat Semua",
+    "invite": "Jemput",
+    "cancel": "Batal",
+    "ok": "OK",
+    "retry": "Cuba Lagi",
+    "errorTitle": "Ada masalah berlaku",
+    "errorSubtitle": "Sila semak sambungan anda dan cuba lagi.",
+    "emptyTitle": "Tiada apa-apa di sini lagi"
+  },
+  "updates": {
+    "title": "Kemas Kini Sedia",
+    "message": "Versi baharu Boardly telah dimuat turun. Mulakan semula sekarang untuk menggunakannya?",
+    "restart": "Mula Semula",
+    "later": "Nanti"
+  },
+  "tabs": {
+    "home": "Utama",
+    "games": "Permainan",
+    "friends": "Rakan",
+    "profile": "Profil"
+  },
+  "home": {
+    "greeting": "Hai, {{name}}!",
+    "quickStart": "Mula Pantas",
+    "quickPlay": "Main Pantas",
+    "quickPlaySubtitle": "Sertai permainan rawak",
+    "yourTables": "Meja Anda",
+    "friendsOnline": "Rakan Dalam Talian",
+    "playersCount": "{{current}} / {{max}} Pemain",
+    "joinWithCode": "Sertai dengan kod",
+    "noTables": "Belum ada meja — mulakan satu!"
+  },
+  "join": {
+    "title": "Sertai Meja",
+    "nameLabel": "Nama Anda",
+    "codeLabel": "Kod Meja",
+    "cta": "Sertai Meja",
+    "hostedBy": "Hos: {{name}}",
+    "openTable": "Buka Meja",
+    "alreadyMessage": "Anda sudah berada di meja {{game}}. Tinggalkannya untuk sertai meja ini.",
+    "leaveAndJoin": "Tinggal & Sertai",
+    "backToMine": "Kembali ke Meja Saya"
+  },
+  "games": {
+    "title": "Permainan",
+    "playersRange": "{{min}} - {{max}} Pemain",
+    "filters": {
+      "all": "Semua",
+      "strategy": "Strategi",
+      "party": "Parti",
+      "classic": "Klasik",
+      "custom": "Tersuai"
+    },
+    "tags": {
+      "classic": "Klasik",
+      "card": "Kad",
+      "strategy": "Strategi",
+      "party": "Parti"
+    }
+  },
+  "friends": {
+    "title": "Rakan",
+    "tabs": {
+      "friends": "Rakan",
+      "requests": "Permintaan",
+      "recent": "Terkini"
+    },
+    "status": {
+      "online": "Dalam Talian",
+      "inGame": "Dalam Permainan",
+      "away": "Tiada",
+      "offline": "Luar Talian"
+    }
+  },
+  "lobby": {
+    "tableCode": "Kod Meja",
+    "host": "Hos",
+    "ready": "Sedia",
+    "waiting": "Menunggu",
+    "playersCount": "{{current}} / {{max}} Pemain",
+    "startGame": "Mula Permainan",
+    "shareInvite": "Kongsi Pautan Jemputan",
+    "codeCopied": "Kod meja disalin!",
+    "shareMessage": "Sertai meja {{game}} saya di Boardly! Kod: {{code}}\n{{link}}",
+    "imReady": "Saya Sedia!",
+    "unready": "Belum Sedia",
+    "stay": "Kekal",
+    "leaveTitle": "Tinggalkan meja ini?",
+    "leaveMessage": "Anda boleh sertai semula dengan kod selagi meja masih dibuka.",
+    "leaveConfirm": "Tinggalkan Meja",
+    "closeTitle": "Tutup meja ini?",
+    "closeMessage": "Meja akan ditutup untuk semua orang.",
+    "closeConfirm": "Tutup Meja",
+    "closedTitle": "Meja ini telah ditutup",
+    "closedSubtitle": "Minta jemputan baharu daripada rakan atau mulakan meja sendiri."
+  },
+  "table": {
+    "inProgress": "Sedang Berlangsung",
+    "waiting": "Menunggu",
+    "finished": "Tamat",
+    "closed": "Ditutup"
+  },
+  "game": {
+    "you": "Anda",
+    "yourTurn": "Giliran anda!",
+    "turn": "Giliran {{name}}",
+    "youWin": "Anda menang! 🎉",
+    "winner": "{{name}} menang!",
+    "draw": "Seri!",
+    "backHome": "Kembali ke Utama"
+  },
+  "profile": {
+    "title": "Profil",
+    "settings": "Tetapan",
+    "language": "Bahasa",
+    "appearance": "Penampilan",
+    "theme": {
+      "light": "Cerah",
+      "dark": "Gelap",
+      "system": "Ikut Sistem"
+    },
+    "gamesPlayed": "Permainan Dimainkan",
+    "wins": "Kemenangan",
+    "friends": "Rakan"
+  },
+  "auth": {
+    "loginTitle": "Selamat kembali!",
+    "registerTitle": "Cipta akaun anda",
+    "username": "Nama Pengguna",
+    "password": "Kata Laluan",
+    "loginCta": "Log Masuk",
+    "registerCta": "Daftar",
+    "noAccount": "Baru di Boardly?",
+    "haveAccount": "Sudah ada akaun?",
+    "registerLink": "Cipta satu",
+    "loginLink": "Log masuk",
+    "logout": "Log Keluar"
+  },
+  "errors": {
+    "invalid_credentials": "Nama pengguna atau kata laluan salah",
+    "username_taken": "Nama pengguna itu telah diambil",
+    "invalid_username": "Nama pengguna mesti 3-30 aksara",
+    "invalid_password": "Kata laluan mesti sekurang-kurangnya 6 aksara",
+    "room_not_found": "Meja tidak dijumpai — semak kod",
+    "room_full": "Meja itu sudah penuh",
+    "game_started": "Permainan itu sudah bermula",
+    "not_host": "Hanya hos boleh memulakan permainan",
+    "unauthorized": "Sila log masuk semula",
+    "already_in_room": "Anda sudah berada di meja lain",
+    "not_all_ready": "Belum semua orang sedia"
+  }
+}

@@ -1,0 +1,156 @@
+{
+  "common": {
+    "appName": "Boardly",
+    "tagline": "Play together. Anytime.",
+    "seeAll": "See All",
+    "invite": "Invite",
+    "cancel": "Cancel",
+    "ok": "OK",
+    "retry": "Try Again",
+    "errorTitle": "Something went wrong",
+    "errorSubtitle": "Please check your connection and try again.",
+    "emptyTitle": "Nothing here yet"
+  },
+  "updates": {
+    "title": "Update Ready",
+    "message": "A new version of Boardly has been downloaded. Restart now to apply it?",
+    "restart": "Restart",
+    "later": "Later"
+  },
+  "tabs": {
+    "home": "Home",
+    "games": "Games",
+    "friends": "Friends",
+    "profile": "Profile"
+  },
+  "home": {
+    "greeting": "Hey, {{name}}!",
+    "quickStart": "Quick Start",
+    "quickPlay": "Quick Play",
+    "quickPlaySubtitle": "Jump into a random game",
+    "yourTables": "Your Tables",
+    "friendsOnline": "Friends Online",
+    "playersCount": "{{current}} / {{max}} Players",
+    "joinWithCode": "Join with a code",
+    "noTables": "No tables yet — start one!"
+  },
+  "join": {
+    "title": "Join a Table",
+    "nameLabel": "Your Name",
+    "codeLabel": "Table Code",
+    "cta": "Join Table",
+    "hostedBy": "Hosted by {{name}}",
+    "openTable": "Open Table",
+    "alreadyMessage": "You're already at a {{game}} table. Leave it to join this one.",
+    "leaveAndJoin": "Leave & Join",
+    "backToMine": "Back to My Table"
+  },
+  "games": {
+    "title": "Games",
+    "playersRange": "{{min}} - {{max}} Players",
+    "filters": {
+      "all": "All",
+      "strategy": "Strategy",
+      "party": "Party",
+      "classic": "Classic",
+      "custom": "Custom"
+    },
+    "tags": {
+      "classic": "Classic",
+      "card": "Card",
+      "strategy": "Strategy",
+      "party": "Party"
+    }
+  },
+  "friends": {
+    "title": "Friends",
+    "tabs": {
+      "friends": "Friends",
+      "requests": "Requests",
+      "recent": "Recent"
+    },
+    "status": {
+      "online": "Online",
+      "inGame": "In Game",
+      "away": "Away",
+      "offline": "Offline"
+    }
+  },
+  "lobby": {
+    "tableCode": "Table Code",
+    "host": "Host",
+    "ready": "Ready",
+    "waiting": "Waiting",
+    "playersCount": "{{current}} / {{max}} Players",
+    "startGame": "Start Game",
+    "shareInvite": "Share Invite Link",
+    "codeCopied": "Table code copied!",
+    "shareMessage": "Join my {{game}} table on Boardly! Code: {{code}}\n{{link}}",
+    "imReady": "I'm Ready!",
+    "unready": "Not Ready",
+    "stay": "Stay",
+    "leaveTitle": "Leave this table?",
+    "leaveMessage": "You can rejoin with the code while the table is open.",
+    "leaveConfirm": "Leave Table",
+    "closeTitle": "Close this table?",
+    "closeMessage": "The table will close for everyone.",
+    "closeConfirm": "Close Table",
+    "closedTitle": "This table is closed",
+    "closedSubtitle": "Ask a friend for a new invite or start your own table."
+  },
+  "table": {
+    "inProgress": "In Progress",
+    "waiting": "Waiting",
+    "finished": "Finished",
+    "closed": "Closed"
+  },
+  "game": {
+    "you": "You",
+    "yourTurn": "Your turn!",
+    "turn": "{{name}}'s turn",
+    "youWin": "You win! 🎉",
+    "winner": "{{name}} wins!",
+    "draw": "It's a draw!",
+    "backHome": "Back to Home"
+  },
+  "profile": {
+    "title": "Profile",
+    "settings": "Settings",
+    "language": "Language",
+    "appearance": "Appearance",
+    "theme": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "gamesPlayed": "Games Played",
+    "wins": "Wins",
+    "friends": "Friends"
+  },
+  "auth": {
+    "loginTitle": "Welcome back!",
+    "registerTitle": "Create your account",
+    "username": "Username",
+    "password": "Password",
+    "loginCta": "Log In",
+    "registerCta": "Sign Up",
+    "noAccount": "New to Boardly?",
+    "haveAccount": "Already have an account?",
+    "registerLink": "Create one",
+    "loginLink": "Log in",
+    "logout": "Log Out"
+  },
+  "errors": {
+    "invalid_credentials": "Wrong username or password",
+    "username_taken": "That username is already taken",
+    "invalid_username": "Username must be 3-30 characters",
+    "invalid_password": "Password must be at least 6 characters",
+    "room_not_found": "Room not found — check the code",
+    "room_full": "That room is already full",
+    "game_started": "That game has already started",
+    "not_host": "Only the host can start the game",
+    "unauthorized": "Please log in again",
+    "already_in_room": "You're already at another table",
+    "not_all_ready": "Not everyone is ready yet"
+  }
+}
