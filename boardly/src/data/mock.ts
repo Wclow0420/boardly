@@ -3,7 +3,6 @@
 // (src/api/client.ts) later only touches the hooks — not the UI.
 
 import type {
-  Friend,
   GameCatalogEntry,
   LobbyPlayer,
   TableSummary,
@@ -75,14 +74,6 @@ export const MOCK_GAMES: GameCatalogEntry[] = [
     maxPlayers: 4,
     rating: 4.4,
   },
-];
-
-export const MOCK_FRIENDS: Friend[] = [
-  { id: "f1", name: "Alex", presence: "online", group: "friends" },
-  { id: "f2", name: "Sam", presence: "online", group: "friends" },
-  { id: "f3", name: "Wei", presence: "inGame", group: "recent" },
-  { id: "f4", name: "Jia Yi", presence: "away", group: "recent" },
-  { id: "f5", name: "Rachel", presence: "offline", group: "requests" },
 ];
 
 export const MOCK_LOBBY = {

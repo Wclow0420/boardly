@@ -4,9 +4,10 @@ import jwt as pyjwt
 from flask import Blueprint, g, request
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from app import presence
 from app.auth import decode_token, issue_tokens, require_auth
 from app.extensions import db
-from app.models import User
+from app.models import GameSession, RoomPlayer, User
 from app.utils import api_error
 
 auth_bp = Blueprint("auth", __name__)
@@ -70,3 +71,21 @@ def refresh():
 @require_auth
 def me():
     return {"user": g.current_user.to_dict()}
+
+
+@auth_bp.get("/me/stats")
+@require_auth
+def my_stats():
+    """Profile counters: finished games I took part in, wins, friends."""
+    me = g.current_user
+    my_room_ids = db.session.query(RoomPlayer.room_id).filter_by(user_id=me.id)
+    finished = GameSession.query.filter(
+        GameSession.status == "finished", GameSession.room_id.in_(my_room_ids)
+    )
+    return {
+        "stats": {
+            "gamesPlayed": finished.count(),
+            "wins": finished.filter(GameSession.winner_user_id == me.id).count(),
+            "friends": len(presence.friend_ids(me.id)),
+        }
+    }

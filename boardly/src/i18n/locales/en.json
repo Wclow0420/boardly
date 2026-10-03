@@ -74,7 +74,42 @@
       "inGame": "In Game",
       "away": "Away",
       "offline": "Offline"
+    },
+    "add": {
+      "title": "Add a Friend",
+      "placeholder": "Search by username",
+      "hint": "Type at least 2 characters to search",
+      "noResults": "No players found"
+    },
+    "actions": {
+      "add": "Add",
+      "accept": "Accept",
+      "decline": "Decline",
+      "remove": "Remove Friend",
+      "more": "More options"
+    },
+    "sections": {
+      "incoming": "Received",
+      "outgoing": "Sent"
+    },
+    "wantsToBeFriends": "Wants to be friends",
+    "requestPending": "Request sent",
+    "inviteSent": "Invite sent!",
+    "removeTitle": "Remove {{name}}?",
+    "removeMessage": "You can add each other again later.",
+    "empty": {
+      "friendsTitle": "No friends yet",
+      "friendsSubtitle": "Add friends to invite them to your tables.",
+      "requestsTitle": "No pending requests",
+      "recentTitle": "No recent players",
+      "recentSubtitle": "People you play with will show up here."
     }
+  },
+  "invite": {
+    "title": "{{name}} invited you!",
+    "message": "Join their {{game}} table?",
+    "join": "Join Table",
+    "notNow": "Not Now"
   },
   "lobby": {
     "tableCode": "Table Code",
@@ -96,7 +131,9 @@
     "closeMessage": "The table will close for everyone.",
     "closeConfirm": "Close Table",
     "closedTitle": "This table is closed",
-    "closedSubtitle": "Ask a friend for a new invite or start your own table."
+    "closedSubtitle": "Ask a friend for a new invite or start your own table.",
+    "inviteFriends": "Invite Friends",
+    "noFriends": "Add friends to invite them straight to your table."
   },
   "table": {
     "inProgress": "In Progress",
@@ -151,6 +188,15 @@
     "not_host": "Only the host can start the game",
     "unauthorized": "Please log in again",
     "already_in_room": "You're already at another table",
-    "not_all_ready": "Not everyone is ready yet"
+    "not_all_ready": "Not everyone is ready yet",
+    "user_not_found": "Player not found",
+    "cannot_friend_self": "You can't add yourself",
+    "already_friends": "You're already friends",
+    "request_exists": "Friend request already sent",
+    "request_not_found": "That request is no longer available",
+    "not_friends": "You're not friends anymore",
+    "no_open_table": "Start a table first, then invite",
+    "friend_offline": "Your friend is offline",
+    "already_at_table": "Already at your table"
   }
 }

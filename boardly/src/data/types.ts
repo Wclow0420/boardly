@@ -29,11 +29,17 @@ export interface TableSummary {
   status: TableStatus;
 }
 
+export type FriendRelation = "friend" | "incoming" | "outgoing" | "none";
+
 export interface Friend {
+  /** User id. */
   id: string;
   name: string;
-  presence: PresenceStatus;
-  group: "friends" | "requests" | "recent";
+  relation: FriendRelation;
+  /** Only known for friends. */
+  presence?: PresenceStatus;
+  /** Pending request id (incoming / outgoing). */
+  requestId?: string;
 }
 
 export interface LobbyPlayer {

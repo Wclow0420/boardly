@@ -74,7 +74,42 @@
       "inGame": "Dalam Permainan",
       "away": "Tiada",
       "offline": "Luar Talian"
+    },
+    "add": {
+      "title": "Tambah Rakan",
+      "placeholder": "Cari mengikut nama pengguna",
+      "hint": "Taip sekurang-kurangnya 2 aksara untuk mencari",
+      "noResults": "Tiada pemain dijumpai"
+    },
+    "actions": {
+      "add": "Tambah",
+      "accept": "Terima",
+      "decline": "Tolak",
+      "remove": "Buang Rakan",
+      "more": "Pilihan lain"
+    },
+    "sections": {
+      "incoming": "Diterima",
+      "outgoing": "Dihantar"
+    },
+    "wantsToBeFriends": "Mahu berkawan",
+    "requestPending": "Permintaan dihantar",
+    "inviteSent": "Jemputan dihantar!",
+    "removeTitle": "Buang {{name}}?",
+    "removeMessage": "Anda boleh menambah satu sama lain semula nanti.",
+    "empty": {
+      "friendsTitle": "Belum ada rakan",
+      "friendsSubtitle": "Tambah rakan untuk menjemput mereka ke meja anda.",
+      "requestsTitle": "Tiada permintaan tertunda",
+      "recentTitle": "Tiada pemain terkini",
+      "recentSubtitle": "Orang yang bermain dengan anda akan muncul di sini."
     }
+  },
+  "invite": {
+    "title": "{{name}} menjemput anda!",
+    "message": "Sertai meja {{game}} mereka?",
+    "join": "Sertai Meja",
+    "notNow": "Bukan Sekarang"
   },
   "lobby": {
     "tableCode": "Kod Meja",
@@ -96,7 +131,9 @@
     "closeMessage": "Meja akan ditutup untuk semua orang.",
     "closeConfirm": "Tutup Meja",
     "closedTitle": "Meja ini telah ditutup",
-    "closedSubtitle": "Minta jemputan baharu daripada rakan atau mulakan meja sendiri."
+    "closedSubtitle": "Minta jemputan baharu daripada rakan atau mulakan meja sendiri.",
+    "inviteFriends": "Jemput Rakan",
+    "noFriends": "Tambah rakan untuk menjemput mereka terus ke meja anda."
   },
   "table": {
     "inProgress": "Sedang Berlangsung",
@@ -151,6 +188,15 @@
     "not_host": "Hanya hos boleh memulakan permainan",
     "unauthorized": "Sila log masuk semula",
     "already_in_room": "Anda sudah berada di meja lain",
-    "not_all_ready": "Belum semua orang sedia"
+    "not_all_ready": "Belum semua orang sedia",
+    "user_not_found": "Pemain tidak dijumpai",
+    "cannot_friend_self": "Anda tidak boleh menambah diri sendiri",
+    "already_friends": "Anda sudah berkawan",
+    "request_exists": "Permintaan rakan sudah dihantar",
+    "request_not_found": "Permintaan itu tidak lagi tersedia",
+    "not_friends": "Anda bukan lagi rakan",
+    "no_open_table": "Mulakan meja dahulu, kemudian jemput",
+    "friend_offline": "Rakan anda di luar talian",
+    "already_at_table": "Sudah berada di meja anda"
   }
 }

@@ -27,6 +27,7 @@ import {
 } from "@/components/ui";
 import { useSession } from "@/context/SessionContext";
 import { ConfettiBackdrop } from "@/features/lobby/ConfettiBackdrop";
+import { InviteFriendsSheet } from "@/features/lobby/InviteFriendsSheet";
 import { InviteSlotCard, PlayerCard } from "@/features/lobby/PlayerCard";
 import {
   useLeaveRoom,
@@ -46,6 +47,7 @@ export default function LobbyScreen() {
   const { user } = useSession();
   const [copied, setCopied] = useState(false);
   const leaveSheetRef = useRef<GorhomBottomSheetModal>(null);
+  const inviteSheetRef = useRef<GorhomBottomSheetModal>(null);
 
   const roomCode = (code ?? "").toUpperCase();
   const roomQuery = useRoom(roomCode);
@@ -223,7 +225,9 @@ export default function LobbyScreen() {
             ))}
             {(room?.players.length ?? 0) < maxPlayers ? (
               <View style={styles.playerCell}>
-                <InviteSlotCard onPress={shareInvite} />
+                <InviteSlotCard
+                  onPress={() => inviteSheetRef.current?.present()}
+                />
               </View>
             ) : null}
           </View>
@@ -275,6 +279,7 @@ export default function LobbyScreen() {
         </View>
       ) : null}
 
+      <InviteFriendsSheet ref={inviteSheetRef} onShareLink={shareInvite} />
       <ConfirmSheet
         ref={leaveSheetRef}
         title={isHost ? t("lobby.closeTitle") : t("lobby.leaveTitle")}

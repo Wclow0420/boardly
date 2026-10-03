@@ -74,7 +74,42 @@
       "inGame": "游戏中",
       "away": "离开",
       "offline": "离线"
+    },
+    "add": {
+      "title": "添加好友",
+      "placeholder": "按用户名搜索",
+      "hint": "至少输入 2 个字符进行搜索",
+      "noResults": "没有找到玩家"
+    },
+    "actions": {
+      "add": "添加",
+      "accept": "接受",
+      "decline": "拒绝",
+      "remove": "删除好友",
+      "more": "更多选项"
+    },
+    "sections": {
+      "incoming": "收到的请求",
+      "outgoing": "发出的请求"
+    },
+    "wantsToBeFriends": "想加你为好友",
+    "requestPending": "请求已发送",
+    "inviteSent": "邀请已发送！",
+    "removeTitle": "删除 {{name}}？",
+    "removeMessage": "之后你们可以重新互加好友。",
+    "empty": {
+      "friendsTitle": "还没有好友",
+      "friendsSubtitle": "添加好友，邀请他们来你的牌桌。",
+      "requestsTitle": "没有待处理的请求",
+      "recentTitle": "没有最近一起玩的玩家",
+      "recentSubtitle": "和你一起玩过的人会显示在这里。"
     }
+  },
+  "invite": {
+    "title": "{{name}} 邀请你！",
+    "message": "加入对方的{{game}}牌桌吗？",
+    "join": "加入牌桌",
+    "notNow": "暂时不要"
   },
   "lobby": {
     "tableCode": "牌桌代码",
@@ -96,7 +131,9 @@
     "closeMessage": "牌桌将对所有人关闭。",
     "closeConfirm": "关闭牌桌",
     "closedTitle": "该牌桌已关闭",
-    "closedSubtitle": "向朋友要一个新邀请，或自己开一桌。"
+    "closedSubtitle": "向朋友要一个新邀请，或自己开一桌。",
+    "inviteFriends": "邀请好友",
+    "noFriends": "添加好友后，可以直接邀请他们来你的牌桌。"
   },
   "table": {
     "inProgress": "进行中",
@@ -151,6 +188,15 @@
     "not_host": "只有房主才能开始游戏",
     "unauthorized": "请重新登录",
     "already_in_room": "你已经在另一个牌桌中",
-    "not_all_ready": "还有人未准备好"
+    "not_all_ready": "还有人未准备好",
+    "user_not_found": "找不到该玩家",
+    "cannot_friend_self": "不能添加自己",
+    "already_friends": "你们已经是好友了",
+    "request_exists": "好友请求已发送",
+    "request_not_found": "该请求已失效",
+    "not_friends": "你们已不是好友",
+    "no_open_table": "请先开一桌，再邀请好友",
+    "friend_offline": "好友不在线",
+    "already_at_table": "已经在你的牌桌中"
   }
 }

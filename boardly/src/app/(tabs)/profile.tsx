@@ -1,6 +1,8 @@
+import { useQuery } from "@tanstack/react-query";
 import { StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
+import { api } from "@/api/client";
 import { AppText, Avatar, Button, Card, Chip, Screen } from "@/components/ui";
 import { useSession } from "@/context/SessionContext";
 import { SUPPORTED_LANGUAGES } from "@/i18n";
@@ -16,10 +18,15 @@ export default function ProfileScreen() {
   const { mode, setMode } = useThemeMode();
   const { language, setLanguage } = useLocale();
 
+  const statsQuery = useQuery({
+    queryKey: ["stats", user?.id],
+    queryFn: async () => (await api.auth.stats()).stats,
+    enabled: user !== null,
+  });
   const stats = [
-    { label: t("profile.gamesPlayed"), value: 42 },
-    { label: t("profile.wins"), value: 17 },
-    { label: t("profile.friends"), value: 12 },
+    { label: t("profile.gamesPlayed"), value: statsQuery.data?.gamesPlayed },
+    { label: t("profile.wins"), value: statsQuery.data?.wins },
+    { label: t("profile.friends"), value: statsQuery.data?.friends },
   ];
 
   return (
@@ -38,7 +45,7 @@ export default function ProfileScreen() {
       <Card style={[styles.stats, { marginTop: spacing.xl }]}>
         {stats.map((stat) => (
           <View key={stat.label} style={styles.stat}>
-            <AppText variant="title">{stat.value}</AppText>
+            <AppText variant="title">{stat.value ?? "–"}</AppText>
             <AppText variant="tiny" color="textSubtle" align="center">
               {stat.label}
             </AppText>

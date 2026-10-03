@@ -20,6 +20,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { SessionProvider, useSession } from "@/context/SessionContext";
+import { FriendsRealtime } from "@/features/friends/FriendsRealtime";
 import { useOtaUpdates } from "@/hooks/useOtaUpdates";
 import { LocaleProvider } from "@/i18n/LocaleContext";
 import "@/i18n";
@@ -73,6 +74,7 @@ function RootNavigator() {
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
       </Stack>
+      {signedIn ? <FriendsRealtime /> : null}
     </>
   );
 }

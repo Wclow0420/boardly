@@ -1,5 +1,5 @@
-// Data hooks for the Home screen — tables come from the real API;
-// friends stay mocked until the friends feature has backend support.
+// Data hooks for the Home screen — tables and friends come from the
+// real API.
 // Identity comes from the session's Bearer token — no usernames in
 // request bodies.
 
@@ -9,8 +9,8 @@ import { useCallback, useMemo } from "react";
 
 import { api, ApiError, type RoomInfo } from "@/api/client";
 import { useSession } from "@/context/SessionContext";
-import { MOCK_FRIENDS } from "@/data/mock";
 import type { Friend, TableSummary } from "@/data/types";
+import { useFriendsQuery } from "@/features/friends/hooks";
 
 function toTableSummary(room: RoomInfo): TableSummary {
   return {
@@ -86,8 +86,9 @@ export function useAlreadyInRoomRedirect() {
 }
 
 export function useOnlineFriends(): Friend[] {
+  const { data } = useFriendsQuery();
   return useMemo(
-    () => MOCK_FRIENDS.filter((f) => f.presence !== "offline"),
-    []
+    () => (data?.friends ?? []).filter((f) => f.presence !== "offline"),
+    [data]
   );
 }

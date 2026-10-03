@@ -109,7 +109,21 @@ token.
 4. Host only: `POST /rooms/<id>/start`
 5. Turns: `POST /rooms/<id>/move` `{move}` — mover is the caller, validated by the game engine, broadcast to the room
 
-Also: `GET /rooms/mine`, `GET /rooms/code/<code>`, `GET /games`.
+Also: `GET /rooms/mine`, `GET /rooms/code/<code>`, `GET /games`,
+`GET /auth/me/stats`.
+
+Friends (`/friends`): `GET ""` (friends with presence, incoming /
+outgoing requests, recent players), `GET /search?q=`, `POST /requests`
+`{userId}`, `POST /requests/<id>/accept`, `DELETE /requests/<id>`
+(decline or cancel), `DELETE /<userId>` (unfriend),
+`POST /<userId>/invite` (invite an online friend to your open table).
+Presence is socket-based: the client emits `authenticate {token}` after
+connecting and then receives `friends_updated` and `table_invite` on its
+own channel. It is tracked in process memory, so run a single worker.
+
+Backend tests: `pytest` inside `backend/` — the friends tests need the
+compose Postgres running (`docker compose up -d db`) and use a separate
+`boardly_test` database; they are skipped when it is unreachable.
 The app is wired to all of this (Quick Play / tap a game → create table;
 Join with a code → bottom sheet; lobby updates live over Socket.IO).
 Testing on a real phone: set `EXPO_PUBLIC_API_URL` to your Mac's LAN IP

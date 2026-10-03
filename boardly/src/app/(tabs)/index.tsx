@@ -113,7 +113,10 @@ export default function HomeScreen() {
       {/* Friends Online */}
       <View style={{ marginTop: spacing.xxl }}>
         <SectionHeader title={t("home.friendsOnline")} />
-        <FriendsOnlineRow friends={onlineFriends} />
+        <FriendsOnlineRow
+          friends={onlineFriends.slice(0, 5)}
+          onInvite={() => router.push("/friends")}
+        />
       </View>
 
       <JoinTableSheet ref={joinSheetRef} />

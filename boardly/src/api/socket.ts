@@ -1,9 +1,10 @@
 // Socket.IO client — real-time room/game updates from the backend.
-// The backend emits: room_updated, game_started, game_updated.
+// The backend emits: room_updated, game_started, game_updated to room
+// channels, and friends_updated / table_invite to the signed-in user.
 
 import { io, type Socket } from "socket.io-client";
 
-import { API_URL } from "./client";
+import { api, API_URL, getAccessToken } from "./client";
 
 let socket: Socket | null = null;
 
@@ -11,6 +12,25 @@ let socket: Socket | null = null;
 // lost on every disconnect (common on phones when backgrounding), so
 // we re-join them all whenever the socket (re)connects.
 const joinedRooms = new Set<string>();
+
+// Whether a user is signed in — the socket then identifies itself on
+// every (re)connect, which is what marks the user online for friends.
+let signedIn = false;
+
+function authenticate(retry = true) {
+  const token = getAccessToken();
+  if (!socket || !signedIn || !token) return;
+  socket.emit("authenticate", { token }, async (ack?: { ok: boolean }) => {
+    if (ack?.ok || !retry) return;
+    // Access token expired: any API call refreshes it, then try once more.
+    try {
+      await api.auth.me();
+      authenticate(false);
+    } catch {
+      // Signed out or offline — the next reconnect tries again.
+    }
+  });
+}
 
 export function getSocket(): Socket {
   if (!socket) {
@@ -21,9 +41,24 @@ export function getSocket(): Socket {
       joinedRooms.forEach((roomId) => {
         socket?.emit("join_room", { roomId });
       });
+      authenticate();
     });
   }
   return socket;
+}
+
+/** Call on sign-in: connect and go online. */
+export function connectUserSocket() {
+  signedIn = true;
+  const current = getSocket();
+  if (current.connected) authenticate();
+  else current.connect();
+}
+
+/** Call on sign-out: dropping the connection takes the user offline. */
+export function disconnectUserSocket() {
+  signedIn = false;
+  socket?.disconnect();
 }
 
 export function joinRoomChannel(roomId: string) {

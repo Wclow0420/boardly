@@ -14,6 +14,7 @@ import {
   setUnauthorizedHandler,
   type AuthUser,
 } from "@/api/client";
+import { connectUserSocket, disconnectUserSocket } from "@/api/socket";
 import { tokenStorage } from "@/api/tokenStorage";
 
 export type SessionStatus = "loading" | "signedOut" | "signedIn";
@@ -65,6 +66,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, [signOutLocally]);
+
+  // The socket follows the session: connected = online for friends.
+  useEffect(() => {
+    if (status === "signedIn") connectUserSocket();
+    else if (status === "signedOut") disconnectUserSocket();
+  }, [status]);
 
   // Any API call that stays 401 after a refresh signs the user out.
   useEffect(() => {

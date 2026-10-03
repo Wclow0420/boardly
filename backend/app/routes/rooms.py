@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from flask import Blueprint, g, request
 
+from app import presence
 from app.auth import require_auth
 from app.extensions import db, socketio
 from app.games import GameError, get_game
@@ -172,6 +173,8 @@ def start_game(room_id):
         {"roomId": str(room.id), "session": session.to_dict()},
         to=f"room:{room.id}",
     )
+    # Friends see these players switch to "in game"
+    presence.notify_friends_of([p.user_id for p in room.players])
     return {"session": session.to_dict()}, 201
 
 
@@ -222,6 +225,8 @@ def make_move(room_id):
         {"roomId": str(room.id), "session": session.to_dict(), "result": result},
         to=f"room:{room.id}",
     )
+    if result is not None:
+        presence.notify_friends_of([p.user_id for p in room.players])
     return {"session": session.to_dict(), "result": result}
 
 
@@ -310,6 +315,7 @@ def leave_room(room_id):
             to=f"room:{room.id}",
         )
         socketio.emit("room_updated", _room_payload(room), to=f"room:{room.id}")
+        presence.notify_friends_of([p.user_id for p in room.players])
         return {"room": _room_payload(room)}
 
     # finished / closed rooms: nothing to do

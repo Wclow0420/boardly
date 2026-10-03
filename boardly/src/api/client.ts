@@ -33,6 +33,10 @@ export function setAccessToken(token: string | null) {
   accessToken = token;
 }
 
+export function getAccessToken(): string | null {
+  return accessToken;
+}
+
 // Called when a request stays unauthorized after a refresh attempt —
 // SessionProvider registers a handler that signs the user out.
 let onUnauthorized: (() => void) | null = null;
@@ -148,6 +152,36 @@ export interface GameSessionInfo {
   winnerUserId: string | null;
 }
 
+export type FriendRelation = "friend" | "incoming" | "outgoing" | "none";
+
+/** A person as the friends endpoints list them. `presence` is only
+ *  shared between friends; `requestId` is set while a request is pending. */
+export interface FriendUser extends AuthUser {
+  relation: FriendRelation;
+  requestId: string | null;
+  presence: "online" | "inGame" | "offline" | null;
+}
+
+export interface FriendsListing {
+  friends: FriendUser[];
+  incoming: FriendUser[];
+  outgoing: FriendUser[];
+  recent: FriendUser[];
+}
+
+/** Socket payload of `table_invite`. */
+export interface TableInvite {
+  from: AuthUser;
+  code: string;
+  game: GameInfo | null;
+}
+
+export interface UserStats {
+  gamesPlayed: number;
+  wins: number;
+  friends: number;
+}
+
 export const api = {
   auth: {
     register: (username: string, password: string) =>
@@ -163,6 +197,43 @@ export const api = {
       }),
 
     me: () => request<{ user: AuthUser }>("/auth/me"),
+
+    stats: () => request<{ stats: UserStats }>("/auth/me/stats"),
+  },
+
+  friends: {
+    list: () => request<FriendsListing>("/friends"),
+
+    search: (q: string) =>
+      request<{ users: FriendUser[] }>(
+        `/friends/search?q=${encodeURIComponent(q)}`
+      ),
+
+    sendRequest: (userId: string) =>
+      request<{ user: FriendUser }>("/friends/requests", {
+        method: "POST",
+        body: JSON.stringify({ userId }),
+      }),
+
+    acceptRequest: (requestId: string) =>
+      request<{ user: FriendUser }>(`/friends/requests/${requestId}/accept`, {
+        method: "POST",
+      }),
+
+    /** Decline a received request or cancel a sent one. */
+    removeRequest: (requestId: string) =>
+      request<{ ok: true }>(`/friends/requests/${requestId}`, {
+        method: "DELETE",
+      }),
+
+    remove: (userId: string) =>
+      request<{ ok: true }>(`/friends/${userId}`, { method: "DELETE" }),
+
+    /** Invite an online friend to the table I'm waiting at. */
+    invite: (userId: string) =>
+      request<{ ok: true; code: string }>(`/friends/${userId}/invite`, {
+        method: "POST",
+      }),
   },
 
   listGames: () => request<{ games: GameInfo[] }>("/games"),
