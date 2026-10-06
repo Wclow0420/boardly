@@ -26,7 +26,7 @@ export interface Theme {
   isDark: boolean;
 }
 
-interface ThemeContextValue {
+export interface ThemeContextValue {
   theme: Theme;
   mode: ThemeMode;
   setMode: (mode: ThemeMode) => void;
@@ -74,6 +74,65 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     [isDark, mode, setMode]
   );
 
+  return (
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  );
+}
+
+/** Re-themes everything inside it: forces the dark palette and layers
+ *  `colors` on top. Used by games that bring their own look (a "skin"),
+ *  so the shared UI kit — text, buttons, cards, sheets — follows it. */
+export function ThemeScope({
+  colors,
+  active = true,
+  children,
+}: {
+  colors?: Partial<ColorScheme>;
+  /** false = leave the surrounding theme untouched. */
+  active?: boolean;
+  children: ReactNode;
+}) {
+  const parent = useContext(ThemeContext);
+  if (!parent) throw new Error("ThemeScope must be used within ThemeProvider");
+
+  const value = useMemo<ThemeContextValue>(
+    () =>
+      active
+        ? {
+            ...parent,
+            theme: {
+              ...parent.theme,
+              colors: { ...darkColors, ...colors },
+              isDark: true,
+            },
+          }
+        : parent,
+    [parent, colors, active]
+  );
+
+  return (
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  );
+}
+
+/** Carries the theme across a portal. Content rendered through a
+ *  portal host (bottom sheets) takes its context from where the host is
+ *  mounted, not from where the sheet is declared — so a sheet opened
+ *  inside a ThemeScope would lose the scope. Capture the value at the
+ *  call site with useThemeRelay() and re-provide it with <ThemeRelay>. */
+export function useThemeRelay(): ThemeContextValue {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error("useThemeRelay must be used within ThemeProvider");
+  return ctx;
+}
+
+export function ThemeRelay({
+  value,
+  children,
+}: {
+  value: ThemeContextValue;
+  children: ReactNode;
+}) {
   return (
     <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );

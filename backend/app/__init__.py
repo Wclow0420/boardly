@@ -1,16 +1,22 @@
 from flask import Flask
 
-from app.config import Config
-from app.extensions import cors, db, migrate, socketio
+from werkzeug.middleware.proxy_fix import ProxyFix
+
+from app.config import Config, validate_production
+from app.extensions import cors, db, limiter, migrate, socketio
 
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+    validate_production(app.config)
+    if app.config.get("TRUST_PROXY"):
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
     db.init_app(app)
     migrate.init_app(app, db)
     cors.init_app(app)
+    limiter.init_app(app)
     # Socket event handlers register themselves on import — before
     # init_app, so they attach to every app instance (tests build several)
     from app.sockets import events  # noqa: F401

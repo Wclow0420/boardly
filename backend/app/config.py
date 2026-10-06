@@ -1,8 +1,10 @@
 import os
 
+DEV_SECRET_KEY = "dev-secret-change-me"
+
 
 class Config:
-    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+    SECRET_KEY = os.environ.get("SECRET_KEY", DEV_SECRET_KEY)
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "DATABASE_URL",
         # Host-machine default: docker-compose maps the db to localhost:5439
@@ -10,3 +12,24 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     APP_ENV = os.environ.get("APP_ENV", "development")
+    # Set to 1 when running behind one reverse proxy / load balancer so
+    # rate limits see the real client IP (X-Forwarded-For).
+    TRUST_PROXY = os.environ.get("TRUST_PROXY", "") == "1"
+    RATELIMIT_HEADERS_ENABLED = True
+    # RATELIMIT_ENABLED=0 turns the per-IP auth limits off — for a LAN
+    # session behind Docker's NAT, where every player shares one IP.
+    RATELIMIT_ENABLED = os.environ.get("RATELIMIT_ENABLED", "1") != "0"
+
+
+def validate_production(config) -> None:
+    """Refuse to boot production with a guessable signing key —
+    anyone who knows it can mint tokens for any account."""
+    if config.get("APP_ENV") != "production":
+        return
+    secret = config.get("SECRET_KEY") or ""
+    if secret == DEV_SECRET_KEY or len(secret) < 32:
+        raise RuntimeError(
+            "SECRET_KEY must be set to a random value of at least 32 "
+            "characters in production "
+            "(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+        )

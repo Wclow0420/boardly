@@ -49,6 +49,11 @@ def _drop(sid):
     return user_id
 
 
+def user_for(sid):
+    """The authenticated user behind a socket, if any."""
+    return _sid_user.get(sid)
+
+
 def is_online(user_id) -> bool:
     return user_id in _user_sids
 

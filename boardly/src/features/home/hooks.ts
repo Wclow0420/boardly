@@ -16,6 +16,7 @@ function toTableSummary(room: RoomInfo): TableSummary {
   return {
     id: room.id,
     code: room.code,
+    gameKey: room.gameType,
     gameName: room.game?.name ?? room.gameType,
     coverColor: room.game?.tileColor ?? "#FFF2D6",
     players: room.players.map((p) => p.username),

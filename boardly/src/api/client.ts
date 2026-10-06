@@ -106,6 +106,8 @@ export interface AuthUser {
   id: string;
   username: string;
   avatar: string | null;
+  /** Profile border worn around the avatar. */
+  borderId: string;
 }
 
 export interface AuthResult {
@@ -128,6 +130,7 @@ export interface GameInfo {
 export interface RoomPlayerInfo {
   userId: string;
   username: string;
+  borderId: string | null;
   seat: number;
   ready: boolean;
 }
@@ -140,6 +143,8 @@ export interface RoomInfo {
   status: "waiting" | "playing" | "finished" | "closed";
   players: RoomPlayerInfo[];
   game: GameInfo | null;
+  /** Code of the open "play again" table for this finished room. */
+  rematchCode: string | null;
   session?: GameSessionInfo | null;
 }
 
@@ -149,7 +154,10 @@ export interface GameSessionInfo {
   gameType: string;
   state: Record<string, unknown>;
   status: "in_progress" | "finished";
+  /** Set when there is exactly one winner. */
   winnerUserId: string | null;
+  /** Every winner (team games have several); empty for no winner. */
+  winnerUserIds: string[];
 }
 
 export type FriendRelation = "friend" | "incoming" | "outgoing" | "none";
@@ -199,6 +207,25 @@ export const api = {
     me: () => request<{ user: AuthUser }>("/auth/me"),
 
     stats: () => request<{ stats: UserStats }>("/auth/me/stats"),
+
+    setBorder: (borderId: string) =>
+      request<{ user: AuthUser }>("/auth/me", {
+        method: "PATCH",
+        body: JSON.stringify({ borderId }),
+      }),
+
+    /** Signs out every other device; returns fresh tokens for this one. */
+    changePassword: (currentPassword: string, newPassword: string) =>
+      request<AuthResult>("/auth/password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword, newPassword }),
+      }),
+
+    deleteAccount: (password: string) =>
+      request<{ ok: true }>("/auth/me", {
+        method: "DELETE",
+        body: JSON.stringify({ password }),
+      }),
   },
 
   friends: {
@@ -270,6 +297,12 @@ export const api = {
 
   leaveRoom: (roomId: string) =>
     request<{ room: RoomInfo }>(`/rooms/${roomId}/leave`, {
+      method: "POST",
+    }),
+
+  /** Play again: opens (or joins) the rematch table for a finished room. */
+  rematch: (roomId: string) =>
+    request<{ room: RoomInfo }>(`/rooms/${roomId}/rematch`, {
       method: "POST",
     }),
 

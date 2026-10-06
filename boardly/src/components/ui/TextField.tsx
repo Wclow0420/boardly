@@ -30,8 +30,9 @@ export function TextField({
         placeholderTextColor={colors.textSubtle}
         style={[
           {
-            backgroundColor: colors.card,
-            borderWidth: 1,
+            // Sunken into the surface it sits on
+            backgroundColor: colors.well,
+            borderWidth: 2,
             borderColor: colors.border,
             borderRadius: radius.md,
             paddingHorizontal: spacing.lg,

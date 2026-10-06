@@ -39,11 +39,19 @@ class BaseGame(ABC):
     @abstractmethod
     def get_result(self, state: dict) -> dict | None:
         """Return None while the game is running, otherwise a dict like
-        {"winnerSeat": 0} or {"draw": True}."""
+        {"winnerSeat": 0}, {"winnerSeats": [0, 3]} (a winning team) or
+        {"draw": True}."""
 
     def view_for(self, state: dict, seat: int) -> dict:
         """State as seen by one player. Override for games with hidden
-        information (hands of cards, etc.). Defaults to full state."""
+        information (hands of cards, secret roles). `seat` is -1 for
+        someone who is not at the table. Defaults to full state.
+        Clients only ever receive this view, never the raw state."""
+        return state
+
+    def on_abandon(self, state: dict, seat: int) -> dict:
+        """A player left mid-game and the table is ending. Return the
+        state to store (e.g. reveal hidden roles). Defaults to no change."""
         return state
 
     def to_dict(self):

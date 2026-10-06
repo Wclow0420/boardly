@@ -2,8 +2,10 @@
 // on device, tokens live in the Keychain/Keystore via expo-secure-store,
 // NEVER in AsyncStorage (which is plain text on disk). AsyncStorage is
 // only for non-sensitive preferences (theme, language).
-// On web (dev preview) SecureStore doesn't exist, so we fall back to
-// localStorage — acceptable for development only.
+// On web SecureStore doesn't exist, so tokens live in localStorage —
+// the usual trade-off for a browser SPA (readable by any script on the
+// page, so keep third-party scripts off it). Access tokens are short
+// lived and changing the password revokes every session.
 
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";

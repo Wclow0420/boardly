@@ -22,6 +22,9 @@ export interface GameCatalogEntry {
 export interface TableSummary {
   id: string;
   code: string;
+  /** Registry key, used to look up the localized name. */
+  gameKey: string;
+  /** Backend display name — fallback when there is no translation. */
   gameName: string;
   coverColor: string;
   players: string[];
@@ -35,6 +38,8 @@ export interface Friend {
   /** User id. */
   id: string;
   name: string;
+  /** Profile border they wear. */
+  borderId?: string;
   relation: FriendRelation;
   /** Only known for friends. */
   presence?: PresenceStatus;
@@ -45,6 +50,7 @@ export interface Friend {
 export interface LobbyPlayer {
   id: string;
   name: string;
+  borderId?: string | null;
   isHost: boolean;
   ready: boolean;
 }

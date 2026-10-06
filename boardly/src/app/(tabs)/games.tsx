@@ -4,18 +4,19 @@ import { useTranslation } from "react-i18next";
 
 import { SearchIcon, SortIcon } from "@/components/icons";
 import {
-  AppText,
   Chip,
   EmptyState,
   ErrorState,
   IconButton,
+  Ribbon,
   Screen,
   SkeletonListItem,
+  TableBackdrop,
 } from "@/components/ui";
 import { GameListItem } from "@/features/games/GameListItem";
 import { GAME_FILTERS, useGameCatalog } from "@/features/games/hooks";
 import { useAlreadyInRoomRedirect, useCreateRoom } from "@/features/home/hooks";
-import { useTheme } from "@/theme";
+import { TABLE, useTheme } from "@/theme";
 
 export default function GamesScreen() {
   const { t } = useTranslation();
@@ -37,7 +38,11 @@ export default function GamesScreen() {
   const header = (
     <View>
       <View style={styles.header}>
-        <AppText variant="h2">{t("games.title")}</AppText>
+        <Ribbon
+          label={t("games.title")}
+          colors={TABLE.ribbonRed}
+          standalone
+        />
         <View style={styles.actions}>
           <IconButton accessibilityLabel="Search">
             <SearchIcon size={20} color={colors.icon} />
@@ -50,7 +55,7 @@ export default function GamesScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ marginTop: spacing.lg }}
+        style={{ marginTop: spacing.xl }}
         contentContainerStyle={styles.filters}
       >
         {GAME_FILTERS.map((key) => (
@@ -83,7 +88,11 @@ export default function GamesScreen() {
   );
 
   return (
-    <Screen scroll={false} style={styles.screen}>
+    <Screen
+      scroll={false}
+      style={styles.screen}
+      backdrop={<TableBackdrop dim={0.45} />}
+    >
       <FlatList
         data={games}
         keyExtractor={(game) => game.id}

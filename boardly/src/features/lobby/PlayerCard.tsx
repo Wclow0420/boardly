@@ -2,8 +2,9 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { PlusIcon } from "@/components/icons";
-import { AppText, Avatar, Card, StatusPill } from "@/components/ui";
+import { AppText, Card, StatusPill } from "@/components/ui";
 import type { LobbyPlayer } from "@/data/types";
+import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
 import { fontFamily, useTheme } from "@/theme";
 import { tapHaptic } from "@/utils/haptics";
 
@@ -13,8 +14,9 @@ export function PlayerCard({ player }: { player: LobbyPlayer }) {
 
   return (
     <Card radius={radius.xl} style={styles.card}>
-      <Avatar
+      <AvatarBorder
         name={player.name}
+        borderId={player.borderId}
         size={74}
         crown={player.isHost}
         ringColor={player.isHost ? colors.accent : colors.border}

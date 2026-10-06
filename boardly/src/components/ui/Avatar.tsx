@@ -14,6 +14,8 @@ export interface AvatarProps {
   crown?: boolean;
   /** Colored ring around the avatar (e.g. the lobby host). */
   ringColor?: string;
+  /** Corner radius; defaults to a circle. */
+  radius?: number;
   style?: ViewStyle;
 }
 
@@ -41,19 +43,11 @@ export function Avatar({
   presence,
   crown = false,
   ringColor,
+  radius,
   style,
 }: AvatarProps) {
-  const { colors } = useTheme();
   const tint = tintFor(name);
   const initial = name.trim().charAt(0).toUpperCase();
-  const dotSize = Math.max(10, size * 0.26);
-
-  const presenceColors: Record<PresenceStatus, string> = {
-    online: colors.success,
-    inGame: colors.primary,
-    away: colors.accent,
-    offline: colors.toggleOff,
-  };
 
   return (
     <View style={[{ width: size, height: size }, style]}>
@@ -61,7 +55,7 @@ export function Avatar({
         style={{
           width: size,
           height: size,
-          borderRadius: size / 2,
+          borderRadius: radius ?? size / 2,
           backgroundColor: tint.bg,
           alignItems: "center",
           justifyContent: "center",
@@ -79,6 +73,30 @@ export function Avatar({
           {initial}
         </AppText>
       </View>
+      <AvatarBadges size={size} presence={presence} crown={crown} />
+    </View>
+  );
+}
+
+/** The presence dot and host crown, drawn over an avatar of this size.
+ *  Separate so a bordered avatar can keep them on top of its border. */
+export function AvatarBadges({
+  size,
+  presence,
+  crown = false,
+}: Pick<AvatarProps, "presence" | "crown"> & { size: number }) {
+  const { colors } = useTheme();
+  const dotSize = Math.max(10, size * 0.26);
+
+  const presenceColors: Record<PresenceStatus, string> = {
+    online: colors.success,
+    inGame: colors.primary,
+    away: colors.accent,
+    offline: colors.toggleOff,
+  };
+
+  return (
+    <>
       {presence ? (
         <View
           style={{
@@ -106,6 +124,6 @@ export function Avatar({
           👑
         </AppText>
       ) : null}
-    </View>
+    </>
   );
 }

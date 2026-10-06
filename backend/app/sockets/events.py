@@ -1,10 +1,12 @@
-"""Socket.IO events. Clients join a per-room channel to receive
-`room_updated`, `game_started`, and `game_updated` broadcasts that the
-REST endpoints emit.
+"""Socket.IO events.
 
-A client that sends `authenticate` with its access token also joins its
-personal `user:<id>` channel (`friends_updated`, `table_invite`) and
-counts as online for as long as that socket stays connected."""
+A client first sends `authenticate` with its access token. That joins
+its personal `user:<id>` channel (`friends_updated`, `table_invite`) and
+marks the user online for as long as the socket stays connected.
+
+An authenticated client can then `join_room` for a table it sits at to
+receive the `room_updated`, `game_started`, and `game_updated`
+broadcasts the REST endpoints emit. Both events ack {"ok": bool}."""
 
 import uuid
 
@@ -13,20 +15,39 @@ from flask import request
 from flask_socketio import join_room as sio_join_room, leave_room as sio_leave_room
 
 from app import presence
-from app.auth import decode_token
+from app.auth import user_from_token
 from app.extensions import db, socketio
+from app.models import RoomPlayer
 
 
 @socketio.on("join_room")
 def on_join_room(data):
-    room_id = data.get("roomId")
-    if room_id is not None:
-        sio_join_room(f"room:{room_id}")
+    """Body: {"roomId": "..."} — only players seated at the table may
+    listen in (broadcasts carry the full game state)."""
+    user_id = presence.user_for(request.sid)
+    try:
+        room_id = uuid.UUID(str((data or {}).get("roomId")))
+    except ValueError:
+        return {"ok": False}
+    if user_id is None:
+        return {"ok": False}
+
+    try:
+        seated = (
+            RoomPlayer.query.filter_by(room_id=room_id, user_id=user_id).first()
+            is not None
+        )
+    finally:
+        db.session.remove()
+    if not seated:
+        return {"ok": False}
+    sio_join_room(f"room:{room_id}")
+    return {"ok": True}
 
 
 @socketio.on("leave_room")
 def on_leave_room(data):
-    room_id = data.get("roomId")
+    room_id = (data or {}).get("roomId")
     if room_id is not None:
         sio_leave_room(f"room:{room_id}")
 
@@ -36,13 +57,12 @@ def on_authenticate(data):
     """Body: {"token": "<access token>"} — acks {"ok": bool}."""
     token = (data or {}).get("token") or ""
     try:
-        payload = decode_token(token, "access")
-    except jwt.InvalidTokenError:
-        return {"ok": False}
+        try:
+            user_id = user_from_token(token, "access").id
+        except jwt.InvalidTokenError:
+            return {"ok": False}
 
-    user_id = uuid.UUID(payload["sub"])
-    sio_join_room(f"user:{user_id}")
-    try:
+        sio_join_room(f"user:{user_id}")
         if presence.connect(request.sid, user_id):
             presence.notify_friends_of([user_id])
     finally:

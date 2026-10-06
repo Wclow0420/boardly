@@ -3,10 +3,14 @@
 // GameDefinition from its index.ts, and register it here.
 
 import type { GameDefinition } from "./types";
+import { avalon } from "./avalon";
+import { coup } from "./coup";
 import { tictactoe } from "./tictactoe";
 
 export const GAMES: Record<string, GameDefinition<any>> = {
   [tictactoe.key]: tictactoe,
+  [avalon.key]: avalon,
+  [coup.key]: coup,
 };
 
 export function getGame(key: string): GameDefinition<any> | undefined {

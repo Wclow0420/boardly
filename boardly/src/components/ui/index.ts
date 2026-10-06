@@ -1,5 +1,10 @@
 export { AppText, type AppTextProps } from "./AppText";
-export { Avatar, type AvatarProps, type PresenceStatus } from "./Avatar";
+export {
+  Avatar,
+  AvatarBadges,
+  type AvatarProps,
+  type PresenceStatus,
+} from "./Avatar";
 export {
   BottomSheetModal,
   BottomSheetScrollView,
@@ -26,3 +31,7 @@ export { SectionHeader, type SectionHeaderProps } from "./SectionHeader";
 export { StatusPill, type StatusPillProps, type StatusPillVariant } from "./StatusPill";
 export { TextField, type TextFieldProps } from "./TextField";
 export { Toggle, type ToggleProps } from "./Toggle";
+export { WebFrame } from "./WebFrame";
+export { Frame, Ribbon, type FrameProps } from "./Frames";
+export { TableBackdrop } from "./TableBackdrop";
+export { Texture, type TextureKind, type TextureProps } from "./Texture";

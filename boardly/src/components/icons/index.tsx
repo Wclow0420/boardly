@@ -227,6 +227,29 @@ export function DotsIcon({ size = defaults.size, color = "#000" }: IconProps) {
   );
 }
 
+/** "!" in a circle — opens help / rules. */
+export function InfoIcon({
+  size = defaults.size,
+  color = "#000",
+  strokeWidth = defaults.strokeWidth,
+}: IconProps) {
+  return (
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+    >
+      <Circle cx={12} cy={12} r={9.5} />
+      <Path d="M12 7v6.5" />
+      <Circle cx={12} cy={16.8} r={0.6} fill={color} />
+    </Svg>
+  );
+}
+
 export function CopyIcon({
   size = defaults.size,
   color = "#000",

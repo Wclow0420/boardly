@@ -22,7 +22,9 @@ export function useRoom(code: string) {
     // the app backgrounds, so poll while the table is still active.
     refetchInterval: (q) => {
       const status = q.state.data?.status;
-      return status === "waiting" || status === "playing" ? 4000 : false;
+      if (status === "waiting" || status === "playing") return 4000;
+      // After the game: watch for someone opening a rematch table
+      return status === "finished" ? 6000 : false;
     },
   });
 

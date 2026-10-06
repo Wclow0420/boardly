@@ -9,7 +9,8 @@
     "retry": "Try Again",
     "errorTitle": "Something went wrong",
     "errorSubtitle": "Please check your connection and try again.",
-    "emptyTitle": "Nothing here yet"
+    "emptyTitle": "Nothing here yet",
+    "back": "Back"
   },
   "updates": {
     "title": "Update Ready",
@@ -32,7 +33,13 @@
     "friendsOnline": "Friends Online",
     "playersCount": "{{current}} / {{max}} Players",
     "joinWithCode": "Join with a code",
-    "noTables": "No tables yet — start one!"
+    "noTables": "No tables yet — start one!",
+    "start": "Start",
+    "noTablesTitle": "No tables yet",
+    "noTablesSubtitle": "Open a table and get a game going!",
+    "inviteTitle": "Invite friends to play",
+    "inviteSubtitle": "Games are more fun together!",
+    "inviteMore": "Invite more"
   },
   "join": {
     "title": "Join a Table",
@@ -61,6 +68,11 @@
       "strategy": "Strategy",
       "party": "Party"
     }
+  },
+  "gameNames": {
+    "tictactoe": "Tic-Tac-Toe",
+    "avalon": "Double Agent",
+    "coup": "Hustle"
   },
   "friends": {
     "title": "Friends",
@@ -120,6 +132,7 @@
     "startGame": "Start Game",
     "shareInvite": "Share Invite Link",
     "codeCopied": "Table code copied!",
+    "linkCopied": "Invite link copied!",
     "shareMessage": "Join my {{game}} table on Boardly! Code: {{code}}\n{{link}}",
     "imReady": "I'm Ready!",
     "unready": "Not Ready",
@@ -148,7 +161,433 @@
     "youWin": "You win! 🎉",
     "winner": "{{name}} wins!",
     "draw": "It's a draw!",
-    "backHome": "Back to Home"
+    "backHome": "Back to Home",
+    "playAgain": "Play Again",
+    "joinRematch": "Join Rematch",
+    "rematchOpen": "A rematch table is open — join in!",
+    "leaveTitle": "Leave the game?",
+    "leaveMessage": "The game ends for everyone at the table and can't be resumed.",
+    "leaveConfirm": "Leave Game",
+    "keepPlaying": "Keep Playing",
+    "yourMove": "Your move"
+  },
+  "rules": {
+    "title": "How to play",
+    "close": "Got it",
+    "tictactoe": {
+      "intro": "Take turns placing your mark on the 3×3 board.",
+      "sections": [
+        {
+          "title": "How to win",
+          "items": [
+            "Get three of your marks in a row — across, down or diagonally.",
+            "If the board fills up with no line, it's a draw."
+          ]
+        }
+      ]
+    },
+    "avalon": {
+      "intro": "The agents try to complete three operations. Moles hide among them and try to make three operations fail.",
+      "pages": {
+        "overview": {
+          "title": "Overview",
+          "intro": "A team game of hidden identities. Agents try to complete operations; moles hide among them and sabotage.",
+          "items": [
+            "Each player is secretly an Agent or a Mole. Moles know each other; most agents know nobody.",
+            "The game lasts up to five operations. Agents need three to succeed; moles need three to fail.",
+            "Agents who reach three successes still have to survive the Hitman's guess at the Handler.",
+            "Moles also win if five proposed teams in a row are rejected.",
+            "Roles are dealt at random and depend on the number of players (see Setup)."
+          ]
+        },
+        "round": {
+          "title": "Each round",
+          "items": [
+            "Leader: the player with the crown proposes a team of the size shown on the track.",
+            "Vote: everyone approves or rejects. Votes are revealed together once all are in.",
+            "A strict majority approves the team. A tie is a rejection.",
+            "Rejected: the crown passes to the next player, who proposes a new team. Five rejections in a row and the moles win.",
+            "Approved: each team member secretly plays Success or Fail — hold the card for 2 seconds. Agents can only play Success; moles may play either.",
+            "The cards are revealed without names. One Fail fails the operation (Operation 4 needs two with 7 or more players).",
+            "The crown moves on and the next operation begins."
+          ]
+        },
+        "roles": {
+          "title": "Roles",
+          "intro": "Eight roles in total. Which ones are in a game depends on the player count — see Setup."
+        },
+        "setup": {
+          "title": "Setup",
+          "intro": "Roles in play and team size for each of the five operations, by number of players."
+        },
+        "ending": {
+          "title": "The ending",
+          "items": [
+            "Three failed operations: the moles win at once.",
+            "Three successful operations: the moles are revealed and may talk it over. The Hitman then names one agent as the Handler.",
+            "If the Hitman is right, the moles steal the win. If wrong, the agents win.",
+            "When the game ends, everyone's role is shown."
+          ]
+        },
+        "more": {
+          "title": "More rules",
+          "items": [
+            "Discussion happens out loud. Anyone may lie about anything — but never show your screen.",
+            "Your role card is face down until you tap it. Tap again to hide it.",
+            "Team votes are public once revealed and stay in History. Operation cards are never linked to a player — only the number of Fails is shown.",
+            "Handler: hint, don't announce. The more obvious you are, the easier the Hitman's job.",
+            "A mole on a team doesn't have to play Fail. Playing Success can build trust.",
+            "If a player leaves mid-game, the game ends for everyone and all roles are revealed."
+          ]
+        }
+      },
+      "roleFacts": {
+        "merlin": {
+          "knows": "Every mole, except the Sleeper.",
+          "note": "Stay hidden. If the agents win three operations, the Hitman wins the game by naming you."
+        },
+        "percival": {
+          "knows": "Who the Handler and the Decoy are — but not which is which.",
+          "note": "Work out the real Handler and shield them."
+        },
+        "servant": {
+          "knows": "Nothing."
+        },
+        "assassin": {
+          "knows": "The other moles, except the Wildcard.",
+          "note": "If the agents win three operations, you name one agent as the Handler. Guess right and the moles win."
+        },
+        "morgana": {
+          "knows": "The other moles, except the Wildcard.",
+          "note": "The Bodyguard sees you as a possible Handler."
+        },
+        "mordred": {
+          "knows": "The other moles, except the Wildcard.",
+          "note": "The Handler can't see you."
+        },
+        "oberon": {
+          "knows": "Nothing — and the other moles don't know you either.",
+          "note": "The Handler does see you."
+        },
+        "minion": {
+          "knows": "The other moles, except the Wildcard."
+        }
+      },
+      "labels": {
+        "knows": "Knows",
+        "note": "Note",
+        "teams": "Teams",
+        "players": "{{count}} players",
+        "split": "{{agents}} agents · {{moles}} moles",
+        "twoFails": "* This operation needs two Fail cards to fail."
+      }
+    },
+    "coup": {
+      "intro": "Everyone runs two stalls — two hidden cards. Bluff, challenge and block until you are the last player with a card left. The deck has 15 cards: 3 each of Boss, Enforcer, Pickpocket, Fixer and Auntie.",
+      "pages": {
+        "overview": {
+          "title": "Overview",
+          "intro": "Everyone runs a crew of two hidden cards. Bluff, challenge and block until you're the last player with a card left.",
+          "items": [
+            "Setup: each player gets 2 face-down cards and $2. The deck has 15 cards — 3 each of Boss, Enforcer, Pickpocket, Fixer and Auntie.",
+            "On your turn you take exactly one action. Some actions need a role — but you may claim a role you don't have.",
+            "After you announce an action, the other players may challenge your claim or block the action.",
+            "A card you lose is turned face up. Lose both and you're out.",
+            "The last player with a card wins.",
+            "Everyone's cash and lost cards are public. Face-down cards and the deck are secret."
+          ]
+        },
+        "roles": {
+          "title": "Roles",
+          "intro": "Five roles, three copies of each. A role gives you a special action, lets you block something, or both."
+        },
+        "actions": {
+          "title": "Actions",
+          "intro": "Take one per turn. \"Needs\" is the role you must claim — truthfully or not."
+        },
+        "challenges": {
+          "title": "Challenges",
+          "items": [
+            "Whenever a player claims a role — to take an action or to block one — any other player may challenge.",
+            "Everyone else chooses Challenge or Allow. The first challenge settles it.",
+            "If it was a bluff: the bluffer loses a card. A bluffed action doesn't happen; a bluffed block fails and the action goes through.",
+            "If it was true: the challenger loses a card. The proven card is shuffled back into the deck and replaced with a new one, so the hand stays secret.",
+            "Day Job, Borrow and Shut Down claim no role, so they can't be challenged.",
+            "Once you tap Allow, you can't challenge that claim any more."
+          ]
+        },
+        "blocks": {
+          "title": "Blocks",
+          "items": [
+            "Borrow can be blocked by any player claiming Boss.",
+            "Pickpocket can be blocked only by its target, claiming Pickpocket or Fixer.",
+            "Rough Up can be blocked only by its target, claiming Auntie.",
+            "A block is a claim, so anyone may challenge it. If the block was a bluff, the blocker loses a card and the action still happens.",
+            "A successful block cancels the action. Money already paid is not returned.",
+            "Day Job, Collect Rent, Swap and Shut Down can't be blocked."
+          ]
+        },
+        "more": {
+          "title": "More rules",
+          "items": [
+            "With $10 or more at the start of your turn, you must Shut Down someone.",
+            "Rough Up costs $3 up front. You get it back only if you're caught bluffing the Enforcer — not if the action is blocked.",
+            "Double loss: bluff Auntie against a Rough Up and get challenged, and you lose one card for the bluff and one for the Rough Up.",
+            "With two cards, you choose which one to lose. With one card left there's no choice.",
+            "When you're out, your cash is gone and you only watch.",
+            "Two players: whoever goes first starts with $1 instead of $2.",
+            "If a player leaves mid-game, the game ends for everyone with no winner.",
+            "Tap your cards to flip them face down when someone might peek."
+          ]
+        }
+      },
+      "effects": {
+        "income": "Take $1 from the bank.",
+        "foreignAid": "Take $2 from the bank.",
+        "tax": "Take $3 from the bank.",
+        "steal": "Take $2 from another player (or whatever they have, if less).",
+        "exchange": "Draw 2 cards from the deck, then return any 2. Changes your roles in secret.",
+        "assassinate": "Choose a player; they lose a card.",
+        "coup": "Choose a player; they lose a card. Nothing can stop it."
+      },
+      "labels": {
+        "action": "Action",
+        "blocks": "Blocks",
+        "cost": "Cost",
+        "needs": "Needs",
+        "blockedBy": "Blocked by",
+        "noAction": "No action of its own",
+        "blocksNothing": "Nothing",
+        "free": "Free",
+        "anyone": "No role — anyone can do it",
+        "needsRole": "{{role}} (claim it)",
+        "byAnyone": "(any player)",
+        "byTarget": "(the target only)",
+        "noBlock": "Can't be blocked"
+      }
+    },
+    "overview": "Overview"
+  },
+  "avalon": {
+    "track": {
+      "quest": "Op {{quest}}",
+      "twoFails": "2 fails needed",
+      "rejections": "Rejected teams: {{count}} / {{max}}"
+    },
+    "role": {
+      "title": "Your role",
+      "reveal": "Tap to reveal — keep it secret",
+      "hide": "Tap to hide",
+      "knows": {
+        "evil": "Moles: {{names}}",
+        "merlin": "The Handler is one of: {{names}}",
+        "allies": "Your fellow moles: {{names}}"
+      }
+    },
+    "roles": {
+      "merlin": {
+        "name": "Handler",
+        "desc": "You know who the moles are. Steer the agents without being exposed — if the Hitman names you, the moles win."
+      },
+      "percival": {
+        "name": "Bodyguard",
+        "desc": "You know who the Handler is — but the Decoy looks the same to you. Protect the Handler."
+      },
+      "servant": {
+        "name": "Field Agent",
+        "desc": "You know nothing. Find the moles and make three operations succeed."
+      },
+      "assassin": {
+        "name": "Hitman",
+        "desc": "Make three operations fail. If the agents complete three, you get one guess at the Handler."
+      },
+      "morgana": {
+        "name": "Decoy",
+        "desc": "You look like the Handler to the Bodyguard. Make three operations fail."
+      },
+      "mordred": {
+        "name": "Sleeper",
+        "desc": "The Handler cannot see you. Make three operations fail."
+      },
+      "oberon": {
+        "name": "Wildcard",
+        "desc": "You are a mole, but you and the other moles don't know each other."
+      },
+      "minion": {
+        "name": "Mole",
+        "desc": "Make three operations fail without being caught."
+      }
+    },
+    "sides": {
+      "good": "Agent",
+      "evil": "Mole"
+    },
+    "known": {
+      "evil": "Mole",
+      "merlin": "Handler or Decoy"
+    },
+    "tags": {
+      "team": "On team"
+    },
+    "team": {
+      "pick": "You lead Operation {{quest}} — pick {{count}} players",
+      "waiting": "{{name}} is choosing a team of {{count}}",
+      "propose": "Propose Team ({{picked}}/{{count}})"
+    },
+    "vote": {
+      "title": "{{name}} proposed this team",
+      "approve": "Approve",
+      "reject": "Reject",
+      "youApproved": "You approved",
+      "youRejected": "You rejected",
+      "waiting": "Waiting for votes ({{done}}/{{total}})"
+    },
+    "quest": {
+      "title": "Operation {{quest}} is underway",
+      "success": "Success",
+      "fail": "Fail",
+      "secret": "Your card is secret. Agents can only play Success.",
+      "waiting": "Waiting for the team ({{done}}/{{total}})",
+      "hold": "Hold a card for 2 seconds to play it."
+    },
+    "assassinate": {
+      "pick": "Name the Handler to steal the win",
+      "waiting": "{{name}} is hunting for the Handler…",
+      "explain": "The agents completed three operations. The moles win if the Hitman finds the Handler.",
+      "confirm": "Take the Shot"
+    },
+    "result": {
+      "good": "Agents win!",
+      "evil": "Moles win!",
+      "none": "Game ended",
+      "youWon": "Your team won 🎉",
+      "youLost": "Your team lost"
+    },
+    "reasons": {
+      "quests": "Three operations succeeded and the Hitman picked {{name}} — not the Handler.",
+      "assassination": "The Hitman found the Handler: {{name}}.",
+      "failedQuests": "Three operations failed.",
+      "rejections": "Five teams in a row were rejected.",
+      "abandoned": "A player left the table."
+    },
+    "history": {
+      "title": "History",
+      "proposal": "Op {{quest}} · {{leader}} proposed {{team}}",
+      "approved": "Approved {{yes}}–{{no}}",
+      "rejected": "Rejected {{yes}}–{{no}}",
+      "succeeded": "Operation succeeded",
+      "failed": "Operation failed ({{count}} fail)"
+    },
+    "reveal": {
+      "approved": "Team approved",
+      "rejected": "Team rejected",
+      "team": "{{leader}} proposed {{team}}",
+      "questSuccess": "Operation succeeded!",
+      "questFail": "Operation failed",
+      "failCards_one": "{{count}} fail card",
+      "failCards_other": "{{count}} fail cards",
+      "dismiss": "Tap to continue"
+    },
+    "tagline": "TRUST · DECEIVE · EXPOSE"
+  },
+  "coup": {
+    "coins_one": "${{count}}",
+    "coins_other": "${{count}}",
+    "out": "Out",
+    "lost": "lost",
+    "deck": "Deck: {{count}} cards",
+    "challenge": "Challenge",
+    "allow": "Allow",
+    "blockWith": "Block with {{role}}",
+    "keep": "Keep These",
+    "hand": {
+      "title": "Your cards",
+      "show": "Tap to show your cards",
+      "hide": "Tap to hide your cards"
+    },
+    "roles": {
+      "duke": {
+        "name": "Boss",
+        "desc": "Collect Rent: take $3. Blocks Borrow."
+      },
+      "assassin": {
+        "name": "Enforcer",
+        "desc": "Pay $3 to make a player lose a card."
+      },
+      "captain": {
+        "name": "Pickpocket",
+        "desc": "Take $2 from a player. Blocks pickpocketing."
+      },
+      "ambassador": {
+        "name": "Fixer",
+        "desc": "Swap cards with the deck. Blocks pickpocketing."
+      },
+      "contessa": {
+        "name": "Auntie",
+        "desc": "Blocks Rough Up."
+      }
+    },
+    "actions": {
+      "income": {
+        "name": "Day Job",
+        "desc": "+$1 · safe"
+      },
+      "foreignAid": {
+        "name": "Borrow",
+        "desc": "+$2 · Boss blocks"
+      },
+      "tax": {
+        "name": "Collect Rent",
+        "desc": "+$3 · claim Boss"
+      },
+      "steal": {
+        "name": "Pickpocket",
+        "desc": "Take $2 · claim Pickpocket"
+      },
+      "exchange": {
+        "name": "Swap",
+        "desc": "Swap cards · claim Fixer"
+      },
+      "assassinate": {
+        "name": "Rough Up",
+        "desc": "Pay $3 · claim Enforcer"
+      },
+      "coup": {
+        "name": "Shut Down",
+        "desc": "Pay $7 · can't be stopped"
+      }
+    },
+    "prompt": {
+      "yourTurn": "Your turn — choose an action",
+      "mustCoup": "You have $10 or more — you must shut someone down",
+      "target": "{{action}}: choose a player",
+      "challenge": "Believe it, or call the bluff? A wrong challenge costs you a card.",
+      "block": "Block it, or let it happen?",
+      "reveal": "Choose a card to lose",
+      "exchange_one": "Choose {{count}} card to keep",
+      "exchange_other": "Choose {{count}} cards to keep",
+      "losing": "{{name}} must give up a card",
+      "waiting": "Waiting for {{names}}"
+    },
+    "result": {
+      "none": "Game ended"
+    },
+    "log": {
+      "income": "{{actor}} works a Day Job (+$1)",
+      "foreignAid": "{{actor}} borrows money (+$2)",
+      "tax": "{{actor}} claims Boss and collects rent (+$3)",
+      "steal": "{{actor}} claims Pickpocket to take from {{target}}",
+      "exchange": "{{actor}} claims Fixer to swap cards",
+      "assassinate": "{{actor}} claims Enforcer to rough up {{target}}",
+      "coup": "{{actor}} shuts down {{target}}",
+      "block": "{{name}} blocks, claiming {{role}}",
+      "blocked": "The action was blocked",
+      "caught": "{{challenger}} challenged {{claimant}} — no {{role}}. Bluff caught!",
+      "proved": "{{challenger}} challenged {{claimant}} — but they had the {{role}}. {{claimant}} shuffles it back and draws a new card.",
+      "lose": "{{name}} loses a card: {{role}}",
+      "out": "{{name}} is out of the game"
+    },
+    "tagline": "BLUFF · HAGGLE · WIN"
   },
   "profile": {
     "title": "Profile",
@@ -162,7 +601,17 @@
     },
     "gamesPlayed": "Games Played",
     "wins": "Wins",
-    "friends": "Friends"
+    "friends": "Friends",
+    "account": "Account",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "changePasswordHint": "At least 6 characters. Your other devices will be signed out.",
+    "savePassword": "Update Password",
+    "deleteAccount": "Delete Account",
+    "deleteAccountMessage": "This permanently deletes your account, friends and profile. It can't be undone. Enter your password to confirm.",
+    "deleteAccountConfirm": "Delete My Account",
+    "borders": "Profile Borders"
   },
   "auth": {
     "loginTitle": "Welcome back!",
@@ -197,6 +646,21 @@
     "not_friends": "You're not friends anymore",
     "no_open_table": "Start a table first, then invite",
     "friend_offline": "Your friend is offline",
-    "already_at_table": "Already at your table"
+    "already_at_table": "Already at your table",
+    "wrong_password": "That password is incorrect",
+    "too_many_requests": "Too many attempts — please wait a minute",
+    "game_not_finished": "The game isn't over yet"
+  },
+  "borders": {
+    "title": "Profile Borders",
+    "equip": "Use This Border",
+    "equipped": "In Use",
+    "free": "Free",
+    "rarity": {
+      "common": "Common",
+      "rare": "Rare",
+      "epic": "Epic",
+      "legendary": "Legendary"
+    }
   }
 }

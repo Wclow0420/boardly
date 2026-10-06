@@ -11,20 +11,22 @@ import {
   QueryClientProvider,
   focusManager,
 } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
+import Head from "expo-router/head";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { ActivityIndicator, AppState, Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { WebFrame } from "@/components/ui";
 import { SessionProvider, useSession } from "@/context/SessionContext";
 import { FriendsRealtime } from "@/features/friends/FriendsRealtime";
 import { useOtaUpdates } from "@/hooks/useOtaUpdates";
 import { LocaleProvider } from "@/i18n/LocaleContext";
 import "@/i18n";
-import { ThemeProvider, useThemeMode } from "@/theme";
+import { TABLE_COLORS, ThemeProvider, ThemeScope } from "@/theme";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -45,10 +47,31 @@ const queryClient = new QueryClient({
   },
 });
 
+// Web: an invite link (/join/CODE) opened by someone who isn't signed
+// in lands on the login screen. Remember it so they end up at the table
+// once they've logged in or registered.
+const invitePath =
+  Platform.OS === "web" &&
+  typeof window !== "undefined" &&
+  /^\/join\/[A-Za-z0-9]{6}\/?$/.test(window.location.pathname)
+    ? window.location.pathname
+    : null;
+
 function RootNavigator() {
-  const { isDark } = useThemeMode();
   const { status } = useSession();
+  const router = useRouter();
   useOtaUpdates();
+
+  const pendingInvite = useRef<string | null>(null);
+  useEffect(() => {
+    if (status === "signedOut" && invitePath && pendingInvite.current === null) {
+      pendingInvite.current = invitePath;
+    } else if (status === "signedIn" && pendingInvite.current) {
+      const path = pendingInvite.current;
+      pendingInvite.current = "";
+      router.replace(path as never);
+    }
+  }, [status, router]);
 
   if (status === "loading") {
     return (
@@ -62,13 +85,19 @@ function RootNavigator() {
 
   return (
     <>
-      <StatusBar style={isDark ? "light" : "dark"} />
+      {Platform.OS === "web" ? (
+        <Head>
+          <title>Boardly</title>
+        </Head>
+      ) : null}
+      <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Protected guard={signedIn}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="lobby/[code]" />
           <Stack.Screen name="game/[code]" />
           <Stack.Screen name="join/[code]" />
+          <Stack.Screen name="borders" />
         </Stack.Protected>
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="(auth)" />
@@ -102,13 +131,19 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
+            {/* One look for the whole app; games with a skin layer their
+                own colours on top inside their screens. */}
+            <ThemeScope colors={TABLE_COLORS}>
             <LocaleProvider>
               <SessionProvider>
-                <BottomSheetModalProvider>
-                  <RootNavigator />
-                </BottomSheetModalProvider>
+                <WebFrame>
+                  <BottomSheetModalProvider>
+                    <RootNavigator />
+                  </BottomSheetModalProvider>
+                </WebFrame>
               </SessionProvider>
             </LocaleProvider>
+            </ThemeScope>
           </ThemeProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

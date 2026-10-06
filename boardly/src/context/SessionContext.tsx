@@ -26,6 +26,11 @@ interface SessionContextValue {
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  changePassword: (current: string, next: string) => Promise<void>;
+  /** Changes the profile border everyone sees around this player. */
+  setBorder: (borderId: string) => Promise<void>;
+  /** Permanently deletes the account, then signs out. */
+  deleteAccount: (password: string) => Promise<void>;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -107,9 +112,47 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     signOutLocally();
   }, [signOutLocally]);
 
+  const changePassword = useCallback(
+    async (current: string, next: string) => {
+      await applyAuthResult(await api.auth.changePassword(current, next));
+    },
+    [applyAuthResult]
+  );
+
+  const setBorder = useCallback(async (borderId: string) => {
+    const { user: updated } = await api.auth.setBorder(borderId);
+    setUser(updated);
+  }, []);
+
+  const deleteAccount = useCallback(
+    async (password: string) => {
+      await api.auth.deleteAccount(password);
+      signOutLocally();
+    },
+    [signOutLocally]
+  );
+
   const value = useMemo(
-    () => ({ user, status, login, register, logout }),
-    [user, status, login, register, logout]
+    () => ({
+      user,
+      status,
+      login,
+      register,
+      logout,
+      changePassword,
+      setBorder,
+      deleteAccount,
+    }),
+    [
+      user,
+      status,
+      login,
+      register,
+      logout,
+      changePassword,
+      setBorder,
+      deleteAccount,
+    ]
   );
 
   return (

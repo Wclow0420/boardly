@@ -5,6 +5,8 @@ import { ChevronRightIcon, FriendsIcon, StarIcon } from "@/components/icons";
 import { AppText, Card, StatusPill } from "@/components/ui";
 import type { GameCatalogEntry } from "@/data/types";
 import { fontFamily, useTheme } from "@/theme";
+import { useGameName } from "@/games/names";
+import { GameBadge } from "./GameBadge";
 
 export interface GameListItemProps {
   game: GameCatalogEntry;
@@ -21,22 +23,22 @@ const TAG_VARIANTS = {
 /** Catalogue row: emoji tile, name + tag, player range, rating. */
 export function GameListItem({ game, onPress }: GameListItemProps) {
   const { t } = useTranslation();
+  const gameName = useGameName();
   const { colors, radius } = useTheme();
 
   return (
     <Card onPress={onPress} radius={radius.xl} style={styles.row}>
-      <View
-        style={[
-          styles.tile,
-          { borderRadius: radius.md, backgroundColor: game.tileColor },
-        ]}
-      >
-        <AppText style={styles.emoji}>{game.emoji}</AppText>
-      </View>
+      <GameBadge
+        gameKey={game.id}
+        emoji={game.emoji}
+        tileColor={game.tileColor}
+        size={56}
+        radius={radius.md}
+      />
       <View style={styles.body}>
         <View style={styles.titleRow}>
           <AppText style={{ fontFamily: fontFamily.semiBold, fontSize: 14 }}>
-            {game.name}
+            {gameName(game.id, game.name)}
           </AppText>
           <StatusPill
             label={t(`games.tags.${game.tagKey}`)}

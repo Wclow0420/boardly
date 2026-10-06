@@ -4,8 +4,20 @@
     {
       "name": "boardly-web",
       "runtimeExecutable": "sh",
-      "runtimeArgs": ["-c", "cd boardly && npx expo start --web --port 8095"],
+      "runtimeArgs": [
+        "-c",
+        "cd boardly && npx expo start --web --port 8095"
+      ],
       "port": 8095
+    },
+    {
+      "name": "boardly-web-prod",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd boardly && node scripts/serve-web.js"
+      ],
+      "port": 8096
     }
   ]
 }

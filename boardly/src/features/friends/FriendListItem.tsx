@@ -2,7 +2,8 @@ import { StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { DotsIcon, MailIcon } from "@/components/icons";
-import { AppText, Avatar, Button, IconButton } from "@/components/ui";
+import { AppText, Button, IconButton } from "@/components/ui";
+import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
 import type { Friend } from "@/data/types";
 import { fontFamily, useTheme } from "@/theme";
 import type { FriendNote } from "./hooks";
@@ -65,7 +66,7 @@ export function FriendListItem({
 
   return (
     <View style={[styles.row, { borderBottomColor: colors.divider }]}>
-      <Avatar name={friend.name} size={40} />
+      <AvatarBorder name={friend.name} borderId={friend.borderId} size={40} />
       <View style={styles.body}>
         <AppText
           numberOfLines={1}

@@ -20,12 +20,13 @@ ACCESS_TTL = timedelta(hours=1)
 REFRESH_TTL = timedelta(days=30)
 
 
-def _encode(user_id, token_type: str, ttl: timedelta) -> str:
+def _encode(user_id, token_type: str, ttl: timedelta, version: int = 0) -> str:
     now = datetime.now(timezone.utc)
     return jwt.encode(
         {
             "sub": str(user_id),
             "type": token_type,
+            "ver": version,
             "iat": now,
             "exp": now + ttl,
             # Unique token id — also makes same-second tokens distinct
@@ -38,8 +39,10 @@ def _encode(user_id, token_type: str, ttl: timedelta) -> str:
 
 def issue_tokens(user: User) -> dict:
     return {
-        "accessToken": _encode(user.id, "access", ACCESS_TTL),
-        "refreshToken": _encode(user.id, "refresh", REFRESH_TTL),
+        "accessToken": _encode(user.id, "access", ACCESS_TTL, user.token_version),
+        "refreshToken": _encode(
+            user.id, "refresh", REFRESH_TTL, user.token_version
+        ),
     }
 
 
@@ -53,6 +56,22 @@ def decode_token(token: str, expected_type: str) -> dict:
     return payload
 
 
+def user_from_token(token: str, expected_type: str) -> User:
+    """The account a token belongs to. Raises jwt.InvalidTokenError if
+    the token is bad, the account is gone, or the token was issued
+    before the account's sessions were revoked."""
+    payload = decode_token(token, expected_type)
+    try:
+        user = db.session.get(User, uuid.UUID(payload["sub"]))
+    except (KeyError, ValueError):
+        user = None
+    if user is None or user.deleted_at is not None:
+        raise jwt.InvalidTokenError("Account no longer exists")
+    if payload.get("ver", 0) != user.token_version:
+        raise jwt.InvalidTokenError("Session was signed out")
+    return user
+
+
 def require_auth(fn):
     """Route decorator: validates the Bearer access token and sets
     g.current_user."""
@@ -63,16 +82,11 @@ def require_auth(fn):
         if not header.startswith("Bearer "):
             return api_error("unauthorized", "Missing access token", 401)
         try:
-            payload = decode_token(header[len("Bearer "):], "access")
+            g.current_user = user_from_token(header[len("Bearer "):], "access")
         except jwt.ExpiredSignatureError:
             return api_error("token_expired", "Access token expired", 401)
         except jwt.InvalidTokenError:
             return api_error("unauthorized", "Invalid access token", 401)
-
-        user = db.session.get(User, uuid.UUID(payload["sub"]))
-        if user is None:
-            return api_error("unauthorized", "Account no longer exists", 401)
-        g.current_user = user
         return fn(*args, **kwargs)
 
     return wrapper

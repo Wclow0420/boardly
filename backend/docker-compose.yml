@@ -24,6 +24,9 @@ services:
     build: .
     image: boardly-api
     container_name: boardly-backend
+    # Development server with auto-reload (the image default is gunicorn)
+    command: python wsgi.py
+    user: root
     environment:
       DATABASE_URL: postgresql://boardly:boardly@db:5432/boardly
       FLASK_APP: wsgi.py

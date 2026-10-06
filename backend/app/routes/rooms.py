@@ -33,16 +33,42 @@ def _reseat(room):
         player.seat = index
 
 
-def _room_payload(room: Room, with_session: bool = True) -> dict:
+def _seat_of(room: Room, user_id) -> int:
+    """The user's seat at this table, or -1 if they are not seated."""
+    for player in room.players:
+        if player.user_id == user_id:
+            return player.seat
+    return -1
+
+
+def _room_payload(room: Room, viewer_id=None) -> dict:
+    """Room as one user sees it. With a viewer, includes the latest game
+    session filtered through that player's view (hidden information
+    stays on the server)."""
     payload = room.to_dict()
-    if with_session:
+    if viewer_id is not None:
         session = (
             GameSession.query.filter_by(room_id=room.id)
             .order_by(GameSession.started_at.desc())
             .first()
         )
-        payload["session"] = session.to_dict() if session else None
+        payload["session"] = (
+            session.to_dict(_seat_of(room, viewer_id)) if session else None
+        )
     return payload
+
+
+def _broadcast_room(room: Room):
+    """Tell the table the room changed. Carries no game state — every
+    client refetches its own view."""
+    socketio.emit("room_updated", _room_payload(room), to=f"room:{room.id}")
+
+
+def _winner_ids(room: Room, result: dict) -> list:
+    seats = result.get("winnerSeats")
+    if seats is None:
+        seats = [result["winnerSeat"]] if result.get("winnerSeat") is not None else []
+    return [p.user_id for p in room.players if p.seat in seats]
 
 
 @rooms_bp.post("")
@@ -67,7 +93,7 @@ def create_room():
         RoomPlayer(room_id=room.id, user_id=g.current_user.id, seat=0, ready=True)
     )
     db.session.commit()
-    return {"room": _room_payload(room)}, 201
+    return {"room": _room_payload(room, g.current_user.id)}, 201
 
 
 @rooms_bp.post("/join")
@@ -103,8 +129,8 @@ def join_room():
         )
         db.session.commit()
 
-    socketio.emit("room_updated", _room_payload(room), to=f"room:{room.id}")
-    return {"room": _room_payload(room)}
+    _broadcast_room(room)
+    return {"room": _room_payload(room, g.current_user.id)}
 
 
 @rooms_bp.get("/mine")
@@ -118,7 +144,7 @@ def my_rooms():
         .order_by(Room.created_at.desc())
         .all()
     )
-    return {"rooms": [_room_payload(m.room, with_session=False) for m in memberships]}
+    return {"rooms": [_room_payload(m.room) for m in memberships]}
 
 
 @rooms_bp.get("/code/<code>")
@@ -127,7 +153,7 @@ def get_room_by_code(code):
     room = Room.query.filter_by(code=code.strip().upper()).first()
     if room is None:
         return api_error("room_not_found", "Room not found", 404)
-    return {"room": _room_payload(room)}
+    return {"room": _room_payload(room, g.current_user.id)}
 
 
 @rooms_bp.get("/<uuid:room_id>")
@@ -136,7 +162,7 @@ def get_room(room_id):
     room = db.session.get(Room, room_id)
     if room is None:
         return api_error("room_not_found", "Room not found", 404)
-    return {"room": _room_payload(room)}
+    return {"room": _room_payload(room, g.current_user.id)}
 
 
 @rooms_bp.post("/<uuid:room_id>/start")
@@ -168,14 +194,10 @@ def start_game(room_id):
     db.session.add(session)
     db.session.commit()
 
-    socketio.emit(
-        "game_started",
-        {"roomId": str(room.id), "session": session.to_dict()},
-        to=f"room:{room.id}",
-    )
+    socketio.emit("game_started", {"roomId": str(room.id)}, to=f"room:{room.id}")
     # Friends see these players switch to "in game"
     presence.notify_friends_of([p.user_id for p in room.players])
-    return {"session": session.to_dict()}, 201
+    return {"session": session.to_dict(_seat_of(room, g.current_user.id))}, 201
 
 
 @rooms_bp.post("/<uuid:room_id>/move")
@@ -190,9 +212,12 @@ def make_move(room_id):
     room = db.session.get(Room, room_id)
     if room is None:
         return api_error("room_not_found", "Room not found", 404)
+    # Row lock: games with simultaneous actions (votes, secret cards)
+    # get concurrent moves, and each must build on the previous one.
     session = (
         GameSession.query.filter_by(room_id=room.id, status="in_progress")
         .order_by(GameSession.started_at.desc())
+        .with_for_update()
         .first()
     )
     if session is None:
@@ -212,22 +237,15 @@ def make_move(room_id):
         session.status = "finished"
         session.finished_at = datetime.now(timezone.utc)
         room.status = "finished"
-        winner_seat = result.get("winnerSeat")
-        if winner_seat is not None:
-            winner = RoomPlayer.query.filter_by(
-                room_id=room.id, seat=winner_seat
-            ).first()
-            session.winner_user_id = winner.user_id if winner else None
+        winners = _winner_ids(room, result)
+        session.winner_user_ids = [str(user_id) for user_id in winners]
+        session.winner_user_id = winners[0] if len(winners) == 1 else None
     db.session.commit()
 
-    socketio.emit(
-        "game_updated",
-        {"roomId": str(room.id), "session": session.to_dict(), "result": result},
-        to=f"room:{room.id}",
-    )
+    socketio.emit("game_updated", {"roomId": str(room.id)}, to=f"room:{room.id}")
     if result is not None:
         presence.notify_friends_of([p.user_id for p in room.players])
-    return {"session": session.to_dict(), "result": result}
+    return {"session": session.to_dict(player.seat), "result": result}
 
 
 
@@ -253,8 +271,8 @@ def set_ready(room_id):
 
     player.ready = ready
     db.session.commit()
-    socketio.emit("room_updated", _room_payload(room), to=f"room:{room.id}")
-    return {"room": _room_payload(room)}
+    _broadcast_room(room)
+    return {"room": _room_payload(room, g.current_user.id)}
 
 
 @rooms_bp.post("/<uuid:room_id>/leave")
@@ -271,27 +289,31 @@ def leave_room(room_id):
     if player is None:
         return api_error("not_in_room", "You are not in this room", 403)
 
+    leave(room, player)
+    return {"room": _room_payload(room, g.current_user.id)}
+
+
+def leave(room, player):
+    """Take a player out of a room and tell everyone at the table.
+    Host leaving a waiting room closes it; leaving mid-game forfeits.
+    Commits; finished / closed rooms are left untouched."""
+    user_id = player.user_id
+
     if room.status == "waiting":
-        if room.host_id == g.current_user.id:
+        if room.host_id == user_id:
             room.status = "closed"
             db.session.commit()
             socketio.emit(
                 "room_closed", {"roomId": str(room.id)}, to=f"room:{room.id}"
-            )
-            socketio.emit(
-                "room_updated", _room_payload(room), to=f"room:{room.id}"
             )
         else:
             db.session.delete(player)
             db.session.flush()
             _reseat(room)
             db.session.commit()
-            socketio.emit(
-                "room_updated", _room_payload(room), to=f"room:{room.id}"
-            )
-        return {"room": _room_payload(room)}
+        _broadcast_room(room)
 
-    if room.status == "playing":
+    elif room.status == "playing":
         session = (
             GameSession.query.filter_by(room_id=room.id, status="in_progress")
             .order_by(GameSession.started_at.desc())
@@ -301,25 +323,71 @@ def leave_room(room_id):
         if session is not None:
             session.status = "finished"
             session.finished_at = datetime.now(timezone.utc)
-            remaining = [p for p in room.players if p.user_id != g.current_user.id]
+            session.state = get_game(session.game_type).on_abandon(
+                session.state, player.seat
+            )
+            remaining = [p for p in room.players if p.user_id != user_id]
             if len(remaining) == 1:
                 session.winner_user_id = remaining[0].user_id
+                session.winner_user_ids = [str(remaining[0].user_id)]
         db.session.commit()
         socketio.emit(
-            "game_updated",
-            {
-                "roomId": str(room.id),
-                "session": session.to_dict() if session else None,
-                "result": {"forfeit": True},
-            },
-            to=f"room:{room.id}",
+            "game_updated", {"roomId": str(room.id)}, to=f"room:{room.id}"
         )
-        socketio.emit("room_updated", _room_payload(room), to=f"room:{room.id}")
+        _broadcast_room(room)
         presence.notify_friends_of([p.user_id for p in room.players])
-        return {"room": _room_payload(room)}
 
-    # finished / closed rooms: nothing to do
-    return {"room": _room_payload(room)}
+
+@rooms_bp.post("/<uuid:room_id>/rematch")
+@require_auth
+def rematch(room_id):
+    """Play again with the same people. The first player to ask opens a
+    fresh table (and hosts it); everyone else who asks joins that table.
+    The finished room keeps its history untouched."""
+    me = g.current_user
+    # Lock the finished room so two players asking at once share one table
+    room = db.session.get(Room, room_id, with_for_update=True)
+    if room is None:
+        return api_error("room_not_found", "Room not found", 404)
+    if _seat_of(room, me.id) < 0:
+        return api_error("not_in_room", "You are not in this room", 403)
+    if room.status != "finished":
+        return api_error("game_not_finished", "The game isn't over yet", 409)
+
+    target = room.rematch_room
+    active = _active_membership(me.id)
+    if active is not None:
+        if target is not None and active.room_id == target.id:
+            return {"room": _room_payload(target, me.id)}  # already there
+        return api_error("already_in_room", "You are already at another table", 409)
+
+    if target is not None and target.status == "playing":
+        return api_error("game_started", "Game already started", 409)
+    if target is not None and target.status != "waiting":
+        target = None  # that rematch is over or was closed — open a new one
+
+    game = get_game(room.game_type)
+    if target is None:
+        target = Room(game_type=room.game_type, host_id=me.id)
+        db.session.add(target)
+        db.session.flush()
+        db.session.add(
+            RoomPlayer(room_id=target.id, user_id=me.id, seat=0, ready=True)
+        )
+        room.rematch_room_id = target.id
+    else:
+        if len(target.players) >= game.max_players:
+            return api_error("room_full", "Room is full", 409)
+        db.session.add(
+            RoomPlayer(room_id=target.id, user_id=me.id, seat=len(target.players))
+        )
+    db.session.commit()
+
+    # Players still looking at the finished game see the invitation;
+    # players already at the new table see the newcomer.
+    _broadcast_room(room)
+    _broadcast_room(target)
+    return {"room": _room_payload(target, me.id)}
 
 
 @rooms_bp.errorhandler(GameError)

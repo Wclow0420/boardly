@@ -1,16 +1,16 @@
 import * as Clipboard from "expo-clipboard";
+import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Linking from "expo-linking";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, Share, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import {
   BackIcon,
   CopyIcon,
-  DotsIcon,
   FriendsIcon,
   LinkIcon,
 } from "@/components/icons";
@@ -26,6 +26,11 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { useSession } from "@/context/SessionContext";
+import {
+  RulesButton,
+  RulesSheet,
+  useHasRules,
+} from "@/features/game/RulesSheet";
 import { ConfettiBackdrop } from "@/features/lobby/ConfettiBackdrop";
 import { InviteFriendsSheet } from "@/features/lobby/InviteFriendsSheet";
 import { InviteSlotCard, PlayerCard } from "@/features/lobby/PlayerCard";
@@ -35,8 +40,11 @@ import {
   useSetReady,
   useStartGame,
 } from "@/features/lobby/hooks";
+import { useGameName } from "@/games/names";
+import { getGame } from "@/games/registry";
 import { fontFamily, palette, useTheme } from "@/theme";
 import { successHaptic, tapHaptic } from "@/utils/haptics";
+import { shareOrCopy } from "@/utils/share";
 
 export default function LobbyScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
@@ -46,6 +54,9 @@ export default function LobbyScreen() {
   const { colors, radius, spacing } = useTheme();
   const { user } = useSession();
   const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const gameName = useGameName();
   const leaveSheetRef = useRef<GorhomBottomSheetModal>(null);
   const inviteSheetRef = useRef<GorhomBottomSheetModal>(null);
 
@@ -56,6 +67,10 @@ export default function LobbyScreen() {
   const setReady = useSetReady(room?.id, roomCode);
   const leaveRoom = useLeaveRoom(room?.id);
 
+  const hasRules = useHasRules(room?.gameType);
+  // Games with their own look bring their art into the lobby header
+  const skin = room ? getGame(room.gameType)?.skin : undefined;
+  const heroInk = skin ? "#FFFFFF" : palette.ink;
   const me = room?.players.find((p) => p.userId === user?.id);
   const isHost = user?.id === room?.hostId;
   const isMember = me !== undefined;
@@ -77,23 +92,33 @@ export default function LobbyScreen() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const shareInvite = () => {
+  const shareInvite = async () => {
     if (!room) return;
-    Share.share({
-      message: t("lobby.shareMessage", {
-        game: room.game?.name ?? room.gameType,
+    const link = Linking.createURL(`join/${room.code}`);
+    const outcome = await shareOrCopy(
+      t("lobby.shareMessage", {
+        game: gameName(room.gameType, room.game?.name),
         code: room.code,
-        link: Linking.createURL(`join/${room.code}`),
+        link,
       }),
-    }).catch(() => {});
+      link
+    ).catch(() => "dismissed" as const);
+    // No share sheet (desktop browsers): the link went to the clipboard
+    if (outcome === "copied") {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    }
   };
 
   const handleBack = () => {
     // Leaving an active lobby means leaving the table — confirm first.
     if (isMember && room?.status === "waiting") {
       leaveSheetRef.current?.present();
-    } else {
+    } else if (router.canGoBack()) {
       router.back();
+    } else {
+      // Opened directly (web link / refresh): nothing to go back to
+      router.replace("/");
     }
   };
 
@@ -119,59 +144,102 @@ export default function LobbyScreen() {
   const isClosed = room?.status === "closed" || room?.status === "finished";
 
   return (
-    <Screen scroll padded={false} inset={false} background={colors.surface}>
+    // Fixed header and footer; only the player list in between scrolls
+    <Screen
+      scroll={false}
+      padded={false}
+      inset={false}
+      background={colors.surface}
+    >
       {/* Header — brand gradient stays identical in dark mode */}
       <LinearGradient
-        colors={["#FFD24A", "#FFB627"]}
+        colors={
+          skin
+            ? [skin.colors.background ?? "#0B1114", skin.colors.background ?? "#0B1114"]
+            : ["#FFD24A", "#FFB627"]
+        }
         start={{ x: 0.2, y: 0 }}
         end={{ x: 0.8, y: 1 }}
         style={[styles.hero, { paddingTop: insets.top + spacing.sm }]}
       >
-        <ConfettiBackdrop />
+        {skin ? (
+          <>
+            {skin.backdropImage ? (
+              <Image
+                source={skin.backdropImage}
+                style={StyleSheet.absoluteFill}
+                contentFit="cover"
+              />
+            ) : null}
+            <View style={[StyleSheet.absoluteFill, styles.heroShade]} />
+          </>
+        ) : (
+          <ConfettiBackdrop />
+        )}
         <View style={styles.heroNav}>
           <IconButton accessibilityLabel="Back" onPress={handleBack}>
-            <BackIcon size={20} color={palette.ink} />
+            <BackIcon size={20} color={heroInk} />
           </IconButton>
-          <IconButton accessibilityLabel="Options">
-            <DotsIcon size={20} color={palette.ink} />
-          </IconButton>
+          {hasRules ? (
+            <RulesButton color={heroInk} onPress={() => setRulesOpen(true)} />
+          ) : (
+            <View />
+          )}
         </View>
 
         <View style={styles.heroBody}>
-          <AppText style={styles.heroEmoji}>{room?.game?.emoji ?? "🎲"}</AppText>
-          <AppText
-            style={{
-              fontFamily: fontFamily.bold,
-              fontSize: 30,
-              lineHeight: 40,
-              color: palette.ink,
-              marginTop: 8,
-            }}
-          >
-            {room?.game?.name ?? " "}
-          </AppText>
+          {skin?.logo ? (
+            <Image
+              source={skin.logo}
+              style={styles.heroLogo}
+              contentFit="contain"
+              accessibilityLabel={
+                room ? gameName(room.gameType, room.game?.name) : undefined
+              }
+            />
+          ) : (
+            <>
+              <AppText style={styles.heroEmoji}>
+                {room?.game?.emoji ?? "🎲"}
+              </AppText>
+              <AppText
+                style={{
+                  fontFamily: fontFamily.bold,
+                  fontSize: 30,
+                  lineHeight: 40,
+                  color: heroInk,
+                  marginTop: 8,
+                }}
+              >
+                {room ? gameName(room.gameType, room.game?.name) : " "}
+              </AppText>
+            </>
+          )}
           <AppText
             style={{
               fontFamily: fontFamily.medium,
               fontSize: 11,
-              color: "rgba(24,32,43,0.6)",
+              color: skin ? "rgba(255,255,255,0.7)" : "rgba(24,32,43,0.6)",
               marginTop: 10,
             }}
           >
             {copied ? t("lobby.codeCopied") : t("lobby.tableCode")}
           </AppText>
-          <Pressable onPress={copyCode} style={styles.codePill}>
+          <Pressable
+            onPress={copyCode}
+            style={[styles.codePill, skin ? styles.codePillDark : null]}
+          >
             <AppText
               style={{
                 fontFamily: fontFamily.bold,
                 fontSize: 16,
-                color: palette.ink,
+                color: heroInk,
                 letterSpacing: 1,
               }}
             >
               {roomCode}
             </AppText>
-            <CopyIcon size={15} color={palette.ink} />
+            <CopyIcon size={15} color={heroInk} />
           </Pressable>
         </View>
       </LinearGradient>
@@ -182,10 +250,15 @@ export default function LobbyScreen() {
           styles.playersSheet,
           {
             backgroundColor: colors.surface,
-            borderRadius: radius.xxl,
+            borderTopLeftRadius: radius.xxl,
+            borderTopRightRadius: radius.xxl,
           },
         ]}
       >
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.playersScroll}
+        >
         {roomQuery.isPending ? (
           <View style={styles.playersGrid}>
             {Array.from({ length: 4 }, (_, i) => (
@@ -217,6 +290,7 @@ export default function LobbyScreen() {
                   player={{
                     id: player.userId,
                     name: player.username,
+                    borderId: player.borderId,
                     isHost: player.userId === room.hostId,
                     ready: player.ready,
                   }}
@@ -232,6 +306,7 @@ export default function LobbyScreen() {
             ) : null}
           </View>
         )}
+        </ScrollView>
       </View>
 
       {/* Footer */}
@@ -269,7 +344,7 @@ export default function LobbyScreen() {
           )}
 
           <Button
-            label={t("lobby.shareInvite")}
+            label={linkCopied ? t("lobby.linkCopied") : t("lobby.shareInvite")}
             variant="secondary"
             size="md"
             leftIcon={<LinkIcon size={16} color={colors.primary} />}
@@ -279,6 +354,14 @@ export default function LobbyScreen() {
         </View>
       ) : null}
 
+      {room && hasRules ? (
+        <RulesSheet
+          gameKey={room.gameType}
+          gameName={gameName(room.gameType, room.game?.name)}
+          visible={rulesOpen}
+          onClose={() => setRulesOpen(false)}
+        />
+      ) : null}
       <InviteFriendsSheet ref={inviteSheetRef} onShareLink={shareInvite} />
       <ConfirmSheet
         ref={leaveSheetRef}
@@ -307,6 +390,12 @@ const styles = StyleSheet.create({
   },
   heroBody: { alignItems: "center", paddingTop: 6 },
   heroEmoji: { fontSize: 44, lineHeight: 52 },
+  heroLogo: { width: 250, height: 118 },
+  heroShade: { backgroundColor: "rgba(0,0,0,0.55)" },
+  codePillDark: {
+    backgroundColor: "rgba(255,255,255,0.14)",
+    borderColor: "rgba(255,255,255,0.35)",
+  },
   codePill: {
     flexDirection: "row",
     alignItems: "center",
@@ -320,10 +409,12 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.8)",
   },
   playersSheet: {
+    flex: 1,
     marginTop: -22,
     marginHorizontal: 14,
-    padding: 16,
+    overflow: "hidden",
   },
+  playersScroll: { padding: 16 },
   playersGrid: {
     flexDirection: "row",
     flexWrap: "wrap",

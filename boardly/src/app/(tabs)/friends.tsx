@@ -9,10 +9,13 @@ import {
   ConfirmSheet,
   EmptyState,
   ErrorState,
+  Frame,
   GorhomBottomSheetModal,
   IconButton,
+  Ribbon,
   Screen,
   SkeletonListItem,
+  TableBackdrop,
 } from "@/components/ui";
 import type { Friend } from "@/data/types";
 import { AddFriendSheet } from "@/features/friends/AddFriendSheet";
@@ -22,7 +25,7 @@ import {
   useFriends,
   useRemoveFriend,
 } from "@/features/friends/hooks";
-import { useTheme } from "@/theme";
+import { TABLE, useTheme } from "@/theme";
 
 type Row =
   | { kind: "header"; key: string; label: string }
@@ -74,7 +77,11 @@ export default function FriendsScreen() {
   const header = (
     <View>
       <View style={styles.header}>
-        <AppText variant="h2">{t("friends.title")}</AppText>
+        <Ribbon
+          label={t("friends.title")}
+          colors={TABLE.ribbonGreen}
+          standalone
+        />
         <IconButton
           accessibilityLabel={t("friends.add.title")}
           onPress={() => addSheetRef.current?.present()}
@@ -84,7 +91,7 @@ export default function FriendsScreen() {
           </View>
         </IconButton>
       </View>
-      <View style={[styles.tabs, { marginTop: spacing.lg }]}>
+      <View style={[styles.tabs, { marginTop: spacing.xl }]}>
         {FRIEND_TABS.map((key) => (
           <Chip
             key={key}
@@ -133,7 +140,9 @@ export default function FriendsScreen() {
   );
 
   return (
-    <Screen scroll={false}>
+    <Screen scroll={false} backdrop={<TableBackdrop dim={0.45} />}>
+      {header}
+      <Frame tone="dark" style={styles.list}>
       <FlatList
         data={rows}
         keyExtractor={(row) => row.key}
@@ -156,12 +165,11 @@ export default function FriendsScreen() {
             />
           )
         }
-        ListHeaderComponent={header}
         ListEmptyComponent={empty}
-        ListHeaderComponentStyle={{ marginBottom: spacing.md }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       />
+      </Frame>
 
       <AddFriendSheet ref={addSheetRef} />
       <ConfirmSheet
@@ -198,4 +206,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   tabs: { flexDirection: "row", gap: 8 },
+  // Grows with the list, and scrolls inside itself once it fills the page
+  list: { flexShrink: 1, marginTop: 16, paddingVertical: 8 },
 });

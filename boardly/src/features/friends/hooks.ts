@@ -17,6 +17,7 @@ function toFriend(user: FriendUser): Friend {
   return {
     id: user.id,
     name: user.username,
+    borderId: user.borderId,
     relation: user.relation,
     presence: user.presence ?? undefined,
     requestId: user.requestId ?? undefined,

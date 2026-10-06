@@ -1,4 +1,5 @@
 import type { BottomTabBarProps } from "expo-router/js-tabs";
+import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -9,8 +10,10 @@ import {
   HomeIcon,
   ProfileIcon,
 } from "@/components/icons";
-import { AppText } from "@/components/ui";
-import { fontFamily, useTheme } from "@/theme";
+import { AppText, Texture } from "@/components/ui";
+import { useFriendsQuery } from "@/features/friends/hooks";
+import { fontFamily } from "@/theme";
+import { TABLE } from "@/theme/table";
 import { tapHaptic } from "@/utils/haptics";
 
 const TAB_CONFIG: Record<
@@ -23,30 +26,68 @@ const TAB_CONFIG: Record<
   profile: { labelKey: "tabs.profile", Icon: ProfileIcon },
 };
 
-/** Design-styled bottom tab bar (filled home glyph, stroke icons). */
-export function TabBar({ state, navigation }: BottomTabBarProps) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
+// A wooden rail along the edge of the table. The current tab is simply
+// highlighted in gold.
+const ACTIVE = TABLE.yellow.fill[0];
+
+function TabItem({
+  label,
+  Icon,
+  focused,
+  badge,
+  onPress,
+}: {
+  label: string;
+  Icon: typeof HomeIcon;
+  focused: boolean;
+  badge: boolean;
+  onPress: () => void;
+}) {
+  const color = focused ? ACTIVE : TABLE.creamMuted;
 
   return (
-    <View
-      style={[
-        styles.bar,
-        {
-          backgroundColor: colors.tabBarBackground,
-          borderTopColor: colors.divider,
-          paddingBottom: Math.max(insets.bottom, 12),
-        },
-      ]}
+    <Pressable
+      accessibilityRole="tab"
+      accessibilityState={{ selected: focused }}
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={styles.item}
     >
+      <View style={styles.iconSlot}>
+        <Icon size={22} color={color} />
+        {badge ? <View style={styles.badge} /> : null}
+      </View>
+      <AppText
+        numberOfLines={1}
+        style={[
+          styles.label,
+          { color, fontFamily: focused ? fontFamily.bold : fontFamily.medium },
+        ]}
+      >
+        {label}
+      </AppText>
+    </Pressable>
+  );
+}
+
+/** Game-styled bottom tab bar. */
+export function TabBar({ state, navigation }: BottomTabBarProps) {
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const pendingRequests = useFriendsQuery().data?.incoming.length ?? 0;
+
+  return (
+    <LinearGradient
+      colors={TABLE.wood.fill}
+      style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 10) }]}
+    >
+      <Texture />
+      <View style={styles.highlight} />
       {state.routes.map((route, index) => {
         const config = TAB_CONFIG[route.name];
         if (!config) return null;
 
         const focused = state.index === index;
-        const color = focused ? colors.primary : colors.iconMuted;
-        const { Icon } = config;
 
         const onPress = () => {
           const event = navigation.emit({
@@ -61,39 +102,55 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
         };
 
         return (
-          <Pressable
+          <TabItem
             key={route.key}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: focused }}
+            label={t(config.labelKey)}
+            Icon={config.Icon}
+            focused={focused}
+            badge={route.name === "friends" && pendingRequests > 0}
             onPress={onPress}
-            style={styles.item}
-          >
-            <View style={styles.iconSlot}>
-              <Icon size={22} color={color} />
-            </View>
-            <AppText
-              style={{
-                fontFamily: focused ? fontFamily.semiBold : fontFamily.medium,
-                fontSize: 10,
-                color,
-              }}
-            >
-              {t(config.labelKey)}
-            </AppText>
-          </Pressable>
+          />
         );
       })}
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   bar: {
     flexDirection: "row",
-    borderTopWidth: 1,
-    paddingTop: 12,
+    borderTopWidth: 3,
+    borderTopColor: TABLE.wood.border,
+    paddingTop: 10,
     paddingHorizontal: 8,
   },
-  item: { flex: 1, alignItems: "center", gap: 5 },
-  iconSlot: { height: 22, justifyContent: "center" },
+  // Light line just under the dark edge, like the lip of a board
+  highlight: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1.5,
+    backgroundColor: TABLE.wood.inner,
+    opacity: 0.7,
+  },
+  item: { flex: 1, alignItems: "center", gap: 3 },
+  iconSlot: {
+    width: 44,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badge: {
+    position: "absolute",
+    top: -2,
+    right: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#E5533C",
+    borderWidth: 2,
+    borderColor: TABLE.wood.border,
+  },
+  label: { fontSize: 10, lineHeight: 14 },
 });

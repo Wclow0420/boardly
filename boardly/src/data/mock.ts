@@ -12,6 +12,7 @@ export const MOCK_TABLES: TableSummary[] = [
   {
     id: "t1",
     code: "BRD1234",
+    gameKey: "monopoly",
     gameName: "Monopoly",
     coverColor: "#FFF2D6",
     players: ["Weng", "Alex", "Sam", "Jia Yi"],
@@ -21,6 +22,7 @@ export const MOCK_TABLES: TableSummary[] = [
   {
     id: "t2",
     code: "BRD5678",
+    gameKey: "uno",
     gameName: "UNO",
     coverColor: "#EDE4FF",
     players: ["Jia Yi", "Weng", "Rachel"],

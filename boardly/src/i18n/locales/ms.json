@@ -9,7 +9,8 @@
     "retry": "Cuba Lagi",
     "errorTitle": "Ada masalah berlaku",
     "errorSubtitle": "Sila semak sambungan anda dan cuba lagi.",
-    "emptyTitle": "Tiada apa-apa di sini lagi"
+    "emptyTitle": "Tiada apa-apa di sini lagi",
+    "back": "Kembali"
   },
   "updates": {
     "title": "Kemas Kini Sedia",
@@ -32,7 +33,13 @@
     "friendsOnline": "Rakan Dalam Talian",
     "playersCount": "{{current}} / {{max}} Pemain",
     "joinWithCode": "Sertai dengan kod",
-    "noTables": "Belum ada meja — mulakan satu!"
+    "noTables": "Belum ada meja — mulakan satu!",
+    "start": "Mula",
+    "noTablesTitle": "Belum ada meja",
+    "noTablesSubtitle": "Buka meja dan mulakan permainan!",
+    "inviteTitle": "Jemput rakan bermain",
+    "inviteSubtitle": "Lebih seronok bersama!",
+    "inviteMore": "Jemput lagi"
   },
   "join": {
     "title": "Sertai Meja",
@@ -61,6 +68,11 @@
       "strategy": "Strategi",
       "party": "Parti"
     }
+  },
+  "gameNames": {
+    "tictactoe": "Tic-Tac-Toe",
+    "avalon": "Double Agent",
+    "coup": "Hustle"
   },
   "friends": {
     "title": "Rakan",
@@ -120,6 +132,7 @@
     "startGame": "Mula Permainan",
     "shareInvite": "Kongsi Pautan Jemputan",
     "codeCopied": "Kod meja disalin!",
+    "linkCopied": "Pautan jemputan disalin!",
     "shareMessage": "Sertai meja {{game}} saya di Boardly! Kod: {{code}}\n{{link}}",
     "imReady": "Saya Sedia!",
     "unready": "Belum Sedia",
@@ -148,7 +161,430 @@
     "youWin": "Anda menang! 🎉",
     "winner": "{{name}} menang!",
     "draw": "Seri!",
-    "backHome": "Kembali ke Utama"
+    "backHome": "Kembali ke Utama",
+    "playAgain": "Main Lagi",
+    "joinRematch": "Sertai Perlawanan Semula",
+    "rematchOpen": "Meja perlawanan semula sudah dibuka — sertai!",
+    "leaveTitle": "Tinggalkan permainan?",
+    "leaveMessage": "Permainan akan tamat untuk semua orang di meja dan tidak boleh disambung.",
+    "leaveConfirm": "Tinggalkan Permainan",
+    "keepPlaying": "Teruskan Bermain",
+    "yourMove": "Giliran anda"
+  },
+  "rules": {
+    "title": "Cara bermain",
+    "close": "Faham",
+    "tictactoe": {
+      "intro": "Bergilir-gilir meletakkan tanda anda pada papan 3×3.",
+      "sections": [
+        {
+          "title": "Cara menang",
+          "items": [
+            "Dapatkan tiga tanda anda sebaris — melintang, menegak atau menyerong.",
+            "Jika papan penuh tanpa sebarang baris, permainan seri."
+          ]
+        }
+      ]
+    },
+    "avalon": {
+      "intro": "Para ejen cuba menjayakan tiga misi. Pengkhianat bersembunyi dalam kalangan mereka dan cuba menggagalkan tiga misi.",
+      "pages": {
+        "overview": {
+          "title": "Ringkasan",
+          "intro": "Permainan berpasukan dengan identiti tersembunyi. Ejen cuba menjayakan misi; pengkhianat bersembunyi dan mensabotaj.",
+          "items": [
+            "Setiap pemain secara rahsia ialah Ejen atau Pengkhianat. Pengkhianat saling mengenali; kebanyakan ejen tidak mengenali sesiapa.",
+            "Permainan berlangsung sehingga lima misi. Ejen perlukan tiga kejayaan; pengkhianat perlukan tiga kegagalan.",
+            "Ejen yang mencapai tiga kejayaan masih perlu terlepas daripada tekaan Pembunuh Upahan tentang Pengendali.",
+            "Pengkhianat juga menang jika lima pasukan berturut-turut ditolak.",
+            "Peranan diagih secara rawak dan bergantung pada bilangan pemain (lihat Persediaan)."
+          ]
+        },
+        "round": {
+          "title": "Setiap pusingan",
+          "items": [
+            "Ketua: pemain bermahkota mencadangkan pasukan mengikut saiz pada trek.",
+            "Undi: semua orang setuju atau tolak. Undian didedahkan serentak selepas semua mengundi.",
+            "Majoriti mutlak meluluskan pasukan. Seri bermaksud ditolak.",
+            "Ditolak: mahkota berpindah kepada pemain seterusnya, yang mencadangkan pasukan baharu. Lima penolakan berturut-turut dan pengkhianat menang.",
+            "Diluluskan: setiap ahli pasukan memainkan Berjaya atau Gagal secara rahsia — tahan kad selama 2 saat. Ejen hanya boleh main Berjaya; pengkhianat boleh pilih.",
+            "Kad didedahkan tanpa nama. Satu Gagal menggagalkan misi (Misi 4 perlukan dua dengan 7 pemain atau lebih).",
+            "Mahkota berpindah dan misi seterusnya bermula."
+          ]
+        },
+        "roles": {
+          "title": "Peranan",
+          "intro": "Lapan peranan semuanya. Peranan yang digunakan bergantung pada bilangan pemain — lihat Persediaan."
+        },
+        "setup": {
+          "title": "Persediaan",
+          "intro": "Peranan yang digunakan dan saiz pasukan bagi setiap lima misi, mengikut bilangan pemain."
+        },
+        "ending": {
+          "title": "Pengakhiran",
+          "items": [
+            "Tiga misi gagal: pengkhianat menang serta-merta.",
+            "Tiga misi berjaya: pengkhianat didedahkan dan boleh berbincang. Pembunuh Upahan kemudian menamakan seorang ejen sebagai Pengendali.",
+            "Jika tekaan betul, pengkhianat merampas kemenangan. Jika salah, ejen menang.",
+            "Apabila permainan tamat, peranan semua orang ditunjukkan."
+          ]
+        },
+        "more": {
+          "title": "Peraturan lain",
+          "items": [
+            "Perbincangan dibuat secara lisan. Sesiapa boleh berbohong tentang apa sahaja — tetapi jangan tunjuk skrin anda.",
+            "Kad peranan anda tertutup sehingga anda mengetiknya. Ketik lagi untuk menyembunyikannya.",
+            "Undian pasukan menjadi umum selepas didedahkan dan kekal dalam Sejarah. Kad misi tidak pernah dikaitkan dengan pemain — hanya bilangan Gagal ditunjukkan.",
+            "Pengendali: beri bayangan, jangan umumkan. Lebih jelas anda, lebih mudah kerja Pembunuh Upahan.",
+            "Pengkhianat dalam pasukan tidak semestinya main Gagal. Main Berjaya boleh membina kepercayaan.",
+            "Jika pemain keluar di tengah permainan, permainan tamat untuk semua dan semua peranan didedahkan."
+          ]
+        }
+      },
+      "roleFacts": {
+        "merlin": {
+          "knows": "Semua pengkhianat, kecuali Ejen Tidur.",
+          "note": "Kekal tersembunyi. Jika ejen menjayakan tiga misi, Pembunuh Upahan menang dengan menamakan anda."
+        },
+        "percival": {
+          "knows": "Siapa Pengendali dan Umpan — tetapi bukan yang mana satu.",
+          "note": "Kenal pasti Pengendali sebenar dan lindungi mereka."
+        },
+        "servant": {
+          "knows": "Tiada apa-apa."
+        },
+        "assassin": {
+          "knows": "Pengkhianat lain, kecuali Kad Liar.",
+          "note": "Jika ejen menjayakan tiga misi, anda menamakan seorang ejen sebagai Pengendali. Teka betul dan pengkhianat menang."
+        },
+        "morgana": {
+          "knows": "Pengkhianat lain, kecuali Kad Liar.",
+          "note": "Pengawal Peribadi melihat anda sebagai kemungkinan Pengendali."
+        },
+        "mordred": {
+          "knows": "Pengkhianat lain, kecuali Kad Liar.",
+          "note": "Pengendali tidak dapat melihat anda."
+        },
+        "oberon": {
+          "knows": "Tiada apa-apa — dan pengkhianat lain juga tidak mengenali anda.",
+          "note": "Tetapi Pengendali nampak anda."
+        },
+        "minion": {
+          "knows": "Pengkhianat lain, kecuali Kad Liar."
+        }
+      },
+      "labels": {
+        "knows": "Tahu",
+        "note": "Nota",
+        "teams": "Pasukan",
+        "players": "{{count}} pemain",
+        "split": "{{agents}} ejen · {{moles}} pengkhianat",
+        "twoFails": "* Misi ini memerlukan dua kad Gagal untuk gagal."
+      }
+    },
+    "coup": {
+      "intro": "Setiap pemain ada dua kad tersembunyi. Menipu, mencabar dan menyekat sehingga anda pemain terakhir yang masih ada kad. Dek ada 15 kad: 3 setiap satu untuk Bos, Samseng, Penyeluk Saku, Orang Tengah dan Makcik.",
+      "pages": {
+        "overview": {
+          "title": "Ringkasan",
+          "intro": "Setiap pemain ada dua kad tersembunyi. Menipu, mencabar dan menyekat sehingga anda pemain terakhir yang masih ada kad.",
+          "items": [
+            "Persediaan: setiap pemain dapat 2 kad tertutup dan $2. Dek ada 15 kad — 3 setiap satu untuk Bos, Samseng, Penyeluk Saku, Orang Tengah dan Makcik.",
+            "Pada giliran anda, ambil tepat satu tindakan. Sesetengah tindakan memerlukan peranan — tetapi anda boleh mendakwa peranan yang anda tiada.",
+            "Selepas anda mengumumkan tindakan, pemain lain boleh mencabar dakwaan anda atau menyekat tindakan itu.",
+            "Kad yang hilang akan dibuka. Hilang kedua-duanya dan anda tersingkir.",
+            "Pemain terakhir yang masih ada kad menang.",
+            "Wang dan kad yang hilang semua pemain adalah umum. Kad tertutup dan dek adalah rahsia."
+          ]
+        },
+        "roles": {
+          "title": "Peranan",
+          "intro": "Lima peranan, tiga salinan setiap satu. Peranan memberi anda tindakan khas, membolehkan anda menyekat sesuatu, atau kedua-duanya."
+        },
+        "actions": {
+          "title": "Tindakan",
+          "intro": "Ambil satu setiap giliran. \"Perlu\" ialah peranan yang mesti anda dakwa — benar atau tidak."
+        },
+        "challenges": {
+          "title": "Cabaran",
+          "items": [
+            "Setiap kali pemain mendakwa peranan — untuk bertindak atau menyekat — mana-mana pemain lain boleh mencabar.",
+            "Pemain lain memilih Cabar atau Benarkan. Cabaran pertama menentukannya.",
+            "Jika ia tipu: penipu kehilangan kad. Tindakan tipu tidak berlaku; sekatan tipu gagal dan tindakan diteruskan.",
+            "Jika ia benar: pencabar kehilangan kad. Kad yang dibuktikan dikocok semula ke dalam dek dan diganti dengan yang baharu, supaya ia kekal rahsia.",
+            "Kerja Harian, Pinjam dan Tutup Kedai tidak mendakwa peranan, jadi tidak boleh dicabar.",
+            "Selepas anda ketik Benarkan, anda tidak boleh mencabar dakwaan itu lagi."
+          ]
+        },
+        "blocks": {
+          "title": "Sekatan",
+          "items": [
+            "Pinjam boleh disekat oleh mana-mana pemain yang mendakwa Bos.",
+            "Seluk Saku hanya boleh disekat oleh sasarannya, dengan mendakwa Penyeluk Saku atau Orang Tengah.",
+            "Belasah hanya boleh disekat oleh sasarannya, dengan mendakwa Makcik.",
+            "Sekatan ialah dakwaan, jadi sesiapa boleh mencabarnya. Jika sekatan itu tipu, penyekat kehilangan kad dan tindakan tetap berlaku.",
+            "Sekatan yang berjaya membatalkan tindakan. Wang yang sudah dibayar tidak dikembalikan.",
+            "Kerja Harian, Kutip Sewa, Tukar dan Tutup Kedai tidak boleh disekat."
+          ]
+        },
+        "more": {
+          "title": "Peraturan lain",
+          "items": [
+            "Dengan $10 atau lebih pada permulaan giliran, anda mesti Tutup Kedai seseorang.",
+            "Belasah memerlukan bayaran $3 dahulu. Anda dapat semula hanya jika tertangkap menipu sebagai Samseng — bukan jika tindakan disekat.",
+            "Rugi berganda: menipu sebagai Makcik terhadap Belasah dan dicabar, anda hilang satu kad kerana menipu dan satu lagi kerana Belasah.",
+            "Dengan dua kad, anda pilih kad mana yang dilepaskan. Dengan satu kad, tiada pilihan.",
+            "Apabila tersingkir, wang anda hilang dan anda hanya menonton.",
+            "Dua pemain: pemain pertama bermula dengan $1, bukan $2.",
+            "Jika pemain keluar di tengah permainan, permainan tamat untuk semua tanpa pemenang.",
+            "Ketik kad anda untuk menutupnya apabila ada yang mungkin mengintai."
+          ]
+        }
+      },
+      "effects": {
+        "income": "Ambil $1 daripada bank.",
+        "foreignAid": "Ambil $2 daripada bank.",
+        "tax": "Ambil $3 daripada bank.",
+        "steal": "Ambil $2 daripada pemain lain (atau seberapa yang mereka ada, jika kurang).",
+        "exchange": "Cabut 2 kad daripada dek, kemudian pulangkan mana-mana 2. Menukar peranan anda secara rahsia.",
+        "assassinate": "Pilih seorang pemain; mereka kehilangan kad.",
+        "coup": "Pilih seorang pemain; mereka kehilangan kad. Tiada apa boleh menghalangnya."
+      },
+      "labels": {
+        "action": "Tindakan",
+        "blocks": "Menyekat",
+        "cost": "Kos",
+        "needs": "Perlu",
+        "blockedBy": "Disekat oleh",
+        "noAction": "Tiada tindakan sendiri",
+        "blocksNothing": "Tiada",
+        "free": "Percuma",
+        "anyone": "Tiada peranan — sesiapa boleh buat",
+        "needsRole": "{{role}} (dakwa)",
+        "byAnyone": "(mana-mana pemain)",
+        "byTarget": "(sasaran sahaja)",
+        "noBlock": "Tidak boleh disekat"
+      }
+    },
+    "overview": "Ringkasan"
+  },
+  "avalon": {
+    "track": {
+      "quest": "Misi {{quest}}",
+      "twoFails": "Perlu 2 gagal",
+      "rejections": "Pasukan ditolak: {{count}} / {{max}}"
+    },
+    "role": {
+      "title": "Peranan anda",
+      "reveal": "Ketik untuk lihat — rahsiakan",
+      "hide": "Ketik untuk sembunyi",
+      "knows": {
+        "evil": "Pengkhianat: {{names}}",
+        "merlin": "Pengendali ialah salah seorang: {{names}}",
+        "allies": "Rakan pengkhianat anda: {{names}}"
+      }
+    },
+    "roles": {
+      "merlin": {
+        "name": "Pengendali",
+        "desc": "Anda tahu siapa pengkhianat. Bimbing para ejen tanpa terbongkar — jika Pembunuh Upahan menamakan anda, pengkhianat menang."
+      },
+      "percival": {
+        "name": "Pengawal Peribadi",
+        "desc": "Anda tahu siapa Pengendali — tetapi Umpan kelihatan sama. Lindungi Pengendali."
+      },
+      "servant": {
+        "name": "Ejen Lapangan",
+        "desc": "Anda tidak tahu apa-apa. Cari pengkhianat dan jayakan tiga misi."
+      },
+      "assassin": {
+        "name": "Pembunuh Upahan",
+        "desc": "Gagalkan tiga misi. Jika para ejen menjayakan tiga misi, anda ada satu tekaan untuk Pengendali."
+      },
+      "morgana": {
+        "name": "Umpan",
+        "desc": "Anda kelihatan seperti Pengendali kepada Pengawal Peribadi. Gagalkan tiga misi."
+      },
+      "mordred": {
+        "name": "Ejen Tidur",
+        "desc": "Pengendali tidak dapat melihat anda. Gagalkan tiga misi."
+      },
+      "oberon": {
+        "name": "Kad Liar",
+        "desc": "Anda pengkhianat, tetapi anda dan pengkhianat lain tidak saling mengenali."
+      },
+      "minion": {
+        "name": "Pengkhianat",
+        "desc": "Gagalkan tiga misi tanpa ditangkap."
+      }
+    },
+    "sides": {
+      "good": "Ejen",
+      "evil": "Pengkhianat"
+    },
+    "known": {
+      "evil": "Pengkhianat",
+      "merlin": "Pengendali atau Umpan"
+    },
+    "tags": {
+      "team": "Dalam pasukan"
+    },
+    "team": {
+      "pick": "Anda ketua Misi {{quest}} — pilih {{count}} pemain",
+      "waiting": "{{name}} sedang memilih pasukan {{count}} orang",
+      "propose": "Cadang Pasukan ({{picked}}/{{count}})"
+    },
+    "vote": {
+      "title": "{{name}} mencadangkan pasukan ini",
+      "approve": "Setuju",
+      "reject": "Tolak",
+      "youApproved": "Anda setuju",
+      "youRejected": "Anda menolak",
+      "waiting": "Menunggu undian ({{done}}/{{total}})"
+    },
+    "quest": {
+      "title": "Misi {{quest}} sedang berjalan",
+      "success": "Berjaya",
+      "fail": "Gagal",
+      "secret": "Kad anda rahsia. Ejen hanya boleh main Berjaya.",
+      "waiting": "Menunggu pasukan misi ({{done}}/{{total}})",
+      "hold": "Tekan dan tahan kad selama 2 saat untuk memainkannya."
+    },
+    "assassinate": {
+      "pick": "Namakan Pengendali untuk merampas kemenangan",
+      "waiting": "{{name}} sedang memburu Pengendali…",
+      "explain": "Para ejen menjayakan tiga misi. Pengkhianat menang jika Pembunuh Upahan menemui Pengendali.",
+      "confirm": "Tembak"
+    },
+    "result": {
+      "good": "Ejen menang!",
+      "evil": "Pengkhianat menang!",
+      "none": "Permainan tamat",
+      "youWon": "Pasukan anda menang 🎉",
+      "youLost": "Pasukan anda kalah"
+    },
+    "reasons": {
+      "quests": "Tiga misi berjaya dan Pembunuh Upahan memilih {{name}} — bukan Pengendali.",
+      "assassination": "Pembunuh Upahan menemui Pengendali: {{name}}.",
+      "failedQuests": "Tiga misi gagal.",
+      "rejections": "Lima pasukan berturut-turut ditolak.",
+      "abandoned": "Seorang pemain meninggalkan meja."
+    },
+    "history": {
+      "title": "Sejarah",
+      "proposal": "Misi {{quest}} · {{leader}} mencadangkan {{team}}",
+      "approved": "Diluluskan {{yes}}–{{no}}",
+      "rejected": "Ditolak {{yes}}–{{no}}",
+      "succeeded": "Misi berjaya",
+      "failed": "Misi gagal ({{count}} gagal)"
+    },
+    "reveal": {
+      "approved": "Pasukan diluluskan",
+      "rejected": "Pasukan ditolak",
+      "team": "{{leader}} mencadangkan {{team}}",
+      "questSuccess": "Misi berjaya!",
+      "questFail": "Misi gagal",
+      "failCards_other": "{{count}} kad gagal",
+      "dismiss": "Ketik untuk teruskan"
+    },
+    "tagline": "PERCAYA · PERDAYA · DEDAH"
+  },
+  "coup": {
+    "coins_other": "${{count}}",
+    "out": "Tersingkir",
+    "lost": "hilang",
+    "deck": "Dek: {{count}} kad",
+    "challenge": "Cabar",
+    "allow": "Benarkan",
+    "blockWith": "Sekat dengan {{role}}",
+    "keep": "Simpan Ini",
+    "hand": {
+      "title": "Kad anda",
+      "show": "Ketik untuk tunjuk kad anda",
+      "hide": "Ketik untuk sembunyi kad anda"
+    },
+    "roles": {
+      "duke": {
+        "name": "Bos",
+        "desc": "Kutip Sewa: ambil $3. Menyekat Pinjam."
+      },
+      "assassin": {
+        "name": "Samseng",
+        "desc": "Bayar $3 supaya seorang pemain kehilangan kad."
+      },
+      "captain": {
+        "name": "Penyeluk Saku",
+        "desc": "Ambil $2 daripada pemain. Menyekat seluk saku."
+      },
+      "ambassador": {
+        "name": "Orang Tengah",
+        "desc": "Tukar kad dengan dek. Menyekat seluk saku."
+      },
+      "contessa": {
+        "name": "Makcik",
+        "desc": "Menyekat Belasah."
+      }
+    },
+    "actions": {
+      "income": {
+        "name": "Kerja Harian",
+        "desc": "+$1 · selamat"
+      },
+      "foreignAid": {
+        "name": "Pinjam",
+        "desc": "+$2 · Bos sekat"
+      },
+      "tax": {
+        "name": "Kutip Sewa",
+        "desc": "+$3 · dakwa Bos"
+      },
+      "steal": {
+        "name": "Seluk Saku",
+        "desc": "Ambil $2 · dakwa Penyeluk Saku"
+      },
+      "exchange": {
+        "name": "Tukar",
+        "desc": "Tukar kad · dakwa Orang Tengah"
+      },
+      "assassinate": {
+        "name": "Belasah",
+        "desc": "Bayar $3 · dakwa Samseng"
+      },
+      "coup": {
+        "name": "Tutup Kedai",
+        "desc": "Bayar $7 · tidak boleh dihalang"
+      }
+    },
+    "prompt": {
+      "yourTurn": "Giliran anda — pilih tindakan",
+      "mustCoup": "Anda ada $10 atau lebih — anda mesti menutup kedai seseorang",
+      "target": "{{action}}: pilih pemain",
+      "challenge": "Percaya, atau cabar? Cabaran yang salah akan menghilangkan satu kad anda.",
+      "block": "Sekat, atau biarkan?",
+      "reveal": "Pilih kad untuk dilepaskan",
+      "exchange_other": "Pilih {{count}} kad untuk disimpan",
+      "losing": "{{name}} mesti melepaskan satu kad",
+      "waiting": "Menunggu {{names}}"
+    },
+    "result": {
+      "none": "Permainan tamat"
+    },
+    "log": {
+      "income": "{{actor}} buat Kerja Harian (+$1)",
+      "foreignAid": "{{actor}} meminjam wang (+$2)",
+      "tax": "{{actor}} mendakwa Bos dan mengutip sewa (+$3)",
+      "steal": "{{actor}} mendakwa Penyeluk Saku untuk mengambil daripada {{target}}",
+      "exchange": "{{actor}} mendakwa Orang Tengah untuk menukar kad",
+      "assassinate": "{{actor}} mendakwa Samseng untuk membelasah {{target}}",
+      "coup": "{{actor}} menutup kedai {{target}}",
+      "block": "{{name}} menyekat, mendakwa {{role}}",
+      "blocked": "Tindakan itu disekat",
+      "caught": "{{challenger}} mencabar {{claimant}} — tiada {{role}}. Tembelang pecah!",
+      "proved": "{{challenger}} mencabar {{claimant}} — tetapi mereka memang ada {{role}}. {{claimant}} mengocoknya semula dan mencabut kad baharu.",
+      "lose": "{{name}} kehilangan kad: {{role}}",
+      "out": "{{name}} tersingkir"
+    },
+    "tagline": "TIPU · CABAR · MENANG"
   },
   "profile": {
     "title": "Profil",
@@ -162,7 +598,17 @@
     },
     "gamesPlayed": "Permainan Dimainkan",
     "wins": "Kemenangan",
-    "friends": "Rakan"
+    "friends": "Rakan",
+    "account": "Akaun",
+    "changePassword": "Tukar Kata Laluan",
+    "currentPassword": "Kata Laluan Semasa",
+    "newPassword": "Kata Laluan Baharu",
+    "changePasswordHint": "Sekurang-kurangnya 6 aksara. Peranti lain anda akan dilog keluar.",
+    "savePassword": "Kemas Kini Kata Laluan",
+    "deleteAccount": "Padam Akaun",
+    "deleteAccountMessage": "Ini akan memadam akaun, rakan dan profil anda secara kekal. Ia tidak boleh dibuat asal. Masukkan kata laluan untuk mengesahkan.",
+    "deleteAccountConfirm": "Padam Akaun Saya",
+    "borders": "Bingkai Profil"
   },
   "auth": {
     "loginTitle": "Selamat kembali!",
@@ -197,6 +643,21 @@
     "not_friends": "Anda bukan lagi rakan",
     "no_open_table": "Mulakan meja dahulu, kemudian jemput",
     "friend_offline": "Rakan anda di luar talian",
-    "already_at_table": "Sudah berada di meja anda"
+    "already_at_table": "Sudah berada di meja anda",
+    "wrong_password": "Kata laluan itu salah",
+    "too_many_requests": "Terlalu banyak percubaan — sila tunggu seminit",
+    "game_not_finished": "Permainan belum tamat"
+  },
+  "borders": {
+    "title": "Bingkai Profil",
+    "equip": "Guna Bingkai Ini",
+    "equipped": "Sedang Digunakan",
+    "free": "Percuma",
+    "rarity": {
+      "common": "Biasa",
+      "rare": "Jarang",
+      "epic": "Epik",
+      "legendary": "Legenda"
+    }
   }
 }

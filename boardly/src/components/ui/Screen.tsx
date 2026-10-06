@@ -24,6 +24,9 @@ export interface ScreenProps {
   style?: StyleProp<ViewStyle>;
   /** Background override — defaults to theme surface. */
   background?: string;
+  /** Drawn behind the content and fixed while it scrolls (e.g. a
+   *  full-screen illustration). */
+  backdrop?: ReactNode;
 }
 
 export function Screen({
@@ -34,6 +37,7 @@ export function Screen({
   bottomInset = 0,
   style,
   background,
+  backdrop,
 }: ScreenProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -50,12 +54,16 @@ export function Screen({
 
   if (!scroll) {
     return (
-      <View style={[containerStyle, contentStyle, style]}>{children}</View>
+      <View style={containerStyle}>
+        {backdrop}
+        <View style={[styles.scroll, contentStyle, style]}>{children}</View>
+      </View>
     );
   }
 
   return (
     <View style={containerStyle}>
+      {backdrop}
       <ScrollView
         contentContainerStyle={[contentStyle, style]}
         showsVerticalScrollIndicator={false}

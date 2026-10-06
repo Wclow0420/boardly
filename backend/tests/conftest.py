@@ -18,6 +18,8 @@ TEST_DATABASE_URL = os.environ.get(
 
 class TestConfig(Config):
     TESTING = True
+    # make_user registers faster than the per-IP auth limits allow
+    RATELIMIT_ENABLED = False
     SQLALCHEMY_DATABASE_URI = TEST_DATABASE_URL
 
 

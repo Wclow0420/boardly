@@ -1,6 +1,6 @@
 import { Pressable } from "react-native";
 
-import { useTheme } from "@/theme";
+import { shade, useTheme } from "@/theme";
 import { tapHaptic } from "@/utils/haptics";
 import { AppText } from "./AppText";
 
@@ -10,7 +10,7 @@ export interface ChipProps {
   onPress?: () => void;
 }
 
-/** Filter/tab pill — yellow when selected, neutral otherwise. */
+/** Filter/tab token — gold when selected, wood otherwise. */
 export function Chip({ label, selected = false, onPress }: ChipProps) {
   const { colors, radius } = useTheme();
 
@@ -30,20 +30,23 @@ export function Chip({ label, selected = false, onPress }: ChipProps) {
         paddingVertical: 7,
         paddingHorizontal: 14,
         borderRadius: radius.pill,
+        borderWidth: 1.5,
+        borderBottomWidth: 3,
+        borderColor: selected ? shade(colors.accentPressed, -0.35) : colors.border,
         backgroundColor: selected
           ? pressed
             ? colors.accentPressed
             : colors.accent
           : pressed
             ? colors.well
-            : colors.chip,
+            : colors.card,
       })}
     >
       <AppText
         variant="label"
         style={{
           fontSize: 11.5,
-          color: selected ? colors.onAccent : colors.textSubtle,
+          color: selected ? colors.onAccent : colors.textMuted,
         }}
       >
         {label}

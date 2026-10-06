@@ -115,7 +115,11 @@ export default ({ config }) => {
     web: {
       ...(config.web ?? {}),
       bundler: "metro",
-      output: "static",
+      // Single-page app: every screen sits behind login and table URLs
+      // (/join/CODE, /lobby/CODE, /game/CODE) are dynamic, so there is
+      // nothing to pre-render. The host must serve index.html for
+      // unknown paths.
+      output: "single",
       favicon: "./assets/images/favicon.png",
     },
 
@@ -123,6 +127,7 @@ export default ({ config }) => {
     plugins: [
       ...(config.plugins ?? []),
       "expo-router",
+      "expo-audio",
       [
         "expo-splash-screen",
         {

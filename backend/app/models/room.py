@@ -22,11 +22,16 @@ class Room(db.Model):
     game_type = db.Column(db.String(50), nullable=False)
     host_id = db.Column(UUID(as_uuid=True), db.ForeignKey("users.id"), nullable=False)
     status = db.Column(db.String(20), default="waiting")  # waiting | playing | finished | closed
+    # The table opened by "Play again" after this room's game finished
+    rematch_room_id = db.Column(
+        UUID(as_uuid=True), db.ForeignKey("rooms.id"), nullable=True
+    )
     created_at = db.Column(
         db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
     host = db.relationship("User", foreign_keys=[host_id])
+    rematch_room = db.relationship("Room", remote_side=[id])
     players = db.relationship("RoomPlayer", back_populates="room", cascade="all, delete-orphan")
     sessions = db.relationship("GameSession", back_populates="room", cascade="all, delete-orphan")
 
@@ -35,6 +40,7 @@ class Room(db.Model):
         from app.games import GAMES
 
         game = GAMES.get(self.game_type)
+        rematch = self.rematch_room
         return {
             "id": str(self.id),
             "code": self.code,
@@ -43,6 +49,10 @@ class Room(db.Model):
             "status": self.status,
             "players": [p.to_dict() for p in self.players],
             "game": game.to_dict() if game else None,
+            # Set while a rematch table is open and waiting for players
+            "rematchCode": (
+                rematch.code if rematch is not None and rematch.status == "waiting" else None
+            ),
         }
 
 
@@ -67,6 +77,7 @@ class RoomPlayer(db.Model):
         return {
             "userId": str(self.user_id),
             "username": self.user.username if self.user else None,
+            "borderId": self.user.border_id if self.user else None,
             "seat": self.seat,
             "ready": self.ready,
         }

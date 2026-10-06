@@ -4,7 +4,15 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { ApiError } from "@/api/client";
-import { AppText, Button, Screen, TextField } from "@/components/ui";
+import {
+  AppText,
+  Button,
+  Frame,
+  Ribbon,
+  Screen,
+  TableBackdrop,
+  TextField,
+} from "@/components/ui";
 import { useSession } from "@/context/SessionContext";
 import { useTheme } from "@/theme";
 import { tapHaptic } from "@/utils/haptics";
@@ -45,7 +53,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const valid = username.trim().length >= 3 && password.length >= 6;
 
   return (
-    <Screen>
+    <Screen backdrop={<TableBackdrop dim={0.5} />}>
       {/* Brand header */}
       <View style={[styles.brand, { marginTop: spacing.xxxl }]}>
         <AppText variant="display" color="text">
@@ -56,11 +64,12 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         </AppText>
       </View>
 
-      <AppText variant="h2" style={{ marginTop: spacing.xxxl }}>
-        {t(mode === "login" ? "auth.loginTitle" : "auth.registerTitle")}
-      </AppText>
+      <Ribbon
+        label={t(mode === "login" ? "auth.loginTitle" : "auth.registerTitle")}
+        style={{ marginTop: spacing.xxxl }}
+      />
 
-      <View style={{ marginTop: spacing.xl, gap: spacing.lg }}>
+      <Frame tone="wood" style={{ paddingTop: spacing.xxl, gap: spacing.lg }}>
         <TextField
           label={t("auth.username")}
           value={username}
@@ -75,6 +84,11 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           onChangeText={setPassword}
           secureTextEntry
           textContentType={mode === "login" ? "password" : "newPassword"}
+          // Enter / the keyboard's Go key submits
+          returnKeyType="go"
+          onSubmitEditing={() => {
+            if (valid && !submitting) submit();
+          }}
         />
         {error ? (
           <AppText variant="caption" color="danger">
@@ -87,7 +101,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           loading={submitting}
           disabled={!valid}
         />
-      </View>
+      </Frame>
 
       {/* Switch mode */}
       <View style={[styles.switchRow, { marginTop: spacing.xxl }]}>

@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import type { TableInvite } from "@/api/client";
 import { getSocket } from "@/api/socket";
 import { ConfirmSheet, GorhomBottomSheetModal } from "@/components/ui";
+import { useGameName } from "@/games/names";
 import { successHaptic } from "@/utils/haptics";
 
 export function FriendsRealtime() {
@@ -18,6 +19,7 @@ export function FriendsRealtime() {
   const queryClient = useQueryClient();
   const sheetRef = useRef<GorhomBottomSheetModal>(null);
   const [invite, setInvite] = useState<TableInvite | null>(null);
+  const gameName = useGameName();
 
   useEffect(() => {
     const socket = getSocket();
@@ -48,7 +50,9 @@ export function FriendsRealtime() {
       ref={sheetRef}
       title={t("invite.title", { name: invite?.from.username ?? "" })}
       message={t("invite.message", {
-        game: invite?.game?.name ?? t("tabs.games"),
+        game: invite?.game
+          ? gameName(invite.game.key, invite.game.name)
+          : t("tabs.games"),
       })}
       confirmLabel={t("invite.join")}
       cancelLabel={t("invite.notNow")}

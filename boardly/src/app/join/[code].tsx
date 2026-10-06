@@ -20,10 +20,13 @@ import {
   EmptyState,
   Screen,
   Skeleton,
+  TableBackdrop,
 } from "@/components/ui";
 import { useSession } from "@/context/SessionContext";
 import { useJoinRoom, useMyTables } from "@/features/home/hooks";
 import { useLeaveRoom } from "@/features/lobby/hooks";
+import { GameBadge } from "@/features/games/GameBadge";
+import { useGameName } from "@/games/names";
 import { fontFamily, useTheme } from "@/theme";
 
 export default function JoinScreen() {
@@ -33,6 +36,7 @@ export default function JoinScreen() {
   const { colors, radius, spacing } = useTheme();
   const { user } = useSession();
   const [error, setError] = useState<string | null>(null);
+  const gameName = useGameName();
 
   const roomCode = (code ?? "").toUpperCase();
 
@@ -79,7 +83,7 @@ export default function JoinScreen() {
 
   if (preview.isPending) {
     return (
-      <Screen>
+      <Screen backdrop={<TableBackdrop dim={0.45} />}>
         <Skeleton height={28} width="60%" />
         <Skeleton height={180} style={{ marginTop: 24 }} radius={20} />
       </Screen>
@@ -88,7 +92,7 @@ export default function JoinScreen() {
 
   if (preview.isError || !room || room.status === "closed") {
     return (
-      <Screen>
+      <Screen backdrop={<TableBackdrop dim={0.45} />}>
         <EmptyState
           emoji="🔍"
           title={t("errors.room_not_found")}
@@ -104,26 +108,22 @@ export default function JoinScreen() {
   const blockedByOtherTable = joinable && otherTable !== undefined;
 
   return (
-    <Screen>
+    <Screen backdrop={<TableBackdrop dim={0.45} />}>
       <AppText variant="h2">{t("join.title")}</AppText>
 
       {/* Table preview */}
       <Card radius={radius.xl} style={[styles.preview, { marginTop: spacing.xl }]}>
-        <View
-          style={[
-            styles.tile,
-            {
-              borderRadius: radius.md,
-              backgroundColor: room.game?.tileColor ?? colors.well,
-            },
-          ]}
-        >
-          <AppText style={styles.emoji}>{room.game?.emoji ?? "🎲"}</AppText>
-        </View>
+        <GameBadge
+          gameKey={room.gameType}
+          emoji={room.game?.emoji}
+          tileColor={room.game?.tileColor ?? colors.well}
+          size={84}
+          radius={radius.md}
+        />
         <AppText
           style={{ fontFamily: fontFamily.bold, fontSize: 20, marginTop: 12 }}
         >
-          {room.game?.name ?? room.gameType}
+          {gameName(room.gameType, room.game?.name)}
         </AppText>
         {host ? (
           <AppText variant="caption" color="textSubtle" style={{ marginTop: 4 }}>
@@ -164,7 +164,9 @@ export default function JoinScreen() {
         ) : blockedByOtherTable ? (
           <>
             <AppText variant="body" color="textSubtle" align="center">
-              {t("join.alreadyMessage", { game: otherTable.gameName })}
+              {t("join.alreadyMessage", {
+                game: gameName(otherTable.gameKey, otherTable.gameName),
+              })}
             </AppText>
             <Button
               label={t("join.leaveAndJoin")}
