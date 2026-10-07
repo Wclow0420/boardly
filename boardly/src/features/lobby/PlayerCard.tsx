@@ -17,6 +17,7 @@ export function PlayerCard({ player }: { player: LobbyPlayer }) {
       <AvatarBorder
         name={player.name}
         borderId={player.borderId}
+        avatarUrl={player.avatarUrl}
         size={74}
         crown={player.isHost}
         ringColor={player.isHost ? colors.accent : colors.border}

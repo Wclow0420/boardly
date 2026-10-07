@@ -32,6 +32,7 @@ def create_app(config_class=Config):
     from app.routes.games import games_bp
     from app.routes.rewards import rewards_bp
     from app.routes.rooms import rooms_bp
+    from app.routes.users import users_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/v1/auth")
     app.register_blueprint(health_bp, url_prefix="/api/v1")
@@ -39,6 +40,7 @@ def create_app(config_class=Config):
     app.register_blueprint(rooms_bp, url_prefix="/api/v1/rooms")
     app.register_blueprint(friends_bp, url_prefix="/api/v1/friends")
     app.register_blueprint(rewards_bp, url_prefix="/api/v1/rewards")
+    app.register_blueprint(users_bp, url_prefix="/api/v1/users")
 
     # JSON error envelope for framework-raised errors (404, 405, ...)
     from werkzeug.exceptions import HTTPException

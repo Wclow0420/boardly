@@ -72,7 +72,8 @@
   "gameNames": {
     "tictactoe": "Tic-Tac-Toe",
     "avalon": "Double Agent",
-    "coup": "Hustle"
+    "coup": "Hustle",
+    "manor": "Midnight Manor"
   },
   "friends": {
     "title": "Friends",
@@ -366,7 +367,53 @@
         "noBlock": "Can't be blocked"
       }
     },
-    "overview": "Overview"
+    "overview": "Overview",
+    "manor": {
+      "intro": "A rich old man has his relatives over for the night. Some are intruders in disguise who want him dead before dawn. The rest must keep him alive until 6 AM.",
+      "sections": [
+        {
+          "title": "Sides",
+          "items": [
+            "Household: the Butler and the Guests. Intruders: 1 with 4 players, 2 with 5–6, 3 with 7–8.",
+            "Intruders know each other. The Butler always knows where the old man was at the start of each hour.",
+            "With 4 players, the lone intruder starts holding the knife."
+          ]
+        },
+        {
+          "title": "Each hour",
+          "items": [
+            "The night runs from 10 PM to 6 AM: 8 hours. Everyone starts in the Grand Hall; the old man starts in the Bedroom.",
+            "Move: secretly stay, or go one room up, down, left or right. The old man wanders randomly too.",
+            "Act: secretly pick one action. It's dark — you see who is in your room, whether the old man is there and what lies around, but not what anyone does."
+          ]
+        },
+        {
+          "title": "Actions",
+          "items": [
+            "Guard: protect the old man. Attack (intruders with a weapon): hurts him if attackers outnumber guards.",
+            "Take a weapon: the knife (Kitchen), candlestick (Library) or poison (Wine Cellar). You carry one item; taking another swaps it.",
+            "Fix a camera (Library, Bedroom, Kitchen, Foyer, Garden). Intruders can break one. Everyone sees cameras go on and off.",
+            "Watch the monitors (Security Room): see everything working cameras recorded this hour — including the last moments before one was broken.",
+            "Search: see what someone in your room carries. Escort: the old man follows you next hour."
+          ]
+        },
+        {
+          "title": "Meetings",
+          "items": [
+            "After midnight, after 3 AM and after every scream, the household talks it over and votes.",
+            "A majority locks a player up for the rest of the night. Their role stays secret."
+          ]
+        },
+        {
+          "title": "How it ends",
+          "items": [
+            "Intruders win if the old man is hit twice. The first hit makes him scream — everyone learns the room, not who.",
+            "The household wins if every intruder is locked up, or the old man is alive at dawn.",
+            "At dawn the intruders get one last chance: their ringleader names the Butler. Get it right and the intruders win."
+          ]
+        }
+      ]
+    }
   },
   "avalon": {
     "track": {
@@ -589,6 +636,203 @@
     },
     "tagline": "BLUFF · HAGGLE · WIN"
   },
+  "manor": {
+    "tagline": "Keep the old man alive until dawn",
+    "rooms": {
+      "study": "Study",
+      "library": "Library",
+      "bedroom": "Bedroom",
+      "kitchen": "Kitchen",
+      "hall": "Grand Hall",
+      "security": "Security Room",
+      "cellar": "Wine Cellar",
+      "foyer": "Foyer",
+      "garden": "Garden"
+    },
+    "hours": {
+      "h0": "10 PM",
+      "h1": "11 PM",
+      "h2": "Midnight",
+      "h3": "1 AM",
+      "h4": "2 AM",
+      "h5": "3 AM",
+      "h6": "4 AM",
+      "h7": "5 AM",
+      "h8": "6 AM"
+    },
+    "clock": {
+      "hour": "Hour {{hour}} of {{total}}",
+      "dawn": "Dawn",
+      "owner": "Old man"
+    },
+    "phases": {
+      "move": "Moving",
+      "act": "Acting",
+      "gathering": "Household meeting",
+      "guess": "Last chance",
+      "finished": "Game over"
+    },
+    "role": {
+      "title": "Your role",
+      "reveal": "Tap to see your role",
+      "hide": "Tap to hide",
+      "allies": "Your fellow intruders: {{names}}",
+      "ringleader": "{{name}} names the Butler at dawn",
+      "ownerAt": "👴 The old man was in the {{room}} when this hour began"
+    },
+    "roles": {
+      "butler": {
+        "name": "Butler",
+        "desc": "Household. You always know where the old man was at the start of the hour. Guide the others — but if the intruders work out who you are, they win at dawn."
+      },
+      "guest": {
+        "name": "Guest",
+        "desc": "Household. Keep the old man alive until 6 AM. Fix cameras, guard him and find the intruders."
+      },
+      "intruder": {
+        "name": "Intruder",
+        "desc": "Hit the old man twice before dawn. Grab a weapon, find him alone, and don't get caught."
+      }
+    },
+    "items": {
+      "knife": "Knife",
+      "candlestick": "Candlestick",
+      "poison": "Poison"
+    },
+    "map": {
+      "you": "You"
+    },
+    "actions": {
+      "wait": {
+        "name": "Lie low",
+        "desc": "Do nothing this hour"
+      },
+      "guard": {
+        "name": "Guard the old man",
+        "desc": "Each guard blocks one attacker"
+      },
+      "attack": {
+        "name": "Attack the old man",
+        "desc": "Works if attackers outnumber guards"
+      },
+      "take": {
+        "name": "Take the {{item}}",
+        "desc": "Swap with whatever you carry"
+      },
+      "fix": {
+        "name": "Fix the camera",
+        "desc": "It records everything in this room"
+      },
+      "break": {
+        "name": "Break the camera",
+        "desc": "Everyone will see it go dark"
+      },
+      "search": {
+        "name": "Search someone",
+        "desc": "See what they carry"
+      },
+      "watch": {
+        "name": "Watch the monitors",
+        "desc": "See this hour's camera footage"
+      },
+      "escort": {
+        "name": "Escort the old man",
+        "desc": "He follows you next hour"
+      }
+    },
+    "prompt": {
+      "move": "Where do you go at {{time}}?",
+      "moveHint": "Stay, or move one room. You can also tap the map.",
+      "stay": "Stay in the {{room}}",
+      "go": "Go",
+      "act": "What do you do in the {{room}}?",
+      "confirm": "Do it",
+      "accuse": "Who should be locked up?",
+      "accuseHint": "Talk it over first. A majority locks that player up for the rest of the night.",
+      "skip": "No one",
+      "vote": "Vote",
+      "skipVote": "Vote for no one",
+      "guess": "Dawn: who is the Butler?",
+      "guessHint": "Talk with your fellow intruders. Name the Butler and you still win.",
+      "name": "Name them"
+    },
+    "room": {
+      "title": "Where you are",
+      "with": "With: {{names}}",
+      "alone": "You're alone here",
+      "owner": "The old man is here",
+      "ownerShort": "old man here",
+      "items": "Lying here: {{items}}",
+      "carrying": "You carry: {{item}}",
+      "emptyHanded": "You carry nothing",
+      "following": "The old man will follow you next hour"
+    },
+    "chosen": {
+      "move": "You're heading to the {{room}}",
+      "act": "Your action: {{action}}",
+      "vote": "You voted for {{name}}",
+      "skip": "You voted for no one"
+    },
+    "waiting": {
+      "move": "Everyone is choosing where to go…",
+      "act": "Everyone is choosing what to do…",
+      "gathering": "The household is voting…",
+      "guess": "{{name}} is naming the Butler…",
+      "locked": "You're locked up — keep talking!",
+      "on": "Waiting for {{names}}"
+    },
+    "players": {
+      "title": "The household",
+      "ally": "Intruder"
+    },
+    "log": {
+      "title": "Your notebook",
+      "hint": "Only you can see this. Share it — or don't.",
+      "did": "You: {{action}}",
+      "tookNone": "Someone else grabbed it first",
+      "attack": {
+        "hit": "The old man was attacked here!",
+        "blocked": "Someone tried to attack the old man here — it was blocked"
+      },
+      "searchFound": "{{name}} carries the {{item}}",
+      "searchNothing": "{{name}} carries nothing",
+      "footage": "Camera footage",
+      "noFootage": "Every camera is broken"
+    },
+    "footage": {
+      "seen": "{{names}}",
+      "empty": "nobody",
+      "entered": "came in: {{names}}",
+      "left": "left: {{names}}",
+      "owner": "old man here",
+      "ownerEntered": "old man came in",
+      "ownerLeft": "old man left",
+      "action": "{{name}}: {{action}}"
+    },
+    "events": {
+      "title": "What everyone knows",
+      "scream": "A scream from the {{room}}!",
+      "cameraOn": "{{room}} camera came on",
+      "cameraOff": "{{room}} camera went dark",
+      "locked": "{{name}} was locked up",
+      "nobody": "The meeting locked no one up"
+    },
+    "result": {
+      "good": "The old man survives!",
+      "evil": "The intruders win",
+      "none": "Game ended",
+      "ownerWas": "The old man ended the night in the {{room}}",
+      "youWon": "You won 🎉",
+      "youLost": "You lost"
+    },
+    "reasons": {
+      "dawn": "Dawn broke and the intruders named {{name}} — the Butler was {{butler}}.",
+      "caught": "Every intruder was locked up.",
+      "killed": "The old man was attacked twice.",
+      "butlerFound": "Dawn broke, but the intruders found the Butler: {{butler}}.",
+      "abandoned": "Someone left the table."
+    }
+  },
   "profile": {
     "title": "Profile",
     "settings": "Settings",
@@ -611,7 +855,14 @@
     "deleteAccount": "Delete Account",
     "deleteAccountMessage": "This permanently deletes your account, friends and profile. It can't be undone. Enter your password to confirm.",
     "deleteAccountConfirm": "Delete My Account",
-    "borders": "Profile Borders"
+    "borders": "Profile Borders",
+    "photo": {
+      "title": "Profile photo",
+      "hint": "Pick a photo from your library. Everyone at your tables will see it.",
+      "choose": "Choose a Photo",
+      "remove": "Remove Photo",
+      "failed": "Couldn't update your photo. Try again."
+    }
   },
   "auth": {
     "loginTitle": "Welcome back!",
@@ -649,7 +900,9 @@
     "already_at_table": "Already at your table",
     "wrong_password": "That password is incorrect",
     "too_many_requests": "Too many attempts — please wait a minute",
-    "game_not_finished": "The game isn't over yet"
+    "game_not_finished": "The game isn't over yet",
+    "invalid_image": "That file isn't a picture we can use.",
+    "image_too_large": "That picture is too large."
   },
   "borders": {
     "title": "Profile Borders",

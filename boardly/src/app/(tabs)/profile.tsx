@@ -24,6 +24,7 @@ import { useEquippedBorder } from "@/features/cosmetics/store";
 import { ChangePasswordSheet } from "@/features/profile/ChangePasswordSheet";
 import { DeleteAccountSheet } from "@/features/profile/DeleteAccountSheet";
 import { LanguageSheet } from "@/features/profile/LanguageSheet";
+import { PhotoSheet } from "@/features/profile/PhotoSheet";
 import { SUPPORTED_LANGUAGES } from "@/i18n";
 import { useLocale } from "@/i18n/LocaleContext";
 import { TABLE, fontFamily, useTheme } from "@/theme";
@@ -48,6 +49,7 @@ export default function ProfileScreen() {
   const languageSheetRef = useRef<GorhomBottomSheetModal>(null);
   const passwordSheetRef = useRef<GorhomBottomSheetModal>(null);
   const deleteSheetRef = useRef<GorhomBottomSheetModal>(null);
+  const photoSheetRef = useRef<GorhomBottomSheetModal>(null);
 
   const statsQuery = useQuery({
     queryKey: ["stats", user?.id],
@@ -108,11 +110,24 @@ export default function ProfileScreen() {
 
       {/* Identity */}
       <View style={styles.identity}>
-        <AvatarBorder
-          name={user?.username ?? "?"}
-          size={68}
-          borderId={borderId}
-        />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t("profile.photo.title")}
+          onPress={() => {
+            tapHaptic();
+            photoSheetRef.current?.present();
+          }}
+        >
+          <AvatarBorder
+            name={user?.username ?? "?"}
+            size={68}
+            borderId={borderId}
+            avatarUrl={user?.avatarUrl}
+          />
+          <View style={styles.editBadge}>
+            <AppText style={styles.editIcon}>📷</AppText>
+          </View>
+        </Pressable>
         <AppText variant="title" style={styles.username}>
           {user?.username ?? ""}
         </AppText>
@@ -182,6 +197,7 @@ export default function ProfileScreen() {
         </ScrollView>
       </Frame>
 
+      <PhotoSheet ref={photoSheetRef} />
       <LanguageSheet ref={languageSheetRef} />
       <ChangePasswordSheet ref={passwordSheetRef} />
       <DeleteAccountSheet ref={deleteSheetRef} />
@@ -196,6 +212,20 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.7 },
   // Extra room above and below the avatar for its border to show
   identity: { alignItems: "center", marginTop: 30 },
+  editBadge: {
+    position: "absolute",
+    right: -8,
+    bottom: -6,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "#E2D6BF",
+  },
+  editIcon: { fontSize: 13, lineHeight: 16 },
   username: { marginTop: 28 },
   coins: { marginTop: 6 },
   stats: { flexDirection: "row", paddingVertical: 14 },

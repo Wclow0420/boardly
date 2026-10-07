@@ -277,6 +277,7 @@ function GameScreenBody({
         userId: p.userId,
         username: p.username,
         borderId: p.borderId,
+        avatarUrl: p.avatarUrl,
       }))}
       busy={makeMove.isPending}
       finished={!inProgress}
@@ -366,6 +367,7 @@ function GameScreenBody({
               <AvatarBorder
                 name={player.username}
                 borderId={player.borderId}
+                avatarUrl={player.avatarUrl}
                 size={34}
               />
               <View style={styles.playerText}>

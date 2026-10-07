@@ -66,7 +66,12 @@ export function FriendListItem({
 
   return (
     <View style={[styles.row, { borderBottomColor: colors.divider }]}>
-      <AvatarBorder name={friend.name} borderId={friend.borderId} size={40} />
+      <AvatarBorder
+        name={friend.name}
+        borderId={friend.borderId}
+        avatarUrl={friend.avatarUrl}
+        size={40}
+      />
       <View style={styles.body}>
         <AppText
           numberOfLines={1}

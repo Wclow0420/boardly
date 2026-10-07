@@ -9,6 +9,8 @@ export interface GamePlayer {
   username: string;
   /** Profile border they wear. */
   borderId?: string | null;
+  /** Profile picture path (see assetUrl). */
+  avatarUrl?: string | null;
 }
 
 /** Props every game board component receives from the game screen. */

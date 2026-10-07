@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { PlusIcon } from "@/components/icons";
+import { assetUrl } from "@/api/client";
 import { AppText, Avatar } from "@/components/ui";
 import type { Friend } from "@/data/types";
 import { useTheme } from "@/theme";
@@ -21,7 +22,12 @@ export function FriendsOnlineRow({ friends, onInvite }: FriendsOnlineRowProps) {
     <View style={styles.row}>
       {friends.map((friend) => (
         <View key={friend.id} style={styles.item}>
-          <Avatar name={friend.name} size={46} presence={friend.presence} />
+          <Avatar
+            name={friend.name}
+            size={46}
+            presence={friend.presence}
+            imageUri={assetUrl(friend.avatarUrl)}
+          />
           <AppText variant="tiny" color="textMuted" numberOfLines={1}>
             {friend.name}
           </AppText>
