@@ -3,7 +3,7 @@
 // only ever sends this player's *view*: other players' roles, choices
 // and notes never reach the client.
 
-export type Role = "butler" | "guest" | "intruder";
+export type Role = "butler" | "guard" | "guest" | "intruder";
 export type Side = "good" | "evil";
 export type Phase = "move" | "act" | "gathering" | "guess" | "finished";
 export type Item = "knife" | "candlestick" | "poison";
@@ -15,6 +15,7 @@ export type Action =
   | "fix"
   | "break"
   | "search"
+  | "flashlight"
   | "watch"
   | "escort";
 export type WinReason =
@@ -64,8 +65,11 @@ export interface Order {
   action?: Action;
   item?: Item;
   target?: number | null;
+  /** Intruders: weapon hidden from searches this hour. */
+  hide?: boolean;
 }
 
+/** Who a working camera saw — faces, not what anyone did. */
 export interface Footage {
   room: number;
   seats: number[];
@@ -74,19 +78,22 @@ export interface Footage {
   owner: boolean;
   ownerEntered: boolean;
   ownerLeft: boolean;
-  actions: { seat: number; action: Action; item?: Item; target?: number }[];
 }
 
 /** One hour in a player's private notebook. */
 export interface LogEntry {
   hour: number;
   room: number;
-  with: number[];
+  /** How many others shared the room — in the dark, never who. */
+  others: number;
   owner: boolean;
   action: Order;
   took?: Item | null;
   attack?: "hit" | "blocked";
-  search?: { target: number; item: Item | null };
+  /** In the dark you only feel something; the Guard sees who and what. */
+  search?: { found: boolean } | { target: number; item: Item | null };
+  /** The Guard's flashlight: who was here and what they did. */
+  seen?: { seat: number; action: Action; item?: Item }[];
   footage?: Footage[];
 }
 
@@ -118,7 +125,10 @@ export interface ManorState {
   myRoom: number | null;
   myItem: Item | null;
   myOrder: Order | null;
-  roommates: number[];
+  /** How many others share my room (it's dark: not who). */
+  othersHere: number;
+  /** Intruders: the once-a-game hide is spent. */
+  hideUsed: boolean;
   ownerHere: boolean;
   /** Butler only: where the old man was when this hour began. */
   ownerSeenAt: number | null;
@@ -166,9 +176,14 @@ export function neighbors(room: number): number[] {
   return out;
 }
 
-/** Where I may go this hour: stay, or a neighbouring room. */
-export function reachable(room: number | null): number[] {
-  return room === null ? [] : [room, ...neighbors(room)].sort((a, b) => a - b);
+/** Where I may go this hour: stay or a neighbouring room — any room
+ *  for intruders — but never a second hour in the Security Room. */
+export function reachable(room: number | null, anywhere = false): number[] {
+  if (room === null) return [];
+  const rooms = anywhere
+    ? ROOMS.map((_, r) => r)
+    : [room, ...neighbors(room)].sort((a, b) => a - b);
+  return room === SECURITY ? rooms.filter((r) => r !== SECURITY) : rooms;
 }
 
 export type Task = "move" | "act" | "accuse" | "guess";
@@ -193,6 +208,11 @@ export interface ActionChoice {
   item?: Item;
 }
 
+/** Intruders may hide their weapon from searches, once a game. */
+export function canHide(state: ManorState): boolean {
+  return state.myRole === "intruder" && state.myItem !== null && !state.hideUsed;
+}
+
 /** The actions this room and this player allow right now. */
 export function availableActions(state: ManorState): ActionChoice[] {
   const room = state.myRoom;
@@ -210,7 +230,8 @@ export function availableActions(state: ManorState): ActionChoice[] {
   if (camera === false) out.push({ action: "fix" });
   if (camera === true && evil) out.push({ action: "break" });
   if (room === SECURITY) out.push({ action: "watch" });
-  if (state.roommates.length > 0) out.push({ action: "search" });
+  if (state.othersHere > 0) out.push({ action: "search" });
+  if (state.myRole === "guard") out.push({ action: "flashlight" });
   out.push({ action: "wait" });
   return out;
 }

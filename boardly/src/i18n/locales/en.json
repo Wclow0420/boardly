@@ -374,8 +374,8 @@
         {
           "title": "Sides",
           "items": [
-            "Household: the Butler and the Guests. Intruders: 1 with 4 players, 2 with 5–6, 3 with 7–8.",
-            "Intruders know each other. The Butler always knows where the old man was at the start of each hour.",
+            "Household: the Butler, the Guard and the Guests. Intruders: 1 with 4 players, 2 with 5–6, 3 with 7–8.",
+            "Intruders know each other. The Butler always knows where the old man was at the start of each hour. The Guard carries the flashlight.",
             "With 4 players, the lone intruder starts holding the knife."
           ]
         },
@@ -383,8 +383,8 @@
           "title": "Each hour",
           "items": [
             "The night runs from 10 PM to 6 AM: 8 hours. Everyone starts in the Grand Hall; the old man starts in the Bedroom.",
-            "Move: secretly stay, or go one room up, down, left or right. The old man wanders randomly too.",
-            "Act: secretly pick one action. It's dark — you see who is in your room, whether the old man is there and what lies around, but not what anyone does."
+            "Move: secretly stay, or go one room up, down, left or right. Intruders can slip into any room. Nobody can stay in the Security Room two hours in a row.",
+            "Act: secretly pick one action. It's dark — you know how many others are in your room and whether the old man is there, but not who they are or what they do."
           ]
         },
         {
@@ -392,9 +392,11 @@
           "items": [
             "Guard: protect the old man. Attack (intruders with a weapon): hurts him if attackers outnumber guards.",
             "Take a weapon: the knife (Kitchen), candlestick (Library) or poison (Wine Cellar). You carry one item; taking another swaps it.",
-            "Fix a camera (Library, Bedroom, Kitchen, Foyer, Garden). Intruders can break one. Everyone sees cameras go on and off.",
-            "Watch the monitors (Security Room): see everything working cameras recorded this hour — including the last moments before one was broken.",
-            "Search: see what someone in your room carries. Escort: the old man follows you next hour."
+            "Fix a camera (Library, Bedroom, Kitchen, Foyer, Garden); intruders can break one. Everyone sees cameras go on and off, but not who did it.",
+            "Watch the monitors (Security Room): see who working cameras saw this hour and whether the old man came or went — not what anyone did.",
+            "Search: pat down someone at random — you only learn whether they carry something. The Guard learns who it was and what they carry.",
+            "Flashlight (Guard): see who is in your room and what each of them does this hour. Escort: the old man follows you next hour.",
+            "Once a game, an intruder can hide their weapon for an hour: searches find nothing on them."
           ]
         },
         {
@@ -691,7 +693,11 @@
       },
       "intruder": {
         "name": "Intruder",
-        "desc": "Hit the old man twice before dawn. Grab a weapon, find him alone, and don't get caught."
+        "desc": "Hit the old man twice before dawn. You can slip into any room each hour, and once a game you can hide your weapon from searches for an hour."
+      },
+      "guard": {
+        "name": "Guard",
+        "desc": "Household. You carry the flashlight: shine it to see who is in your room and what they're doing, and your searches show who you patted down and what they carry."
       }
     },
     "items": {
@@ -721,7 +727,7 @@
       },
       "fix": {
         "name": "Fix the camera",
-        "desc": "It records everything in this room"
+        "desc": "It shows who comes and goes here"
       },
       "break": {
         "name": "Break the camera",
@@ -729,15 +735,19 @@
       },
       "search": {
         "name": "Search someone",
-        "desc": "See what they carry"
+        "desc": "Pat down someone at random in the dark"
       },
       "watch": {
         "name": "Watch the monitors",
-        "desc": "See this hour's camera footage"
+        "desc": "See who the working cameras saw this hour"
       },
       "escort": {
         "name": "Escort the old man",
         "desc": "He follows you next hour"
+      },
+      "flashlight": {
+        "name": "Shine the flashlight",
+        "desc": "See who is here and what they're doing"
       }
     },
     "prompt": {
@@ -754,24 +764,30 @@
       "skipVote": "Vote for no one",
       "guess": "Dawn: who is the Butler?",
       "guessHint": "Talk with your fellow intruders. Name the Butler and you still win.",
-      "name": "Name them"
+      "name": "Name them",
+      "moveHintIntruder": "Intruders can slip into any room. You can also tap the map.",
+      "leaveSecurity": "You can't stay in the Security Room.",
+      "hide": "Hide my weapon this hour",
+      "hideHint": "Searches won't find it this hour. Once a game."
     },
     "room": {
       "title": "Where you are",
-      "with": "With: {{names}}",
       "alone": "You're alone here",
       "owner": "The old man is here",
       "ownerShort": "old man here",
       "items": "Lying here: {{items}}",
       "carrying": "You carry: {{item}}",
       "emptyHanded": "You carry nothing",
-      "following": "The old man will follow you next hour"
+      "following": "The old man will follow you next hour",
+      "others_one": "{{count}} other person here",
+      "others_other": "{{count}} other people here"
     },
     "chosen": {
       "move": "You're heading to the {{room}}",
       "act": "Your action: {{action}}",
       "vote": "You voted for {{name}}",
-      "skip": "You voted for no one"
+      "skip": "You voted for no one",
+      "hidden": "weapon hidden"
     },
     "waiting": {
       "move": "Everyone is choosing where to go…",
@@ -794,10 +810,14 @@
         "hit": "The old man was attacked here!",
         "blocked": "Someone tried to attack the old man here — it was blocked"
       },
-      "searchFound": "{{name}} carries the {{item}}",
-      "searchNothing": "{{name}} carries nothing",
+      "searchFound": "🔦 {{name}} carries the {{item}}",
+      "searchNothing": "🔦 {{name}} carries nothing",
       "footage": "Camera footage",
-      "noFootage": "Every camera is broken"
+      "noFootage": "Every camera is broken",
+      "feltSomething": "You felt something on them — but who was it?",
+      "feltNothing": "They carried nothing",
+      "seenNobody": "Nobody else here",
+      "seenAction": "{{name}}: {{action}}"
     },
     "footage": {
       "seen": "{{names}}",
@@ -806,8 +826,7 @@
       "left": "left: {{names}}",
       "owner": "old man here",
       "ownerEntered": "old man came in",
-      "ownerLeft": "old man left",
-      "action": "{{name}}: {{action}}"
+      "ownerLeft": "old man left"
     },
     "events": {
       "title": "What everyone knows",

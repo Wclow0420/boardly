@@ -32,7 +32,7 @@ class FirstChoice(random.Random):
 game = Manor(FirstChoice())
 
 # seat:      0         1        2        3           4
-ROLES_5 = ["butler", "guest", "guest", "intruder", "intruder"]
+ROLES_5 = ["butler", "guard", "guest", "intruder", "intruder"]
 
 
 def start(roles=ROLES_5):
@@ -89,6 +89,7 @@ def test_setup_for_every_player_count(n):
     state = game.initial_state(n, random.Random(n))
     assert sorted(state["roles"]) == sorted(ROLE_SETS[n])
     assert state["roles"].count("butler") == 1
+    assert state["roles"].count("guard") == 1
     assert sum(is_evil(r) for r in state["roles"]) == {4: 1, 5: 2, 6: 2, 7: 3, 8: 3}[n]
     assert state["positions"] == [HALL] * n
     assert state["owner"]["room"] == BEDROOM and state["owner"]["hp"] == 2
@@ -131,7 +132,10 @@ def test_move_waits_for_everyone_then_reveals_the_room():
     state = move_all({**state, "orders": [None] * 5}, {0: KITCHEN, 3: KITCHEN})
     assert state["phase"] == "act"
     assert state["positions"] == [KITCHEN, HALL, HALL, KITCHEN, HALL]
-    assert game.view_for(state, 0)["roommates"] == [3]
+    # In the dark you know how many share your room, not who
+    assert game.view_for(state, 0)["othersHere"] == 1
+    assert game.view_for(state, 1)["othersHere"] == 2
+    assert "roommates" not in game.view_for(state, 0)
 
 
 def test_only_one_step_at_a_time():
@@ -139,6 +143,22 @@ def test_only_one_step_at_a_time():
     for room in (BEDROOM, 8, 0, 99, "hall", None):
         with pytest.raises(GameError):
             game.apply_move(state, 0, {"type": "move", "room": room})
+
+
+def test_intruders_slip_into_any_room():
+    state = game.apply_move(start(), 3, {"type": "move", "room": 8})
+    assert state["orders"][3] == {"room": 8}
+    with pytest.raises(GameError):
+        game.apply_move(start(), 3, {"type": "move", "room": 9})
+
+
+def test_nobody_stays_in_the_security_room():
+    state = place(start(), [SECURITY, HALL, HALL, SECURITY, HALL])
+    for seat in (0, 3):
+        with pytest.raises(GameError):
+            game.apply_move(state, seat, {"type": "move", "room": SECURITY})
+    state = move_all(state, {0: HALL, 3: 8, 1: SECURITY})
+    assert state["positions"][:2] == [HALL, SECURITY]
 
 
 def test_the_old_man_wanders_at_most_one_room():
@@ -234,44 +254,84 @@ def test_take_swaps_and_ties_go_to_one_player():
                         {"type": "act", "action": "take", "item": "knife"})
 
 
-def test_search_reveals_what_someone_carries():
-    state = place(start(), [KITCHEN, HALL, HALL, KITCHEN, HALL], owner=BEDROOM)
+def test_a_search_in_the_dark_only_feels_something():
+    state = place(start(), [KITCHEN, HALL, KITCHEN, KITCHEN, HALL], owner=BEDROOM)
+    state = {**state, "carrying": [None, None, "candlestick", "knife", None]}
+    state = hour(state, acts={0: {"action": "search"}})
+    # a random person in the room (here the first); not who, not what
+    assert state["logs"][0][-1]["search"] == {"found": True}
+    assert state["logs"][0][-1]["others"] == 2
+    with pytest.raises(GameError):  # nobody else in the study
+        game.apply_move(move_all(place(state, [STUDY] + state["positions"][1:])),
+                        0, {"type": "act", "action": "search"})
+
+
+def test_the_guard_sees_who_and_what():
+    state = place(start(), [HALL, KITCHEN, HALL, KITCHEN, HALL], owner=BEDROOM)
     state = {**state, "carrying": [None, None, None, "knife", None]}
-    state = hour(state, acts={0: {"action": "search", "target": 3}})
-    assert state["logs"][0][-1]["search"] == {"target": 3, "item": "knife"}
-    with pytest.raises(GameError):  # not in the same room
-        game.apply_move(move_all(state), 0,
-                        {"type": "act", "action": "search", "target": 1})
+    state = hour(state, acts={1: {"action": "search"}})
+    assert state["logs"][1][-1]["search"] == {"target": 3, "item": "knife"}
+
+
+def test_the_flashlight_shows_who_is_here_and_what_they_do():
+    state = place(start(), [HALL, KITCHEN, KITCHEN, KITCHEN, HALL], owner=BEDROOM)
+    state = hour(state, acts={1: {"action": "flashlight"},
+                              2: {"action": "fix"},
+                              3: {"action": "take", "item": "knife"}})
+    assert state["logs"][1][-1]["seen"] == [
+        {"seat": 2, "action": "fix"},
+        {"seat": 3, "action": "take", "item": "knife"},
+    ]
+    with pytest.raises(GameError):  # only the guard has one
+        game.apply_move(move_all(state), 2, {"type": "act", "action": "flashlight"})
+
+
+def test_an_intruder_hides_a_weapon_once_for_one_hour():
+    state = place(start(), [HALL, KITCHEN, HALL, KITCHEN, HALL], owner=BEDROOM)
+    state = {**state, "carrying": [None, None, None, "knife", None]}
+    hidden = hour(state, acts={1: {"action": "search"},
+                               3: {"action": "wait", "hide": True}})
+    assert hidden["logs"][1][-1]["search"] == {"target": 3, "item": None}
+    assert game.view_for(hidden, 3)["hideUsed"] is True
+    with pytest.raises(GameError):  # once a game
+        game.apply_move(move_all(hidden), 3,
+                        {"type": "act", "action": "wait", "hide": True})
+    # the next hour it's found again
+    found = hour(hidden, acts={1: {"action": "search"}})
+    assert found["logs"][1][-1]["search"] == {"target": 3, "item": "knife"}
+    with pytest.raises(GameError):  # only intruders, only with a weapon
+        game.apply_move(move_all(state), 2,
+                        {"type": "act", "action": "wait", "hide": True})
 
 
 # ------------------------------------------------------------ cameras
 
 
-def test_fixed_camera_feeds_the_monitors():
-    state = place(start(), [KITCHEN, SECURITY, HALL, KITCHEN, HALL], owner=BEDROOM)
-    state = hour(state, acts={0: {"action": "fix"}, 1: {"action": "watch"}})
+def test_fixed_camera_shows_who_was_there_not_what_they_did():
+    state = place(start(), [KITCHEN, HALL, HALL, KITCHEN, HALL], owner=BEDROOM)
+    state = hour(state, {1: SECURITY},
+                 acts={0: {"action": "fix"}, 1: {"action": "watch"}})
     assert state["cameras"][KITCHEN] is True
     assert {"hour": 0, "kind": "cameraOn", "room": KITCHEN} in state["events"]
     feed = state["logs"][1][-1]["footage"]
     assert [f["room"] for f in feed] == [KITCHEN]
     assert feed[0]["seats"] == [0, 3]
-    assert {"seat": 0, "action": "fix"} in feed[0]["actions"]
-    # people in the room only know who's there, not what anyone did
+    assert "actions" not in feed[0]
     assert "footage" not in state["logs"][0][-1]
 
 
-def test_breaking_a_camera_is_caught_on_its_last_footage():
-    state = place(start(), [HALL, SECURITY, HALL, KITCHEN, HALL], owner=BEDROOM)
+def test_a_broken_camera_still_shows_who_was_there_last():
+    state = place(start(), [HALL, HALL, HALL, KITCHEN, HALL], owner=BEDROOM)
     cameras = list(state["cameras"])
     cameras[KITCHEN] = True
     state = {**state, "cameras": cameras}
-    state = hour(state, {0: KITCHEN},
+    state = hour(state, {0: KITCHEN, 1: SECURITY},
                  acts={3: {"action": "break"}, 1: {"action": "watch"}})
     assert state["cameras"][KITCHEN] is False
     assert {"hour": 0, "kind": "cameraOff", "room": KITCHEN} in state["events"]
     feed = state["logs"][1][-1]["footage"][0]
-    assert feed["entered"] == [0]
-    assert {"seat": 3, "action": "break"} in feed["actions"]
+    assert feed["seats"] == [0, 3] and feed["entered"] == [0]
+    assert "break" not in json.dumps(feed)  # not who broke it
 
 
 def test_camera_rules():
@@ -367,12 +427,12 @@ def test_abandoned_game_has_no_winner():
 
 
 def test_view_keeps_secrets():
-    state = place(start(), [STUDY, SECURITY, HALL, KITCHEN, HALL], owner=8)
+    state = place(start(), [STUDY, HALL, HALL, KITCHEN, HALL], owner=8)
     state = {**state, "carrying": [None, None, None, "knife", None]}
     state = move_all(state)
     state = game.apply_move(state, 3, {"type": "act", "action": "wait"})
 
-    guest = game.view_for(state, 1)
+    guest = game.view_for(state, 2)
     text = json.dumps(guest)
     assert guest["roles"] is None and guest["intruders"] is None
     assert guest["ownerSeenAt"] is None and guest["ownerRoom"] is None
@@ -389,7 +449,7 @@ def test_view_keeps_secrets():
 
     spectator = game.view_for(state, -1)
     assert spectator["myRole"] is None and spectator["log"] == []
-    assert spectator["roommates"] == []
+    assert spectator["othersHere"] == 0
 
 
 # ------------------------------------------------------------------ API
@@ -431,4 +491,4 @@ def test_api_plays_an_hour_with_private_views(client, make_user):
         assert res.status_code == 200
     state = _view(client, room, users[0])
     assert state["phase"] == "act"
-    assert sorted(state["roommates"]) == [1, 2, 3]
+    assert state["othersHere"] == 3
