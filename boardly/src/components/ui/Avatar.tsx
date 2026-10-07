@@ -1,3 +1,4 @@
+import { Image } from "expo-image";
 import { View, type ViewStyle } from "react-native";
 
 import { fontFamily, useTheme } from "@/theme";
@@ -16,6 +17,8 @@ export interface AvatarProps {
   ringColor?: string;
   /** Corner radius; defaults to a circle. */
   radius?: number;
+  /** Full address of a profile picture; the initial shows without one. */
+  imageUri?: string | null;
   style?: ViewStyle;
 }
 
@@ -44,6 +47,7 @@ export function Avatar({
   crown = false,
   ringColor,
   radius,
+  imageUri,
   style,
 }: AvatarProps) {
   const tint = tintFor(name);
@@ -61,17 +65,27 @@ export function Avatar({
           justifyContent: "center",
           borderWidth: ringColor ? 3 : 0,
           borderColor: ringColor,
+          overflow: "hidden",
         }}
       >
-        <AppText
-          style={{
-            fontFamily: fontFamily.semiBold,
-            fontSize: size * 0.34,
-            color: tint.fg,
-          }}
-        >
-          {initial}
-        </AppText>
+        {imageUri ? (
+          <Image
+            source={{ uri: imageUri }}
+            style={{ width: "100%", height: "100%" }}
+            contentFit="cover"
+            accessibilityLabel={name}
+          />
+        ) : (
+          <AppText
+            style={{
+              fontFamily: fontFamily.semiBold,
+              fontSize: size * 0.34,
+              color: tint.fg,
+            }}
+          >
+            {initial}
+          </AppText>
+        )}
       </View>
       <AvatarBadges size={size} presence={presence} crown={crown} />
     </View>

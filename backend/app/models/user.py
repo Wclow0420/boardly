@@ -13,6 +13,8 @@ class User(db.Model):
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
+    # Version of the uploaded profile picture (see models/avatar.py), or
+    # None. It goes into the picture's URL so a new upload busts caches.
     avatar = db.Column(db.String(255), nullable=True)
     # Profile border worn around the avatar (see app/cosmetics.py)
     border_id = db.Column(
@@ -35,11 +37,18 @@ class User(db.Model):
         db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
+    @property
+    def avatar_url(self) -> str | None:
+        """Path of the profile picture, relative to the API's address."""
+        if not self.avatar:
+            return None
+        return f"/api/v1/users/{self.id}/avatar?v={self.avatar}"
+
     def to_dict(self):
         return {
             "id": str(self.id),
             "username": self.username,
-            "avatar": self.avatar,
+            "avatarUrl": self.avatar_url,
             "borderId": self.border_id or DEFAULT_BORDER,
         }
 

@@ -40,6 +40,7 @@ export interface Friend {
   name: string;
   /** Profile border they wear. */
   borderId?: string;
+  avatarUrl?: string | null;
   relation: FriendRelation;
   /** Only known for friends. */
   presence?: PresenceStatus;
@@ -51,6 +52,7 @@ export interface LobbyPlayer {
   id: string;
   name: string;
   borderId?: string | null;
+  avatarUrl?: string | null;
   isHost: boolean;
   ready: boolean;
 }

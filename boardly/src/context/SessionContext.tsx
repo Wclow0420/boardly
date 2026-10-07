@@ -33,6 +33,8 @@ interface SessionContextValue {
   buyBorder: (borderId: string) => Promise<void>;
   /** Changes the profile border everyone sees around this player. */
   setBorder: (borderId: string) => Promise<void>;
+  /** Sets the profile picture (base64 JPEG/PNG/WebP), or null to remove it. */
+  setAvatar: (image: string | null) => Promise<void>;
   /** Permanently deletes the account, then signs out. */
   deleteAccount: (password: string) => Promise<void>;
 }
@@ -135,6 +137,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setUser(updated);
   }, []);
 
+  const setAvatar = useCallback(async (image: string | null) => {
+    const { user: updated } =
+      image === null
+        ? await api.auth.removeAvatar()
+        : await api.auth.uploadAvatar(image);
+    setUser(updated);
+  }, []);
+
   const deleteAccount = useCallback(
     async (password: string) => {
       await api.auth.deleteAccount(password);
@@ -154,6 +164,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       updateUser,
       buyBorder,
       setBorder,
+      setAvatar,
       deleteAccount,
     }),
     [
@@ -166,6 +177,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       updateUser,
       buyBorder,
       setBorder,
+      setAvatar,
       deleteAccount,
     ]
   );

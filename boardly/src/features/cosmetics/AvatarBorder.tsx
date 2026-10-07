@@ -9,6 +9,7 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 
+import { assetUrl } from "@/api/client";
 import { Avatar, AvatarBadges, type PresenceStatus } from "@/components/ui";
 
 import {
@@ -32,6 +33,8 @@ export interface AvatarBorderProps {
   /** Coloured ring; only shown with the "No Border" choice, since any
    *  other border takes its place. */
   ringColor?: string;
+  /** Profile picture path from the API (avatarUrl). */
+  avatarUrl?: string | null;
 }
 
 // Borders are drawn in a square this many times the avatar's size, in a
@@ -49,13 +52,15 @@ export function AvatarBorder({
   presence,
   crown,
   ringColor,
+  avatarUrl,
 }: AvatarBorderProps) {
   const border = getBorder(borderId ?? undefined);
+  const imageUri = assetUrl(avatarUrl);
   const badges = <AvatarBadges size={size} presence={presence} crown={crown} />;
 
   if (border.kind === "glow") {
     return (
-      <GlowAvatar border={border} name={name} size={size}>
+      <GlowAvatar border={border} name={name} size={size} imageUri={imageUri}>
         {badges}
       </GlowAvatar>
     );
@@ -68,6 +73,7 @@ export function AvatarBorder({
       <Avatar
         name={name}
         size={size}
+        imageUri={imageUri}
         ringColor={border.kind === "none" ? ringColor : undefined}
       />
       {badges}
@@ -183,11 +189,13 @@ function GlowAvatar({
   border,
   name,
   size,
+  imageUri,
   children,
 }: {
   border: GlowBorder;
   name: string;
   size: number;
+  imageUri: string | null;
   children?: ReactNode;
 }) {
   const glow = scaleGlow(border.glow, size / 72);
@@ -205,7 +213,12 @@ function GlowAvatar({
           style={{ width: box, height: box }}
         >
           <View style={{ width: box, height: box, padding: outline }}>
-            <Avatar name={name} size={size} radius={border.roundness * size} />
+            <Avatar
+              name={name}
+              size={size}
+              radius={border.roundness * size}
+              imageUri={imageUri}
+            />
           </View>
         </AnimatedGlow>
       </View>

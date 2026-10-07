@@ -78,6 +78,7 @@ class RoomPlayer(db.Model):
             "userId": str(self.user_id),
             "username": self.user.username if self.user else None,
             "borderId": self.user.border_id if self.user else None,
+            "avatarUrl": self.user.avatar_url if self.user else None,
             "seat": self.seat,
             "ready": self.ready,
         }

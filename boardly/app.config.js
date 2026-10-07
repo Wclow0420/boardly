@@ -139,6 +139,16 @@ export default ({ config }) => {
       "expo-router",
       "expo-audio",
       [
+        "expo-image-picker",
+        {
+          // Only the photo library is used, for profile pictures
+          photosPermission:
+            "Boardly uses your photos so you can pick a profile picture.",
+          cameraPermission: false,
+          microphonePermission: false,
+        },
+      ],
+      [
         "expo-splash-screen",
         {
           backgroundColor: "#208AEF",

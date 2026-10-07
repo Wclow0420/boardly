@@ -92,6 +92,7 @@ export default function BordersScreen() {
             name={name}
             size={84}
             borderId={selected.id}
+            avatarUrl={user?.avatarUrl}
           />
         </View>
         <AppText variant="title" align="center">
@@ -171,7 +172,12 @@ export default function BordersScreen() {
                 ]}
               >
                 <View style={styles.tileAvatar}>
-                  <AvatarBorder name={name} size={40} borderId={border.id} />
+                  <AvatarBorder
+                    name={name}
+                    size={40}
+                    borderId={border.id}
+                    avatarUrl={user?.avatarUrl}
+                  />
                 </View>
                 <AppText variant="tiny" numberOfLines={1} align="center">
                   {border.name}

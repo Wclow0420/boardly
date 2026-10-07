@@ -291,6 +291,7 @@ export default function LobbyScreen() {
                     id: player.userId,
                     name: player.username,
                     borderId: player.borderId,
+                    avatarUrl: player.avatarUrl,
                     isHost: player.userId === room.hostId,
                     ready: player.ready,
                   }}

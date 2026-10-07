@@ -165,6 +165,7 @@ export function CoupBoard({
                 <AvatarBorder
                   name={userOf(seat)}
                   borderId={players.find((p) => p.seat === seat)?.borderId}
+                  avatarUrl={players.find((p) => p.seat === seat)?.avatarUrl}
                   size={36}
                 />
                 <AppText variant="label" style={styles.grow} numberOfLines={1}>
@@ -356,6 +357,7 @@ export function CoupBoard({
                 <AvatarBorder
                   name={player.username}
                   borderId={player.borderId}
+                  avatarUrl={player.avatarUrl}
                   size={44}
                   ringColor={waitedOn ? colors.primary : colors.border}
                 />

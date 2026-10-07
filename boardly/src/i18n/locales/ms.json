@@ -72,7 +72,8 @@
   "gameNames": {
     "tictactoe": "Tic-Tac-Toe",
     "avalon": "Double Agent",
-    "coup": "Hustle"
+    "coup": "Hustle",
+    "manor": "Midnight Manor"
   },
   "friends": {
     "title": "Rakan",
@@ -366,7 +367,53 @@
         "noBlock": "Tidak boleh disekat"
       }
     },
-    "overview": "Ringkasan"
+    "overview": "Ringkasan",
+    "manor": {
+      "intro": "Seorang datuk tua yang kaya menjemput saudara-maranya bermalam. Sebahagian daripada mereka ialah penceroboh yang menyamar dan mahu dia mati sebelum subuh. Yang lain mesti memastikan dia hidup hingga 6 pagi.",
+      "sections": [
+        {
+          "title": "Pihak",
+          "items": [
+            "Keluarga: Butler dan Tetamu. Penceroboh: 1 untuk 4 pemain, 2 untuk 5–6, 3 untuk 7–8.",
+            "Penceroboh saling mengenali. Butler sentiasa tahu di mana datuk tua pada awal setiap jam.",
+            "Dengan 4 pemain, penceroboh tunggal bermula dengan pisau."
+          ]
+        },
+        {
+          "title": "Setiap jam",
+          "items": [
+            "Malam bermula 10 malam hingga 6 pagi: 8 jam. Semua bermula di Dewan Besar; datuk tua bermula di Bilik Tidur.",
+            "Bergerak: secara rahsia kekal, atau pergi satu bilik ke atas, bawah, kiri atau kanan. Datuk tua juga merayau secara rawak.",
+            "Bertindak: secara rahsia pilih satu tindakan. Gelap — anda nampak siapa di bilik anda, sama ada datuk tua ada dan barang di situ, tetapi bukan apa yang orang lain buat."
+          ]
+        },
+        {
+          "title": "Tindakan",
+          "items": [
+            "Kawal: lindungi datuk tua. Serang (penceroboh bersenjata): mencederakannya jika penyerang lebih ramai daripada pengawal.",
+            "Ambil senjata: pisau (Dapur), kaki lilin (Perpustakaan) atau racun (Bilik Wain). Anda bawa satu barang; mengambil yang lain akan menukarnya.",
+            "Baiki kamera (Perpustakaan, Bilik Tidur, Dapur, Ruang Masuk, Taman). Penceroboh boleh merosakkannya. Semua orang nampak kamera menyala dan padam.",
+            "Tonton monitor (Bilik Kawalan): lihat semua yang dirakam kamera jam ini — termasuk saat terakhir sebelum kamera dirosakkan.",
+            "Geledah: lihat apa yang dibawa seseorang di bilik anda. Iring: datuk tua ikut anda jam seterusnya."
+          ]
+        },
+        {
+          "title": "Mesyuarat",
+          "items": [
+            "Selepas tengah malam, selepas 3 pagi dan selepas setiap jeritan, keluarga berbincang dan mengundi.",
+            "Undi majoriti mengurung seorang pemain hingga subuh. Perannya kekal rahsia."
+          ]
+        },
+        {
+          "title": "Cara tamat",
+          "items": [
+            "Penceroboh menang jika datuk tua diserang dua kali. Serangan pertama membuatnya menjerit — semua tahu biliknya, bukan siapa.",
+            "Keluarga menang jika semua penceroboh dikurung, atau datuk tua masih hidup ketika subuh.",
+            "Ketika subuh, penceroboh dapat satu peluang terakhir: ketua mereka meneka Butler. Jika betul, penceroboh menang."
+          ]
+        }
+      ]
+    }
   },
   "avalon": {
     "track": {
@@ -586,6 +633,203 @@
     },
     "tagline": "TIPU · CABAR · MENANG"
   },
+  "manor": {
+    "tagline": "Pastikan datuk tua hidup hingga subuh",
+    "rooms": {
+      "study": "Bilik Bacaan",
+      "library": "Perpustakaan",
+      "bedroom": "Bilik Tidur",
+      "kitchen": "Dapur",
+      "hall": "Dewan Besar",
+      "security": "Bilik Kawalan",
+      "cellar": "Bilik Wain",
+      "foyer": "Ruang Masuk",
+      "garden": "Taman"
+    },
+    "hours": {
+      "h0": "10 malam",
+      "h1": "11 malam",
+      "h2": "Tengah malam",
+      "h3": "1 pagi",
+      "h4": "2 pagi",
+      "h5": "3 pagi",
+      "h6": "4 pagi",
+      "h7": "5 pagi",
+      "h8": "6 pagi"
+    },
+    "clock": {
+      "hour": "Jam {{hour}} daripada {{total}}",
+      "dawn": "Subuh",
+      "owner": "Datuk tua"
+    },
+    "phases": {
+      "move": "Bergerak",
+      "act": "Bertindak",
+      "gathering": "Mesyuarat keluarga",
+      "guess": "Peluang terakhir",
+      "finished": "Tamat"
+    },
+    "role": {
+      "title": "Peranan anda",
+      "reveal": "Ketik untuk lihat — rahsiakan",
+      "hide": "Ketik untuk sembunyi",
+      "allies": "Rakan penceroboh anda: {{names}}",
+      "ringleader": "{{name}} akan meneka Butler ketika subuh",
+      "ownerAt": "👴 Datuk tua berada di {{room}} pada awal jam ini"
+    },
+    "roles": {
+      "butler": {
+        "name": "Butler",
+        "desc": "Pihak keluarga. Anda sentiasa tahu di mana datuk tua pada awal setiap jam. Bimbing yang lain — tetapi jika penceroboh dapat meneka anda, mereka menang ketika subuh."
+      },
+      "guest": {
+        "name": "Tetamu",
+        "desc": "Pihak keluarga. Pastikan datuk tua hidup hingga 6 pagi. Baiki kamera, kawal dia dan cari penceroboh."
+      },
+      "intruder": {
+        "name": "Penceroboh",
+        "desc": "Serang datuk tua dua kali sebelum subuh. Ambil senjata, cari dia bersendirian, dan jangan tertangkap."
+      }
+    },
+    "items": {
+      "knife": "Pisau",
+      "candlestick": "Kaki lilin",
+      "poison": "Racun"
+    },
+    "map": {
+      "you": "Anda"
+    },
+    "actions": {
+      "wait": {
+        "name": "Berdiam diri",
+        "desc": "Tidak buat apa-apa jam ini"
+      },
+      "guard": {
+        "name": "Kawal datuk tua",
+        "desc": "Setiap pengawal menghalang seorang penyerang"
+      },
+      "attack": {
+        "name": "Serang datuk tua",
+        "desc": "Berjaya jika penyerang lebih ramai daripada pengawal"
+      },
+      "take": {
+        "name": "Ambil {{item}}",
+        "desc": "Tukar dengan barang yang anda bawa"
+      },
+      "fix": {
+        "name": "Baiki kamera",
+        "desc": "Ia merakam semua yang berlaku di bilik ini"
+      },
+      "break": {
+        "name": "Rosakkan kamera",
+        "desc": "Semua orang akan nampak ia gelap"
+      },
+      "search": {
+        "name": "Geledah seseorang",
+        "desc": "Lihat apa yang dia bawa"
+      },
+      "watch": {
+        "name": "Tonton monitor",
+        "desc": "Lihat rakaman kamera jam ini"
+      },
+      "escort": {
+        "name": "Iring datuk tua",
+        "desc": "Dia akan ikut anda jam seterusnya"
+      }
+    },
+    "prompt": {
+      "move": "Ke mana anda pergi pada {{time}}?",
+      "moveHint": "Kekal, atau pergi ke bilik sebelah. Anda juga boleh ketik peta.",
+      "stay": "Kekal di {{room}}",
+      "go": "Pergi",
+      "act": "Apa anda buat di {{room}}?",
+      "confirm": "Buat",
+      "accuse": "Siapa patut dikurung?",
+      "accuseHint": "Bincang dahulu. Undi majoriti akan mengurung pemain itu hingga subuh.",
+      "skip": "Tiada sesiapa",
+      "vote": "Undi",
+      "skipVote": "Undi tiada sesiapa",
+      "guess": "Subuh: siapa Butler?",
+      "guessHint": "Bincang dengan rakan penceroboh. Teka Butler dengan betul dan anda tetap menang.",
+      "name": "Dialah"
+    },
+    "room": {
+      "title": "Lokasi anda",
+      "with": "Bersama: {{names}}",
+      "alone": "Anda bersendirian di sini",
+      "owner": "Datuk tua ada di sini",
+      "ownerShort": "datuk tua di sini",
+      "items": "Ada di sini: {{items}}",
+      "carrying": "Anda membawa: {{item}}",
+      "emptyHanded": "Anda tidak membawa apa-apa",
+      "following": "Datuk tua akan ikut anda jam seterusnya"
+    },
+    "chosen": {
+      "move": "Anda menuju ke {{room}}",
+      "act": "Tindakan anda: {{action}}",
+      "vote": "Anda mengundi {{name}}",
+      "skip": "Anda mengundi tiada sesiapa"
+    },
+    "waiting": {
+      "move": "Semua sedang memilih ke mana hendak pergi…",
+      "act": "Semua sedang memilih tindakan…",
+      "gathering": "Keluarga sedang mengundi…",
+      "guess": "{{name}} sedang meneka Butler…",
+      "locked": "Anda dikurung — teruskan berbincang!",
+      "on": "Menunggu {{names}}"
+    },
+    "players": {
+      "title": "Seisi rumah",
+      "ally": "Penceroboh"
+    },
+    "log": {
+      "title": "Buku nota anda",
+      "hint": "Hanya anda boleh lihat. Kongsi — atau tidak.",
+      "did": "Anda: {{action}}",
+      "tookNone": "Orang lain mengambilnya dahulu",
+      "attack": {
+        "hit": "Datuk tua diserang di sini!",
+        "blocked": "Seseorang cuba menyerang datuk tua di sini — ia dihalang"
+      },
+      "searchFound": "{{name}} membawa {{item}}",
+      "searchNothing": "{{name}} tidak membawa apa-apa",
+      "footage": "Rakaman kamera",
+      "noFootage": "Semua kamera rosak"
+    },
+    "footage": {
+      "seen": "{{names}}",
+      "empty": "tiada sesiapa",
+      "entered": "masuk: {{names}}",
+      "left": "keluar: {{names}}",
+      "owner": "datuk tua di sini",
+      "ownerEntered": "datuk tua masuk",
+      "ownerLeft": "datuk tua keluar",
+      "action": "{{name}}: {{action}}"
+    },
+    "events": {
+      "title": "Apa yang semua orang tahu",
+      "scream": "Jeritan dari {{room}}!",
+      "cameraOn": "Kamera {{room}} menyala",
+      "cameraOff": "Kamera {{room}} menjadi gelap",
+      "locked": "{{name}} telah dikurung",
+      "nobody": "Mesyuarat tidak mengurung sesiapa"
+    },
+    "result": {
+      "good": "Datuk tua terselamat!",
+      "evil": "Penceroboh menang",
+      "none": "Permainan tamat",
+      "ownerWas": "Datuk tua berada di {{room}} pada akhir malam",
+      "youWon": "Anda menang 🎉",
+      "youLost": "Anda kalah"
+    },
+    "reasons": {
+      "dawn": "Subuh tiba dan penceroboh meneka {{name}} — Butler sebenar ialah {{butler}}.",
+      "caught": "Semua penceroboh telah dikurung.",
+      "killed": "Datuk tua diserang dua kali.",
+      "butlerFound": "Subuh tiba, tetapi penceroboh menemui Butler: {{butler}}.",
+      "abandoned": "Seseorang meninggalkan meja."
+    }
+  },
   "profile": {
     "title": "Profil",
     "settings": "Tetapan",
@@ -608,7 +852,14 @@
     "deleteAccount": "Padam Akaun",
     "deleteAccountMessage": "Ini akan memadam akaun, rakan dan profil anda secara kekal. Ia tidak boleh dibuat asal. Masukkan kata laluan untuk mengesahkan.",
     "deleteAccountConfirm": "Padam Akaun Saya",
-    "borders": "Bingkai Profil"
+    "borders": "Bingkai Profil",
+    "photo": {
+      "title": "Foto profil",
+      "hint": "Pilih foto dari galeri anda. Semua pemain di meja anda akan melihatnya.",
+      "choose": "Pilih Foto",
+      "remove": "Buang Foto",
+      "failed": "Foto tidak dapat dikemas kini. Cuba lagi."
+    }
   },
   "auth": {
     "loginTitle": "Selamat kembali!",
@@ -646,7 +897,9 @@
     "already_at_table": "Sudah berada di meja anda",
     "wrong_password": "Kata laluan itu salah",
     "too_many_requests": "Terlalu banyak percubaan — sila tunggu seminit",
-    "game_not_finished": "Permainan belum tamat"
+    "game_not_finished": "Permainan belum tamat",
+    "invalid_image": "Fail itu bukan gambar yang boleh digunakan.",
+    "image_too_large": "Gambar itu terlalu besar."
   },
   "borders": {
     "title": "Bingkai Profil",

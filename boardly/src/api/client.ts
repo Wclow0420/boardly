@@ -12,6 +12,12 @@ export const API_URL =
 
 const API_BASE = `${API_URL}/api/v1`;
 
+/** Full address of a file the API serves (e.g. an avatarUrl path). */
+export function assetUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  return /^https?:/.test(path) ? path : `${API_URL}${path}`;
+}
+
 /** Error envelope: {"error": {"code": "...", "message": "..."}} */
 export class ApiError extends Error {
   code: string;
@@ -106,7 +112,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 export interface AuthUser {
   id: string;
   username: string;
-  avatar: string | null;
+  /** Profile picture path (see assetUrl), or null for the initial. */
+  avatarUrl: string | null;
   /** Profile border worn around the avatar. */
   borderId: string;
   /** Coin balance. Only sent for your own account. */
@@ -144,6 +151,7 @@ export interface RoomPlayerInfo {
   userId: string;
   username: string;
   borderId: string | null;
+  avatarUrl?: string | null;
   seat: number;
   ready: boolean;
 }
@@ -232,6 +240,16 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify({ borderId }),
       }),
+
+    /** `image`: base64 JPEG, PNG or WebP (the app sends a small square). */
+    uploadAvatar: (image: string) =>
+      request<{ user: AuthUser }>("/auth/me/avatar", {
+        method: "PUT",
+        body: JSON.stringify({ image }),
+      }),
+
+    removeAvatar: () =>
+      request<{ user: AuthUser }>("/auth/me/avatar", { method: "DELETE" }),
 
     /** Signs out every other device; returns fresh tokens for this one. */
     changePassword: (currentPassword: string, newPassword: string) =>

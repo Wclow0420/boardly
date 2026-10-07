@@ -1,3 +1,5 @@
+import base64
+import binascii
 import uuid
 from datetime import datetime, timezone
 
@@ -10,12 +12,25 @@ from app import presence
 from app.cosmetics import BORDER_IDS, BORDER_PRICES, DEFAULT_BORDER, owns_border
 from app.auth import issue_tokens, require_auth, user_from_token
 from app.extensions import db, limiter, socketio
-from app.models import Friendship, GameSession, Room, RoomPlayer, User
+from app.models import Avatar, Friendship, GameSession, Room, RoomPlayer, User
 from app.utils import api_error
 
 auth_bp = Blueprint("auth", __name__)
 
 MIN_PASSWORD_LENGTH = 6
+# The app uploads a small square (about 256px); this leaves headroom
+MAX_AVATAR_BYTES = 300 * 1024
+
+
+def _image_mime(data: bytes) -> str | None:
+    """JPEG, PNG or WebP by their file signatures; None otherwise."""
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    return None
 
 
 @auth_bp.post("/register")
@@ -94,6 +109,50 @@ def update_me():
         return api_error("border_locked", "Unlock this border first", 403)
 
     me.border_id = border_id
+    db.session.commit()
+    return {"user": me.to_self_dict()}
+
+
+@auth_bp.put("/me/avatar")
+@limiter.limit("20 per hour")
+@require_auth
+def upload_avatar():
+    """Body: {"image": "<base64 JPEG, PNG or WebP>"} — set the profile
+    picture."""
+    # base64 is 4/3 of the bytes; refuse oversized bodies before parsing
+    if (request.content_length or 0) > MAX_AVATAR_BYTES * 4 // 3 + 1024:
+        return api_error("image_too_large", "That picture is too large", 413)
+    data = request.get_json(silent=True) or {}
+    try:
+        image = base64.b64decode(data.get("image") or "", validate=True)
+    except (binascii.Error, ValueError):
+        image = b""
+    mime = _image_mime(image)
+    if mime is None:
+        return api_error("invalid_image", "Upload a JPEG, PNG or WebP picture", 400)
+    if len(image) > MAX_AVATAR_BYTES:
+        return api_error("image_too_large", "That picture is too large", 413)
+
+    me = g.current_user
+    avatar = db.session.get(Avatar, me.id)
+    if avatar is None:
+        avatar = Avatar(user_id=me.id)
+        db.session.add(avatar)
+    avatar.data = image
+    avatar.mime = mime
+    avatar.updated_at = datetime.now(timezone.utc)
+    me.avatar = uuid.uuid4().hex[:12]
+    db.session.commit()
+    return {"user": me.to_self_dict()}
+
+
+@auth_bp.delete("/me/avatar")
+@require_auth
+def delete_avatar():
+    """Back to the letter avatar."""
+    me = g.current_user
+    Avatar.query.filter_by(user_id=me.id).delete()
+    me.avatar = None
     db.session.commit()
     return {"user": me.to_self_dict()}
 
@@ -181,6 +240,7 @@ def delete_account():
     me.username = f"deleted-{uuid.uuid4().hex[:12]}"
     me.password_hash = ""  # never matches a password hash check
     me.avatar = None
+    Avatar.query.filter_by(user_id=me.id).delete()
     me.border_id = DEFAULT_BORDER
     me.coins = 0
     me.owned_borders = []
