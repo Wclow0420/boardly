@@ -1,4 +1,5 @@
-# Render blueprint: the Boardly backend and its Postgres database.
+# Render blueprint: the Boardly backend, its Postgres database and the
+# web version of the app.
 # In Render: New → Blueprint → pick this repository. Render creates both,
 # wires DATABASE_URL, and generates SECRET_KEY.
 #
@@ -39,4 +40,30 @@ services:
         value: "1"
       - key: PORT
         value: "5005"
-      # Add CORS_ORIGINS here once the web version has an address
+      # Set this in the dashboard to the web app's address (boardly-web
+      # below) so only that site can call the API from a browser.
+      - key: CORS_ORIGINS
+        sync: false
+
+  # The web version of the app: static files built from the Expo project.
+  - type: web
+    name: boardly-web
+    runtime: static
+    rootDir: boardly
+    buildCommand: npm ci && npm run build:web
+    staticPublishPath: dist
+    autoDeploy: true
+    # Single-page app: table links (/join/CODE, /lobby/CODE, /game/CODE)
+    # are handled in the browser, so every path serves index.html.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: APP_ENV
+        value: production
+      # Baked into the build. Change it here if the backend's address changes.
+      - key: EXPO_PUBLIC_API_URL
+        value: https://boardly-api-m3y5.onrender.com
