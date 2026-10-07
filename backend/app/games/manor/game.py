@@ -27,6 +27,8 @@ Full state (server only — clients get `view_for`):
   "positions": [4, 4, ...],          # room by seat, None = locked up
   "owner": {"room": 2, "hp": 2, "startRoom": 2, "escort": None},
   "cameras": [None, False, ...],     # by room: None = no camera
+  "cameraSeen": [[None, False, ...], ...],
+                                     # by seat: each camera as last seen
   "items": {"knife": 3, ...},        # room, or None while carried
   "carrying": [None, "knife", ...],  # by seat
   "hideUsed": [False, ...],          # intruders' once-a-game hide
@@ -146,6 +148,12 @@ class Manor(BaseGame):
             "items": items,
             "carrying": carrying,
             "hideUsed": [False] * num_players,
+            # Everyone knows the cameras start broken; after that you only
+            # see one from its own room or from the Security Room
+            "cameraSeen": [
+                [False if r in CAMERA_ROOMS else None for r in range(len(ROOMS))]
+                for _ in range(num_players)
+            ],
             "orders": [None] * num_players,
             "lastMove": None,
             "events": [],
@@ -230,14 +238,14 @@ class Manor(BaseGame):
             owner["room"] = self.rng.choice([owner_from] + neighbors(owner_from))
         owner["escort"] = None
 
-        return {
+        return self._look_at_cameras({
             **state,
             "phase": "act",
             "positions": positions,
             "owner": owner,
             "orders": [None] * n,
             "lastMove": {"from": old, "ownerFrom": owner_from},
-        }
+        })
 
     # --- step 2: act
 
@@ -362,13 +370,6 @@ class Manor(BaseGame):
                     recording.append(r)
         for s in acting("break"):
             cameras[positions[s]] = False
-        for r in CAMERA_ROOMS:
-            if cameras[r] != state["cameras"][r]:
-                events.append({
-                    "hour": hour,
-                    "kind": "cameraOn" if cameras[r] else "cameraOff",
-                    "room": r,
-                })
 
         last = state["lastMove"] or {"from": positions, "ownerFrom": room}
         footage = [
@@ -414,7 +415,7 @@ class Manor(BaseGame):
                 **notes[s],
             })
 
-        state = {
+        state = self._look_at_cameras({
             **state,
             "owner": owner,
             "cameras": cameras,
@@ -423,13 +424,34 @@ class Manor(BaseGame):
             "orders": [None] * n,
             "events": events,
             "logs": logs,
-        }
+        })
 
         if owner["hp"] <= 0:
             return self._finish(state, "evil", "killed")
         if hit or hour in GATHERING_HOURS:
             return {**state, "phase": "gathering"}
         return self._next_hour(state)
+
+    @staticmethod
+    def _seen_cameras(state):
+        """Each seat's memory of the cameras (games started before
+        cameras went private: everyone saw them start broken)."""
+        if "cameraSeen" in state:
+            return state["cameraSeen"]
+        start = [False if r in CAMERA_ROOMS else None for r in range(len(ROOMS))]
+        return [list(start) for _ in range(state["numPlayers"])]
+
+    def _look_at_cameras(self, state):
+        """Players see a camera's status from its own room, and every
+        camera's from the Security Room's monitors."""
+        cameras = state["cameras"]
+        seen = [list(row) for row in self._seen_cameras(state)]
+        for s, here in enumerate(state["positions"]):
+            if here == SECURITY:
+                seen[s] = list(cameras)
+            elif here in CAMERA_ROOMS:
+                seen[s][here] = cameras[here]
+        return {**state, "cameraSeen": seen}
 
     @staticmethod
     def _visible(order):
@@ -593,7 +615,12 @@ class Manor(BaseGame):
             "hours": HOURS,
             "ownerHp": owner["hp"],
             "ownerMaxHp": OWNER_HP,
-            "cameras": state["cameras"],
+            # Cameras as I last saw them; the truth only once it's over
+            "cameras": state["cameras"]
+            if finished
+            else self._seen_cameras(state)[seat]
+            if seated
+            else [False if r in CAMERA_ROOMS else None for r in range(len(ROOMS))],
             "events": state["events"],
             "locked": [s for s, r in enumerate(state["positions"]) if r is None],
             # Who has chosen this phase — never what

@@ -392,7 +392,7 @@
           "items": [
             "Kawal: lindungi datuk tua. Serang (penceroboh bersenjata): mencederakannya jika penyerang lebih ramai daripada pengawal.",
             "Ambil senjata: pisau (Dapur), kaki lilin (Perpustakaan) atau racun (Bilik Wain). Anda bawa satu barang; mengambil yang lain akan menukarnya.",
-            "Baiki kamera (Perpustakaan, Bilik Tidur, Dapur, Ruang Masuk, Taman); penceroboh boleh merosakkannya. Semua orang nampak kamera menyala dan padam, tetapi bukan siapa yang melakukannya.",
+            "Baiki kamera (Perpustakaan, Bilik Tidur, Dapur, Ruang Masuk, Taman); penceroboh boleh merosakkannya. Anda hanya nampak sama ada kamera hidup dari biliknya sendiri atau dari Bilik Kawalan — tiada sesiapa diberitahu apabila ia berubah.",
             "Tonton monitor (Bilik Kawalan): lihat siapa yang dirakam kamera jam ini dan sama ada datuk tua masuk atau keluar — bukan apa yang orang buat.",
             "Geledah: raba seseorang secara rawak — anda hanya tahu sama ada dia membawa sesuatu. Pengawal Keselamatan tahu siapa dan apa yang dibawa.",
             "Lampu suluh (Pengawal Keselamatan): lihat siapa di bilik anda dan apa yang setiap orang buat jam ini. Iring: datuk tua ikut anda jam seterusnya.",
@@ -703,7 +703,8 @@
       "poison": "Racun"
     },
     "map": {
-      "you": "Anda"
+      "you": "Anda",
+      "camHint": "Kamera seperti yang anda lihat kali terakhir. Anda hanya nampak kamera dari biliknya sendiri atau dari Bilik Kawalan."
     },
     "actions": {
       "wait": {
@@ -728,7 +729,7 @@
       },
       "break": {
         "name": "Rosakkan kamera",
-        "desc": "Semua orang akan nampak ia gelap"
+        "desc": "Hanya anda tahu ia mati — sehingga ada yang melihat"
       },
       "search": {
         "name": "Geledah seseorang",

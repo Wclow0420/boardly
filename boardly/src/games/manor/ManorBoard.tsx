@@ -118,6 +118,11 @@ export function ManorBoard({
         onSelect={(room) => choose({ room })}
         showOwner={roleShown || state.myRole !== "butler"}
       />
+      {!over ? (
+        <AppText variant="tiny" color="textSubtle" style={{ marginTop: -spacing.md }}>
+          {`📷  ${t("manor.map.camHint")}`}
+        </AppText>
+      ) : null}
 
       {over ? (
         <Card>

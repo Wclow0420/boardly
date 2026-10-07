@@ -392,7 +392,7 @@
           "items": [
             "Guard: protect the old man. Attack (intruders with a weapon): hurts him if attackers outnumber guards.",
             "Take a weapon: the knife (Kitchen), candlestick (Library) or poison (Wine Cellar). You carry one item; taking another swaps it.",
-            "Fix a camera (Library, Bedroom, Kitchen, Foyer, Garden); intruders can break one. Everyone sees cameras go on and off, but not who did it.",
+            "Fix a camera (Library, Bedroom, Kitchen, Foyer, Garden); intruders can break one. You only see whether a camera is on from its own room or from the Security Room — nobody is told when it changes.",
             "Watch the monitors (Security Room): see who working cameras saw this hour and whether the old man came or went — not what anyone did.",
             "Search: pat down someone at random — you only learn whether they carry something. The Guard learns who it was and what they carry.",
             "Flashlight (Guard): see who is in your room and what each of them does this hour. Escort: the old man follows you next hour.",
@@ -706,7 +706,8 @@
       "poison": "Poison"
     },
     "map": {
-      "you": "You"
+      "you": "You",
+      "camHint": "Cameras as you last saw them. You only see one from its own room or from the Security Room."
     },
     "actions": {
       "wait": {
@@ -731,7 +732,7 @@
       },
       "break": {
         "name": "Break the camera",
-        "desc": "Everyone will see it go dark"
+        "desc": "Only you know it's off — until someone looks"
       },
       "search": {
         "name": "Search someone",
