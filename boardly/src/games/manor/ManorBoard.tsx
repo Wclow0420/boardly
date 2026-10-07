@@ -13,7 +13,9 @@ import {
   ITEM_EMOJI,
   ROOMS,
   ROOM_EMOJI,
+  SECURITY,
   availableActions,
+  canHide,
   guessTargets,
   reachable,
   screamsByRoom,
@@ -58,6 +60,7 @@ export function ManorBoard({
     room?: number;
     action?: ActionChoice;
     target?: number | null;
+    hide?: boolean;
   }>({ step });
   const current = pick.step === step ? pick : { step };
   const [roleShown, setRoleShown] = useState(false);
@@ -106,7 +109,11 @@ export function ManorBoard({
 
       <HouseMap
         state={state}
-        selectable={task === "move" ? reachable(state.myRoom) : []}
+        selectable={
+          task === "move"
+            ? reachable(state.myRoom, state.myRole === "intruder")
+            : []
+        }
         selected={current.room}
         onSelect={(room) => choose({ room })}
         showOwner={roleShown || state.myRole !== "butler"}
@@ -158,17 +165,17 @@ export function ManorBoard({
             <ActPrompt
               state={state}
               choice={current.action}
-              target={current.target}
+              hide={current.hide ?? false}
               busy={busy}
               names={names}
-              onChoose={(action) => choose({ action, target: undefined })}
-              onTarget={(target) => choose({ target })}
+              onChoose={(action) => choose({ action })}
+              onToggleHide={() => choose({ hide: !current.hide })}
               onConfirm={() =>
                 send({
                   type: "act",
                   action: current.action?.action,
                   item: current.action?.item,
-                  target: current.target,
+                  hide: current.hide && canHide(state) ? true : undefined,
                 })
               }
             />
@@ -273,7 +280,13 @@ function RoleCard({
         <>
           <View style={styles.roleHead}>
             <AppText style={{ fontSize: 44 }}>
-              {role === "butler" ? "🤵" : role === "intruder" ? "🗡️" : "🧳"}
+              {role === "butler"
+                ? "🤵"
+                : role === "guard"
+                  ? "🔦"
+                  : role === "intruder"
+                    ? "🗡️"
+                    : "🧳"}
             </AppText>
             <View style={styles.grow}>
               <AppText
@@ -437,6 +450,7 @@ function MovePrompt({
   const { t } = useTranslation();
   const { spacing } = useTheme();
   const here = state.myRoom;
+  const anywhere = state.myRole === "intruder";
 
   return (
     <>
@@ -444,10 +458,11 @@ function MovePrompt({
         {`🚶  ${t("manor.prompt.move", { time: names.hourName(state.hour) })}`}
       </AppText>
       <AppText variant="caption" color="textMuted" style={{ marginTop: 4 }}>
-        {t("manor.prompt.moveHint")}
+        {t(anywhere ? "manor.prompt.moveHintIntruder" : "manor.prompt.moveHint")}
+        {here === SECURITY ? ` ${t("manor.prompt.leaveSecurity")}` : ""}
       </AppText>
       <View style={[styles.chips, { marginTop: spacing.md }]}>
-        {reachable(here).map((room) => (
+        {reachable(here, anywhere).map((room) => (
           <Chip
             key={room}
             label={`${ROOM_EMOJI[ROOMS[room]]}  ${
@@ -475,27 +490,26 @@ function MovePrompt({
 function ActPrompt({
   state,
   choice,
-  target,
+  hide,
   busy,
   names,
   onChoose,
-  onTarget,
+  onToggleHide,
   onConfirm,
 }: {
   state: ManorState;
   choice?: ActionChoice;
-  target?: number | null;
+  hide: boolean;
   busy: boolean;
   names: Names;
   onChoose: (choice: ActionChoice) => void;
-  onTarget: (seat: number) => void;
+  onToggleHide: () => void;
   onConfirm: () => void;
 }) {
   const { t } = useTranslation();
   const { colors, spacing } = useTheme();
   const options = availableActions(state);
-  const needsTarget = choice?.action === "search";
-  const ready = choice !== undefined && (!needsTarget || typeof target === "number");
+  const ready = choice !== undefined;
 
   return (
     <>
@@ -503,8 +517,8 @@ function ActPrompt({
         {`🕯️  ${t("manor.prompt.act", { room: names.roomName(state.myRoom ?? 0) })}`}
       </AppText>
       <AppText variant="caption" color="textMuted" style={{ marginTop: 4 }}>
-        {state.roommates.length > 0
-          ? t("manor.room.with", { names: names.namesOf(state.roommates) })
+        {state.othersHere > 0
+          ? t("manor.room.others", { count: state.othersHere })
           : t("manor.room.alone")}
         {state.ownerHere ? `  ·  👴 ${t("manor.room.ownerShort")}` : ""}
       </AppText>
@@ -545,18 +559,32 @@ function ActPrompt({
           );
         })}
       </View>
-      {needsTarget ? (
-        <View style={[styles.chips, { marginTop: spacing.md }]}>
-          {state.roommates.map((seat) => (
-            <Chip
-              key={seat}
-              label={names.nameOf(seat)}
-              selected={target === seat}
-              disabled={busy}
-              onPress={() => onTarget(seat)}
-            />
-          ))}
-        </View>
+      {canHide(state) ? (
+        <Pressable
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: hide }}
+          disabled={busy}
+          onPress={onToggleHide}
+          style={[
+            styles.action,
+            styles.toggle,
+            {
+              marginTop: spacing.md,
+              backgroundColor: hide ? colors.primarySoft : colors.well,
+              borderColor: hide ? colors.primary : colors.border,
+            },
+          ]}
+        >
+          <View style={styles.grow}>
+            <AppText variant="label">{`🫥  ${t("manor.prompt.hide")}`}</AppText>
+            <AppText variant="tiny" color="textSubtle" style={{ marginTop: 2 }}>
+              {t("manor.prompt.hideHint")}
+            </AppText>
+          </View>
+          <AppText variant="label" color={hide ? "primary" : "textSubtle"}>
+            {hide ? "☑" : "☐"}
+          </AppText>
+        </Pressable>
       ) : null}
       <Button
         label={t("manor.prompt.confirm")}
@@ -722,6 +750,7 @@ function Waiting({
         item: mine.item ? t(`manor.items.${mine.item}`) : "",
       }),
     });
+    if (mine.hide) chosen += ` · 🫥 ${t("manor.chosen.hidden")}`;
   } else if (mine && "target" in mine) {
     chosen =
       mine.target === null || mine.target === undefined
@@ -770,8 +799,8 @@ function MyRoom({ state, names }: { state: ManorState; names: Names }) {
         {`${ROOM_EMOJI[ROOMS[room]]}  ${names.roomName(room)}`}
       </AppText>
       <AppText variant="body" color="textMuted" style={{ marginTop: 4 }}>
-        {state.roommates.length > 0
-          ? t("manor.room.with", { names: names.namesOf(state.roommates) })
+        {state.othersHere > 0
+          ? t("manor.room.others", { count: state.othersHere })
           : t("manor.room.alone")}
       </AppText>
       {state.ownerHere ? (
@@ -929,8 +958,8 @@ function logLines(
   t: (key: string, options?: Record<string, unknown>) => string
 ): string[] {
   const lines = [
-    entry.with.length > 0
-      ? t("manor.room.with", { names: names.namesOf(entry.with) })
+    entry.others > 0
+      ? t("manor.room.others", { count: entry.others })
       : t("manor.room.alone"),
   ];
   if (entry.owner) lines.push(`👴 ${t("manor.room.owner")}`);
@@ -944,16 +973,36 @@ function logLines(
       })
     );
   }
+  if (entry.action.hide) lines.push(`🫥 ${t("manor.chosen.hidden")}`);
   if (entry.took === null) lines.push(t("manor.log.tookNone"));
   if (entry.attack) lines.push(`⚠️ ${t(`manor.log.attack.${entry.attack}`)}`);
-  if (entry.search) {
+  const search = entry.search;
+  if (search && "found" in search) {
+    lines.push(t(search.found ? "manor.log.feltSomething" : "manor.log.feltNothing"));
+  } else if (search) {
     lines.push(
-      entry.search.item
+      search.item
         ? t("manor.log.searchFound", {
-            name: names.nameOf(entry.search.target),
-            item: t(`manor.items.${entry.search.item}`),
+            name: names.nameOf(search.target),
+            item: t(`manor.items.${search.item}`),
           })
-        : t("manor.log.searchNothing", { name: names.nameOf(entry.search.target) })
+        : t("manor.log.searchNothing", { name: names.nameOf(search.target) })
+    );
+  }
+  if (entry.seen) {
+    lines.push(
+      entry.seen.length === 0
+        ? `🔦 ${t("manor.log.seenNobody")}`
+        : `🔦 ${entry.seen
+            .map((o) =>
+              t("manor.log.seenAction", {
+                name: names.nameOf(o.seat),
+                action: t(`manor.actions.${o.action}.name`, {
+                  item: o.item ? t(`manor.items.${o.item}`) : "",
+                }),
+              })
+            )
+            .join(" · ")}`
     );
   }
   return lines;
@@ -986,18 +1035,6 @@ function FootageList({ footage, names }: { footage: Footage[]; names: Names }) {
           if (clip.ownerEntered) parts.push(t("manor.footage.ownerEntered"));
           else if (clip.ownerLeft) parts.push(t("manor.footage.ownerLeft"));
           else if (clip.owner) parts.push(t("manor.footage.owner"));
-          for (const a of clip.actions) {
-            if (a.action === "wait") continue;
-            parts.push(
-              t("manor.footage.action", {
-                name: names.nameOf(a.seat),
-                action: t(`manor.actions.${a.action}.name`, {
-                  item: a.item ? t(`manor.items.${a.item}`) : "",
-                }),
-              }) +
-                (a.target !== undefined ? ` → ${names.nameOf(a.target)}` : "")
-            );
-          }
           return (
             <AppText key={clip.room} variant="tiny" style={{ marginTop: 3 }}>
               {`${ROOM_EMOJI[ROOMS[clip.room]]} ${names.roomName(clip.room)}: ${parts.join(" · ")}`}
@@ -1148,6 +1185,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
   },
+  toggle: { flexDirection: "row", alignItems: "center", gap: 10 },
   record: { paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
   footage: {
     marginTop: 6,

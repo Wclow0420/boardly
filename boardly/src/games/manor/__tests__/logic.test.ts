@@ -1,5 +1,6 @@
 import {
   availableActions,
+  canHide,
   currentSeat,
   guessTargets,
   neighbors,
@@ -27,7 +28,8 @@ function view(overrides: Partial<ManorState> = {}): ManorState {
     myRoom: 4,
     myItem: null,
     myOrder: null,
-    roommates: [],
+    othersHere: 0,
+    hideUsed: false,
     ownerHere: false,
     ownerSeenAt: null,
     followingMe: false,
@@ -50,6 +52,15 @@ describe("floor plan", () => {
     expect(neighbors(0).sort()).toEqual([1, 3]);
     expect(reachable(8)).toEqual([5, 7, 8]);
     expect(reachable(null)).toEqual([]);
+  });
+
+  it("lets intruders go anywhere", () => {
+    expect(reachable(0, true)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8]);
+  });
+
+  it("never keeps anyone in the security room for a second hour", () => {
+    expect(reachable(5)).toEqual([2, 4, 8]);
+    expect(reachable(5, true)).not.toContain(5);
   });
 });
 
@@ -85,11 +96,23 @@ describe("availableActions", () => {
       "fix",
       "wait",
     ]);
-    expect(names(view({ myRoom: 5, roommates: [2] }))).toEqual([
+    expect(names(view({ myRoom: 5, othersHere: 1 }))).toEqual([
       "watch",
       "search",
       "wait",
     ]);
+  });
+
+  it("gives the flashlight to the guard", () => {
+    expect(names(view({ myRole: "guard" }))).toEqual(["flashlight", "wait"]);
+  });
+
+  it("lets an armed intruder hide a weapon once", () => {
+    const intruder = view({ myRole: "intruder", myItem: "knife" });
+    expect(canHide(intruder)).toBe(true);
+    expect(canHide({ ...intruder, hideUsed: true })).toBe(false);
+    expect(canHide({ ...intruder, myItem: null })).toBe(false);
+    expect(canHide(view({ myItem: "knife" }))).toBe(false);
   });
 
   it("keeps attack and break for armed intruders", () => {

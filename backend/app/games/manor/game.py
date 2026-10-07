@@ -1,14 +1,17 @@
 """Midnight Manor engine — hidden roles in a dark house.
 
 A rich old man has his relatives over for the night. Some of them are
-Intruders in disguise who want him dead before dawn; the rest (one of
-them the Butler, who knows where he is) want him alive at 6am.
+Intruders in disguise who want him dead before dawn; the rest (the
+Butler, who knows where he is, the Guard, who has the flashlight, and
+the Guests) want him alive at 6am.
 
 The night is 8 hours. Each hour everyone secretly moves (stay, or one
-room up/down/left/right), then secretly picks one action. It's dark:
-in your room you see who is there, whether the old man is, and what
-items lie around — but not what anyone does. Only working cameras see
-actions, and only whoever watches the monitors sees the footage.
+room up/down/left/right; intruders may slip into any room), then
+secretly picks one action. It's dark: in your room you only know how
+many others are there, whether the old man is, and what items lie
+around — not who anyone is or what they do. The Guard's flashlight
+shows who is there and what they do. Working cameras show who was in
+their room, and only to whoever watches the monitors.
 
 House (room index):
   0 Study      1 Library 📷   2 Bedroom 📷
@@ -18,7 +21,7 @@ House (room index):
 Full state (server only — clients get `view_for`):
 {
   "numPlayers": 5,
-  "roles": ["butler", "intruder", "guest", ...],   # by seat
+  "roles": ["butler", "guard", "intruder", ...],   # by seat
   "phase": "move" | "act" | "gathering" | "guess" | "finished",
   "hour": 0,                         # 0 = 10pm ... 7 = 5am
   "positions": [4, 4, ...],          # room by seat, None = locked up
@@ -26,6 +29,7 @@ Full state (server only — clients get `view_for`):
   "cameras": [None, False, ...],     # by room: None = no camera
   "items": {"knife": 3, ...},        # room, or None while carried
   "carrying": [None, "knife", ...],  # by seat
+  "hideUsed": [False, ...],          # intruders' once-a-game hide
   "orders": [None, {...}, ...],      # this phase's secret choices
   "lastMove": {"from": [...], "ownerFrom": 2},
   "events": [...],                   # public timeline
@@ -38,9 +42,11 @@ Full state (server only — clients get `view_for`):
 
 Moves:
   {"type": "move", "room": r}                        phase "move"
-  {"type": "act", "action": a, ...}                  phase "act"
+  {"type": "act", "action": a, "hide"?: bool, ...}   phase "act"
       a: wait | guard | attack | take (+ "item") | fix | break
-         | search (+ "target") | watch | escort
+         | search | flashlight | watch | escort
+      hide: an intruder hides their weapon from searches this hour
+      (once a game)
   {"type": "accuse", "target": seat | None}          phase "gathering"
   {"type": "guess", "target": seat}                  phase "guess"
 """
@@ -67,18 +73,18 @@ OWNER_HP = 2
 GATHERING_HOURS = (2, 5)
 
 ROLE_SETS = {
-    4: ["butler", "guest", "guest", "intruder"],
-    5: ["butler", "guest", "guest", "intruder", "intruder"],
-    6: ["butler", "guest", "guest", "guest", "intruder", "intruder"],
-    7: ["butler", "guest", "guest", "guest",
+    4: ["butler", "guard", "guest", "intruder"],
+    5: ["butler", "guard", "guest", "intruder", "intruder"],
+    6: ["butler", "guard", "guest", "guest", "intruder", "intruder"],
+    7: ["butler", "guard", "guest", "guest",
         "intruder", "intruder", "intruder"],
-    8: ["butler", "guest", "guest", "guest", "guest",
+    8: ["butler", "guard", "guest", "guest", "guest",
         "intruder", "intruder", "intruder"],
 }
 
 ACTIONS = (
     "wait", "guard", "attack", "take", "fix", "break",
-    "search", "watch", "escort",
+    "search", "flashlight", "watch", "escort",
 )
 
 
@@ -139,6 +145,7 @@ class Manor(BaseGame):
                         for r in range(len(ROOMS))],
             "items": items,
             "carrying": carrying,
+            "hideUsed": [False] * num_players,
             "orders": [None] * num_players,
             "lastMove": None,
             "events": [],
@@ -191,8 +198,14 @@ class Manor(BaseGame):
             raise GameError("Not moving right now")
         here = state["positions"][seat]
         room = move.get("room")
-        if type(room) is not int or (room != here and room not in neighbors(here)):
+        if is_evil(state["roles"][seat]):
+            # Intruders slip through the dark to any room
+            if type(room) is not int or not 0 <= room < len(ROOMS):
+                raise GameError("Pick a room")
+        elif type(room) is not int or (room != here and room not in neighbors(here)):
             raise GameError("Stay, or move to a room next to yours")
+        if here == SECURITY and room == SECURITY:
+            raise GameError("You can't stay in the Security Room")
         state = self._submit(state, seat, {"room": room})
         if not self._all_in(state):
             return state
@@ -239,7 +252,19 @@ class Manor(BaseGame):
         role = state["roles"][seat]
         owner_here = state["owner"]["room"] == here
         camera = state["cameras"][here]
+        others = [
+            s for s, r in enumerate(state["positions"]) if r == here and s != seat
+        ]
         order = {"action": action}
+
+        if move.get("hide"):
+            if not is_evil(role):
+                raise GameError("Only intruders hide weapons")
+            if state["carrying"][seat] is None:
+                raise GameError("You have nothing to hide")
+            if state["hideUsed"][seat]:
+                raise GameError("You already hid your weapon once")
+            order["hide"] = True
 
         if action in ("guard", "escort") and not owner_here:
             raise GameError("The old man isn't here")
@@ -262,20 +287,18 @@ class Manor(BaseGame):
                 raise GameError("Only intruders break cameras")
             if camera is not True:
                 raise GameError("No working camera here")
-        elif action == "search":
-            target = move.get("target")
-            if (
-                type(target) is not int
-                or target == seat
-                or not 0 <= target < state["numPlayers"]
-                or state["positions"][target] != here
-            ):
-                raise GameError("Pick someone in your room")
-            order["target"] = target
+        elif action == "search" and not others:
+            raise GameError("No one else is here")
+        elif action == "flashlight" and role != "guard":
+            raise GameError("Only the Guard has the flashlight")
         elif action == "watch" and here != SECURITY:
             raise GameError("The monitors are in the Security Room")
 
         state = self._submit(state, seat, order)
+        if order.get("hide"):
+            hide_used = list(state["hideUsed"])
+            hide_used[seat] = True
+            state = {**state, "hideUsed": hide_used}
         if not self._all_in(state):
             return state
         return self._resolve_act(state)
@@ -355,9 +378,25 @@ class Manor(BaseGame):
         for s in acting("watch"):
             notes[s]["footage"] = footage
 
+        # Searches pat down a random person in the dark. Everyone feels
+        # whether they carry something; only the Guard's flashlight shows
+        # who it was and what. A hidden weapon isn't found this hour.
         for s in acting("search"):
-            target = orders[s]["target"]
-            notes[s]["search"] = {"target": target, "item": carrying[target]}
+            others = [o for o in active if o != s and positions[o] == positions[s]]
+            target = self.rng.choice(others)
+            item = None if orders[target].get("hide") else carrying[target]
+            if roles[s] == "guard":
+                notes[s]["search"] = {"target": target, "item": item}
+            else:
+                notes[s]["search"] = {"found": item is not None}
+
+        # The flashlight: who is here, and what each of them is doing
+        for s in acting("flashlight"):
+            notes[s]["seen"] = [
+                {"seat": o, **self._visible(orders[o])}
+                for o in active
+                if o != s and positions[o] == positions[s]
+            ]
 
         escorts = acting("escort")
         owner["escort"] = self.rng.choice(escorts) if escorts else None
@@ -368,7 +407,8 @@ class Manor(BaseGame):
             logs[s].append({
                 "hour": hour,
                 "room": here,
-                "with": [o for o in active if o != s and positions[o] == here],
+                # In the dark: how many, never who
+                "others": sum(1 for o in active if o != s and positions[o] == here),
                 "owner": room == here,
                 "action": orders[s],
                 **notes[s],
@@ -392,8 +432,13 @@ class Manor(BaseGame):
         return self._next_hour(state)
 
     @staticmethod
+    def _visible(order):
+        """An order as someone watching sees it (a hidden weapon isn't)."""
+        return {k: v for k, v in order.items() if k != "hide"}
+
+    @staticmethod
     def _footage(state, room, last):
-        """What one camera saw this hour (night vision: actions too)."""
+        """Who one camera saw this hour — faces, not what anyone did."""
         positions = state["positions"]
         inside = [s for s, r in enumerate(positions) if r == room]
         owner = state["owner"]
@@ -408,11 +453,6 @@ class Manor(BaseGame):
             "owner": owner["room"] == room,
             "ownerEntered": owner["room"] == room and last["ownerFrom"] != room,
             "ownerLeft": last["ownerFrom"] == room and owner["room"] != room,
-            "actions": [
-                {"seat": s, **state["orders"][s]}
-                for s in inside
-                if state["orders"][s] is not None
-            ],
         }
 
     def _next_hour(self, state):
@@ -562,10 +602,12 @@ class Manor(BaseGame):
             "myRoom": here,
             "myItem": state["carrying"][seat] if seated else None,
             "myOrder": state["orders"][seat] if seated else None,
-            "roommates": [
-                s for s, r in enumerate(state["positions"])
+            # It's dark: how many others share my room, never who
+            "othersHere": sum(
+                1 for s, r in enumerate(state["positions"])
                 if here is not None and r == here and s != seat
-            ],
+            ),
+            "hideUsed": state["hideUsed"][seat] if seated else False,
             "ownerHere": here is not None and owner["room"] == here,
             # The Butler always knows where he was when the hour began
             "ownerSeenAt": (owner["startRoom"] if phase == "act" else owner["room"])

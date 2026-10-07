@@ -374,8 +374,8 @@
         {
           "title": "Pihak",
           "items": [
-            "Keluarga: Butler dan Tetamu. Penceroboh: 1 untuk 4 pemain, 2 untuk 5–6, 3 untuk 7–8.",
-            "Penceroboh saling mengenali. Butler sentiasa tahu di mana datuk tua pada awal setiap jam.",
+            "Keluarga: Butler, Pengawal Keselamatan dan Tetamu. Penceroboh: 1 untuk 4 pemain, 2 untuk 5–6, 3 untuk 7–8.",
+            "Penceroboh saling mengenali. Butler sentiasa tahu di mana datuk tua pada awal setiap jam. Pengawal Keselamatan membawa lampu suluh.",
             "Dengan 4 pemain, penceroboh tunggal bermula dengan pisau."
           ]
         },
@@ -383,8 +383,8 @@
           "title": "Setiap jam",
           "items": [
             "Malam bermula 10 malam hingga 6 pagi: 8 jam. Semua bermula di Dewan Besar; datuk tua bermula di Bilik Tidur.",
-            "Bergerak: secara rahsia kekal, atau pergi satu bilik ke atas, bawah, kiri atau kanan. Datuk tua juga merayau secara rawak.",
-            "Bertindak: secara rahsia pilih satu tindakan. Gelap — anda nampak siapa di bilik anda, sama ada datuk tua ada dan barang di situ, tetapi bukan apa yang orang lain buat."
+            "Bergerak: secara rahsia kekal, atau pergi satu bilik ke atas, bawah, kiri atau kanan. Penceroboh boleh menyelinap ke mana-mana bilik. Tiada sesiapa boleh kekal di Bilik Kawalan dua jam berturut-turut.",
+            "Bertindak: secara rahsia pilih satu tindakan. Gelap — anda tahu berapa orang lain di bilik anda dan sama ada datuk tua ada, tetapi bukan siapa mereka atau apa yang mereka buat."
           ]
         },
         {
@@ -392,9 +392,11 @@
           "items": [
             "Kawal: lindungi datuk tua. Serang (penceroboh bersenjata): mencederakannya jika penyerang lebih ramai daripada pengawal.",
             "Ambil senjata: pisau (Dapur), kaki lilin (Perpustakaan) atau racun (Bilik Wain). Anda bawa satu barang; mengambil yang lain akan menukarnya.",
-            "Baiki kamera (Perpustakaan, Bilik Tidur, Dapur, Ruang Masuk, Taman). Penceroboh boleh merosakkannya. Semua orang nampak kamera menyala dan padam.",
-            "Tonton monitor (Bilik Kawalan): lihat semua yang dirakam kamera jam ini — termasuk saat terakhir sebelum kamera dirosakkan.",
-            "Geledah: lihat apa yang dibawa seseorang di bilik anda. Iring: datuk tua ikut anda jam seterusnya."
+            "Baiki kamera (Perpustakaan, Bilik Tidur, Dapur, Ruang Masuk, Taman); penceroboh boleh merosakkannya. Semua orang nampak kamera menyala dan padam, tetapi bukan siapa yang melakukannya.",
+            "Tonton monitor (Bilik Kawalan): lihat siapa yang dirakam kamera jam ini dan sama ada datuk tua masuk atau keluar — bukan apa yang orang buat.",
+            "Geledah: raba seseorang secara rawak — anda hanya tahu sama ada dia membawa sesuatu. Pengawal Keselamatan tahu siapa dan apa yang dibawa.",
+            "Lampu suluh (Pengawal Keselamatan): lihat siapa di bilik anda dan apa yang setiap orang buat jam ini. Iring: datuk tua ikut anda jam seterusnya.",
+            "Sekali dalam permainan, penceroboh boleh menyembunyikan senjata selama sejam: geledahan tidak menjumpai apa-apa."
           ]
         },
         {
@@ -688,7 +690,11 @@
       },
       "intruder": {
         "name": "Penceroboh",
-        "desc": "Serang datuk tua dua kali sebelum subuh. Ambil senjata, cari dia bersendirian, dan jangan tertangkap."
+        "desc": "Serang datuk tua dua kali sebelum subuh. Anda boleh menyelinap ke mana-mana bilik setiap jam, dan sekali dalam permainan anda boleh menyembunyikan senjata daripada geledahan selama sejam."
+      },
+      "guard": {
+        "name": "Pengawal Keselamatan",
+        "desc": "Pihak keluarga. Anda membawa lampu suluh: suluh untuk lihat siapa di bilik anda dan apa yang mereka buat, dan geledahan anda menunjukkan siapa dan apa yang dibawa."
       }
     },
     "items": {
@@ -718,7 +724,7 @@
       },
       "fix": {
         "name": "Baiki kamera",
-        "desc": "Ia merakam semua yang berlaku di bilik ini"
+        "desc": "Ia menunjukkan siapa keluar masuk bilik ini"
       },
       "break": {
         "name": "Rosakkan kamera",
@@ -726,15 +732,19 @@
       },
       "search": {
         "name": "Geledah seseorang",
-        "desc": "Lihat apa yang dia bawa"
+        "desc": "Raba seseorang secara rawak dalam gelap"
       },
       "watch": {
         "name": "Tonton monitor",
-        "desc": "Lihat rakaman kamera jam ini"
+        "desc": "Lihat siapa yang dirakam kamera jam ini"
       },
       "escort": {
         "name": "Iring datuk tua",
         "desc": "Dia akan ikut anda jam seterusnya"
+      },
+      "flashlight": {
+        "name": "Nyalakan lampu suluh",
+        "desc": "Lihat siapa di sini dan apa yang mereka buat"
       }
     },
     "prompt": {
@@ -751,24 +761,30 @@
       "skipVote": "Undi tiada sesiapa",
       "guess": "Subuh: siapa Butler?",
       "guessHint": "Bincang dengan rakan penceroboh. Teka Butler dengan betul dan anda tetap menang.",
-      "name": "Dialah"
+      "name": "Dialah",
+      "moveHintIntruder": "Penceroboh boleh menyelinap ke mana-mana bilik. Anda juga boleh ketik peta.",
+      "leaveSecurity": "Anda tidak boleh kekal di Bilik Kawalan.",
+      "hide": "Sembunyikan senjata jam ini",
+      "hideHint": "Geledahan tidak akan menjumpainya jam ini. Sekali sahaja."
     },
     "room": {
       "title": "Lokasi anda",
-      "with": "Bersama: {{names}}",
       "alone": "Anda bersendirian di sini",
       "owner": "Datuk tua ada di sini",
       "ownerShort": "datuk tua di sini",
       "items": "Ada di sini: {{items}}",
       "carrying": "Anda membawa: {{item}}",
       "emptyHanded": "Anda tidak membawa apa-apa",
-      "following": "Datuk tua akan ikut anda jam seterusnya"
+      "following": "Datuk tua akan ikut anda jam seterusnya",
+      "others_one": "{{count}} orang lain di sini",
+      "others_other": "{{count}} orang lain di sini"
     },
     "chosen": {
       "move": "Anda menuju ke {{room}}",
       "act": "Tindakan anda: {{action}}",
       "vote": "Anda mengundi {{name}}",
-      "skip": "Anda mengundi tiada sesiapa"
+      "skip": "Anda mengundi tiada sesiapa",
+      "hidden": "senjata disembunyikan"
     },
     "waiting": {
       "move": "Semua sedang memilih ke mana hendak pergi…",
@@ -791,10 +807,14 @@
         "hit": "Datuk tua diserang di sini!",
         "blocked": "Seseorang cuba menyerang datuk tua di sini — ia dihalang"
       },
-      "searchFound": "{{name}} membawa {{item}}",
-      "searchNothing": "{{name}} tidak membawa apa-apa",
+      "searchFound": "🔦 {{name}} membawa {{item}}",
+      "searchNothing": "🔦 {{name}} tidak membawa apa-apa",
       "footage": "Rakaman kamera",
-      "noFootage": "Semua kamera rosak"
+      "noFootage": "Semua kamera rosak",
+      "feltSomething": "Anda terasa sesuatu pada dia — tetapi siapa?",
+      "feltNothing": "Dia tidak membawa apa-apa",
+      "seenNobody": "Tiada orang lain di sini",
+      "seenAction": "{{name}}: {{action}}"
     },
     "footage": {
       "seen": "{{names}}",
@@ -803,8 +823,7 @@
       "left": "keluar: {{names}}",
       "owner": "datuk tua di sini",
       "ownerEntered": "datuk tua masuk",
-      "ownerLeft": "datuk tua keluar",
-      "action": "{{name}}: {{action}}"
+      "ownerLeft": "datuk tua keluar"
     },
     "events": {
       "title": "Apa yang semua orang tahu",
