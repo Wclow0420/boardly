@@ -39,6 +39,15 @@ describe("usePromptSheet", () => {
     expect(sheet.present).toHaveBeenCalledTimes(2);
   });
 
+  it("never dismisses a sheet it didn't present", async () => {
+    const { sheet, hook } = await setup();
+    await hook.rerender({ open: false, step: "b" });
+    expect(sheet.dismiss).not.toHaveBeenCalled();
+    // so it still opens when the player's turn comes
+    await hook.rerender({ open: true, step: "c" });
+    expect(sheet.present).toHaveBeenCalledTimes(1);
+  });
+
   it("leaves a sheet closed once it is no longer needed", async () => {
     const { sheet, hook } = await setup();
     await hook.rerender({ open: true, step: "a" });

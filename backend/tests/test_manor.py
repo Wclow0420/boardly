@@ -312,7 +312,7 @@ def test_fixed_camera_shows_who_was_there_not_what_they_did():
     state = hour(state, {1: SECURITY},
                  acts={0: {"action": "fix"}, 1: {"action": "watch"}})
     assert state["cameras"][KITCHEN] is True
-    assert {"hour": 0, "kind": "cameraOn", "room": KITCHEN} in state["events"]
+    assert state["events"] == []  # nobody is told it came on
     feed = state["logs"][1][-1]["footage"]
     assert [f["room"] for f in feed] == [KITCHEN]
     assert feed[0]["seats"] == [0, 3]
@@ -328,7 +328,7 @@ def test_a_broken_camera_still_shows_who_was_there_last():
     state = hour(state, {0: KITCHEN, 1: SECURITY},
                  acts={3: {"action": "break"}, 1: {"action": "watch"}})
     assert state["cameras"][KITCHEN] is False
-    assert {"hour": 0, "kind": "cameraOff", "room": KITCHEN} in state["events"]
+    assert state["events"] == []  # nobody is told it went dark
     feed = state["logs"][1][-1]["footage"][0]
     assert feed["seats"] == [0, 3] and feed["entered"] == [0]
     assert "break" not in json.dumps(feed)  # not who broke it
@@ -492,3 +492,23 @@ def test_api_plays_an_hour_with_private_views(client, make_user):
     state = _view(client, room, users[0])
     assert state["phase"] == "act"
     assert state["othersHere"] == 3
+
+
+def test_you_only_see_a_camera_from_its_room_or_the_monitors():
+    state = place(start(), [KITCHEN, HALL, HALL, HALL, HALL], owner=BEDROOM)
+    state = hour(state, acts={0: {"action": "fix"}})
+    assert state["cameras"][KITCHEN] is True
+    assert game.view_for(state, 0)["cameras"][KITCHEN] is True  # the fixer
+    assert game.view_for(state, 2)["cameras"][KITCHEN] is False  # elsewhere
+
+    # walking into the Security Room shows every camera
+    state = move_all(state, {2: SECURITY})
+    assert game.view_for(state, 2)["cameras"][KITCHEN] is True
+    # and you remember what you saw after you leave
+    state = act_all(state)
+    state = move_all(state, {2: HALL})
+    assert game.view_for(state, 2)["cameras"][KITCHEN] is True
+    assert game.view_for(state, 1)["cameras"][KITCHEN] is False
+
+    # spectators never see the real cameras mid-game
+    assert game.view_for(state, -1)["cameras"][KITCHEN] is False
