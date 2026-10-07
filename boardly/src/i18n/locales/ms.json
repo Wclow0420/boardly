@@ -384,7 +384,7 @@
           "items": [
             "Malam bermula 10 malam hingga 6 pagi: 8 jam. Semua bermula di Dewan Besar; datuk tua bermula di Bilik Tidur.",
             "Bergerak: secara rahsia kekal, atau pergi satu bilik ke atas, bawah, kiri atau kanan. Penceroboh boleh menyelinap ke mana-mana bilik. Tiada sesiapa boleh kekal di Bilik Kawalan dua jam berturut-turut.",
-            "Bertindak: secara rahsia pilih satu tindakan. Gelap — anda tahu berapa orang lain di bilik anda dan sama ada datuk tua ada, tetapi bukan siapa mereka atau apa yang mereka buat."
+            "Bertindak: Secara rahsia pilih satu tindakan. Gelap — anda tahu sama ada ada orang lain di bilik anda dan sama ada datuk tua ada, tetapi bukan siapa, berapa ramai atau apa yang mereka buat."
           ]
         },
         {
@@ -777,8 +777,7 @@
       "carrying": "Anda membawa: {{item}}",
       "emptyHanded": "Anda tidak membawa apa-apa",
       "following": "Datuk tua akan ikut anda jam seterusnya",
-      "others_one": "{{count}} orang lain di sini",
-      "others_other": "{{count}} orang lain di sini"
+      "someone": "Ada orang lain di sini — anda tidak nampak siapa"
     },
     "chosen": {
       "move": "Anda menuju ke {{room}}",

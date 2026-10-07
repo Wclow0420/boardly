@@ -84,8 +84,10 @@ export interface Footage {
 export interface LogEntry {
   hour: number;
   room: number;
-  /** How many others shared the room — in the dark, never who. */
-  others: number;
+  /** Someone else shared the room — in the dark, not who or how many. */
+  company?: boolean;
+  /** Older notes kept a head count. */
+  others?: number;
   owner: boolean;
   action: Order;
   took?: Item | null;
@@ -125,8 +127,8 @@ export interface ManorState {
   myRoom: number | null;
   myItem: Item | null;
   myOrder: Order | null;
-  /** How many others share my room (it's dark: not who). */
-  othersHere: number;
+  /** Someone else is in my room (it's dark: not who, not how many). */
+  someoneHere: boolean;
   /** Intruders: the once-a-game hide is spent. */
   hideUsed: boolean;
   ownerHere: boolean;
@@ -230,7 +232,7 @@ export function availableActions(state: ManorState): ActionChoice[] {
   if (camera === false) out.push({ action: "fix" });
   if (camera === true && evil) out.push({ action: "break" });
   if (room === SECURITY) out.push({ action: "watch" });
-  if (state.othersHere > 0) out.push({ action: "search" });
+  if (state.someoneHere) out.push({ action: "search" });
   if (state.myRole === "guard") out.push({ action: "flashlight" });
   out.push({ action: "wait" });
   return out;
