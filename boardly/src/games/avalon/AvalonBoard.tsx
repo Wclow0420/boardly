@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -8,9 +8,9 @@ import {
   BottomSheetModal,
   Button,
   Card,
-  GorhomBottomSheetModal,
 } from "@/components/ui";
 import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
+import { usePromptSheet } from "@/hooks/usePromptSheet";
 import { fontFamily, useTheme } from "@/theme";
 import { moveHaptic, tapHaptic } from "@/utils/haptics";
 import type { GameBoardProps } from "../types";
@@ -45,7 +45,6 @@ export function AvalonBoard({
   const { t } = useTranslation();
   const { colors, spacing } = useTheme();
   const insets = useSafeAreaInsets();
-  const sheetRef = useRef<GorhomBottomSheetModal>(null);
 
   // Seats picked while building a team / choosing the assassin's target.
   // Tagged with the step it belongs to, so it clears itself when the
@@ -105,10 +104,10 @@ export function AvalonBoard({
   // Whatever the game needs from me comes up as a sheet pinned to the
   // bottom. It can't be swiped away — it closes when I've answered.
   const needsMe = action !== null;
-  useEffect(() => {
-    if (needsMe) sheetRef.current?.present();
-    else sheetRef.current?.dismiss();
-  }, [needsMe, step]);
+  const { ref: sheetRef, onDismiss: onSheetDismiss } = usePromptSheet(
+    needsMe,
+    step
+  );
 
   /** Tappable player chips, for picking a team or the Hitman's target. */
   const picker = (seats: number[]) => (
@@ -402,7 +401,12 @@ export function AvalonBoard({
       {/* Room to scroll the table clear of the open sheet */}
       {needsMe ? <View style={{ height: SHEET_CLEARANCE }} /> : null}
 
-      <BottomSheetModal ref={sheetRef} dismissable={false} backdrop={false}>
+      <BottomSheetModal
+        ref={sheetRef}
+        onDismiss={onSheetDismiss}
+        dismissable={false}
+        backdrop={false}
+      >
         <View
           style={{
             paddingHorizontal: spacing.xl,
