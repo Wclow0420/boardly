@@ -384,7 +384,7 @@
           "items": [
             "The night runs from 10 PM to 6 AM: 8 hours. Everyone starts in the Grand Hall; the old man starts in the Bedroom.",
             "Move: secretly stay, or go one room up, down, left or right. Intruders can slip into any room. Nobody can stay in the Security Room two hours in a row.",
-            "Act: secretly pick one action. It's dark — you know how many others are in your room and whether the old man is there, but not who they are or what they do."
+            "Act: Secretly pick one action. It's dark — you know whether someone else is in your room and whether the old man is there, but not who, how many, or what they do."
           ]
         },
         {
@@ -780,8 +780,7 @@
       "carrying": "You carry: {{item}}",
       "emptyHanded": "You carry nothing",
       "following": "The old man will follow you next hour",
-      "others_one": "{{count}} other person here",
-      "others_other": "{{count}} other people here"
+      "someone": "Someone else is here — you can't see who"
     },
     "chosen": {
       "move": "You're heading to the {{room}}",

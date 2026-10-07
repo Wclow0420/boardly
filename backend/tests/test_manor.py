@@ -132,9 +132,10 @@ def test_move_waits_for_everyone_then_reveals_the_room():
     state = move_all({**state, "orders": [None] * 5}, {0: KITCHEN, 3: KITCHEN})
     assert state["phase"] == "act"
     assert state["positions"] == [KITCHEN, HALL, HALL, KITCHEN, HALL]
-    # In the dark you know how many share your room, not who
-    assert game.view_for(state, 0)["othersHere"] == 1
-    assert game.view_for(state, 1)["othersHere"] == 2
+    # In the dark you only know someone else is there — not who, not how many
+    assert game.view_for(state, 0)["someoneHere"] is True
+    assert game.view_for(state, 1)["someoneHere"] is True
+    assert "othersHere" not in game.view_for(state, 1)
     assert "roommates" not in game.view_for(state, 0)
 
 
@@ -260,7 +261,7 @@ def test_a_search_in_the_dark_only_feels_something():
     state = hour(state, acts={0: {"action": "search"}})
     # a random person in the room (here the first); not who, not what
     assert state["logs"][0][-1]["search"] == {"found": True}
-    assert state["logs"][0][-1]["others"] == 2
+    assert state["logs"][0][-1]["company"] is True
     with pytest.raises(GameError):  # nobody else in the study
         game.apply_move(move_all(place(state, [STUDY] + state["positions"][1:])),
                         0, {"type": "act", "action": "search"})
@@ -449,7 +450,7 @@ def test_view_keeps_secrets():
 
     spectator = game.view_for(state, -1)
     assert spectator["myRole"] is None and spectator["log"] == []
-    assert spectator["othersHere"] == 0
+    assert spectator["someoneHere"] is False
 
 
 # ------------------------------------------------------------------ API
@@ -491,7 +492,7 @@ def test_api_plays_an_hour_with_private_views(client, make_user):
         assert res.status_code == 200
     state = _view(client, room, users[0])
     assert state["phase"] == "act"
-    assert state["othersHere"] == 3
+    assert state["someoneHere"] is True
 
 
 def test_you_only_see_a_camera_from_its_room_or_the_monitors():

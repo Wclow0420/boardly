@@ -522,9 +522,7 @@ function ActPrompt({
         {`🕯️  ${t("manor.prompt.act", { room: names.roomName(state.myRoom ?? 0) })}`}
       </AppText>
       <AppText variant="caption" color="textMuted" style={{ marginTop: 4 }}>
-        {state.othersHere > 0
-          ? t("manor.room.others", { count: state.othersHere })
-          : t("manor.room.alone")}
+        {state.someoneHere ? t("manor.room.someone") : t("manor.room.alone")}
         {state.ownerHere ? `  ·  👴 ${t("manor.room.ownerShort")}` : ""}
       </AppText>
       <View style={{ gap: 8, marginTop: spacing.md }}>
@@ -804,9 +802,7 @@ function MyRoom({ state, names }: { state: ManorState; names: Names }) {
         {`${ROOM_EMOJI[ROOMS[room]]}  ${names.roomName(room)}`}
       </AppText>
       <AppText variant="body" color="textMuted" style={{ marginTop: 4 }}>
-        {state.othersHere > 0
-          ? t("manor.room.others", { count: state.othersHere })
-          : t("manor.room.alone")}
+        {state.someoneHere ? t("manor.room.someone") : t("manor.room.alone")}
       </AppText>
       {state.ownerHere ? (
         <AppText variant="bodyMedium" style={{ marginTop: 4 }}>
@@ -963,8 +959,8 @@ function logLines(
   t: (key: string, options?: Record<string, unknown>) => string
 ): string[] {
   const lines = [
-    entry.others > 0
-      ? t("manor.room.others", { count: entry.others })
+    entry.company || (entry.others ?? 0) > 0
+      ? t("manor.room.someone")
       : t("manor.room.alone"),
   ];
   if (entry.owner) lines.push(`👴 ${t("manor.room.owner")}`);

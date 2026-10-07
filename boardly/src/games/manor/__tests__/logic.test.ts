@@ -28,7 +28,7 @@ function view(overrides: Partial<ManorState> = {}): ManorState {
     myRoom: 4,
     myItem: null,
     myOrder: null,
-    othersHere: 0,
+    someoneHere: false,
     hideUsed: false,
     ownerHere: false,
     ownerSeenAt: null,
@@ -96,7 +96,7 @@ describe("availableActions", () => {
       "fix",
       "wait",
     ]);
-    expect(names(view({ myRoom: 5, othersHere: 1 }))).toEqual([
+    expect(names(view({ myRoom: 5, someoneHere: true }))).toEqual([
       "watch",
       "search",
       "wait",

@@ -7,8 +7,8 @@ the Guests) want him alive at 6am.
 
 The night is 8 hours. Each hour everyone secretly moves (stay, or one
 room up/down/left/right; intruders may slip into any room), then
-secretly picks one action. It's dark: in your room you only know how
-many others are there, whether the old man is, and what items lie
+secretly picks one action. It's dark: in your room you only know whether
+someone else is there, whether the old man is, and what items lie
 around — not who anyone is or what they do. The Guard's flashlight
 shows who is there and what they do. Working cameras show who was in
 their room, and only to whoever watches the monitors.
@@ -408,8 +408,8 @@ class Manor(BaseGame):
             logs[s].append({
                 "hour": hour,
                 "room": here,
-                # In the dark: how many, never who
-                "others": sum(1 for o in active if o != s and positions[o] == here),
+                # In the dark: only that someone else was there
+                "company": any(o != s and positions[o] == here for o in active),
                 "owner": room == here,
                 "action": orders[s],
                 **notes[s],
@@ -629,10 +629,10 @@ class Manor(BaseGame):
             "myRoom": here,
             "myItem": state["carrying"][seat] if seated else None,
             "myOrder": state["orders"][seat] if seated else None,
-            # It's dark: how many others share my room, never who
-            "othersHere": sum(
-                1 for s, r in enumerate(state["positions"])
-                if here is not None and r == here and s != seat
+            # It's dark: only whether anyone else is in my room
+            "someoneHere": any(
+                here is not None and r == here and s != seat
+                for s, r in enumerate(state["positions"])
             ),
             "hideUsed": state["hideUsed"][seat] if seated else False,
             "ownerHere": here is not None and owner["room"] == here,
