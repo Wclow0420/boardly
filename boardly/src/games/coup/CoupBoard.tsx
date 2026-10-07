@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Pressable,
   StyleSheet,
@@ -14,9 +14,9 @@ import {
   AppText,
   BottomSheetModal,
   Button,
-  GorhomBottomSheetModal,
 } from "@/components/ui";
 import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
+import { usePromptSheet } from "@/hooks/usePromptSheet";
 import { fontFamily, useTheme } from "@/theme";
 import { moveHaptic, tapHaptic } from "@/utils/haptics";
 import type { GameBoardProps } from "../types";
@@ -63,7 +63,6 @@ export function CoupBoard({
   const { t } = useTranslation();
   const { colors, spacing } = useTheme();
   const insets = useSafeAreaInsets();
-  const sheetRef = useRef<GorhomBottomSheetModal>(null);
 
   // An action that still needs a target, and the cards picked to keep in
   // an exchange. Tagged with the step so they clear when play moves on.
@@ -87,10 +86,10 @@ export function CoupBoard({
   // Whatever the game needs from me comes up as a sheet pinned to the
   // bottom. It can't be swiped away — it closes when I've answered.
   const needsMe = task !== null;
-  useEffect(() => {
-    if (needsMe) sheetRef.current?.present();
-    else sheetRef.current?.dismiss();
-  }, [needsMe, step]);
+  const { ref: sheetRef, onDismiss: onSheetDismiss } = usePromptSheet(
+    needsMe,
+    step
+  );
 
   const userOf = (seat: number) =>
     players.find((p) => p.seat === seat)?.username ?? `#${seat + 1}`;
@@ -501,7 +500,12 @@ export function CoupBoard({
       {/* Room to scroll the table clear of the open sheet */}
       {needsMe ? <View style={{ height: SHEET_CLEARANCE }} /> : null}
 
-      <BottomSheetModal ref={sheetRef} dismissable={false} backdrop={false}>
+      <BottomSheetModal
+        ref={sheetRef}
+        onDismiss={onSheetDismiss}
+        dismissable={false}
+        backdrop={false}
+      >
         <View
           style={{
             paddingHorizontal: spacing.xl,
