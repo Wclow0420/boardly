@@ -27,6 +27,10 @@ interface SessionContextValue {
   register: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   changePassword: (current: string, next: string) => Promise<void>;
+  /** Replaces the signed-in user with a fresher copy from the server. */
+  updateUser: (user: AuthUser) => void;
+  /** Spends coins to unlock a profile border. */
+  buyBorder: (borderId: string) => Promise<void>;
   /** Changes the profile border everyone sees around this player. */
   setBorder: (borderId: string) => Promise<void>;
   /** Permanently deletes the account, then signs out. */
@@ -119,6 +123,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     [applyAuthResult]
   );
 
+  const updateUser = useCallback((next: AuthUser) => setUser(next), []);
+
+  const buyBorder = useCallback(async (borderId: string) => {
+    const { user: updated } = await api.auth.buyBorder(borderId);
+    setUser(updated);
+  }, []);
+
   const setBorder = useCallback(async (borderId: string) => {
     const { user: updated } = await api.auth.setBorder(borderId);
     setUser(updated);
@@ -140,6 +151,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       register,
       logout,
       changePassword,
+      updateUser,
+      buyBorder,
       setBorder,
       deleteAccount,
     }),
@@ -150,6 +163,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       register,
       logout,
       changePassword,
+      updateUser,
+      buyBorder,
       setBorder,
       deleteAccount,
     ]

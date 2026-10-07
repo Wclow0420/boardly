@@ -18,6 +18,7 @@ import {
   Screen,
   Skeleton,
 } from "@/components/ui";
+import { EarnedCoins } from "@/features/coins/EarnedCoins";
 import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
 import { useSession } from "@/context/SessionContext";
 import { useMakeMove, useRematch } from "@/features/game/hooks";
@@ -289,6 +290,7 @@ function GameScreenBody({
     <View style={{ marginTop: spacing.xxl, gap: spacing.md }}>
       {mySeat >= 0 ? (
         <>
+          <EarnedCoins sessionId={session.id} />
           {room.rematchCode ? (
             <AppText variant="caption" color="textMuted" align="center">
               {t("game.rematchOpen")}

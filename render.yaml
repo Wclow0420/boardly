@@ -1,0 +1,42 @@
+# Render blueprint: the Boardly backend and its Postgres database.
+# In Render: New → Blueprint → pick this repository. Render creates both,
+# wires DATABASE_URL, and generates SECRET_KEY.
+#
+# Plans below are the free ones so nothing is charged by surprise. They
+# are for trying things out only: a free web service sleeps when idle
+# (dropping live game connections) and a free database is temporary.
+# Move both to paid plans before real players use it.
+
+databases:
+  - name: boardly-db
+    databaseName: boardly
+    user: boardly
+    plan: free
+    region: singapore
+
+services:
+  - type: web
+    name: boardly-api
+    runtime: docker
+    rootDir: backend
+    plan: free
+    region: singapore
+    # Keep this at one instance: live game state is held in memory.
+    numInstances: 1
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: boardly-db
+          property: connectionString
+      # Behind Render's proxy, so rate limits see each player's real IP
+      - key: TRUST_PROXY
+        value: "1"
+      - key: PORT
+        value: "5005"
+      # Add CORS_ORIGINS here once the web version has an address

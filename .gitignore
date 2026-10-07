@@ -1,1 +1,4 @@
+# Raw source art kept outside the app (the app's copies live in boardly/assets)
+/Game Image/
+/ChatGPT Image*.png
 .DS_Store

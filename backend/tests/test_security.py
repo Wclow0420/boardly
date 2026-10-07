@@ -1,10 +1,13 @@
 """Production hardening: config guard, rate limits, session
 revocation, account deletion, socket room access."""
 
+import uuid
+
 import pytest
 
 from app import create_app
-from app.extensions import limiter, socketio
+from app.extensions import db, limiter, socketio
+from app.models import User
 from tests.conftest import TestConfig
 
 AUTH = "/api/v1/auth"
@@ -165,7 +168,7 @@ def test_room_channel_is_members_only(app, client, make_user):
     assert "room_updated" not in heard(anonymous)
 
 
-def test_profile_border_default_change_and_visibility(client, make_user):
+def test_profile_border_default_change_and_visibility(app, client, make_user):
     alice = make_user("alice_border")
     bob = make_user("bob_border")
 
@@ -177,6 +180,11 @@ def test_profile_border_default_change_and_visibility(client, make_user):
     )
     assert bad.status_code == 400
     assert bad.get_json()["error"]["code"] == "invalid_border"
+
+    # (she has unlocked it; buying is covered in test_coins.py)
+    user = db.session.get(User, uuid.UUID(alice["id"]))
+    user.owned_borders = ["ember"]
+    db.session.commit()
 
     ok = client.patch(
         "/api/v1/auth/me", json={"borderId": "ember"}, headers=alice["headers"]

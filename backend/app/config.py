@@ -3,13 +3,32 @@ import os
 DEV_SECRET_KEY = "dev-secret-change-me"
 
 
-class Config:
-    SECRET_KEY = os.environ.get("SECRET_KEY", DEV_SECRET_KEY)
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
+def _database_url() -> str:
+    url = os.environ.get(
         "DATABASE_URL",
         # Host-machine default: docker-compose maps the db to localhost:5439
         "postgresql://boardly:boardly@localhost:5439/boardly",
     )
+    # Some hosts hand out the old "postgres://" scheme, which SQLAlchemy
+    # no longer accepts.
+    if url.startswith("postgres://"):
+        url = "postgresql://" + url[len("postgres://") :]
+    return url
+
+
+def cors_origins():
+    """Web origins allowed to call the API and open sockets. CORS_ORIGINS
+    is a comma-separated list; unset means any origin (fine for the
+    mobile apps, which send none — set it once the web app has a home)."""
+    raw = os.environ.get("CORS_ORIGINS", "").strip()
+    if not raw or raw == "*":
+        return "*"
+    return [origin.strip() for origin in raw.split(",") if origin.strip()]
+
+
+class Config:
+    SECRET_KEY = os.environ.get("SECRET_KEY", DEV_SECRET_KEY)
+    SQLALCHEMY_DATABASE_URI = _database_url()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     APP_ENV = os.environ.get("APP_ENV", "development")
     # Set to 1 when running behind one reverse proxy / load balancer so

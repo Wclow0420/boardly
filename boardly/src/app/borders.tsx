@@ -14,6 +14,8 @@ import {
   TableBackdrop,
 } from "@/components/ui";
 import { useSession } from "@/context/SessionContext";
+import { CoinIcon } from "@/features/coins/CoinIcon";
+import { CoinPill } from "@/features/coins/CoinPill";
 import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
 import {
   BORDERS,
@@ -28,17 +30,23 @@ import { successHaptic, tapHaptic } from "@/utils/haptics";
 export default function BordersScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { user, setBorder } = useSession();
+  const { user, setBorder, buyBorder } = useSession();
   const { colors } = useTheme();
   const equippedId = useEquippedBorder();
   const [selectedId, setSelectedId] = useState(equippedId);
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
 
-  const equip = async (id: string) => {
+  const coins = user?.coins ?? 0;
+  const owns = (border: { id: string; price: number }) =>
+    border.price === 0 || (user?.ownedBorders ?? []).includes(border.id);
+
+  /** Wear a border; a locked one is bought first, then worn. */
+  const equip = async (id: string, locked: boolean) => {
     setSaving(true);
     setFailed(false);
     try {
+      if (locked) await buyBorder(id);
       await setBorder(id);
       successHaptic();
     } catch {
@@ -51,6 +59,8 @@ export default function BordersScreen() {
   const name = user?.username ?? "?";
   const selected = getBorder(selectedId);
   const rarityColor = RARITY_COLORS[selected.rarity];
+  const selectedOwned = owns(selected);
+  const shortBy = Math.max(0, selected.price - coins);
 
   return (
     <Screen
@@ -70,6 +80,8 @@ export default function BordersScreen() {
           colors={TABLE.ribbonGold}
           standalone
         />
+        <View style={styles.grow} />
+        <CoinPill amount={coins} />
       </View>
 
       {/* Preview of the selected border */}
@@ -91,22 +103,39 @@ export default function BordersScreen() {
               {t(`borders.rarity.${selected.rarity}`)}
             </AppText>
           </View>
-          <AppText variant="label" style={{ color: TABLE.yellow.fill[0] }}>
-            {selected.price > 0 ? `🪙 ${selected.price}` : t("borders.free")}
-          </AppText>
+          <View style={styles.price}>
+            {selected.price > 0 ? <CoinIcon size={16} /> : null}
+            <AppText variant="label" style={{ color: TABLE.yellow.fill[0] }}>
+              {selected.price > 0 ? selected.price : t("borders.free")}
+            </AppText>
+          </View>
         </View>
         <Button
           size="md"
           label={
             selected.id === equippedId
               ? t("borders.equipped")
-              : t("borders.equip")
+              : !selectedOwned
+                ? t("borders.unlock", { price: selected.price })
+                : t("borders.equip")
           }
-          disabled={selected.id === equippedId}
+          leftIcon={
+            !selectedOwned && selected.id !== equippedId ? (
+              <CoinIcon size={18} />
+            ) : undefined
+          }
+          disabled={
+            selected.id === equippedId || (!selectedOwned && shortBy > 0)
+          }
           loading={saving}
-          onPress={() => equip(selected.id)}
+          onPress={() => equip(selected.id, !selectedOwned)}
           style={styles.equip}
         />
+        {!selectedOwned && shortBy > 0 ? (
+          <AppText variant="caption" color="textMuted" align="center">
+            {t("borders.notEnough", { count: shortBy })}
+          </AppText>
+        ) : null}
         {failed ? (
           <AppText variant="caption" color="danger" align="center">
             {t("common.errorTitle")}
@@ -156,6 +185,9 @@ export default function BordersScreen() {
                 {border.id === equippedId ? (
                   <AppText style={styles.check}>✓</AppText>
                 ) : null}
+                {!owns(border) ? (
+                  <AppText style={styles.lock}>🔒</AppText>
+                ) : null}
               </Pressable>
             );
           })}
@@ -172,6 +204,8 @@ export default function BordersScreen() {
 const styles = StyleSheet.create({
   screen: { paddingBottom: 16 },
   header: { flexDirection: "row", alignItems: "center", gap: 8 },
+  grow: { flex: 1 },
+  price: { flexDirection: "row", alignItems: "center", gap: 4 },
   preview: { marginTop: 12, alignItems: "center", gap: 4, paddingVertical: 10 },
   // Room for the border to draw outside the avatar
   previewAvatar: { paddingTop: 34, paddingBottom: 34 },
@@ -205,6 +239,7 @@ const styles = StyleSheet.create({
   filler: { width: "31.3%" },
   tileAvatar: { paddingTop: 24, paddingBottom: 22 },
   dot: { width: 6, height: 6, borderRadius: 3, marginTop: 4 },
+  lock: { position: "absolute", top: 4, left: 6, fontSize: 11 },
   check: {
     position: "absolute",
     top: 4,

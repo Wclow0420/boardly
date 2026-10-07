@@ -58,6 +58,16 @@ export default ({ config }) => {
   const environment = process.env.APP_ENV || "development";
   console.log(`⚙️ Building app for environment: ${environment}`);
 
+  // EXPO_PUBLIC_API_URL is not in eas.json: it comes from the EAS
+  // environment of the build profile (expo.dev → Environment variables),
+  // or from .env.local on your own machine. Without it the app would
+  // quietly talk to localhost, so a cloud build stops here instead.
+  if (!process.env.EXPO_PUBLIC_API_URL && environment !== "development") {
+    const message = `EXPO_PUBLIC_API_URL is not set for the "${environment}" environment. Add it on expo.dev (Environment variables).`;
+    if (process.env.EAS_BUILD === "true") throw new Error(message);
+    console.warn(`⚠️ ${message}`);
+  }
+
   const { name, bundleIdentifier, packageName, scheme } =
     getDynamicAppConfig(environment);
 

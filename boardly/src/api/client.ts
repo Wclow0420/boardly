@@ -1,8 +1,9 @@
 // REST client for the Flask backend (/api/v1).
 // Identity comes from the Bearer access token; on 401 the client
 // refreshes once (rotating both tokens) and retries the request.
-// EXPO_PUBLIC_API_URL is set per build profile in eas.json;
-// defaults to the local dev backend.
+// EXPO_PUBLIC_API_URL comes from the EAS environment of the build
+// profile (set on expo.dev), or from .env.local on your own machine;
+// without it the app talks to the local dev backend.
 
 import { tokenStorage } from "./tokenStorage";
 
@@ -108,6 +109,18 @@ export interface AuthUser {
   avatar: string | null;
   /** Profile border worn around the avatar. */
   borderId: string;
+  /** Coin balance. Only sent for your own account. */
+  coins?: number;
+  /** Paid borders you have unlocked. Only sent for your own account. */
+  ownedBorders?: string[];
+}
+
+export interface CoinRewardInfo {
+  id: string;
+  sessionId: string;
+  gameType: string;
+  amount: number;
+  reason: "win" | "played";
 }
 
 export interface AuthResult {
@@ -208,6 +221,12 @@ export const api = {
 
     stats: () => request<{ stats: UserStats }>("/auth/me/stats"),
 
+    buyBorder: (borderId: string) =>
+      request<{ user: AuthUser }>(
+        `/auth/me/borders/${encodeURIComponent(borderId)}/buy`,
+        { method: "POST" }
+      ),
+
     setBorder: (borderId: string) =>
       request<{ user: AuthUser }>("/auth/me", {
         method: "PATCH",
@@ -225,6 +244,17 @@ export const api = {
       request<{ ok: true }>("/auth/me", {
         method: "DELETE",
         body: JSON.stringify({ password }),
+      }),
+  },
+
+  rewards: {
+    list: () =>
+      request<{ rewards: CoinRewardInfo[]; total: number }>("/rewards"),
+
+    /** Moves every waiting reward onto the coin balance. */
+    claim: () =>
+      request<{ claimed: number; user: AuthUser }>("/rewards/claim", {
+        method: "POST",
       }),
   },
 

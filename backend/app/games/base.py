@@ -21,6 +21,10 @@ class BaseGame(ABC):
     min_players: int = 2
     max_players: int = 2
 
+    # Coins each player earns when a game finishes (see app/rewards.py)
+    coins_win: int = 10
+    coins_play: int = 3
+
     # Display metadata consumed by the app's catalogue/lobby UI
     emoji: str = "🎲"
     tile_color: str = "#FFF2D6"  # pastel behind the emoji tile

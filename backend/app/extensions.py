@@ -7,6 +7,8 @@ from flask_migrate import Migrate
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 
+from app.config import cors_origins
+
 db = SQLAlchemy()
 migrate = Migrate()
 cors = CORS()
@@ -16,6 +18,6 @@ limiter = Limiter(key_func=get_remote_address, storage_uri="memory://")
 # threading + simple-websocket, in development (python wsgi.py) and in
 # production (gunicorn gthread, one worker — see Dockerfile).
 socketio = SocketIO(
-    cors_allowed_origins="*",
+    cors_allowed_origins=cors_origins(),
     async_mode=os.environ.get("SOCKETIO_ASYNC_MODE", "threading"),
 )

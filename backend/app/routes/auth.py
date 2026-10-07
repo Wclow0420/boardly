@@ -7,7 +7,7 @@ from sqlalchemy import or_
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app import presence
-from app.cosmetics import BORDER_IDS, DEFAULT_BORDER
+from app.cosmetics import BORDER_IDS, BORDER_PRICES, DEFAULT_BORDER, owns_border
 from app.auth import issue_tokens, require_auth, user_from_token
 from app.extensions import db, limiter, socketio
 from app.models import Friendship, GameSession, Room, RoomPlayer, User
@@ -40,7 +40,7 @@ def register():
     user = User(username=username, password_hash=generate_password_hash(password))
     db.session.add(user)
     db.session.commit()
-    return {"user": user.to_dict(), **issue_tokens(user)}, 201
+    return {"user": user.to_self_dict(), **issue_tokens(user)}, 201
 
 
 @auth_bp.post("/login")
@@ -59,7 +59,7 @@ def login():
     ):
         return api_error("invalid_credentials", "Wrong username or password", 401)
 
-    return {"user": user.to_dict(), **issue_tokens(user)}
+    return {"user": user.to_self_dict(), **issue_tokens(user)}
 
 
 @auth_bp.post("/refresh")
@@ -72,13 +72,13 @@ def refresh():
         user = user_from_token(token, "refresh")
     except pyjwt.InvalidTokenError:
         return api_error("unauthorized", "Invalid or expired refresh token", 401)
-    return {"user": user.to_dict(), **issue_tokens(user)}
+    return {"user": user.to_self_dict(), **issue_tokens(user)}
 
 
 @auth_bp.get("/me")
 @require_auth
 def me():
-    return {"user": g.current_user.to_dict()}
+    return {"user": g.current_user.to_self_dict()}
 
 
 @auth_bp.patch("/me")
@@ -90,10 +90,38 @@ def update_me():
     border_id = data.get("borderId")
     if border_id not in BORDER_IDS:
         return api_error("invalid_border", "Unknown profile border", 400)
+    if not owns_border(me, border_id):
+        return api_error("border_locked", "Unlock this border first", 403)
 
     me.border_id = border_id
     db.session.commit()
-    return {"user": me.to_dict()}
+    return {"user": me.to_self_dict()}
+
+
+@auth_bp.post("/me/borders/<border_id>/buy")
+@require_auth
+def buy_border(border_id):
+    """Spend coins to unlock a profile border."""
+    if border_id not in BORDER_IDS:
+        return api_error("invalid_border", "Unknown profile border", 404)
+    # Lock the account row so the balance cannot be spent twice
+    me = db.session.get(
+        User, g.current_user.id, with_for_update=True, populate_existing=True
+    )
+    price = BORDER_PRICES[border_id]
+    refusal = None
+    if owns_border(me, border_id):
+        refusal = api_error("already_owned", "You already have this border", 409)
+    elif me.coins < price:
+        refusal = api_error("not_enough_coins", "Not enough coins", 402)
+    if refusal is not None:
+        db.session.rollback()  # let go of the row lock
+        return refusal
+
+    me.coins -= price
+    me.owned_borders = [*(me.owned_borders or []), border_id]
+    db.session.commit()
+    return {"user": me.to_self_dict()}
 
 
 @auth_bp.post("/password")
@@ -115,7 +143,7 @@ def change_password():
     me.password_hash = generate_password_hash(new_password)
     me.token_version += 1
     db.session.commit()
-    return {"user": me.to_dict(), **issue_tokens(me)}
+    return {"user": me.to_self_dict(), **issue_tokens(me)}
 
 
 @auth_bp.delete("/me")
@@ -154,6 +182,8 @@ def delete_account():
     me.password_hash = ""  # never matches a password hash check
     me.avatar = None
     me.border_id = DEFAULT_BORDER
+    me.coins = 0
+    me.owned_borders = []
     me.token_version += 1
     me.deleted_at = datetime.now(timezone.utc)
     db.session.commit()

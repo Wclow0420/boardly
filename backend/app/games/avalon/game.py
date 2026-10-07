@@ -81,6 +81,8 @@ class Avalon(BaseGame):
     name = "Double Agent"
     min_players = 5
     max_players = 10
+    coins_win = 25
+    coins_play = 8
     emoji = "🕵️"
     tile_color = "#EDE4FF"
     category = "party"

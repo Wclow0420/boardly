@@ -10,8 +10,7 @@
       "environment": "development",
       "channel": "development",
       "env": {
-        "APP_ENV": "development",
-        "EXPO_PUBLIC_API_URL": "http://localhost:5005"
+        "APP_ENV": "development"
       },
       "ios": {
         "simulator": true
@@ -32,8 +31,7 @@
       "environment": "preview",
       "channel": "preview",
       "env": {
-        "APP_ENV": "preview",
-        "EXPO_PUBLIC_API_URL": "https://api-preview.boardly.app"
+        "APP_ENV": "preview"
       },
       "ios": {
         "resourceClass": "m-medium",
@@ -49,8 +47,7 @@
       "environment": "production",
       "channel": "production",
       "env": {
-        "APP_ENV": "production",
-        "EXPO_PUBLIC_API_URL": "https://api.boardly.app"
+        "APP_ENV": "production"
       },
       "ios": {
         "resourceClass": "m-medium",

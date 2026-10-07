@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from app.cosmetics import DEFAULT_BORDER
 from app.extensions import db
@@ -21,6 +21,10 @@ class User(db.Model):
         default=DEFAULT_BORDER,
         server_default=DEFAULT_BORDER,
     )
+    # Coins earned by playing, spent on cosmetics
+    coins = db.Column(db.Integer, nullable=False, default=0, server_default="0")
+    # Ids of the paid borders this player has unlocked
+    owned_borders = db.Column(JSONB, nullable=False, default=list, server_default="[]")
     # Bumped to sign out every device (password change, account deletion):
     # tokens carry the version they were issued for.
     token_version = db.Column(db.Integer, nullable=False, default=0, server_default="0")
@@ -37,4 +41,12 @@ class User(db.Model):
             "username": self.username,
             "avatar": self.avatar,
             "borderId": self.border_id or DEFAULT_BORDER,
+        }
+
+    def to_self_dict(self):
+        """The account as its owner sees it: adds what is private."""
+        return {
+            **self.to_dict(),
+            "coins": self.coins,
+            "ownedBorders": list(self.owned_borders or []),
         }

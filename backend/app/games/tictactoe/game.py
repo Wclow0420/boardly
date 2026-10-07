@@ -24,6 +24,8 @@ class TicTacToe(BaseGame):
     name = "Tic-Tac-Toe"
     min_players = 2
     max_players = 2
+    coins_win = 6
+    coins_play = 2
     emoji = "⭕"
     tile_color = "#E3F0FF"
     category = "classic"

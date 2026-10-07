@@ -2,7 +2,7 @@ from flask import Flask
 
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from app.config import Config, validate_production
+from app.config import Config, cors_origins, validate_production
 from app.extensions import cors, db, limiter, migrate, socketio
 
 
@@ -15,7 +15,7 @@ def create_app(config_class=Config):
 
     db.init_app(app)
     migrate.init_app(app, db)
-    cors.init_app(app)
+    cors.init_app(app, origins=cors_origins())
     limiter.init_app(app)
     # Socket event handlers register themselves on import — before
     # init_app, so they attach to every app instance (tests build several)
@@ -30,6 +30,7 @@ def create_app(config_class=Config):
     from app.routes.friends import friends_bp
     from app.routes.health import health_bp
     from app.routes.games import games_bp
+    from app.routes.rewards import rewards_bp
     from app.routes.rooms import rooms_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/v1/auth")
@@ -37,6 +38,7 @@ def create_app(config_class=Config):
     app.register_blueprint(games_bp, url_prefix="/api/v1/games")
     app.register_blueprint(rooms_bp, url_prefix="/api/v1/rooms")
     app.register_blueprint(friends_bp, url_prefix="/api/v1/friends")
+    app.register_blueprint(rewards_bp, url_prefix="/api/v1/rewards")
 
     # JSON error envelope for framework-raised errors (404, 405, ...)
     from werkzeug.exceptions import HTTPException

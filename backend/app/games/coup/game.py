@@ -101,6 +101,8 @@ class Coup(BaseGame):
     name = "Hustle"
     min_players = 2
     max_players = 6
+    coins_win = 20
+    coins_play = 5
     emoji = "🏮"
     tile_color = "#FFEBD6"
     category = "strategy"

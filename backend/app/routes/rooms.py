@@ -7,6 +7,7 @@ from app.auth import require_auth
 from app.extensions import db, socketio
 from app.games import GameError, get_game
 from app.models import GameSession, Room, RoomPlayer
+from app.rewards import grant_game_rewards
 from app.utils import api_error
 
 rooms_bp = Blueprint("rooms", __name__)
@@ -240,6 +241,7 @@ def make_move(room_id):
         winners = _winner_ids(room, result)
         session.winner_user_ids = [str(user_id) for user_id in winners]
         session.winner_user_id = winners[0] if len(winners) == 1 else None
+        grant_game_rewards(room, session)
     db.session.commit()
 
     socketio.emit("game_updated", {"roomId": str(room.id)}, to=f"room:{room.id}")
@@ -330,6 +332,7 @@ def leave(room, player):
             if len(remaining) == 1:
                 session.winner_user_id = remaining[0].user_id
                 session.winner_user_ids = [str(remaining[0].user_id)]
+            grant_game_rewards(room, session, abandoned=True, exclude=user_id)
         db.session.commit()
         socketio.emit(
             "game_updated", {"roomId": str(room.id)}, to=f"room:{room.id}"

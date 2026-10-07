@@ -17,6 +17,9 @@ import {
 } from "@/components/ui";
 import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
 import { useSession } from "@/context/SessionContext";
+import { ClaimRewards } from "@/features/coins/ClaimRewards";
+import { CoinFly, type CoinFlyHandle } from "@/features/coins/CoinFly";
+import { CoinPill } from "@/features/coins/CoinPill";
 import {
   CHAIR,
   CROWN_COIN,
@@ -52,6 +55,8 @@ export default function HomeScreen() {
   const createRoom = useCreateRoom();
   const redirectIfInRoom = useAlreadyInRoomRedirect();
   const joinSheetRef = useRef<GorhomBottomSheetModal>(null);
+  const coinPillRef = useRef<View>(null);
+  const coinFlyRef = useRef<CoinFlyHandle>(null);
 
   const quickPlay = () => {
     const catalogue = games.data ?? [];
@@ -102,20 +107,23 @@ export default function HomeScreen() {
         />
       ) : null}
 
-      {/* Greeting */}
+      {/* Me (opens my profile), coins, notifications */}
       <View style={styles.header}>
-        <View style={styles.greeting}>
-          <AppText
-            variant="h2"
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.6}
-            style={styles.shrink}
-          >
-            {t("home.greeting", { name: user?.username ?? "" })}
-          </AppText>
-          <AppText style={styles.wave}>👋</AppText>
-        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={user?.username ?? t("tabs.profile")}
+          hitSlop={8}
+          onPress={() => router.push("/profile")}
+          style={({ pressed }) => pressed && styles.pressed}
+        >
+          <AvatarBorder
+            name={user?.username ?? "?"}
+            borderId={user?.borderId}
+            size={42}
+          />
+        </Pressable>
+        <View style={styles.grow} />
+        <CoinPill ref={coinPillRef} amount={user?.coins ?? 0} />
         <View>
           <IconButton accessibilityLabel="Notifications">
             <BellIcon size={22} color={colors.icon} />
@@ -123,6 +131,9 @@ export default function HomeScreen() {
           <View style={styles.badge} />
         </View>
       </View>
+
+      {/* Winnings waiting to be claimed */}
+      <ClaimRewards target={coinPillRef} fly={coinFlyRef} />
 
       {/* Quick start */}
       <View style={{ marginTop: spacing.md }}>
@@ -303,23 +314,25 @@ export default function HomeScreen() {
       </View>
 
       <JoinTableSheet ref={joinSheetRef} />
+      {/* Coins fly across this layer when winnings are claimed */}
+      <CoinFly ref={coinFlyRef} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   grow: { flex: 1 },
-  shrink: { flexShrink: 1 },
   pressed: { opacity: 0.88 },
   screen: { paddingBottom: 12 },
+  // Padding leaves room for the avatar's border, which draws outside it
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
+    gap: 8,
+    paddingTop: 12,
+    paddingBottom: 8,
+    paddingLeft: 6,
   },
-  greeting: { flexDirection: "row", alignItems: "center", gap: 6, flex: 1 },
-  wave: { fontSize: 18, lineHeight: 24 },
   badge: {
     position: "absolute",
     top: 2,

@@ -658,6 +658,17 @@
       "rare": "稀有",
       "epic": "史诗",
       "legendary": "传说"
-    }
+    },
+    "unlock": "{{price}} 金币解锁",
+    "notEnough": "还差 {{count}} 金币",
+    "locked": "未解锁"
+  },
+  "coins": {
+    "earned_one": "你获得了 {{count}} 金币！",
+    "earned_other": "你获得了 {{count}} 金币！",
+    "fromGames": "来自已完成的游戏",
+    "claim": "领取",
+    "waiting_one": "+{{count}} 金币 — 回首页领取",
+    "waiting_other": "+{{count}} 金币 — 回首页领取"
   }
 }

@@ -661,6 +661,17 @@
       "rare": "Rare",
       "epic": "Epic",
       "legendary": "Legendary"
-    }
+    },
+    "unlock": "Unlock for {{price}}",
+    "notEnough": "You need {{count}} more coins",
+    "locked": "Locked"
+  },
+  "coins": {
+    "earned_one": "You earned {{count}} coin!",
+    "earned_other": "You earned {{count}} coins!",
+    "fromGames": "From your finished games",
+    "claim": "Claim",
+    "waiting_one": "+{{count}} coin — claim it on Home",
+    "waiting_other": "+{{count}} coins — claim them on Home"
   }
 }

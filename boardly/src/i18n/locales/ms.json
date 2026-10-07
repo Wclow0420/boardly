@@ -658,6 +658,17 @@
       "rare": "Jarang",
       "epic": "Epik",
       "legendary": "Legenda"
-    }
+    },
+    "unlock": "Buka dengan {{price}}",
+    "notEnough": "Perlu {{count}} syiling lagi",
+    "locked": "Berkunci"
+  },
+  "coins": {
+    "earned_one": "Anda dapat {{count}} syiling!",
+    "earned_other": "Anda dapat {{count}} syiling!",
+    "fromGames": "Daripada permainan yang selesai",
+    "claim": "Tuntut",
+    "waiting_one": "+{{count}} syiling — tuntut di Laman Utama",
+    "waiting_other": "+{{count}} syiling — tuntut di Laman Utama"
   }
 }

@@ -18,6 +18,7 @@ import {
   Texture,
 } from "@/components/ui";
 import { useSession } from "@/context/SessionContext";
+import { CoinPill } from "@/features/coins/CoinPill";
 import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
 import { useEquippedBorder } from "@/features/cosmetics/store";
 import { ChangePasswordSheet } from "@/features/profile/ChangePasswordSheet";
@@ -115,10 +116,13 @@ export default function ProfileScreen() {
         <AppText variant="title" style={styles.username}>
           {user?.username ?? ""}
         </AppText>
+        <View style={styles.coins}>
+          <CoinPill amount={user?.coins ?? 0} />
+        </View>
       </View>
 
       {/* Stats */}
-      <Card style={[styles.stats, { marginTop: spacing.lg }]}>
+      <Card style={[styles.stats, { marginTop: spacing.md }]}>
         {stats.map((stat) => (
           <View key={stat.label} style={styles.stat}>
             <AppText variant="title">{stat.value ?? "–"}</AppText>
@@ -191,8 +195,9 @@ const styles = StyleSheet.create({
   grow: { flex: 1 },
   pressed: { opacity: 0.7 },
   // Extra room above and below the avatar for its border to show
-  identity: { alignItems: "center", marginTop: 34 },
-  username: { marginTop: 30 },
+  identity: { alignItems: "center", marginTop: 30 },
+  username: { marginTop: 28 },
+  coins: { marginTop: 6 },
   stats: { flexDirection: "row", paddingVertical: 14 },
   stat: { flex: 1, alignItems: "center", gap: 4 },
   // Fills the rest of the screen; the rows scroll inside it
