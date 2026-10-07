@@ -142,6 +142,12 @@ Frontend:
    `src/games/registry.ts`. Set `layout: "custom"` when the board draws
    its own players, status and result (anything that isn't a simple
    alternating-turn board — see `avalon/`).
+3. If the board asks the player for a move in a bottom sheet, open and
+   close it with `usePromptSheet(needsMe, step)` from
+   `src/hooks/usePromptSheet.ts` (pass its `ref` and `onDismiss` to the
+   `<BottomSheetModal>`), never with your own `present()`/`dismiss()`
+   effect. A sheet asked to open while it is still closing gets dropped,
+   and the player sees no prompt until they reload; the hook re-opens it.
 
 The rooms/lobby/session plumbing (REST + Socket.IO broadcasts) is
 game-agnostic — game state lives in a JSONB column and only the two
