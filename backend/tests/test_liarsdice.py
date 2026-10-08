@@ -33,7 +33,8 @@ def test_setup():
     assert len(state["dice"]) == 4 and all(len(h) == 5 for h in state["dice"])
     assert all(1 <= d <= 6 for h in state["dice"] for d in h)
     assert state["cups"] == [0, 0, 0, 0] and state["bid"] is None
-    for n in (1, 7):
+    assert len(game.initial_state(10, random.Random(2))["dice"]) == 10
+    for n in (1, 11):
         with pytest.raises(GameError):
             game.initial_state(n)
 
@@ -66,12 +67,33 @@ def test_each_bid_must_go_higher():
         bid(state, 1, 11, 2)
 
 
-def test_zhai_may_keep_the_count_and_then_sticks():
+def test_zhai_may_keep_the_count():
     state = bid(start(TWO), 0, 3, 5)
     state = bid(state, 1, 3, 5, zhai=True)  # going zhai is itself a raise
     assert state["bid"]["zhai"] is True
-    state = bid(state, 0, 4, 5)  # no way back to wild 1s
+    state = bid(state, 0, 4, 5, zhai=True)  # and staying zhai raises as usual
     assert state["bid"]["zhai"] is True
+
+
+def test_a_zhai_opening_may_call_the_player_count():
+    with pytest.raises(GameError):
+        bid(start(TWO), 0, 2, 5)
+    assert bid(start(TWO), 0, 2, 5, zhai=True)["bid"]["quantity"] == 2
+    assert bid(start(TWO), 0, 2, 1)["bid"]["zhai"] is True  # 1s are zhai
+    with pytest.raises(GameError):
+        bid(start(TWO), 0, 1, 5, zhai=True)
+
+
+def test_breaking_zhai_needs_double_the_dice():
+    state = bid(start(TWO), 0, 3, 4, zhai=True)
+    for q in (4, 5):
+        with pytest.raises(GameError):  # 开斋 at 3 zhai needs 6+
+            bid(state, 1, q, 6)
+    state = bid(state, 1, 6, 2)  # break the fast: 1s are wild again
+    assert state["bid"]["zhai"] is False
+    state = challenge(state, 0)
+    # 2s with wild 1s: [1, 2] + [1] = 3, short of 6
+    assert state["reveal"]["found"] == 3 and state["reveal"]["loser"] == 1
 
 
 def test_not_your_turn():
@@ -93,7 +115,7 @@ def test_challenge_a_true_bid_and_the_challenger_drinks():
 
 def test_challenge_a_lie_and_the_bidder_drinks_double():
     state = bid(start(TWO), 0, 3, 5, zhai=True)  # only three 5s: true
-    state = bid(state, 1, 4, 5)                  # four 5s without wilds: lie
+    state = bid(state, 1, 4, 5, zhai=True)       # four 5s without wilds: lie
     state = challenge(state, 0, double=True)
     assert state["reveal"]["found"] == 3 and state["reveal"]["loser"] == 1
     assert state["cups"] == [0, 2] and state["reveal"]["drink"] == 2

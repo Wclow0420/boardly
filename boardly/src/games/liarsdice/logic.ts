@@ -54,9 +54,15 @@ export function totalDice(state: LiarsDiceState): number {
   return state.diceCount.reduce((a, b) => a + b, 0);
 }
 
-/** Whether the next bid stays zhai whatever the player picks. */
-export function zhaiLocked(state: LiarsDiceState): boolean {
-  return state.bid?.zhai ?? false;
+/** Smallest count that breaks the fast (开斋) after a zhai bid. */
+export function breakZhaiMin(state: LiarsDiceState): number | null {
+  return state.bid?.zhai ? state.bid.quantity * 2 : null;
+}
+
+/** Smallest opening count: above the player count, or equal to it zhai. */
+export function openingMin(state: LiarsDiceState, zhai: boolean): number {
+  const players = activeSeats(state).length;
+  return zhai ? players : players + 1;
 }
 
 /** Whether (quantity, face, zhai) is a legal next bid. */
@@ -68,8 +74,10 @@ export function isValidBid(
 ): boolean {
   if (face < 1 || face > 6 || quantity < 1 || quantity > totalDice(state)) return false;
   const last = state.bid;
-  const isZhai = zhai || face === 1 || zhaiLocked(state);
-  if (last === null) return quantity > activeSeats(state).length;
+  const isZhai = zhai || face === 1;
+  if (last === null) return quantity >= openingMin(state, isZhai);
+  // Breaking the fast: 1s are wild again, at double the dice
+  if (last.zhai && !isZhai) return quantity >= last.quantity * 2;
   const next = [quantity, faceRank(face)];
   const prev = [last.quantity, faceRank(last.face)];
   const higher = next[0] > prev[0] || (next[0] === prev[0] && next[1] > prev[1]);
@@ -79,6 +87,7 @@ export function isValidBid(
 
 /** A sensible starting point for the bid picker: the smallest raise. */
 export function suggestedBid(state: LiarsDiceState): { quantity: number; face: number } {
+  // (a zhai round keeps going zhai unless the player breaks it)
   const last = state.bid;
   if (last === null) {
     return { quantity: activeSeats(state).length + 1, face: state.myDice[0] === 1 ? 2 : state.myDice[0] ?? 2 };

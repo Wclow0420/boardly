@@ -431,9 +431,9 @@
         {
           "title": "1 joker dan zhai",
           "items": [
-            "1 ialah joker: dikira sebagai apa-apa nombor.",
-            "Zhai (斋) mematikannya untuk baki pusingan — 1 hanya dikira sebagai 1. Panggil 1 sentiasa zhai.",
-            "Bertukar ke zhai boleh kekalkan jumlah dan nombor yang sama, kerana ia lebih sukar."
+            "1 ialah joker: dikira sebagai apa-apa nombor — kecuali panggilan zhai (斋), di mana 1 hanya dikira sebagai 1. Panggil 1 sentiasa zhai.",
+            "Bertukar ke zhai boleh kekalkan jumlah dan nombor yang sama, kerana ia lebih sukar. Panggilan pertama zhai boleh serendah bilangan pemain.",
+            "Buka puasa (开斋, juga dipanggil 飞): selepas panggilan zhai, anda boleh jadikan 1 joker semula — tetapi mesti panggil sekurang-kurangnya dua kali ganda (selepas 3 × 4 zhai, sekurang-kurangnya 6)."
           ]
         },
         {
@@ -894,14 +894,13 @@
     "bid_other": "{{count}} × {{face}}",
     "zhai": "Zhai",
     "zhaiName": "1 bukan joker",
-    "zhaiHint": "1 hanya dikira sebagai 1. Boleh kekalkan jumlah yang sama apabila bertukar.",
+    "zhaiHint": "1 hanya dikira sebagai 1. Boleh kekalkan panggilan yang sama apabila bertukar.",
     "zhaiOnes": "Panggil 1 sentiasa zhai",
-    "zhaiLocked": "Pusingan ini sudah zhai",
     "round": "Pusingan {{round}} · {{dice}} dadu di atas meja",
     "calledBy": "dipanggil oleh {{name}}",
     "onesWild": "1 ialah joker",
     "onesNotWild": "1 bukan joker",
-    "opening": "Panggilan pertama: {{name}} · sekurang-kurangnya {{min}}",
+    "opening": "Panggilan pertama: {{name}} · sekurang-kurangnya {{min}}, atau {{zhaiMin}} zhai",
     "waiting": "{{name}} sedang berfikir…",
     "youreOut": "Anda sudah mabuk — tonton sahaja 🥴",
     "yourDice": "Dadu anda (ketik untuk tutup)",
@@ -934,7 +933,12 @@
     "noWinner": "Permainan tamat",
     "youWin": "Anda menang! 🍻",
     "winner": "{{name}} menang!",
-    "lastStanding": "Yang terakhir bertahan menang"
+    "lastStanding": "Yang terakhir bertahan menang",
+    "breakZhai": "Buka puasa (开斋) — 1 jadi joker semula",
+    "breakHint": "Nyahtanda untuk buka puasa (开斋): 1 jadi joker semula, tetapi mesti panggil sekurang-kurangnya {{min}}.",
+    "breakingHint": "Buka puasa: panggil sekurang-kurangnya {{min}} dadu.",
+    "mustBreak": "Buka puasa perlukan sekurang-kurangnya {{min}} dadu",
+    "broke": "buka puasa"
   },
   "profile": {
     "title": "Profil",
