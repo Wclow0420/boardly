@@ -5,6 +5,7 @@
 import type { GameDefinition } from "./types";
 import { avalon } from "./avalon";
 import { coup } from "./coup";
+import { liarsdice } from "./liarsdice";
 import { manor } from "./manor";
 import { tictactoe } from "./tictactoe";
 
@@ -13,6 +14,7 @@ export const GAMES: Record<string, GameDefinition<any>> = {
   [avalon.key]: avalon,
   [coup.key]: coup,
   [manor.key]: manor,
+  [liarsdice.key]: liarsdice,
 };
 
 export function getGame(key: string): GameDefinition<any> | undefined {

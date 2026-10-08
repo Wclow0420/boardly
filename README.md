@@ -15,7 +15,8 @@ Boardly/
 │   │       ├── tictactoe/    #   example game (logic in game.py)
 │   │       ├── avalon/       #   "Double Agent": hidden roles, 5-10 players
 │   │       ├── coup/         #   "Hustle": bluffing card game, 2-6 players
-│   │       └── manor/        #   "Midnight Manor": hidden roles in a dark house, 4-8 players
+│   │       ├── manor/        #   "Midnight Manor": hidden roles in a dark house, 4-8 players
+│   │       └── liarsdice/    #   "Liar's Dice" (大话骰): bluffing dice drinking game, 2-6 players
 │   ├── migrations/           # Alembic (via Flask-Migrate)
 │   ├── docker-compose.yml    # backend :5005 + postgres :5439
 │   └── Dockerfile
@@ -37,7 +38,8 @@ Boardly/
             ├── tictactoe/    #   logic.ts (rules) + TicTacToeBoard.tsx (UI)
             ├── avalon/       #   "Double Agent" — logic.ts + AvalonBoard.tsx
             ├── coup/         #   "Hustle" — logic.ts + CoupBoard.tsx
-            └── manor/        #   "Midnight Manor" — logic.ts + ManorBoard.tsx
+            ├── manor/        #   "Midnight Manor" — logic.ts + ManorBoard.tsx
+            └── liarsdice/    #   "Liar's Dice" — logic.ts + LiarsDiceBoard.tsx
 ```
 
 New-app conventions (theme, i18n, folder standards, checklists):

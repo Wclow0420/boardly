@@ -73,7 +73,8 @@
     "tictactoe": "井字棋",
     "avalon": "双面间谍",
     "coup": "夜市风云",
-    "manor": "午夜庄园"
+    "manor": "午夜庄园",
+    "liarsdice": "大话骰"
   },
   "friends": {
     "title": "好友",
@@ -412,6 +413,43 @@
             "老爷爷被袭击两次，入侵者获胜。第一次袭击时他会尖叫 — 大家知道是哪个房间，但不知道是谁。",
             "所有入侵者都被关起来，或老爷爷活到天亮，家人阵营获胜。",
             "天亮时入侵者还有最后一次机会：由头目指认管家。猜中了，入侵者获胜。"
+          ]
+        }
+      ]
+    },
+    "liarsdice": {
+      "intro": "酒吧经典游戏。每人摇 5 粒骰子，只看自己的。大家轮流叫全桌一共有几个某点数 — 直到有人说你在吹牛。",
+      "sections": [
+        {
+          "title": "叫骰",
+          "items": [
+            "叫法是「N 个 X」：全桌所有人的骰子里，至少有 N 粒是 X 点。",
+            "第一口至少要比人数多（2 个人至少叫 3 个）。",
+            "后面的人要叫得更大：数量更多，或数量一样但点数更大。点数大小：2 < 3 < 4 < 5 < 6 < 1。"
+          ]
+        },
+        {
+          "title": "1 是万能、叫斋",
+          "items": [
+            "1 是万能骰，可以当任何点数。",
+            "叫「斋」之后，这一轮 1 只算 1，不再是万能。叫 1 一定是斋。",
+            "改叫斋时可以叫一样的数量和点数，因为斋更难成立。"
+          ]
+        },
+        {
+          "title": "开骰",
+          "items": [
+            "轮到你时，可以不叫，直接「开」：所有人亮骰子，一起数。",
+            "实际数量够了，开的人喝一杯；不够，叫的人喝一杯。",
+            "「劈」一样是开，但输的人喝两杯。"
+          ]
+        },
+        {
+          "title": "输赢",
+          "items": [
+            "喝满三杯就醉倒，出局。",
+            "每次开完，还没出局的人重新摇骰，输的人先叫下一轮。",
+            "最后一个没醉倒的人获胜。"
           ]
         }
       ]
@@ -848,6 +886,51 @@
       "butlerFound": "天亮了，但入侵者找出了管家：{{butler}}。",
       "abandoned": "有人离开了牌桌。"
     }
+  },
+  "liarsdice": {
+    "tagline": "吹牛、开骰、喝！",
+    "bid": "{{count}} 个 {{face}}",
+    "bid_other": "{{count}} 个 {{face}}",
+    "zhai": "斋",
+    "zhaiName": "1 不当万能",
+    "zhaiHint": "1 只算 1。改叫斋时可以叫一样的数量。",
+    "zhaiOnes": "叫 1 一定是斋",
+    "zhaiLocked": "这一轮已经是斋了",
+    "round": "第 {{round}} 轮 · 桌上共 {{dice}} 粒骰",
+    "calledBy": "{{name}} 叫的",
+    "onesWild": "1 是万能",
+    "onesNotWild": "1 不是万能",
+    "opening": "{{name}} 先叫 — 至少 {{min}} 个",
+    "waiting": "{{name}} 正在想…",
+    "youreOut": "你醉倒了 — 好好看戏 🥴",
+    "yourDice": "你的骰子（点击盖起来）",
+    "showDice": "点击看你的骰子",
+    "youHave": "你有 {{count}} 粒算 {{face}}",
+    "youHave_other": "你有 {{count}} 粒算 {{face}}",
+    "hideHint": "只有你看得到。没叫斋之前，1 可以当任何点数。",
+    "calls": "这一轮的叫法",
+    "yourTurn": "轮到你 — 叫得比 {{bid}} 大，或者开",
+    "yourOpening": "轮到你 — 先叫",
+    "call": "叫 {{bid}}",
+    "mustRaise": "要叫更多粒，或一样多但点数更大（2 < 3 < 4 < 5 < 6 < 1）",
+    "mustOpen": "至少要叫 {{min}} 个",
+    "open": "开",
+    "split": "劈",
+    "challengeHint": "开：输的喝 1 杯。劈：输的喝 2 杯。",
+    "drunk": "醉倒 — 出局",
+    "thinking": "思考中",
+    "lastRound": "第 {{round}} 轮结果",
+    "openedBy": "{{name}} 开了 {{bidder}} 的 {{bid}}",
+    "splitBy": "{{name}} 劈了 {{bidder}} 的 {{bid}}",
+    "found": "实际有 {{count}} 个 {{face}}",
+    "found_other": "实际有 {{count}} 个 {{face}}",
+    "drinks": "{{name}} 喝 {{count}} 杯",
+    "drinks_other": "{{name}} 喝 {{count}} 杯",
+    "drunkOut": "醉倒出局",
+    "noWinner": "游戏结束",
+    "youWin": "你赢了！🍻",
+    "winner": "{{name}} 赢了！",
+    "lastStanding": "最后没醉倒的人获胜"
   },
   "profile": {
     "title": "我的",

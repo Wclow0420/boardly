@@ -7,6 +7,7 @@ Each game lives in its own folder (app/games/<key>/) and exposes a
 from app.games.base import BaseGame, GameError
 from app.games.avalon.game import game as avalon
 from app.games.coup.game import game as coup
+from app.games.liarsdice.game import game as liarsdice
 from app.games.manor.game import game as manor
 from app.games.tictactoe.game import game as tictactoe
 
@@ -15,6 +16,7 @@ GAMES: dict[str, BaseGame] = {
     avalon.key: avalon,
     coup.key: coup,
     manor.key: manor,
+    liarsdice.key: liarsdice,
 }
 
 
