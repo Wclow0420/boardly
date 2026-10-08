@@ -38,7 +38,7 @@ export const liarsdice: GameDefinition<LiarsDiceState> = {
   key: "liarsdice",
   name: "Liar's Dice",
   minPlayers: 2,
-  maxPlayers: 6,
+  maxPlayers: 10,
   Board: LiarsDiceBoard,
   currentSeat,
   layout: "custom",

@@ -58,6 +58,19 @@ describe("bidding", () => {
     expect(isValidBid(view({ bid: bid(3, 5, true) }), 3, 5, true)).toBe(false);
   });
 
+  it("lets a zhai opening call the player count", () => {
+    expect(isValidBid(view(), 2, 5, true)).toBe(true);
+    expect(isValidBid(view(), 2, 1, false)).toBe(true); // 1s are zhai
+    expect(isValidBid(view(), 1, 5, true)).toBe(false);
+  });
+
+  it("breaks the fast (开斋) only at double the dice", () => {
+    const state = view({ bid: bid(3, 4, true) });
+    expect(isValidBid(state, 5, 6, false)).toBe(false);
+    expect(isValidBid(state, 6, 2, false)).toBe(true);
+    expect(isValidBid(state, 4, 4, true)).toBe(true); // staying zhai raises as usual
+  });
+
   it("suggests the smallest raise", () => {
     expect(suggestedBid(view())).toEqual({ quantity: 3, face: 2 });
     expect(suggestedBid(view({ bid: bid(3, 5) }))).toEqual({ quantity: 3, face: 6 });

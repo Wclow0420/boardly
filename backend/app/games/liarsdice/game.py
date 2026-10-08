@@ -5,12 +5,15 @@ turn, players bid on how many dice of one face there are on the whole
 table ("4 fives"), each bid higher than the last, until someone calls
 the last bid a lie:
 
-- Opening bid: more dice than there are players (2 players: 3+).
+- Opening bid: more dice than there are players (2 players: 3+); an
+  opening zhai bid may be as many as there are players.
 - A raise is more dice, or as many dice of a higher face, where faces
   rank 2 < 3 < 4 < 5 < 6 < 1.
-- 1s are wild and count as any face, until someone bids "zhai" (斋)
-  or bids on 1s; from then on in that round 1s count only as 1s. Going
-  zhai may keep the same count and face (it makes the bid harder).
+- 1s are wild and count as any face, unless the bid is "zhai" (斋):
+  then 1s count only as 1s. Bidding 1s is always zhai. Going zhai may
+  keep the same count and face (it makes the bid harder).
+- Breaking the fast (开斋, also called 飞): after a zhai bid, the next
+  bid may make 1s wild again, but must call at least double the dice.
 - Challenge ("open", 开): reveal everything. If the table has at least
   the bid, the challenger drinks a cup, otherwise the bidder does. A
   "double" challenge (劈) makes the loser drink two.
@@ -58,7 +61,7 @@ class LiarsDice(BaseGame):
     key = "liarsdice"
     name = "Liar's Dice"
     min_players = 2
-    max_players = 6
+    max_players = 10
     coins_win = 15
     coins_play = 4
     emoji = "🎲"
@@ -74,7 +77,7 @@ class LiarsDice(BaseGame):
 
     def initial_state(self, num_players: int, rng: random.Random | None = None) -> dict:
         if not self.min_players <= num_players <= self.max_players:
-            raise GameError("This game needs 2 to 6 players")
+            raise GameError("This game needs 2 to 10 players")
         rng = rng or self.rng
         return {
             "numPlayers": num_players,
@@ -128,11 +131,19 @@ class LiarsDice(BaseGame):
             raise GameError(f"There are only {total} dice on the table")
 
         last = state["bid"]
-        # Once zhai, the round stays zhai; bidding 1s is always zhai
-        zhai = bool(move.get("zhai")) or face == 1 or bool(last and last["zhai"])
+        # Bidding 1s is always zhai
+        zhai = bool(move.get("zhai")) or face == 1
         if last is None:
-            if quantity <= len(active):
-                raise GameError(f"Open with more than {len(active)} dice")
+            # A zhai opening may call as many dice as there are players
+            least = len(active) if zhai else len(active) + 1
+            if quantity < least:
+                raise GameError(f"Open with at least {least} dice")
+        elif last["zhai"] and not zhai:
+            # Breaking the fast: 1s are wild again, at double the dice
+            if quantity < 2 * last["quantity"]:
+                raise GameError(
+                    f"Breaking zhai needs at least {2 * last['quantity']} dice"
+                )
         else:
             new = (quantity, face_rank(face))
             old = (last["quantity"], face_rank(last["face"]))

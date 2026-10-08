@@ -431,9 +431,9 @@
         {
           "title": "Wild 1s and zhai",
           "items": [
-            "1s are wild: they count as any face.",
-            "Zhai (斋) turns that off for the rest of the round — 1s count only as 1s. Calling 1s is always zhai.",
-            "Switching to zhai may keep the same number and face, since it makes the bid harder."
+            "1s are wild: they count as any face — unless the bid is zhai (斋), when 1s count only as 1s. Calling 1s is always zhai.",
+            "Switching to zhai may keep the same number and face, since it makes the bid harder. An opening zhai bid may be as low as the number of players.",
+            "Break the fast (开斋, also called 飞): after a zhai bid, you can make 1s wild again — but you must call at least double the dice (after 3 × 4 zhai, at least 6)."
           ]
         },
         {
@@ -897,14 +897,13 @@
     "bid_other": "{{count}} × {{face}}",
     "zhai": "Zhai",
     "zhaiName": "1s aren't wild",
-    "zhaiHint": "Make 1s count only as 1s. You may keep the same number when you switch.",
+    "zhaiHint": "Make 1s count only as 1s. You may keep the same call when you switch.",
     "zhaiOnes": "Calling 1s is always zhai",
-    "zhaiLocked": "This round is already zhai",
     "round": "Round {{round}} · {{dice}} dice on the table",
     "calledBy": "called by {{name}}",
     "onesWild": "1s are wild",
     "onesNotWild": "1s are not wild",
-    "opening": "First call: {{name}} · at least {{min}} of a face",
+    "opening": "First call: {{name}} · at least {{min}}, or {{zhaiMin}} zhai",
     "waiting": "{{name}} is thinking…",
     "youreOut": "You're out — enjoy the show 🥴",
     "yourDice": "Your dice (tap to cover)",
@@ -937,7 +936,12 @@
     "noWinner": "Game ended",
     "youWin": "You win! 🍻",
     "winner": "{{name}} wins!",
-    "lastStanding": "Last one standing"
+    "lastStanding": "Last one standing",
+    "breakZhai": "Break the fast (开斋) — 1s wild again",
+    "breakHint": "Untick to break the fast (开斋): 1s are wild again, but you must call at least {{min}}.",
+    "breakingHint": "Breaking the fast: call at least {{min}} dice.",
+    "mustBreak": "Breaking the fast needs at least {{min}} dice",
+    "broke": "broke the fast"
   },
   "profile": {
     "title": "Profile",

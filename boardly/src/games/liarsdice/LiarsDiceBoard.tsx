@@ -14,7 +14,8 @@ import {
   myCount,
   suggestedBid,
   totalDice,
-  zhaiLocked,
+  breakZhaiMin,
+  openingMin,
   type Bid,
   type LiarsDiceState,
   type Reveal,
@@ -146,7 +147,11 @@ export function LiarsDiceBoard({
           </>
         ) : (
           <AppText variant="title" style={{ marginTop: 4 }}>
-            {t("liarsdice.opening", { name: nameOf(state.turn), min: activeCount(state) + 1 })}
+            {t("liarsdice.opening", {
+              name: nameOf(state.turn),
+              min: openingMin(state, false),
+              zhaiMin: openingMin(state, true),
+            })}
           </AppText>
         )}
         {!over && !myTurn ? (
@@ -206,11 +211,16 @@ export function LiarsDiceBoard({
           {state.bids
             .slice()
             .reverse()
-            .map((bid, i) => (
-              <AppText key={i} variant="caption" color={i === 0 ? "text" : "textSubtle"}>
-                {`${nameOf(bid.seat)}: ${bidText(bid)}`}
-              </AppText>
-            ))}
+            .map((bid, i, newestFirst) => {
+              const broke = !bid.zhai && newestFirst[i + 1]?.zhai === true;
+              return (
+                <AppText key={i} variant="caption" color={i === 0 ? "text" : "textSubtle"}>
+                  {`${nameOf(bid.seat)}: ${bidText(bid)}${
+                    broke ? `  🍖 ${t("liarsdice.broke")}` : ""
+                  }`}
+                </AppText>
+              );
+            })}
         </View>
       ) : null}
 
@@ -249,10 +259,6 @@ export function LiarsDiceBoard({
   );
 }
 
-function activeCount(state: LiarsDiceState): number {
-  return state.cups.filter((c) => c < state.maxCups).length;
-}
-
 function BidPicker({
   state,
   busy,
@@ -271,8 +277,11 @@ function BidPicker({
   const start = suggestedBid(state);
   const [quantity, setQuantity] = useState(start.quantity);
   const [face, setFace] = useState(start.face);
-  const [zhaiPicked, setZhaiPicked] = useState(false);
-  const zhai = zhaiPicked || face === 1 || zhaiLocked(state);
+  // A zhai round stays zhai unless the player breaks the fast (开斋)
+  const [zhaiPicked, setZhaiPicked] = useState(state.bid?.zhai ?? false);
+  const zhai = zhaiPicked || face === 1;
+  const breakMin = breakZhaiMin(state);
+  const breaking = breakMin !== null && !zhai;
   const valid = isValidBid(state, quantity, face, zhai);
   const total = totalDice(state);
 
@@ -338,8 +347,8 @@ function BidPicker({
 
       <Pressable
         accessibilityRole="checkbox"
-        accessibilityState={{ checked: zhai, disabled: face === 1 || zhaiLocked(state) }}
-        disabled={busy || face === 1 || zhaiLocked(state)}
+        accessibilityState={{ checked: zhai, disabled: face === 1 }}
+        disabled={busy || face === 1}
         onPress={() => {
           tapHaptic();
           setZhaiPicked((v) => !v);
@@ -354,13 +363,19 @@ function BidPicker({
         ]}
       >
         <View style={{ flex: 1 }}>
-          <AppText variant="label">{`${t("liarsdice.zhai")} — ${t("liarsdice.zhaiName")}`}</AppText>
+          <AppText variant="label">
+            {breaking
+              ? `🍖  ${t("liarsdice.breakZhai")}`
+              : `${t("liarsdice.zhai")} — ${t("liarsdice.zhaiName")}`}
+          </AppText>
           <AppText variant="tiny" color="textSubtle">
             {face === 1
               ? t("liarsdice.zhaiOnes")
-              : zhaiLocked(state)
-                ? t("liarsdice.zhaiLocked")
-                : t("liarsdice.zhaiHint")}
+              : breaking
+                ? t("liarsdice.breakingHint", { min: breakMin })
+                : breakMin !== null
+                  ? t("liarsdice.breakHint", { min: breakMin })
+                  : t("liarsdice.zhaiHint")}
           </AppText>
         </View>
         <AppText variant="label" color={zhai ? "primary" : "textSubtle"}>
@@ -377,9 +392,11 @@ function BidPicker({
       />
       {!valid ? (
         <AppText variant="tiny" color="textSubtle" align="center" style={{ marginTop: 4 }}>
-          {state.bid
-            ? t("liarsdice.mustRaise")
-            : t("liarsdice.mustOpen", { min: activeCount(state) + 1 })}
+          {breaking
+            ? t("liarsdice.mustBreak", { min: breakMin })
+            : state.bid
+              ? t("liarsdice.mustRaise")
+              : t("liarsdice.mustOpen", { min: openingMin(state, zhai) })}
         </AppText>
       ) : null}
 
