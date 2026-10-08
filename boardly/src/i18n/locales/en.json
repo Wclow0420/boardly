@@ -73,7 +73,8 @@
     "tictactoe": "Tic-Tac-Toe",
     "avalon": "Double Agent",
     "coup": "Hustle",
-    "manor": "Midnight Manor"
+    "manor": "Midnight Manor",
+    "liarsdice": "Liar's Dice"
   },
   "friends": {
     "title": "Friends",
@@ -412,6 +413,43 @@
             "Intruders win if the old man is hit twice. The first hit makes him scream — everyone learns the room, not who.",
             "The household wins if every intruder is locked up, or the old man is alive at dawn.",
             "At dawn the intruders get one last chance: their ringleader names the Butler. Get it right and the intruders win."
+          ]
+        }
+      ]
+    },
+    "liarsdice": {
+      "intro": "The bar classic. Everyone shakes 5 dice and looks only at their own. Take turns bidding how many of one face are on the whole table — until someone calls a lie.",
+      "sections": [
+        {
+          "title": "Bidding",
+          "items": [
+            "A bid is \"N × face\": at least N dice on the table show that face, counting everyone's dice.",
+            "The opening bid must be more than the number of players (2 players: at least 3).",
+            "Each bid must be higher: more dice, or the same number of a higher face. Faces rank 2 < 3 < 4 < 5 < 6 < 1."
+          ]
+        },
+        {
+          "title": "Wild 1s and zhai",
+          "items": [
+            "1s are wild: they count as any face.",
+            "Zhai (斋) turns that off for the rest of the round — 1s count only as 1s. Calling 1s is always zhai.",
+            "Switching to zhai may keep the same number and face, since it makes the bid harder."
+          ]
+        },
+        {
+          "title": "Calling a lie",
+          "items": [
+            "On your turn, instead of bidding you can Open (开): everyone's dice are revealed and counted.",
+            "If there are at least as many as the bid, the caller drinks a cup; if not, the bidder does.",
+            "Double (劈) works the same, but the loser drinks two cups."
+          ]
+        },
+        {
+          "title": "Winning",
+          "items": [
+            "Three cups and you're drunk — out of the game.",
+            "After each call everyone still in shakes again, and the loser starts the next round.",
+            "The last player standing wins."
           ]
         }
       ]
@@ -851,6 +889,55 @@
       "butlerFound": "Dawn broke, but the intruders found the Butler: {{butler}}.",
       "abandoned": "Someone left the table."
     }
+  },
+  "liarsdice": {
+    "tagline": "Bluff, call, drink",
+    "bid": "{{count}} × {{face}}",
+    "bid_one": "{{count}} × {{face}}",
+    "bid_other": "{{count}} × {{face}}",
+    "zhai": "Zhai",
+    "zhaiName": "1s aren't wild",
+    "zhaiHint": "Make 1s count only as 1s. You may keep the same number when you switch.",
+    "zhaiOnes": "Calling 1s is always zhai",
+    "zhaiLocked": "This round is already zhai",
+    "round": "Round {{round}} · {{dice}} dice on the table",
+    "calledBy": "called by {{name}}",
+    "onesWild": "1s are wild",
+    "onesNotWild": "1s are not wild",
+    "opening": "First call: {{name}} · at least {{min}} of a face",
+    "waiting": "{{name}} is thinking…",
+    "youreOut": "You're out — enjoy the show 🥴",
+    "yourDice": "Your dice (tap to cover)",
+    "showDice": "Tap to look at your dice",
+    "youHave": "You have {{count}} that count for {{face}}",
+    "youHave_one": "You have {{count}} that counts for {{face}}",
+    "youHave_other": "You have {{count}} that count for {{face}}",
+    "hideHint": "Only you can see these. 1s count as any face unless the round goes zhai.",
+    "calls": "This round's calls",
+    "yourTurn": "Your turn — beat {{bid}}, or call it",
+    "yourOpening": "Your turn — open the bidding",
+    "call": "Call {{bid}}",
+    "mustRaise": "Call more dice, or the same number of a higher face (2 < 3 < 4 < 5 < 6 < 1)",
+    "mustOpen": "Open with at least {{min}}",
+    "open": "Open",
+    "split": "Double",
+    "challengeHint": "Open: the loser drinks 1. Double: the loser drinks 2.",
+    "drunk": "Drunk — out",
+    "thinking": "thinking",
+    "lastRound": "Round {{round}} result",
+    "openedBy": "{{name}} opened {{bidder}}'s {{bid}}",
+    "splitBy": "{{name}} doubled on {{bidder}}'s {{bid}}",
+    "found": "There were {{count}} × {{face}}",
+    "found_one": "There was {{count}} × {{face}}",
+    "found_other": "There were {{count}} × {{face}}",
+    "drinks": "🍺 {{name}} +{{count}}",
+    "drinks_one": "🍺 {{name}} +{{count}}",
+    "drinks_other": "🍺 {{name}} +{{count}}",
+    "drunkOut": "— out",
+    "noWinner": "Game ended",
+    "youWin": "You win! 🍻",
+    "winner": "{{name}} wins!",
+    "lastStanding": "Last one standing"
   },
   "profile": {
     "title": "Profile",

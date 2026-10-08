@@ -73,7 +73,8 @@
     "tictactoe": "Tic-Tac-Toe",
     "avalon": "Double Agent",
     "coup": "Hustle",
-    "manor": "Midnight Manor"
+    "manor": "Midnight Manor",
+    "liarsdice": "Dadu Penipu"
   },
   "friends": {
     "title": "Rakan",
@@ -412,6 +413,43 @@
             "Penceroboh menang jika datuk tua diserang dua kali. Serangan pertama membuatnya menjerit — semua tahu biliknya, bukan siapa.",
             "Keluarga menang jika semua penceroboh dikurung, atau datuk tua masih hidup ketika subuh.",
             "Ketika subuh, penceroboh dapat satu peluang terakhir: ketua mereka meneka Butler. Jika betul, penceroboh menang."
+          ]
+        }
+      ]
+    },
+    "liarsdice": {
+      "intro": "Permainan klasik di bar. Semua orang goncang 5 dadu dan hanya lihat dadu sendiri. Bergilir-gilir teka berapa banyak satu nombor di seluruh meja — sehingga ada yang kata anda menipu.",
+      "sections": [
+        {
+          "title": "Panggilan",
+          "items": [
+            "Panggilan ialah \"N × nombor\": sekurang-kurangnya N dadu di meja menunjukkan nombor itu, kira dadu semua orang.",
+            "Panggilan pertama mesti lebih daripada bilangan pemain (2 pemain: sekurang-kurangnya 3).",
+            "Setiap panggilan mesti lebih tinggi: lebih banyak dadu, atau jumlah sama dengan nombor lebih tinggi. Susunan: 2 < 3 < 4 < 5 < 6 < 1."
+          ]
+        },
+        {
+          "title": "1 joker dan zhai",
+          "items": [
+            "1 ialah joker: dikira sebagai apa-apa nombor.",
+            "Zhai (斋) mematikannya untuk baki pusingan — 1 hanya dikira sebagai 1. Panggil 1 sentiasa zhai.",
+            "Bertukar ke zhai boleh kekalkan jumlah dan nombor yang sama, kerana ia lebih sukar."
+          ]
+        },
+        {
+          "title": "Buka",
+          "items": [
+            "Pada giliran anda, boleh Buka (开) dan bukan panggil: semua dadu didedahkan dan dikira.",
+            "Jika cukup, yang buka minum secawan; jika tidak, yang panggil minum.",
+            "Ganda (劈) sama, tetapi yang kalah minum dua cawan."
+          ]
+        },
+        {
+          "title": "Menang",
+          "items": [
+            "Tiga cawan dan anda mabuk — keluar.",
+            "Selepas setiap buka, yang masih bermain goncang semula, dan yang kalah mula pusingan seterusnya.",
+            "Pemain terakhir yang bertahan menang."
           ]
         }
       ]
@@ -848,6 +886,55 @@
       "butlerFound": "Subuh tiba, tetapi penceroboh menemui Butler: {{butler}}.",
       "abandoned": "Seseorang meninggalkan meja."
     }
+  },
+  "liarsdice": {
+    "tagline": "Tipu, buka, minum",
+    "bid": "{{count}} × {{face}}",
+    "bid_one": "{{count}} × {{face}}",
+    "bid_other": "{{count}} × {{face}}",
+    "zhai": "Zhai",
+    "zhaiName": "1 bukan joker",
+    "zhaiHint": "1 hanya dikira sebagai 1. Boleh kekalkan jumlah yang sama apabila bertukar.",
+    "zhaiOnes": "Panggil 1 sentiasa zhai",
+    "zhaiLocked": "Pusingan ini sudah zhai",
+    "round": "Pusingan {{round}} · {{dice}} dadu di atas meja",
+    "calledBy": "dipanggil oleh {{name}}",
+    "onesWild": "1 ialah joker",
+    "onesNotWild": "1 bukan joker",
+    "opening": "Panggilan pertama: {{name}} · sekurang-kurangnya {{min}}",
+    "waiting": "{{name}} sedang berfikir…",
+    "youreOut": "Anda sudah mabuk — tonton sahaja 🥴",
+    "yourDice": "Dadu anda (ketik untuk tutup)",
+    "showDice": "Ketik untuk lihat dadu anda",
+    "youHave": "Anda ada {{count}} yang dikira untuk {{face}}",
+    "youHave_one": "Anda ada {{count}} yang dikira untuk {{face}}",
+    "youHave_other": "Anda ada {{count}} yang dikira untuk {{face}}",
+    "hideHint": "Hanya anda yang nampak. 1 dikira sebagai apa-apa nombor kecuali pusingan zhai.",
+    "calls": "Panggilan pusingan ini",
+    "yourTurn": "Giliran anda — lawan {{bid}}, atau buka",
+    "yourOpening": "Giliran anda — mulakan panggilan",
+    "call": "Panggil {{bid}}",
+    "mustRaise": "Panggil lebih banyak dadu, atau jumlah sama dengan nombor lebih tinggi (2 < 3 < 4 < 5 < 6 < 1)",
+    "mustOpen": "Mula dengan sekurang-kurangnya {{min}}",
+    "open": "Buka",
+    "split": "Ganda",
+    "challengeHint": "Buka: yang kalah minum 1. Ganda: yang kalah minum 2.",
+    "drunk": "Mabuk — keluar",
+    "thinking": "berfikir",
+    "lastRound": "Keputusan pusingan {{round}}",
+    "openedBy": "{{name}} buka {{bid}} oleh {{bidder}}",
+    "splitBy": "{{name}} gandakan {{bid}} oleh {{bidder}}",
+    "found": "Ada {{count}} × {{face}}",
+    "found_one": "Ada {{count}} × {{face}}",
+    "found_other": "Ada {{count}} × {{face}}",
+    "drinks": "{{name}} minum {{count}}",
+    "drinks_one": "{{name}} minum {{count}}",
+    "drinks_other": "{{name}} minum {{count}}",
+    "drunkOut": "dan keluar",
+    "noWinner": "Permainan tamat",
+    "youWin": "Anda menang! 🍻",
+    "winner": "{{name}} menang!",
+    "lastStanding": "Yang terakhir bertahan menang"
   },
   "profile": {
     "title": "Profil",
