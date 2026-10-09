@@ -17,6 +17,7 @@ import {
   breakZhaiMin,
   canSplit,
   isKaizhai,
+  isLeopard,
   isOut,
   openingMin,
   taskFor,
@@ -226,7 +227,10 @@ export function LiarsDiceBoard({
                     ? t("liarsdice.youHave", {
                         count: myCount(state.myDice, state.bid.face, state.bid.zhai),
                         face: state.bid.face,
-                      })
+                      }) +
+                      (isLeopard(state.myDice, state.bid.face, state.bid.zhai)
+                        ? `  🐆 ${t("liarsdice.leopard")}`
+                        : "")
                     : t("liarsdice.hideHint")}
                 </AppText>
               </>
@@ -629,6 +633,11 @@ function LastReveal({
                   const counts = myCount([face], bid.face, bid.zhai) > 0;
                   return <Die key={i} face={face} size={26} glow={counts} dim={!counts} />;
                 })}
+              {isLeopard(hand, bid.face, bid.zhai) ? (
+                <AppText variant="tiny" color="primary" style={styles.leopard}>
+                  {`🐆 ${t("liarsdice.leopard")}`}
+                </AppText>
+              ) : null}
             </View>
           ) : null
         )}
@@ -758,4 +767,5 @@ const styles = StyleSheet.create({
   },
   revealRow: { flexDirection: "row", alignItems: "center", gap: 5 },
   revealName: { width: 64 },
+  leopard: { fontFamily: fontFamily.semiBold, marginLeft: 4 },
 });

@@ -15,6 +15,8 @@ the last bid a lie:
 - A zhai round may break the fast (开斋, also called 飞): the next bid
   makes 1s wild again but must call at least double the dice. Once a
   round is kaizhai it stays kaizhai — no more zhai, so no more 1s.
+- 豹子 (five of a kind): a cup whose five dice all count for the bid
+  counts as six (two 1s + three 3s are six 3s when 1s are wild).
 - Open (开): the player whose turn it is calls the last bid a lie.
   Everything is revealed; if the table has at least the bid, the
   caller drinks a cup, otherwise the bidder does.
@@ -68,10 +70,18 @@ def face_rank(face: int) -> int:
     return 7 if face == 1 else face
 
 
+def hand_count(hand: list[int], face: int, zhai: bool) -> int:
+    """Dice in one cup that count for a bid on `face`. A full cup that all
+    counts (豹子 — five of a kind, wild 1s included when kaizhai) counts
+    one extra: two 1s and three 3s are six 3s, but only when 1s are wild."""
+    wild = not zhai and face != 1
+    found = sum(1 for d in hand if d == face or (wild and d == 1))
+    return found + 1 if found == len(hand) == DICE_EACH else found
+
+
 def counts(dice: list[list[int]], face: int, zhai: bool) -> int:
     """Dice on the table that count for a bid on `face`."""
-    wild = not zhai and face != 1
-    return sum(1 for hand in dice for d in hand if d == face or (wild and d == 1))
+    return sum(hand_count(hand, face, zhai) for hand in dice)
 
 
 class LiarsDice(BaseGame):

@@ -2,6 +2,7 @@ import {
   canSplit,
   faceRank,
   isKaizhai,
+  isLeopard,
   isOut,
   taskFor,
   isValidBid,
@@ -89,6 +90,15 @@ describe("bidding", () => {
     expect(suggestedBid(view({ bid: bid(3, 6) }))).toEqual({ quantity: 4, face: 2 });
     expect(suggestedBid(view({ bid: bid(3, 6, true) }))).toEqual({ quantity: 3, face: 1 });
     expect(suggestedBid(view({ bid: bid(3, 1) }))).toEqual({ quantity: 4, face: 2 });
+  });
+
+  it("counts five of a kind (豹子) one extra", () => {
+    expect(myCount([1, 1, 3, 3, 3], 3, false)).toBe(6);
+    expect(myCount([1, 1, 3, 3, 3], 3, true)).toBe(3);
+    expect(myCount([3, 3, 3, 3, 3], 3, true)).toBe(6);
+    expect(myCount([3, 3, 3, 3, 2], 3, false)).toBe(4);
+    expect(isLeopard([1, 1, 1, 1, 1], 4, false)).toBe(true);
+    expect(isLeopard([1, 1, 1, 1, 1], 4, true)).toBe(false);
   });
 
   it("counts my dice, with 1s wild until zhai", () => {

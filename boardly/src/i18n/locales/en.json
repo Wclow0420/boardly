@@ -435,7 +435,8 @@
           "items": [
             "The opening bid picks the round: zhai (斋) — 1s count only as 1s — or kaizhai (开斋) — 1s are wild and count as any face. Calling 1s is always zhai.",
             "A zhai round can break the fast (开斋, also called 飞): 1s become wild again, but you must call at least double the dice (after 3 × 4 zhai, at least 6). An opening zhai bid may be as low as the number of players.",
-            "Once a round is kaizhai it stays kaizhai: nobody can go back to zhai, so nobody can call 1s."
+            "Once a round is kaizhai it stays kaizhai: nobody can go back to zhai, so nobody can call 1s.",
+            "Five of a kind (豹子): a cup whose five dice all count for the bid counts as six. With wild 1s, two 1s + three 3s are six 3s; under zhai they're just three 3s, while five real 3s still count as six."
           ]
         },
         {
@@ -959,7 +960,8 @@
     "endVote": "Vote to stop",
     "endCancel": "Keep playing",
     "kaizhai": "Kaizhai",
-    "lockedKaizhai": "This round is kaizhai: 1s are wild, and nobody can call zhai or 1s."
+    "lockedKaizhai": "This round is kaizhai: 1s are wild, and nobody can call zhai or 1s.",
+    "leopard": "Five of a kind +1"
   },
   "profile": {
     "title": "Profile",

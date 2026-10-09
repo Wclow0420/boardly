@@ -140,8 +140,20 @@ export function suggestedBid(state: LiarsDiceState): { quantity: number; face: n
 }
 
 /** How many of my dice count for a face. */
+/** How many dice in one cup count for a face. A full cup that all
+ *  counts (豹子 — five of a kind, wild 1s included when kaizhai) counts
+ *  one extra: two 1s + three 3s are six 3s, but only when 1s are wild. */
 export function myCount(dice: number[], face: number, zhai: boolean): number {
-  return dice.filter((d) => d === face || (!zhai && face !== 1 && d === 1)).length;
+  const found = dice.filter((d) => d === face || (!zhai && face !== 1 && d === 1)).length;
+  return isLeopard(dice, face, zhai) ? found + 1 : found;
+}
+
+/** Whether a cup is 豹子 for this face: all five dice count. */
+export function isLeopard(dice: number[], face: number, zhai: boolean): boolean {
+  return (
+    dice.length === 5 &&
+    dice.every((d) => d === face || (!zhai && face !== 1 && d === 1))
+  );
 }
 
 export function currentSeat(state: LiarsDiceState): number {
