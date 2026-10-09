@@ -435,7 +435,8 @@
           "items": [
             "Panggilan pertama menentukan pusingan: zhai (斋) — 1 hanya dikira sebagai 1 — atau kaizhai (开斋) — 1 ialah joker. Panggil 1 sentiasa zhai.",
             "Pusingan zhai boleh buka puasa (开斋, juga dipanggil 飞): 1 jadi joker semula, tetapi mesti panggil sekurang-kurangnya dua kali ganda (selepas 3 × 4 zhai, sekurang-kurangnya 6). Panggilan pertama zhai boleh serendah bilangan pemain.",
-            "Sekali kaizhai, kekal kaizhai: tiada siapa boleh kembali ke zhai, jadi tiada siapa boleh panggil 1."
+            "Sekali kaizhai, kekal kaizhai: tiada siapa boleh kembali ke zhai, jadi tiada siapa boleh panggil 1.",
+            "Lima sama (豹子): cawan yang kelima-lima dadunya dikira untuk panggilan dikira sebagai enam. Dengan 1 joker, dua 1 + tiga 3 ialah enam 3; dalam zhai hanya tiga 3, manakala lima 3 sebenar tetap dikira enam."
           ]
         },
         {
@@ -956,7 +957,8 @@
     "endVote": "Undi berhenti",
     "endCancel": "Teruskan",
     "kaizhai": "Kaizhai",
-    "lockedKaizhai": "Pusingan ini kaizhai: 1 ialah joker, dan tiada siapa boleh panggil zhai atau 1."
+    "lockedKaizhai": "Pusingan ini kaizhai: 1 ialah joker, dan tiada siapa boleh panggil zhai atau 1.",
+    "leopard": "Lima sama +1"
   },
   "profile": {
     "title": "Profil",

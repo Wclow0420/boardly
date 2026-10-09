@@ -53,6 +53,17 @@ def test_setup():
     assert game.new_state(3, {"mode": "endless"})["mode"] == "endless"
 
 
+def test_five_of_a_kind_counts_one_extra():
+    leopard = [[1, 1, 3, 3, 3]]
+    assert counts(leopard, 3, zhai=False) == 6  # kaizhai: 1s wild, 豹子 +1
+    assert counts(leopard, 3, zhai=True) == 3   # zhai: just three 3s
+    assert counts([[3, 3, 3, 3, 3]], 3, zhai=True) == 6  # five real 3s
+    assert counts([[1, 1, 1, 1, 1]], 1, zhai=True) == 6
+    assert counts([[1, 1, 1, 1, 1]], 4, zhai=False) == 6  # all wild
+    assert counts([[3, 3, 3, 3, 2]], 3, zhai=False) == 4  # not a full cup
+    assert counts([[1, 1, 3, 3, 3], [3, 2, 2, 2, 2]], 3, zhai=False) == 7
+
+
 def test_ones_are_wild_unless_zhai():
     dice = [[1, 5, 5], [1, 2, 5]]
     assert counts(dice, 5, zhai=False) == 5  # three 5s and two wild 1s
