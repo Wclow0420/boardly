@@ -78,18 +78,23 @@ def test_each_bid_must_go_higher():
         with pytest.raises(GameError):
             bid(state, 1, q, f)
     assert bid(state, 1, 3, 6)["bid"]["face"] == 6   # same count, higher face
-    assert bid(state, 1, 3, 1)["bid"]["zhai"] is True  # 1 is the top face
     assert bid(state, 1, 4, 2)["bid"]["quantity"] == 4  # more dice
+    zhai = bid(start(TWO), 0, 3, 5, zhai=True)
+    assert bid(zhai, 1, 3, 1)["bid"]["face"] == 1  # 1 is the top face
     with pytest.raises(GameError):  # only ten dice on the table
         bid(state, 1, 11, 2)
 
 
-def test_zhai_may_keep_the_count():
-    state = bid(start(TWO), 0, 3, 5)
-    state = bid(state, 1, 3, 5, zhai=True)  # going zhai is itself a raise
-    assert state["bid"]["zhai"] is True
-    state = bid(state, 0, 4, 5, zhai=True)  # and staying zhai raises as usual
-    assert state["bid"]["zhai"] is True
+def test_once_kaizhai_no_going_back_to_zhai():
+    state = bid(start(TWO), 0, 3, 5)  # a kaizhai opening: 1s are wild
+    for q, f, z in ((3, 5, True), (5, 6, True), (4, 1, False)):
+        with pytest.raises(GameError):  # no zhai, so no 1s either
+            bid(state, 1, q, f, zhai=z)
+    zhai = bid(start(TWO), 0, 3, 5, zhai=True)
+    assert bid(zhai, 1, 4, 5, zhai=True)["bid"]["zhai"] is True  # stays zhai
+    broken = bid(zhai, 1, 6, 5)  # break the fast
+    with pytest.raises(GameError):  # and it stays broken
+        bid(broken, 0, 7, 5, zhai=True)
 
 
 def test_a_zhai_opening_may_call_the_player_count():

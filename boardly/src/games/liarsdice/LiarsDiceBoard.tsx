@@ -16,6 +16,7 @@ import {
   totalDice,
   breakZhaiMin,
   canSplit,
+  isKaizhai,
   isOut,
   openingMin,
   taskFor,
@@ -113,9 +114,9 @@ export function LiarsDiceBoard({
       ? t("game.you")
       : (players.find((p) => p.seat === seat)?.username ?? `#${seat + 1}`);
   const bidText = (bid: Pick<Bid, "quantity" | "face" | "zhai">) =>
-    `${t("liarsdice.bid", { count: bid.quantity, face: bid.face })}${
-      bid.zhai ? ` · ${t("liarsdice.zhai")}` : ""
-    }`;
+    `${t("liarsdice.bid", { count: bid.quantity, face: bid.face })} · ${t(
+      bid.zhai ? "liarsdice.zhai" : "liarsdice.kaizhai"
+    )}`;
 
   const send = (move: Record<string, unknown>) => {
     moveHaptic();
@@ -140,18 +141,21 @@ export function LiarsDiceBoard({
               <AppText variant="h1">{state.bid.quantity}</AppText>
               <AppText variant="h2">×</AppText>
               <Die face={state.bid.face} size={44} />
-              {state.bid.zhai ? (
-                <View style={[styles.zhaiTag, { backgroundColor: colors.danger }]}>
-                  <AppText variant="label" style={{ color: "#fff" }}>
-                    {t("liarsdice.zhai")}
-                  </AppText>
-                </View>
-              ) : null}
+              {/* 斋 = 1s count only as 1s; 开斋 = 1s are wild */}
+              <View
+                style={[
+                  styles.zhaiTag,
+                  { backgroundColor: state.bid.zhai ? colors.danger : colors.primary },
+                ]}
+              >
+                <AppText
+                  variant="title"
+                  style={{ color: state.bid.zhai ? "#fff" : colors.primaryContrast }}
+                >
+                  {t(state.bid.zhai ? "liarsdice.zhai" : "liarsdice.kaizhai")}
+                </AppText>
+              </View>
             </View>
-            <AppText variant="body" color="textMuted">
-              {t("liarsdice.calledBy", { name: nameOf(state.bid.seat) })}
-              {` · ${t(state.bid.zhai ? "liarsdice.onesNotWild" : "liarsdice.onesWild")}`}
-            </AppText>
           </>
         ) : (
           <AppText variant="title" style={{ marginTop: 4 }}>
@@ -349,7 +353,9 @@ function BidPicker({
   const [face, setFace] = useState(start.face);
   // A zhai round stays zhai unless the player breaks the fast (开斋)
   const [zhaiPicked, setZhaiPicked] = useState(state.bid?.zhai ?? false);
-  const zhai = zhaiPicked || face === 1;
+  // Once kaizhai, the round stays kaizhai: no zhai, no 1s
+  const kaizhai = isKaizhai(state);
+  const zhai = !kaizhai && (zhaiPicked || face === 1);
   const breakMin = breakZhaiMin(state);
   const breaking = breakMin !== null && !zhai;
   const valid = isValidBid(state, quantity, face, zhai);
@@ -395,7 +401,7 @@ function BidPicker({
       </View>
 
       <View style={[styles.faces, { marginTop: spacing.sm }]}>
-        {[2, 3, 4, 5, 6, 1].map((f) => (
+        {(kaizhai ? [2, 3, 4, 5, 6] : [2, 3, 4, 5, 6, 1]).map((f) => (
           <Pressable
             key={f}
             accessibilityRole="button"
@@ -415,6 +421,11 @@ function BidPicker({
         ))}
       </View>
 
+      {kaizhai ? (
+        <AppText variant="tiny" color="textSubtle" style={{ marginTop: spacing.sm }}>
+          {`🍖  ${t("liarsdice.lockedKaizhai")}`}
+        </AppText>
+      ) : (
       <Pressable
         accessibilityRole="checkbox"
         accessibilityState={{ checked: zhai, disabled: face === 1 }}
@@ -452,6 +463,7 @@ function BidPicker({
           {zhai ? "☑" : "☐"}
         </AppText>
       </Pressable>
+      )}
 
       <Button
         label={t("liarsdice.call", { bid: bidText({ quantity, face, zhai }) })}

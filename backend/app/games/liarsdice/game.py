@@ -9,11 +9,12 @@ the last bid a lie:
   opening zhai bid may be as many as there are players.
 - A raise is more dice, or as many dice of a higher face, where faces
   rank 2 < 3 < 4 < 5 < 6 < 1.
-- 1s are wild and count as any face, unless the bid is "zhai" (斋):
-  then 1s count only as 1s. Bidding 1s is always zhai. Going zhai may
-  keep the same count and face (it makes the bid harder).
-- Breaking the fast (开斋, also called 飞): after a zhai bid, the next
-  bid may make 1s wild again, but must call at least double the dice.
+- The opening bid picks the round's kind: zhai (斋, 1s count only as
+  1s) or kaizhai (开斋, 1s are wild and count as any face). Bidding 1s
+  is always zhai.
+- A zhai round may break the fast (开斋, also called 飞): the next bid
+  makes 1s wild again but must call at least double the dice. Once a
+  round is kaizhai it stays kaizhai — no more zhai, so no more 1s.
 - Open (开): the player whose turn it is calls the last bid a lie.
   Everything is revealed; if the table has at least the bid, the
   caller drinks a cup, otherwise the bidder does.
@@ -191,12 +192,11 @@ class LiarsDice(BaseGame):
                 raise GameError(
                     f"Breaking zhai needs at least {2 * last['quantity']} dice"
                 )
-        else:
-            new = (quantity, face_rank(face))
-            old = (last["quantity"], face_rank(last["face"]))
-            going_zhai = zhai and not last["zhai"]
-            if not (new > old or (going_zhai and new >= old)):
-                raise GameError("Bid higher than the last call")
+        elif zhai and not last["zhai"]:
+            # Once the fast is broken the round stays kaizhai
+            raise GameError("This round is kaizhai — no going back to zhai")
+        elif (quantity, face_rank(face)) <= (last["quantity"], face_rank(last["face"])):
+            raise GameError("Bid higher than the last call")
 
         bid = {"quantity": quantity, "face": face, "zhai": zhai, "seat": seat}
         return {

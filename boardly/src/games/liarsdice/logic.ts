@@ -108,11 +108,17 @@ export function isValidBid(
   if (last === null) return quantity >= openingMin(state, isZhai);
   // Breaking the fast: 1s are wild again, at double the dice
   if (last.zhai && !isZhai) return quantity >= last.quantity * 2;
-  const next = [quantity, faceRank(face)];
-  const prev = [last.quantity, faceRank(last.face)];
-  const higher = next[0] > prev[0] || (next[0] === prev[0] && next[1] > prev[1]);
-  const same = next[0] === prev[0] && next[1] === prev[1];
-  return higher || (isZhai && !last.zhai && (higher || same));
+  // Once kaizhai, the round stays kaizhai (so no 1s either)
+  if (!last.zhai && isZhai) return false;
+  return (
+    quantity > last.quantity ||
+    (quantity === last.quantity && faceRank(face) > faceRank(last.face))
+  );
+}
+
+/** Whether this round is kaizhai (开斋): 1s wild, and no going back. */
+export function isKaizhai(state: LiarsDiceState): boolean {
+  return state.bid !== null && !state.bid.zhai;
 }
 
 /** A sensible starting point for the bid picker: the smallest raise. */
@@ -120,10 +126,17 @@ export function suggestedBid(state: LiarsDiceState): { quantity: number; face: n
   // (a zhai round keeps going zhai unless the player breaks it)
   const last = state.bid;
   if (last === null) {
-    return { quantity: activeSeats(state).length + 1, face: state.myDice[0] === 1 ? 2 : state.myDice[0] ?? 2 };
+    return {
+      quantity: activeSeats(state).length + 1,
+      face: state.myDice[0] === 1 ? 2 : (state.myDice[0] ?? 2),
+    };
   }
-  if (last.face !== 1) return { quantity: last.quantity, face: last.face === 6 ? 1 : last.face + 1 };
-  return { quantity: last.quantity + 1, face: 2 };
+  if (last.face === 1) return { quantity: last.quantity + 1, face: 2 };
+  if (last.face === 6) {
+    // 1 tops 6 in a zhai round; kaizhai rounds have no 1s
+    return last.zhai ? { quantity: last.quantity, face: 1 } : { quantity: last.quantity + 1, face: 2 };
+  }
+  return { quantity: last.quantity, face: last.face + 1 };
 }
 
 /** How many of my dice count for a face. */

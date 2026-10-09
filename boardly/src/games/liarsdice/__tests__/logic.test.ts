@@ -1,6 +1,7 @@
 import {
   canSplit,
   faceRank,
+  isKaizhai,
   isOut,
   taskFor,
   isValidBid,
@@ -55,14 +56,18 @@ describe("bidding", () => {
     expect(isValidBid(state, 3, 5, false)).toBe(false);
     expect(isValidBid(state, 3, 4, false)).toBe(false);
     expect(isValidBid(state, 3, 6, false)).toBe(true);
-    expect(isValidBid(state, 3, 1, false)).toBe(true);
+    expect(isValidBid(state, 3, 1, false)).toBe(false); // kaizhai: no 1s
+    expect(isValidBid(view({ bid: bid(3, 5, true) }), 3, 1, true)).toBe(true);
     expect(isValidBid(state, 4, 2, false)).toBe(true);
     expect(isValidBid(state, 11, 2, false)).toBe(false); // only 10 dice
   });
 
-  it("lets a switch to zhai keep the same call", () => {
-    expect(isValidBid(view({ bid: bid(3, 5) }), 3, 5, true)).toBe(true);
+  it("never goes back to zhai once kaizhai", () => {
+    expect(isValidBid(view({ bid: bid(3, 5) }), 3, 5, true)).toBe(false);
+    expect(isValidBid(view({ bid: bid(3, 5) }), 5, 6, true)).toBe(false);
     expect(isValidBid(view({ bid: bid(3, 5, true) }), 3, 5, true)).toBe(false);
+    expect(isKaizhai(view({ bid: bid(3, 5) }))).toBe(true);
+    expect(isKaizhai(view({ bid: bid(3, 5, true) }))).toBe(false);
   });
 
   it("lets a zhai opening call the player count", () => {
@@ -81,7 +86,8 @@ describe("bidding", () => {
   it("suggests the smallest raise", () => {
     expect(suggestedBid(view())).toEqual({ quantity: 3, face: 2 });
     expect(suggestedBid(view({ bid: bid(3, 5) }))).toEqual({ quantity: 3, face: 6 });
-    expect(suggestedBid(view({ bid: bid(3, 6) }))).toEqual({ quantity: 3, face: 1 });
+    expect(suggestedBid(view({ bid: bid(3, 6) }))).toEqual({ quantity: 4, face: 2 });
+    expect(suggestedBid(view({ bid: bid(3, 6, true) }))).toEqual({ quantity: 3, face: 1 });
     expect(suggestedBid(view({ bid: bid(3, 1) }))).toEqual({ quantity: 4, face: 2 });
   });
 
