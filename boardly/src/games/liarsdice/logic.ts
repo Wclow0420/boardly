@@ -16,7 +16,8 @@ export interface Reveal {
   dice: number[][];
   bid: Bid;
   challenger: number;
-  double: boolean;
+  /** open (开) = 1 cup, split (劈) = 2, counter (反劈) = 4. */
+  kind: "open" | "split" | "counter";
   found: number;
   loser: number;
   drink: number;
@@ -25,18 +26,27 @@ export interface Reveal {
 
 export interface LiarsDiceState {
   numPlayers: number;
-  phase: "bidding" | "finished";
+  /** knockout: out at maxCups; endless: nobody is out, vote to stop. */
+  mode: "knockout" | "endless";
+  /** "split": someone split (劈) the bid, waiting on the bidder. */
+  phase: "bidding" | "split" | "finished";
   turn: number;
   round: number;
   cups: number[];
-  maxCups: number;
+  /** Cups that knock you out; null in endless games. */
+  maxCups: number | null;
   diceEach: number;
   myDice: number[];
   diceCount: number[];
   bid: Bid | null;
   bids: Bid[];
+  split: { by: number } | null;
+  /** Endless: seats voting to stop. */
+  endVotes: number[];
   reveal: Reveal | null;
   winner: number | null;
+  /** Endless: fewest cups when the table stopped (ties share it). */
+  winners: number[] | null;
 }
 
 /** 1 is the top face: 2 < 3 < 4 < 5 < 6 < 1. */
@@ -44,10 +54,30 @@ export function faceRank(face: number): number {
   return face === 1 ? 7 : face;
 }
 
+export function isOut(state: LiarsDiceState, seat: number): boolean {
+  return state.maxCups !== null && state.cups[seat] >= state.maxCups;
+}
+
 export function activeSeats(state: LiarsDiceState): number[] {
-  return state.cups
-    .map((cups, seat) => (cups < state.maxCups ? seat : -1))
-    .filter((seat) => seat >= 0);
+  return state.cups.map((_, seat) => seat).filter((seat) => !isOut(state, seat));
+}
+
+/** Whether this player may split (劈) the bid on the table now. */
+export function canSplit(state: LiarsDiceState, mySeat: number): boolean {
+  return (
+    state.phase === "bidding" &&
+    state.bid !== null &&
+    mySeat >= 0 &&
+    state.bid.seat !== mySeat &&
+    !isOut(state, mySeat)
+  );
+}
+
+/** What the game is waiting on from this player, if anything. */
+export function taskFor(state: LiarsDiceState, mySeat: number): "bid" | "answer" | null {
+  if (mySeat < 0 || state.phase === "finished") return null;
+  if (state.phase === "split") return state.bid?.seat === mySeat ? "answer" : null;
+  return state.turn === mySeat ? "bid" : null;
 }
 
 export function totalDice(state: LiarsDiceState): number {
@@ -102,5 +132,7 @@ export function myCount(dice: number[], face: number, zhai: boolean): number {
 }
 
 export function currentSeat(state: LiarsDiceState): number {
-  return state.phase === "finished" ? -1 : state.turn;
+  if (state.phase === "finished") return -1;
+  if (state.phase === "split") return state.bid?.seat ?? -1;
+  return state.turn;
 }

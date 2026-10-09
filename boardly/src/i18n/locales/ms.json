@@ -148,7 +148,9 @@
     "closedTitle": "Meja ini telah ditutup",
     "closedSubtitle": "Minta jemputan baharu daripada rakan atau mulakan meja sendiri.",
     "inviteFriends": "Jemput Rakan",
-    "noFriends": "Tambah rakan untuk menjemput mereka terus ke meja anda."
+    "noFriends": "Tambah rakan untuk menjemput mereka terus ke meja anda.",
+    "settings": "Tetapan permainan",
+    "settingsHostOnly": "Hanya hos boleh menukarnya."
   },
   "table": {
     "inProgress": "Sedang Berlangsung",
@@ -437,19 +439,20 @@
           ]
         },
         {
-          "title": "Buka",
+          "title": "Buka, belah, balas",
           "items": [
-            "Pada giliran anda, boleh Buka (开) dan bukan panggil: semua dadu didedahkan dan dikira.",
-            "Jika cukup, yang buka minum secawan; jika tidak, yang panggil minum.",
-            "Ganda (劈) sama, tetapi yang kalah minum dua cawan."
+            "Buka (开): pada giliran anda, kata panggilan terakhir menipu. Semua dadu didedahkan dan dikira. Jika cukup, yang buka minum 1 cawan; jika tidak, yang panggil minum.",
+            "Belah (劈): sesiapa sahaja — bukan hanya yang bergilir — boleh belah panggilan terakhir pada bila-bila masa. Yang kalah minum 2 cawan.",
+            "Balas belah (反劈): yang dibelah boleh membalas. Yang kalah minum 4."
           ]
         },
         {
           "title": "Menang",
           "items": [
-            "Tiga cawan dan anda mabuk — keluar.",
             "Selepas setiap buka, yang masih bermain goncang semula, dan yang kalah mula pusingan seterusnya.",
-            "Pemain terakhir yang bertahan menang."
+            "Kalah keluar: 5 cawan dan anda mabuk — keluar. Pemain terakhir yang bertahan menang.",
+            "Tanpa had: tiada siapa keluar; cawan terus dikira. Apabila lebih separuh meja mengundi berhenti, paling sedikit cawan menang.",
+            "Hos memilih mod di bilik."
           ]
         }
       ]
@@ -916,13 +919,11 @@
     "mustRaise": "Panggil lebih banyak dadu, atau jumlah sama dengan nombor lebih tinggi (2 < 3 < 4 < 5 < 6 < 1)",
     "mustOpen": "Mula dengan sekurang-kurangnya {{min}}",
     "open": "Buka",
-    "split": "Ganda",
-    "challengeHint": "Buka: yang kalah minum 1. Ganda: yang kalah minum 2.",
+    "split": "Belah",
+    "challengeHint": "Buka: yang kalah minum 1. Belah: yang kalah minum 2 — dan yang dibelah boleh balas untuk 4.",
     "drunk": "Mabuk — keluar",
     "thinking": "berfikir",
     "lastRound": "Keputusan pusingan {{round}}",
-    "openedBy": "{{name}} buka {{bid}} oleh {{bidder}}",
-    "splitBy": "{{name}} gandakan {{bid}} oleh {{bidder}}",
     "found": "Ada {{count}} × {{face}}",
     "found_one": "Ada {{count}} × {{face}}",
     "found_other": "Ada {{count}} × {{face}}",
@@ -938,7 +939,25 @@
     "breakHint": "Nyahtanda untuk buka puasa (开斋): 1 jadi joker semula, tetapi mesti panggil sekurang-kurangnya {{min}}.",
     "breakingHint": "Buka puasa: panggil sekurang-kurangnya {{min}} dadu.",
     "mustBreak": "Buka puasa perlukan sekurang-kurangnya {{min}} dadu",
-    "broke": "buka puasa"
+    "broke": "buka puasa",
+    "splitting": "{{name}} belah panggilan {{bidder}}!",
+    "waitingAnswer": "{{name}} sedang memutuskan sama ada mahu balas…",
+    "splitThem": "Belah panggilan {{name}} (yang kalah minum 2)",
+    "youWereSplit": "{{name}} belah {{bid}} anda!",
+    "answerHint": "Terima: yang kalah minum 2. Balas belah: yang kalah minum 4.",
+    "accept": "Terima (2)",
+    "counter": "Balas (4)",
+    "revealBy": {
+      "open": "{{name}} buka {{bid}} oleh {{bidder}}",
+      "split": "{{name}} belah {{bid}} oleh {{bidder}}",
+      "counter": "{{name}} belah {{bid}} oleh {{bidder}} — dan {{bidder}} membalas!"
+    },
+    "winnersTied": "{{names}} menang!",
+    "fewestCups": "Paling sedikit cawan menang",
+    "endTitle": "Cukup untuk malam ini?",
+    "endHint": "{{votes}} undi untuk berhenti · perlu {{needed}}",
+    "endVote": "Undi berhenti",
+    "endCancel": "Teruskan"
   },
   "profile": {
     "title": "Profil",
@@ -1033,5 +1052,20 @@
     "claim": "Tuntut",
     "waiting_one": "+{{count}} syiling — tuntut di Laman Utama",
     "waiting_other": "+{{count}} syiling — tuntut di Laman Utama"
+  },
+  "gameOptions": {
+    "liarsdice": {
+      "mode": {
+        "title": "Mod",
+        "knockout": {
+          "name": "Kalah keluar",
+          "desc": "5 cawan dan anda keluar. Yang terakhir bertahan menang."
+        },
+        "endless": {
+          "name": "Tanpa had",
+          "desc": "Tiada siapa keluar — terus minum. Undi untuk berhenti; paling sedikit cawan menang."
+        }
+      }
+    }
   }
 }

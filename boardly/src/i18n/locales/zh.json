@@ -148,7 +148,9 @@
     "closedTitle": "该牌桌已关闭",
     "closedSubtitle": "向朋友要一个新邀请，或自己开一桌。",
     "inviteFriends": "邀请好友",
-    "noFriends": "添加好友后，可以直接邀请他们来你的牌桌。"
+    "noFriends": "添加好友后，可以直接邀请他们来你的牌桌。",
+    "settings": "游戏设置",
+    "settingsHostOnly": "只有房主可以修改。"
   },
   "table": {
     "inProgress": "进行中",
@@ -437,19 +439,20 @@
           ]
         },
         {
-          "title": "开骰",
+          "title": "开、劈、反劈",
           "items": [
-            "轮到你时，可以不叫，直接「开」：所有人亮骰子，一起数。",
-            "实际数量够了，开的人喝一杯；不够，叫的人喝一杯。",
-            "「劈」一样是开，但输的人喝两杯。"
+            "开：轮到你时可以不叫，直接说上家吹牛。所有人亮骰子一起数：够了，开的人喝 1 杯；不够，叫的人喝 1 杯。",
+            "劈：任何人都可以劈，不用等轮到自己，随时都能劈当前的叫法。输的人喝 2 杯。",
+            "反劈：被劈的人可以反劈，输的人喝 4 杯。"
           ]
         },
         {
           "title": "输赢",
           "items": [
-            "喝满三杯就醉倒，出局。",
             "每次开完，还没出局的人重新摇骰，输的人先叫下一轮。",
-            "最后一个没醉倒的人获胜。"
+            "出局模式：喝满 5 杯就醉倒出局，最后一个没醉倒的人获胜。",
+            "无限模式：没人会出局，杯数一直累计。超过一半的人投票结束时，喝最少的人获胜。",
+            "模式由房主在房间里选择。"
           ]
         }
       ]
@@ -915,12 +918,10 @@
     "mustOpen": "至少要叫 {{min}} 个",
     "open": "开",
     "split": "劈",
-    "challengeHint": "开：输的喝 1 杯。劈：输的喝 2 杯。",
+    "challengeHint": "开：输的喝 1 杯。劈：输的喝 2 杯，被劈的人还可以反劈变 4 杯。",
     "drunk": "醉倒 — 出局",
     "thinking": "思考中",
     "lastRound": "第 {{round}} 轮结果",
-    "openedBy": "{{name}} 开了 {{bidder}} 的 {{bid}}",
-    "splitBy": "{{name}} 劈了 {{bidder}} 的 {{bid}}",
     "found": "实际有 {{count}} 个 {{face}}",
     "found_other": "实际有 {{count}} 个 {{face}}",
     "drinks": "{{name}} 喝 {{count}} 杯",
@@ -934,7 +935,25 @@
     "breakHint": "取消勾选就是开斋（飞）：1 变回万能，但至少要叫 {{min}} 个。",
     "breakingHint": "开斋中：至少要叫 {{min}} 个。",
     "mustBreak": "开斋至少要叫 {{min}} 个",
-    "broke": "开斋"
+    "broke": "开斋",
+    "splitting": "{{name}} 劈了 {{bidder}}！",
+    "waitingAnswer": "{{name}} 正在决定要不要反劈…",
+    "splitThem": "劈 {{name}}（输的喝 2 杯）",
+    "youWereSplit": "{{name}} 劈了你的 {{bid}}！",
+    "answerHint": "接受：输的喝 2 杯。反劈：输的喝 4 杯。",
+    "accept": "接受（2 杯）",
+    "counter": "反劈（4 杯）",
+    "revealBy": {
+      "open": "{{name}} 开了 {{bidder}} 的 {{bid}}",
+      "split": "{{name}} 劈了 {{bidder}} 的 {{bid}}",
+      "counter": "{{name}} 劈了 {{bidder}} 的 {{bid}}，{{bidder}} 反劈！"
+    },
+    "winnersTied": "{{names}} 赢了！",
+    "fewestCups": "喝最少的人获胜",
+    "endTitle": "今晚就到这里？",
+    "endHint": "{{votes}} 人想结束 · 需要 {{needed}} 人",
+    "endVote": "投票结束",
+    "endCancel": "继续玩"
   },
   "profile": {
     "title": "我的",
@@ -1029,5 +1048,20 @@
     "claim": "领取",
     "waiting_one": "+{{count}} 金币 — 回首页领取",
     "waiting_other": "+{{count}} 金币 — 回首页领取"
+  },
+  "gameOptions": {
+    "liarsdice": {
+      "mode": {
+        "title": "模式",
+        "knockout": {
+          "name": "出局模式",
+          "desc": "喝满 5 杯就出局，最后没醉的人赢。"
+        },
+        "endless": {
+          "name": "无限模式",
+          "desc": "没人出局，一直喝下去。投票结束，喝最少的人赢。"
+        }
+      }
+    }
   }
 }

@@ -148,7 +148,9 @@
     "closedTitle": "This table is closed",
     "closedSubtitle": "Ask a friend for a new invite or start your own table.",
     "inviteFriends": "Invite Friends",
-    "noFriends": "Add friends to invite them straight to your table."
+    "noFriends": "Add friends to invite them straight to your table.",
+    "settings": "Game settings",
+    "settingsHostOnly": "Only the host can change these."
   },
   "table": {
     "inProgress": "In Progress",
@@ -439,17 +441,18 @@
         {
           "title": "Calling a lie",
           "items": [
-            "On your turn, instead of bidding you can Open (开): everyone's dice are revealed and counted.",
-            "If there are at least as many as the bid, the caller drinks a cup; if not, the bidder does.",
-            "Double (劈) works the same, but the loser drinks two cups."
+            "Open (开): on your turn, instead of bidding, call the last bid a lie. Everyone's dice are revealed and counted. If there are enough, the caller drinks 1 cup; if not, the bidder does.",
+            "Split (劈): anyone — not just the player up — can split the last bid at any time. The loser drinks 2 cups.",
+            "Counter-split (反劈): the player who was split can counter. Then the loser drinks 4."
           ]
         },
         {
           "title": "Winning",
           "items": [
-            "Three cups and you're drunk — out of the game.",
             "After each call everyone still in shakes again, and the loser starts the next round.",
-            "The last player standing wins."
+            "Knockout: 5 cups and you're drunk — out. The last player standing wins.",
+            "Endless: nobody is ever out; cups just add up. When more than half the table votes to stop, the fewest cups win.",
+            "The host picks the mode in the lobby."
           ]
         }
       ]
@@ -919,13 +922,11 @@
     "mustRaise": "Call more dice, or the same number of a higher face (2 < 3 < 4 < 5 < 6 < 1)",
     "mustOpen": "Open with at least {{min}}",
     "open": "Open",
-    "split": "Double",
-    "challengeHint": "Open: the loser drinks 1. Double: the loser drinks 2.",
+    "split": "Split",
+    "challengeHint": "Open: the loser drinks 1. Split: the loser drinks 2 — and the bidder may counter for 4.",
     "drunk": "Drunk — out",
     "thinking": "thinking",
     "lastRound": "Round {{round}} result",
-    "openedBy": "{{name}} opened {{bidder}}'s {{bid}}",
-    "splitBy": "{{name}} doubled on {{bidder}}'s {{bid}}",
     "found": "There were {{count}} × {{face}}",
     "found_one": "There was {{count}} × {{face}}",
     "found_other": "There were {{count}} × {{face}}",
@@ -941,7 +942,25 @@
     "breakHint": "Untick to break the fast (开斋): 1s are wild again, but you must call at least {{min}}.",
     "breakingHint": "Breaking the fast: call at least {{min}} dice.",
     "mustBreak": "Breaking the fast needs at least {{min}} dice",
-    "broke": "broke the fast"
+    "broke": "broke the fast",
+    "splitting": "{{name}} split the call — {{bidder}} to answer!",
+    "waitingAnswer": "{{name}} is deciding whether to counter…",
+    "splitThem": "Split {{name}}'s call (loser drinks 2)",
+    "youWereSplit": "{{name}} split your {{bid}}!",
+    "answerHint": "Accept: the loser drinks 2. Counter-split: the loser drinks 4.",
+    "accept": "Accept (2)",
+    "counter": "Counter (4)",
+    "revealBy": {
+      "open": "{{name}} opened the {{bid}} call by {{bidder}}",
+      "split": "{{name}} split the {{bid}} call by {{bidder}}",
+      "counter": "{{name}} split the {{bid}} call by {{bidder}} — who countered!"
+    },
+    "winnersTied": "{{names}} win!",
+    "fewestCups": "Fewest cups wins",
+    "endTitle": "Call it a night?",
+    "endHint": "{{votes}} voted to stop · {{needed}} needed",
+    "endVote": "Vote to stop",
+    "endCancel": "Keep playing"
   },
   "profile": {
     "title": "Profile",
@@ -1036,5 +1055,20 @@
     "claim": "Claim",
     "waiting_one": "+{{count}} coin — claim it on Home",
     "waiting_other": "+{{count}} coins — claim them on Home"
+  },
+  "gameOptions": {
+    "liarsdice": {
+      "mode": {
+        "title": "Mode",
+        "knockout": {
+          "name": "Knockout",
+          "desc": "5 cups and you're out. Last one standing wins."
+        },
+        "endless": {
+          "name": "Endless",
+          "desc": "Nobody's out — just keep drinking. Vote to stop; fewest cups wins."
+        }
+      }
+    }
   }
 }

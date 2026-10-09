@@ -1,5 +1,8 @@
 import {
+  canSplit,
   faceRank,
+  isOut,
+  taskFor,
   isValidBid,
   myCount,
   suggestedBid,
@@ -9,18 +12,22 @@ import {
 function view(overrides: Partial<LiarsDiceState> = {}): LiarsDiceState {
   return {
     numPlayers: 2,
+    mode: "knockout",
     phase: "bidding",
     turn: 0,
     round: 1,
     cups: [0, 0],
-    maxCups: 3,
+    maxCups: 5,
     diceEach: 5,
     myDice: [1, 2, 5, 5, 6],
     diceCount: [5, 5],
     bid: null,
     bids: [],
+    split: null,
+    endVotes: [],
     reveal: null,
     winner: null,
+    winners: null,
     ...overrides,
   };
 }
@@ -40,7 +47,7 @@ describe("bidding", () => {
   it("opens above the player count", () => {
     expect(isValidBid(view(), 2, 5, false)).toBe(false);
     expect(isValidBid(view(), 3, 5, false)).toBe(true);
-    expect(isValidBid(view({ cups: [0, 3], diceCount: [5, 0] }), 2, 5, false)).toBe(true);
+    expect(isValidBid(view({ cups: [0, 5], diceCount: [5, 0] }), 2, 5, false)).toBe(true);
   });
 
   it("must raise the count or the face", () => {
@@ -82,5 +89,26 @@ describe("bidding", () => {
     expect(myCount([1, 2, 5, 5, 6], 5, false)).toBe(3);
     expect(myCount([1, 2, 5, 5, 6], 5, true)).toBe(2);
     expect(myCount([1, 1, 5], 1, false)).toBe(2);
+  });
+});
+
+describe("splits and modes", () => {
+  it("lets anyone but the bidder split, any time", () => {
+    const state = view({ numPlayers: 3, cups: [0, 0, 0], bid: bid(4, 5), turn: 2 });
+    expect(canSplit(state, 0)).toBe(true); // not their turn: still allowed
+    expect(canSplit(state, 1)).toBe(false); // their own bid
+    expect(canSplit(view(), 0)).toBe(false); // nothing to split yet
+  });
+
+  it("asks the bidder to answer a split", () => {
+    const state = view({ phase: "split", bid: bid(4, 5), split: { by: 0 } });
+    expect(taskFor(state, 1)).toBe("answer");
+    expect(taskFor(state, 0)).toBeNull();
+    expect(taskFor(view(), 0)).toBe("bid");
+  });
+
+  it("never knocks anyone out in endless games", () => {
+    expect(isOut(view({ cups: [5, 0] }), 0)).toBe(true);
+    expect(isOut(view({ mode: "endless", maxCups: null, cups: [12, 0] }), 0)).toBe(false);
   });
 });

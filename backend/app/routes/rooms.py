@@ -75,7 +75,8 @@ def _winner_ids(room: Room, result: dict) -> list:
 @rooms_bp.post("")
 @require_auth
 def create_room():
-    """Body: {"gameType": "tictactoe"} — creator becomes host."""
+    """Body: {"gameType": "tictactoe", "options"?: {...}} — creator
+    becomes host."""
     data = request.get_json() or {}
     game_type = data.get("gameType")
     if not game_type:
@@ -87,7 +88,11 @@ def create_room():
         )
 
     game = get_game(game_type)  # raises GameError if unknown
-    room = Room(game_type=game.key, host_id=g.current_user.id)
+    room = Room(
+        game_type=game.key,
+        host_id=g.current_user.id,
+        options=game.clean_options(data.get("options")),
+    )
     db.session.add(room)
     db.session.flush()
     db.session.add(
@@ -166,6 +171,25 @@ def get_room(room_id):
     return {"room": _room_payload(room, g.current_user.id)}
 
 
+@rooms_bp.patch("/<uuid:room_id>/options")
+@require_auth
+def set_options(room_id):
+    """Body: {"options": {"mode": "endless"}} — the host changes the
+    game's settings while the table is still waiting."""
+    room = db.session.get(Room, room_id)
+    if room is None:
+        return api_error("room_not_found", "Room not found", 404)
+    if room.host_id != g.current_user.id:
+        return api_error("not_host", "Only the host can change settings", 403)
+    if room.status != "waiting":
+        return api_error("game_started", "Game already started", 409)
+    game = get_game(room.game_type)
+    room.options = game.clean_options((request.get_json() or {}).get("options"), room.options)
+    db.session.commit()
+    _broadcast_room(room)
+    return {"room": _room_payload(room, g.current_user.id)}
+
+
 @rooms_bp.post("/<uuid:room_id>/start")
 @require_auth
 def start_game(room_id):
@@ -189,7 +213,9 @@ def start_game(room_id):
     session = GameSession(
         room_id=room.id,
         game_type=room.game_type,
-        state=game.initial_state(len(room.players)),
+        state=game.new_state(
+            len(room.players), game.clean_options(None, room.options)
+        ),
     )
     room.status = "playing"
     db.session.add(session)
@@ -371,7 +397,9 @@ def rematch(room_id):
 
     game = get_game(room.game_type)
     if target is None:
-        target = Room(game_type=room.game_type, host_id=me.id)
+        target = Room(
+            game_type=room.game_type, host_id=me.id, options=dict(room.options or {})
+        )
         db.session.add(target)
         db.session.flush()
         db.session.add(
