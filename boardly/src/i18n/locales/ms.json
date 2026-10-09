@@ -433,9 +433,9 @@
         {
           "title": "1 joker dan zhai",
           "items": [
-            "1 ialah joker: dikira sebagai apa-apa nombor — kecuali panggilan zhai (斋), di mana 1 hanya dikira sebagai 1. Panggil 1 sentiasa zhai.",
-            "Bertukar ke zhai boleh kekalkan jumlah dan nombor yang sama, kerana ia lebih sukar. Panggilan pertama zhai boleh serendah bilangan pemain.",
-            "Buka puasa (开斋, juga dipanggil 飞): selepas panggilan zhai, anda boleh jadikan 1 joker semula — tetapi mesti panggil sekurang-kurangnya dua kali ganda (selepas 3 × 4 zhai, sekurang-kurangnya 6)."
+            "Panggilan pertama menentukan pusingan: zhai (斋) — 1 hanya dikira sebagai 1 — atau kaizhai (开斋) — 1 ialah joker. Panggil 1 sentiasa zhai.",
+            "Pusingan zhai boleh buka puasa (开斋, juga dipanggil 飞): 1 jadi joker semula, tetapi mesti panggil sekurang-kurangnya dua kali ganda (selepas 3 × 4 zhai, sekurang-kurangnya 6). Panggilan pertama zhai boleh serendah bilangan pemain.",
+            "Sekali kaizhai, kekal kaizhai: tiada siapa boleh kembali ke zhai, jadi tiada siapa boleh panggil 1."
           ]
         },
         {
@@ -897,12 +897,9 @@
     "bid_other": "{{count}} × {{face}}",
     "zhai": "Zhai",
     "zhaiName": "1 bukan joker",
-    "zhaiHint": "1 hanya dikira sebagai 1. Boleh kekalkan panggilan yang sama apabila bertukar.",
+    "zhaiHint": "Bertanda: zhai — 1 hanya dikira sebagai 1. Tidak bertanda: kaizhai — 1 ialah joker, dan pusingan ini tidak boleh kembali ke zhai.",
     "zhaiOnes": "Panggil 1 sentiasa zhai",
     "round": "Pusingan {{round}} · {{dice}} dadu di atas meja",
-    "calledBy": "dipanggil oleh {{name}}",
-    "onesWild": "1 ialah joker",
-    "onesNotWild": "1 bukan joker",
     "opening": "Panggilan pertama: {{name}} · sekurang-kurangnya {{min}}, atau {{zhaiMin}} zhai",
     "waiting": "{{name}} sedang berfikir…",
     "youreOut": "Anda sudah mabuk — tonton sahaja 🥴",
@@ -957,7 +954,9 @@
     "endTitle": "Cukup untuk malam ini?",
     "endHint": "{{votes}} undi untuk berhenti · perlu {{needed}}",
     "endVote": "Undi berhenti",
-    "endCancel": "Teruskan"
+    "endCancel": "Teruskan",
+    "kaizhai": "Kaizhai",
+    "lockedKaizhai": "Pusingan ini kaizhai: 1 ialah joker, dan tiada siapa boleh panggil zhai atau 1."
   },
   "profile": {
     "title": "Profil",

@@ -433,9 +433,9 @@
         {
           "title": "Wild 1s and zhai",
           "items": [
-            "1s are wild: they count as any face — unless the bid is zhai (斋), when 1s count only as 1s. Calling 1s is always zhai.",
-            "Switching to zhai may keep the same number and face, since it makes the bid harder. An opening zhai bid may be as low as the number of players.",
-            "Break the fast (开斋, also called 飞): after a zhai bid, you can make 1s wild again — but you must call at least double the dice (after 3 × 4 zhai, at least 6)."
+            "The opening bid picks the round: zhai (斋) — 1s count only as 1s — or kaizhai (开斋) — 1s are wild and count as any face. Calling 1s is always zhai.",
+            "A zhai round can break the fast (开斋, also called 飞): 1s become wild again, but you must call at least double the dice (after 3 × 4 zhai, at least 6). An opening zhai bid may be as low as the number of players.",
+            "Once a round is kaizhai it stays kaizhai: nobody can go back to zhai, so nobody can call 1s."
           ]
         },
         {
@@ -900,12 +900,9 @@
     "bid_other": "{{count}} × {{face}}",
     "zhai": "Zhai",
     "zhaiName": "1s aren't wild",
-    "zhaiHint": "Make 1s count only as 1s. You may keep the same call when you switch.",
+    "zhaiHint": "Ticked: zhai — 1s count only as 1s. Unticked: kaizhai — 1s are wild, and the round can't go zhai again.",
     "zhaiOnes": "Calling 1s is always zhai",
     "round": "Round {{round}} · {{dice}} dice on the table",
-    "calledBy": "called by {{name}}",
-    "onesWild": "1s are wild",
-    "onesNotWild": "1s are not wild",
     "opening": "First call: {{name}} · at least {{min}}, or {{zhaiMin}} zhai",
     "waiting": "{{name}} is thinking…",
     "youreOut": "You're out — enjoy the show 🥴",
@@ -960,7 +957,9 @@
     "endTitle": "Call it a night?",
     "endHint": "{{votes}} voted to stop · {{needed}} needed",
     "endVote": "Vote to stop",
-    "endCancel": "Keep playing"
+    "endCancel": "Keep playing",
+    "kaizhai": "Kaizhai",
+    "lockedKaizhai": "This round is kaizhai: 1s are wild, and nobody can call zhai or 1s."
   },
   "profile": {
     "title": "Profile",
