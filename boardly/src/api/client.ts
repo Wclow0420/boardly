@@ -145,6 +145,8 @@ export interface GameInfo {
   tileColor: string;
   category: string;
   tag: string;
+  /** Lobby settings the host can pick: {name: [choices]}, first = default. */
+  options?: Record<string, string[]>;
 }
 
 export interface RoomPlayerInfo {
@@ -164,6 +166,8 @@ export interface RoomInfo {
   status: "waiting" | "playing" | "finished" | "closed";
   players: RoomPlayerInfo[];
   game: GameInfo | null;
+  /** The host's current settings for this table's game. */
+  options?: Record<string, string>;
   /** Code of the open "play again" table for this finished room. */
   rematchCode: string | null;
   session?: GameSessionInfo | null;
@@ -335,6 +339,12 @@ export const api = {
   startGame: (roomId: string) =>
     request<{ session: GameSessionInfo }>(`/rooms/${roomId}/start`, {
       method: "POST",
+    }),
+
+  setRoomOptions: (roomId: string, options: Record<string, string>) =>
+    request<{ room: RoomInfo }>(`/rooms/${roomId}/options`, {
+      method: "PATCH",
+      body: JSON.stringify({ options }),
     }),
 
   setReady: (roomId: string, ready: boolean) =>

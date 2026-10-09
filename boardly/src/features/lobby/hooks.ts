@@ -70,6 +70,21 @@ export function useSetReady(roomId: string | undefined, code: string) {
   });
 }
 
+/** The host changes the game's settings while the table waits. */
+export function useSetRoomOptions(roomId: string | undefined, code: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (options: Record<string, string>) => {
+      if (roomId === undefined) throw new Error("Room not loaded");
+      return api.setRoomOptions(roomId, options);
+    },
+    onSuccess: ({ room }) => {
+      queryClient.setQueryData(["room", code], room);
+    },
+  });
+}
+
 export function useLeaveRoom(roomId: string | undefined) {
   const queryClient = useQueryClient();
 

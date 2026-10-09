@@ -14,28 +14,43 @@ the last bid a lie:
   keep the same count and face (it makes the bid harder).
 - Breaking the fast (开斋, also called 飞): after a zhai bid, the next
   bid may make 1s wild again, but must call at least double the dice.
-- Challenge ("open", 开): reveal everything. If the table has at least
-  the bid, the challenger drinks a cup, otherwise the bidder does. A
-  "double" challenge (劈) makes the loser drink two.
-- Three cups and you're out (drunk). Last one standing wins.
+- Open (开): the player whose turn it is calls the last bid a lie.
+  Everything is revealed; if the table has at least the bid, the
+  caller drinks a cup, otherwise the bidder does.
+- Split (劈): ANY other player may call the last bid a lie at any time,
+  for two cups. The bidder then accepts (two cups) or counter-splits
+  (反劈) for four.
+
+Two modes, picked in the lobby:
+- knockout: five cups and you're out (drunk); last one standing wins.
+- endless: nobody is ever out; cups just add up. The game ends when
+  more than half the table votes to stop; the fewest cups win.
 
 Full state (server only — clients get `view_for`):
 {
   "numPlayers": 3,
+  "mode": "knockout" | "endless",
   "dice": [[1, 4, 4, 6, 2], [], ...],   # by seat; [] once out
-  "cups": [0, 2, 3],                    # cups drunk, by seat
-  "turn": 0,                            # whose turn to bid or call
+  "cups": [0, 2, 5],                    # cups drunk, by seat
+  "turn": 0,                            # whose turn to bid or open
   "round": 1,
   "bid": null | {"quantity": 4, "face": 5, "zhai": false, "seat": 2},
   "bids": [...],                        # this round's bids, in order
+  "split": null | {"by": 1},            # waiting on the bidder's answer
+  "endVotes": [],                       # endless: seats voting to stop
   "reveal": null | {...},               # how the last round ended
-  "phase": "bidding" | "finished",
-  "winner": null | seat
+  "phase": "bidding" | "split" | "finished",
+  "winner": null | seat,
+  "winners": null | [seats]             # endless: fewest cups (ties)
 }
 
-Moves (on your turn):
-  {"type": "bid", "quantity": q, "face": f, "zhai": bool}
-  {"type": "challenge", "double": bool}  call the last bid a lie
+Moves:
+  {"type": "bid", "quantity": q, "face": f, "zhai": bool}   your turn
+  {"type": "challenge"}                                     your turn: 开
+  {"type": "split", "bids": n}     anyone but the bidder: 劈 the bid they
+                                   saw (n = how many bids they saw)
+  {"type": "respond", "counter": bool}   the bidder: accept, or 反劈
+  {"type": "end", "vote": bool}          endless: vote to stop
 """
 
 import random
@@ -43,7 +58,8 @@ import random
 from app.games.base import BaseGame, GameError
 
 DICE_EACH = 5
-MAX_CUPS = 3
+KNOCKOUT_CUPS = 5
+DRINKS = {"open": 1, "split": 2, "counter": 4}
 
 
 def face_rank(face: int) -> int:
@@ -68,6 +84,7 @@ class LiarsDice(BaseGame):
     tile_color = "#FFE0E0"
     category = "party"
     tag = "party"
+    options = {"mode": ["knockout", "endless"]}
 
     def __init__(self, rng: random.Random | None = None):
         self.rng = rng or random.SystemRandom()
@@ -75,34 +92,51 @@ class LiarsDice(BaseGame):
     def _roll(self) -> list[int]:
         return [self.rng.randint(1, 6) for _ in range(DICE_EACH)]
 
-    def initial_state(self, num_players: int, rng: random.Random | None = None) -> dict:
+    def initial_state(
+        self, num_players: int, rng: random.Random | None = None, mode: str = "knockout"
+    ) -> dict:
         if not self.min_players <= num_players <= self.max_players:
             raise GameError("This game needs 2 to 10 players")
+        if mode not in self.options["mode"]:
+            raise GameError("Unknown mode")
         rng = rng or self.rng
         return {
             "numPlayers": num_players,
+            "mode": mode,
             "dice": [self._roll() for _ in range(num_players)],
             "cups": [0] * num_players,
             "turn": rng.randrange(num_players),
             "round": 1,
             "bid": None,
             "bids": [],
+            "split": None,
+            "endVotes": [],
             "reveal": None,
             "phase": "bidding",
             "winner": None,
+            "winners": None,
         }
+
+    def new_state(self, num_players: int, options: dict) -> dict:
+        return self.initial_state(num_players, mode=options["mode"])
 
     # ------------------------------------------------------------ moves
 
     @staticmethod
-    def _active(state) -> list[int]:
-        return [s for s, cups in enumerate(state["cups"]) if cups < MAX_CUPS]
+    def _endless(state) -> bool:
+        return state.get("mode") == "endless"
+
+    def _is_out(self, state, seat) -> bool:
+        return not self._endless(state) and state["cups"][seat] >= KNOCKOUT_CUPS
+
+    def _active(self, state) -> list[int]:
+        return [s for s in range(state["numPlayers"]) if not self._is_out(state, s)]
 
     def _next_active(self, state, seat) -> int:
         n = state["numPlayers"]
         for step in range(1, n + 1):
             s = (seat + step) % n
-            if state["cups"][s] < MAX_CUPS:
+            if not self._is_out(state, s):
                 return s
         return seat
 
@@ -111,13 +145,26 @@ class LiarsDice(BaseGame):
             raise GameError("Game is already over")
         if not isinstance(move, dict):
             raise GameError("Invalid move")
+        if not 0 <= seat < state["numPlayers"] or self._is_out(state, seat):
+            raise GameError("You're out of this game")
+        kind = move.get("type")
+        if kind == "end":
+            return self._vote_end(state, seat, bool(move.get("vote")))
+        if kind == "split":
+            return self._split(state, seat, move)
+        if kind == "respond":
+            return self._respond(state, seat, bool(move.get("counter")))
+
+        if state["phase"] != "bidding":
+            raise GameError("Waiting on the split")
         if seat != state["turn"]:
             raise GameError("It isn't your turn")
-        kind = move.get("type")
         if kind == "bid":
             return self._bid(state, seat, move)
         if kind == "challenge":
-            return self._challenge(state, seat, bool(move.get("double")))
+            if state["bid"] is None:
+                raise GameError("Nobody has bid yet")
+            return self._reveal(state, seat, "open")
         raise GameError("Unknown move type")
 
     def _bid(self, state, seat, move):
@@ -159,29 +206,56 @@ class LiarsDice(BaseGame):
             "turn": self._next_active(state, seat),
         }
 
-    def _challenge(self, state, seat, double):
+    def _split(self, state, seat, move):
+        """劈: anyone but the bidder, at any time, for two cups."""
         bid = state["bid"]
-        if bid is None:
-            raise GameError("Nobody has bid yet")
+        if state["phase"] != "bidding" or bid is None:
+            raise GameError("There's no bid to split")
+        if seat == bid["seat"]:
+            raise GameError("You can't split your own bid")
+        # Splits race the next bid: only the bid the player saw counts
+        if move.get("bids") != len(state["bids"]):
+            raise GameError("The bid has changed — look again")
+        return {**state, "phase": "split", "split": {"by": seat}}
+
+    def _respond(self, state, seat, counter):
+        """The bidder answers a split: accept, or counter-split (反劈)."""
+        if state["phase"] != "split":
+            raise GameError("Nobody split")
+        if seat != state["bid"]["seat"]:
+            raise GameError("Only the bidder answers a split")
+        return self._reveal(
+            state, state["split"]["by"], "counter" if counter else "split"
+        )
+
+    def _reveal(self, state, challenger, kind):
+        bid = state["bid"]
         found = counts(state["dice"], bid["face"], bid["zhai"])
-        bidder_right = found >= bid["quantity"]
-        loser = seat if bidder_right else bid["seat"]
-        drink = 2 if double else 1
+        loser = challenger if found >= bid["quantity"] else bid["seat"]
+        drink = DRINKS[kind]
 
         cups = list(state["cups"])
-        cups[loser] = min(MAX_CUPS, cups[loser] + drink)
-        reveal = {
-            "round": state["round"],
-            "dice": state["dice"],
-            "bid": bid,
-            "challenger": seat,
-            "double": double,
-            "found": found,
-            "loser": loser,
-            "drink": drink,
-            "out": cups[loser] >= MAX_CUPS,
+        cups[loser] += drink
+        if not self._endless(state):
+            cups[loser] = min(KNOCKOUT_CUPS, cups[loser])
+        state = {
+            **state,
+            "cups": cups,
+            "phase": "bidding",
+            "split": None,
+            "reveal": {
+                "round": state["round"],
+                "dice": state["dice"],
+                "bid": bid,
+                "challenger": challenger,
+                "kind": kind,
+                "found": found,
+                "loser": loser,
+                "drink": drink,
+                "out": False,
+            },
         }
-        state = {**state, "cups": cups, "reveal": reveal}
+        state["reveal"]["out"] = self._is_out(state, loser)
 
         active = self._active(state)
         if len(active) == 1:
@@ -194,14 +268,43 @@ class LiarsDice(BaseGame):
             }
 
         # New round: everyone still in shakes again; the loser starts
-        starter = loser if cups[loser] < MAX_CUPS else self._next_active(state, loser)
+        starter = (
+            loser if not self._is_out(state, loser) else self._next_active(state, loser)
+        )
         return {
             **state,
-            "dice": [self._roll() if c < MAX_CUPS else [] for c in cups],
+            "dice": [
+                [] if self._is_out(state, s) else self._roll()
+                for s in range(state["numPlayers"])
+            ],
             "turn": starter,
             "round": state["round"] + 1,
             "bid": None,
             "bids": [],
+        }
+
+    def _vote_end(self, state, seat, vote):
+        """Endless mode: more than half the table stops the game."""
+        if not self._endless(state):
+            raise GameError("Only endless games end by vote")
+        votes = set(state.get("endVotes", []))
+        if vote:
+            votes.add(seat)
+        else:
+            votes.discard(seat)
+        state = {**state, "endVotes": sorted(votes)}
+        if len(votes) * 2 <= state["numPlayers"]:
+            return state
+        fewest = min(state["cups"])
+        winners = [s for s, c in enumerate(state["cups"]) if c == fewest]
+        return {
+            **state,
+            "phase": "finished",
+            "winners": winners,
+            "winner": winners[0] if len(winners) == 1 else None,
+            "bid": None,
+            "split": None,
+            "dice": [[] for _ in state["cups"]],
         }
 
     # ----------------------------------------------------------- result
@@ -209,6 +312,8 @@ class LiarsDice(BaseGame):
     def get_result(self, state: dict) -> dict | None:
         if state["phase"] != "finished":
             return None
+        if state.get("winners"):
+            return {"winnerSeats": state["winners"]}
         if state["winner"] is None:
             return {"draw": True}
         return {"winnerSeat": state["winner"]}
@@ -216,28 +321,34 @@ class LiarsDice(BaseGame):
     def on_abandon(self, state: dict, seat: int) -> dict:
         if state["phase"] == "finished":
             return state
-        return {**state, "phase": "finished", "winner": None}
+        return {**state, "phase": "finished", "winner": None, "winners": None}
 
     # ------------------------------------------------------------- view
 
     def view_for(self, state: dict, seat: int) -> dict:
         n = state["numPlayers"]
         seated = 0 <= seat < n
+        endless = self._endless(state)
         return {
             "numPlayers": n,
+            "mode": state.get("mode", "knockout"),
             "phase": state["phase"],
             "turn": state["turn"],
             "round": state["round"],
             "cups": state["cups"],
-            "maxCups": MAX_CUPS,
+            # Cups that knock you out; null in endless games
+            "maxCups": None if endless else KNOCKOUT_CUPS,
             "diceEach": DICE_EACH,
             # Only your own cup; everyone else's stays covered
             "myDice": sorted(state["dice"][seat]) if seated else [],
             "diceCount": [len(hand) for hand in state["dice"]],
             "bid": state["bid"],
             "bids": state["bids"],
+            "split": state.get("split"),
+            "endVotes": state.get("endVotes", []),
             "reveal": state["reveal"],
             "winner": state["winner"],
+            "winners": state.get("winners"),
         }
 
 

@@ -1,6 +1,6 @@
 import type { GameDefinition } from "../types";
 import { LiarsDiceBoard } from "./LiarsDiceBoard";
-import { currentSeat, type LiarsDiceState } from "./logic";
+import { currentSeat, taskFor, type LiarsDiceState } from "./logic";
 
 // Late-night bar: dark wood, neon red, beer gold.
 const SKIN_COLORS = {
@@ -47,6 +47,5 @@ export const liarsdice: GameDefinition<LiarsDiceState> = {
     backdrop: ["#4A1414", "rgba(20,12,12,0)"],
     taglineKey: "liarsdice.tagline",
   },
-  needsMe: (state, mySeat) =>
-    state.phase !== "finished" && mySeat >= 0 && state.turn === mySeat,
+  needsMe: (state, mySeat) => taskFor(state, mySeat) !== null,
 };

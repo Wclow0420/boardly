@@ -15,7 +15,10 @@ import {
   suggestedBid,
   totalDice,
   breakZhaiMin,
+  canSplit,
+  isOut,
   openingMin,
+  taskFor,
   type Bid,
   type LiarsDiceState,
   type Reveal,
@@ -96,9 +99,13 @@ export function LiarsDiceBoard({
   const insets = useSafeAreaInsets();
 
   const over = finished || state.phase === "finished";
-  const myTurn = !over && mySeat >= 0 && state.turn === mySeat;
-  const step = `${state.round}:${state.bids.length}`;
-  const { ref: sheetRef, onDismiss: onSheetDismiss } = usePromptSheet(myTurn, step);
+  const task = over ? null : taskFor(state, mySeat);
+  const myTurn = task === "bid";
+  const step = `${state.round}:${state.bids.length}:${state.phase}`;
+  const { ref: sheetRef, onDismiss: onSheetDismiss } = usePromptSheet(
+    task !== null,
+    step
+  );
   const [handHidden, setHandHidden] = useState(false);
 
   const nameOf = (seat: number) =>
@@ -115,7 +122,8 @@ export function LiarsDiceBoard({
     onMove(move);
   };
 
-  const iAmOut = mySeat >= 0 && state.cups[mySeat] >= state.maxCups;
+  const iAmOut = mySeat >= 0 && isOut(state, mySeat);
+  const split = () => send({ type: "split", bids: state.bids.length });
 
   return (
     <View style={{ gap: spacing.lg }}>
@@ -154,10 +162,32 @@ export function LiarsDiceBoard({
             })}
           </AppText>
         )}
-        {!over && !myTurn ? (
-          <AppText variant="caption" color="textSubtle" style={{ marginTop: spacing.sm }}>
-            {`⏳  ${t("liarsdice.waiting", { name: nameOf(state.turn) })}`}
+        {state.phase === "split" && state.bid && state.split ? (
+          <AppText variant="bodyMedium" style={{ marginTop: spacing.sm, color: colors.danger }}>
+            {`🪓  ${t("liarsdice.splitting", {
+              name: nameOf(state.split.by),
+              bidder: nameOf(state.bid.seat),
+            })}`}
           </AppText>
+        ) : null}
+        {!over && task === null ? (
+          <AppText variant="caption" color="textSubtle" style={{ marginTop: spacing.sm }}>
+            {`⏳  ${
+              state.phase === "split" && state.bid
+                ? t("liarsdice.waitingAnswer", { name: nameOf(state.bid.seat) })
+                : t("liarsdice.waiting", { name: nameOf(state.turn) })
+            }`}
+          </AppText>
+        ) : null}
+        {/* Anyone can split the bid, any time — not just the player up */}
+        {!myTurn && canSplit(state, mySeat) && state.bid ? (
+          <Button
+            label={`🪓  ${t("liarsdice.splitThem", { name: nameOf(state.bid.seat) })}`}
+            variant="danger"
+            style={{ marginTop: spacing.md }}
+            disabled={busy}
+            onPress={split}
+          />
         ) : null}
       </Card>
 
@@ -228,7 +258,16 @@ export function LiarsDiceBoard({
         <LastReveal reveal={state.reveal} nameOf={nameOf} bidText={bidText} />
       ) : null}
 
-      {myTurn ? <View style={{ height: SHEET_CLEARANCE }} /> : null}
+      {state.mode === "endless" && !over && mySeat >= 0 ? (
+        <EndVote
+          state={state}
+          mySeat={mySeat}
+          busy={busy}
+          onVote={(vote) => send({ type: "end", vote })}
+        />
+      ) : null}
+
+      {task !== null ? <View style={{ height: SHEET_CLEARANCE }} /> : null}
 
       <BottomSheetModal
         ref={sheetRef}
@@ -243,15 +282,44 @@ export function LiarsDiceBoard({
             paddingBottom: insets.bottom + spacing.xl,
           }}
         >
-          {myTurn ? (
+          {task === "bid" ? (
             <BidPicker
               key={step}
               state={state}
               busy={busy}
               bidText={bidText}
               onBid={(quantity, face, zhai) => send({ type: "bid", quantity, face, zhai })}
-              onChallenge={(double) => send({ type: "challenge", double })}
+              onOpen={() => send({ type: "challenge" })}
+              onSplit={split}
             />
+          ) : task === "answer" && state.bid && state.split ? (
+            <>
+              <AppText variant="title">
+                {`🪓  ${t("liarsdice.youWereSplit", {
+                  name: nameOf(state.split.by),
+                  bid: bidText(state.bid),
+                })}`}
+              </AppText>
+              <AppText variant="caption" color="textMuted" style={{ marginTop: 4 }}>
+                {t("liarsdice.answerHint")}
+              </AppText>
+              <View style={[styles.challengeRow, { marginTop: spacing.md }]}>
+                <Button
+                  label={t("liarsdice.accept")}
+                  variant="secondary"
+                  disabled={busy}
+                  onPress={() => send({ type: "respond", counter: false })}
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  label={`🔥  ${t("liarsdice.counter")}`}
+                  variant="danger"
+                  disabled={busy}
+                  onPress={() => send({ type: "respond", counter: true })}
+                  style={{ flex: 1 }}
+                />
+              </View>
+            </>
           ) : null}
         </View>
       </BottomSheetModal>
@@ -264,13 +332,15 @@ function BidPicker({
   busy,
   bidText,
   onBid,
-  onChallenge,
+  onOpen,
+  onSplit,
 }: {
   state: LiarsDiceState;
   busy: boolean;
   bidText: (bid: Pick<Bid, "quantity" | "face" | "zhai">) => string;
   onBid: (quantity: number, face: number, zhai: boolean) => void;
-  onChallenge: (double: boolean) => void;
+  onOpen: () => void;
+  onSplit: () => void;
 }) {
   const { t } = useTranslation();
   const { colors, spacing } = useTheme();
@@ -406,14 +476,14 @@ function BidPicker({
             label={`🔍  ${t("liarsdice.open")}`}
             variant="danger"
             disabled={busy}
-            onPress={() => onChallenge(false)}
+            onPress={onOpen}
             style={{ flex: 1 }}
           />
           <Button
             label={`🪓  ${t("liarsdice.split")}`}
             variant="danger"
             disabled={busy}
-            onPress={() => onChallenge(true)}
+            onPress={onSplit}
             style={{ flex: 1 }}
           />
         </View>
@@ -446,8 +516,11 @@ function Players({
         .sort((a, b) => a.seat - b.seat)
         .map((player) => {
           const seat = player.seat;
-          const out = state.cups[seat] >= state.maxCups;
-          const up = state.phase !== "finished" && state.turn === seat;
+          const out = isOut(state, seat);
+          const up =
+            state.phase === "split"
+              ? state.bid?.seat === seat
+              : state.phase !== "finished" && state.turn === seat;
           return (
             <View
               key={player.userId}
@@ -477,11 +550,20 @@ function Players({
                     : `🎲 ×${state.diceCount[seat]}${up ? `  ·  ${t("liarsdice.thinking")}` : ""}`}
                 </AppText>
               </View>
-              <AppText style={{ fontSize: 18 }}>
-                {Array.from({ length: state.maxCups }, (_, i) =>
-                  i < state.cups[seat] ? "🍺" : "▫️"
-                ).join("")}
-              </AppText>
+              {state.maxCups === null ? (
+                <AppText variant="title">{`🍺 ×${state.cups[seat]}`}</AppText>
+              ) : (
+                <View style={{ alignItems: "flex-end" }}>
+                  <AppText style={{ fontSize: 15 }}>
+                    {Array.from({ length: state.maxCups }, (_, i) =>
+                      i < state.cups[seat] ? "🍺" : "▫️"
+                    ).join("")}
+                  </AppText>
+                  <AppText variant="tiny" color="textSubtle">
+                    {`${state.cups[seat]}/${state.maxCups}`}
+                  </AppText>
+                </View>
+              )}
             </View>
           );
         })}
@@ -509,7 +591,7 @@ function LastReveal({
         {t("liarsdice.lastRound", { round: reveal.round })}
       </AppText>
       <AppText variant="title" style={{ marginTop: 4 }}>
-        {t(reveal.double ? "liarsdice.splitBy" : "liarsdice.openedBy", {
+        {t(`liarsdice.revealBy.${reveal.kind ?? "open"}`, {
           name: nameOf(reveal.challenger),
           bid: bidText(bid),
           bidder: nameOf(bid.seat),
@@ -543,6 +625,42 @@ function LastReveal({
   );
 }
 
+/** Endless games stop when more than half the table votes to. */
+function EndVote({
+  state,
+  mySeat,
+  busy,
+  onVote,
+}: {
+  state: LiarsDiceState;
+  mySeat: number;
+  busy: boolean;
+  onVote: (vote: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const { spacing } = useTheme();
+  const voted = state.endVotes.includes(mySeat);
+  return (
+    <Card>
+      <AppText variant="label">{`🛑  ${t("liarsdice.endTitle")}`}</AppText>
+      <AppText variant="tiny" color="textSubtle" style={{ marginTop: 2 }}>
+        {t("liarsdice.endHint", {
+          votes: state.endVotes.length,
+          needed: Math.floor(state.numPlayers / 2) + 1,
+        })}
+      </AppText>
+      <Button
+        label={voted ? t("liarsdice.endCancel") : t("liarsdice.endVote")}
+        variant="secondary"
+        size="sm"
+        style={{ marginTop: spacing.sm }}
+        disabled={busy}
+        onPress={() => onVote(!voted)}
+      />
+    </Card>
+  );
+}
+
 function Result({
   state,
   mySeat,
@@ -556,17 +674,30 @@ function Result({
   const { colors } = useTheme();
   return (
     <View style={{ alignItems: "center", marginTop: 6 }}>
-      <AppText style={{ fontSize: 44 }}>{state.winner !== null ? "🏆" : "🚪"}</AppText>
+      <AppText style={{ fontSize: 44 }}>
+        {state.winner !== null || state.winners ? "🏆" : "🚪"}
+      </AppText>
       <AppText variant="h2" align="center" style={{ color: colors.primary }}>
-        {state.winner === null
-          ? t("liarsdice.noWinner")
-          : state.winner === mySeat
-            ? t("liarsdice.youWin")
-            : t("liarsdice.winner", { name: nameOf(state.winner) })}
+        {state.winners && state.winners.length > 1
+          ? t("liarsdice.winnersTied", { names: state.winners.map(nameOf).join(", ") })
+          : state.winner === null
+            ? t("liarsdice.noWinner")
+            : state.winner === mySeat
+              ? t("liarsdice.youWin")
+              : t("liarsdice.winner", { name: nameOf(state.winner) })}
       </AppText>
       <AppText variant="caption" color="textMuted" align="center" style={{ marginTop: 4 }}>
-        {t("liarsdice.lastStanding")}
+        {t(state.mode === "endless" ? "liarsdice.fewestCups" : "liarsdice.lastStanding")}
       </AppText>
+      {state.mode === "endless" ? (
+        <AppText variant="caption" color="textSubtle" align="center" style={{ marginTop: 6 }}>
+          {state.cups
+            .map((cups, seat) => ({ cups, seat }))
+            .sort((a, b) => a.cups - b.cups)
+            .map(({ cups, seat }) => `${nameOf(seat)} 🍺${cups}`)
+            .join("   ")}
+        </AppText>
+      ) : null}
     </View>
   );
 }

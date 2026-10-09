@@ -33,6 +33,7 @@ import {
 } from "@/features/game/RulesSheet";
 import { ConfettiBackdrop } from "@/features/lobby/ConfettiBackdrop";
 import { InviteFriendsSheet } from "@/features/lobby/InviteFriendsSheet";
+import { GameSettings } from "@/features/lobby/GameSettings";
 import { InviteSlotCard, PlayerCard } from "@/features/lobby/PlayerCard";
 import {
   useLeaveRoom,
@@ -283,6 +284,10 @@ export default function LobbyScreen() {
             onAction={() => router.dismissTo("/")}
           />
         ) : (
+          <>
+          {room ? (
+            <GameSettings room={room} code={roomCode} isHost={isHost} />
+          ) : null}
           <View style={styles.playersGrid}>
             {room?.players.map((player) => (
               <View key={player.userId} style={styles.playerCell}>
@@ -306,6 +311,7 @@ export default function LobbyScreen() {
               </View>
             ) : null}
           </View>
+          </>
         )}
         </ScrollView>
       </View>

@@ -3,7 +3,7 @@ import string
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from app.extensions import db
 
@@ -22,6 +22,8 @@ class Room(db.Model):
     game_type = db.Column(db.String(50), nullable=False)
     host_id = db.Column(UUID(as_uuid=True), db.ForeignKey("users.id"), nullable=False)
     status = db.Column(db.String(20), default="waiting")  # waiting | playing | finished | closed
+    # The host's game settings (see BaseGame.options)
+    options = db.Column(JSONB, nullable=False, default=dict, server_default="{}")
     # The table opened by "Play again" after this room's game finished
     rematch_room_id = db.Column(
         UUID(as_uuid=True), db.ForeignKey("rooms.id"), nullable=True
@@ -49,6 +51,7 @@ class Room(db.Model):
             "status": self.status,
             "players": [p.to_dict() for p in self.players],
             "game": game.to_dict() if game else None,
+            "options": game.clean_options(None, self.options) if game else {},
             # Set while a rematch table is open and waiting for players
             "rematchCode": (
                 rematch.code if rematch is not None and rematch.status == "waiting" else None

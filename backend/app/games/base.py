@@ -31,6 +31,10 @@ class BaseGame(ABC):
     category: str = "classic"  # strategy | party | classic | custom
     tag: str = "classic"  # tag chip: classic | card | strategy | party
 
+    # Settings the host picks in the lobby, as {name: [choices]}; the
+    # first choice is the default. E.g. {"mode": ["knockout", "endless"]}.
+    options: dict[str, list[str]] = {}
+
     @abstractmethod
     def initial_state(self, num_players: int) -> dict:
         """Return the starting state for a new session."""
@@ -45,6 +49,28 @@ class BaseGame(ABC):
         """Return None while the game is running, otherwise a dict like
         {"winnerSeat": 0}, {"winnerSeats": [0, 3]} (a winning team) or
         {"draw": True}."""
+
+    def default_options(self) -> dict:
+        return {name: choices[0] for name, choices in self.options.items()}
+
+    def clean_options(self, raw, current: dict | None = None) -> dict:
+        """Lobby settings merged over `current` (or the defaults).
+        Raises GameError for an unknown setting or choice."""
+        merged = {**self.default_options(), **(current or {})}
+        if raw is None:
+            return merged
+        if not isinstance(raw, dict):
+            raise GameError("Options must be an object")
+        for name, choice in raw.items():
+            if choice not in self.options.get(name, []):
+                raise GameError(f"Unknown option {name}={choice}")
+            merged[name] = choice
+        return merged
+
+    def new_state(self, num_players: int, options: dict) -> dict:
+        """Start a game with the lobby's settings. Games with options
+        override this; the rest ignore them."""
+        return self.initial_state(num_players)
 
     def view_for(self, state: dict, seat: int) -> dict:
         """State as seen by one player. Override for games with hidden
@@ -68,4 +94,5 @@ class BaseGame(ABC):
             "tileColor": self.tile_color,
             "category": self.category,
             "tag": self.tag,
+            "options": self.options,
         }
