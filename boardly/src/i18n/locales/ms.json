@@ -427,7 +427,8 @@
           "items": [
             "Panggilan ialah \"N × nombor\": sekurang-kurangnya N dadu di meja menunjukkan nombor itu, kira dadu semua orang.",
             "Panggilan pertama mesti lebih daripada bilangan pemain (2 pemain: sekurang-kurangnya 3).",
-            "Setiap panggilan mesti lebih tinggi: lebih banyak dadu, atau jumlah sama dengan nombor lebih tinggi. Susunan: 2 < 3 < 4 < 5 < 6 < 1."
+            "Setiap panggilan mesti lebih tinggi: lebih banyak dadu, atau jumlah sama dengan nombor lebih tinggi. Susunan: 2 < 3 < 4 < 5 < 6 < 1.",
+            "Bersepah (散骰): jika kelima-lima dadu anda berbeza, anda boleh tunjukkan kepada semua dan goncang semula — bila-bila masa sebelum panggilan pertama anda dalam pusingan itu."
           ]
         },
         {
@@ -958,7 +959,9 @@
     "endCancel": "Teruskan",
     "kaizhai": "Kaizhai",
     "lockedKaizhai": "Pusingan ini kaizhai: 1 ialah joker, dan tiada siapa boleh panggil zhai atau 1.",
-    "leopard": "Lima sama +1"
+    "leopard": "Lima sama +1",
+    "reroll": "Bersepah — tunjuk dan goncang semula",
+    "rerolled": "{{name}} goncang semula cawan bersepah (tunjuk {{dice}})"
   },
   "profile": {
     "title": "Profil",

@@ -427,7 +427,8 @@
           "items": [
             "A bid is \"N × face\": at least N dice on the table show that face, counting everyone's dice.",
             "The opening bid must be more than the number of players (2 players: at least 3).",
-            "Each bid must be higher: more dice, or the same number of a higher face. Faces rank 2 < 3 < 4 < 5 < 6 < 1."
+            "Each bid must be higher: more dice, or the same number of a higher face. Faces rank 2 < 3 < 4 < 5 < 6 < 1.",
+            "Scattered (散骰): if your five dice all show different faces, you may show them to the table and shake again — any time before your first bid of the round."
           ]
         },
         {
@@ -961,7 +962,9 @@
     "endCancel": "Keep playing",
     "kaizhai": "Kaizhai",
     "lockedKaizhai": "This round is kaizhai: 1s are wild, and nobody can call zhai or 1s.",
-    "leopard": "Five of a kind +1"
+    "leopard": "Five of a kind +1",
+    "reroll": "Scattered — show and reshake",
+    "rerolled": "{{name}} reshook a scattered cup (showed {{dice}})"
   },
   "profile": {
     "title": "Profile",

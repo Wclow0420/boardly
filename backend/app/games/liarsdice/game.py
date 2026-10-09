@@ -17,6 +17,8 @@ the last bid a lie:
   round is kaizhai it stays kaizhai — no more zhai, so no more 1s.
 - 豹子 (five of a kind): a cup whose five dice all count for the bid
   counts as six (two 1s + three 3s are six 3s when 1s are wild).
+- 散骰 (all five faces different): you may show your cup to the table
+  and shake again, any time before your first bid of the round.
 - Open (开): the player whose turn it is calls the last bid a lie.
   Everything is revealed; if the table has at least the bid, the
   caller drinks a cup, otherwise the bidder does.
@@ -41,6 +43,7 @@ Full state (server only — clients get `view_for`):
   "bids": [...],                        # this round's bids, in order
   "split": null | {"by": 1},            # waiting on the bidder's answer
   "endVotes": [],                       # endless: seats voting to stop
+  "rerolls": [{"seat": 1, "dice": [...]}],  # this round's 散骰 rerolls
   "reveal": null | {...},               # how the last round ended
   "phase": "bidding" | "split" | "finished",
   "winner": null | seat,
@@ -54,6 +57,8 @@ Moves:
                                    saw (n = how many bids they saw)
   {"type": "respond", "counter": bool}   the bidder: accept, or 反劈
   {"type": "end", "vote": bool}          endless: vote to stop
+  {"type": "reroll"}               散骰: five different faces may be shown
+                                   and shaken again, before your first bid
 """
 
 import random
@@ -122,6 +127,7 @@ class LiarsDice(BaseGame):
             "bids": [],
             "split": None,
             "endVotes": [],
+            "rerolls": [],
             "reveal": None,
             "phase": "bidding",
             "winner": None,
@@ -159,6 +165,8 @@ class LiarsDice(BaseGame):
         if not 0 <= seat < state["numPlayers"] or self._is_out(state, seat):
             raise GameError("You're out of this game")
         kind = move.get("type")
+        if kind == "reroll":
+            return self._reroll(state, seat)
         if kind == "end":
             return self._vote_end(state, seat, bool(move.get("vote")))
         if kind == "split":
@@ -291,6 +299,25 @@ class LiarsDice(BaseGame):
             "round": state["round"] + 1,
             "bid": None,
             "bids": [],
+            "rerolls": [],
+        }
+
+    def _reroll(self, state, seat):
+        """散骰: five different faces may be shown to the table and shaken
+        again, until you've made your first bid of the round."""
+        if state["phase"] != "bidding":
+            raise GameError("Not while a split is pending")
+        hand = state["dice"][seat]
+        if len(set(hand)) != DICE_EACH:
+            raise GameError("Only five different faces can be shaken again")
+        if any(b["seat"] == seat for b in state["bids"]):
+            raise GameError("You've already bid this round")
+        dice = list(state["dice"])
+        dice[seat] = self._roll()
+        return {
+            **state,
+            "dice": dice,
+            "rerolls": state.get("rerolls", []) + [{"seat": seat, "dice": sorted(hand)}],
         }
 
     def _vote_end(self, state, seat, vote):
@@ -356,6 +383,8 @@ class LiarsDice(BaseGame):
             "bids": state["bids"],
             "split": state.get("split"),
             "endVotes": state.get("endVotes", []),
+            # Cups shaken again this round, with the faces they showed
+            "rerolls": state.get("rerolls", []),
             "reveal": state["reveal"],
             "winner": state["winner"],
             "winners": state.get("winners"),

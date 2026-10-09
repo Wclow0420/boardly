@@ -15,6 +15,7 @@ import {
   suggestedBid,
   totalDice,
   breakZhaiMin,
+  canReroll,
   canSplit,
   isKaizhai,
   isLeopard,
@@ -233,6 +234,16 @@ export function LiarsDiceBoard({
                         : "")
                     : t("liarsdice.hideHint")}
                 </AppText>
+                {canReroll(state, mySeat) ? (
+                  <Button
+                    label={`🎲  ${t("liarsdice.reroll")}`}
+                    variant="secondary"
+                    size="sm"
+                    style={{ marginTop: spacing.sm }}
+                    disabled={busy}
+                    onPress={() => send({ type: "reroll" })}
+                  />
+                ) : null}
               </>
             )
           ) : null}
@@ -241,11 +252,16 @@ export function LiarsDiceBoard({
 
       <Players state={state} players={players} nameOf={nameOf} />
 
-      {state.bids.length > 0 && !over ? (
+      {(state.bids.length > 0 || state.rerolls.length > 0) && !over ? (
         <View>
           <AppText variant="label" style={{ marginBottom: spacing.sm }}>
             {t("liarsdice.calls")}
           </AppText>
+          {state.rerolls.map((r, i) => (
+            <AppText key={`r${i}`} variant="caption" color="textSubtle">
+              {`🎲 ${t("liarsdice.rerolled", { name: nameOf(r.seat), dice: r.dice.join(" ") })}`}
+            </AppText>
+          ))}
           {state.bids
             .slice()
             .reverse()
