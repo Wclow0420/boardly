@@ -1,4 +1,5 @@
 import {
+  canReroll,
   canSplit,
   faceRank,
   isKaizhai,
@@ -27,6 +28,7 @@ function view(overrides: Partial<LiarsDiceState> = {}): LiarsDiceState {
     bids: [],
     split: null,
     endVotes: [],
+    rerolls: [],
     reveal: null,
     winner: null,
     winners: null,
@@ -126,5 +128,16 @@ describe("splits and modes", () => {
   it("never knocks anyone out in endless games", () => {
     expect(isOut(view({ cups: [5, 0] }), 0)).toBe(true);
     expect(isOut(view({ mode: "endless", maxCups: null, cups: [12, 0] }), 0)).toBe(false);
+  });
+});
+
+describe("scattered dice (散骰)", () => {
+  it("lets a cup of five different faces reshake before its first bid", () => {
+    const scattered = view({ myDice: [1, 2, 3, 5, 6] });
+    expect(canReroll(scattered, 0)).toBe(true);
+    expect(canReroll(view({ myDice: [1, 1, 3, 5, 6] }), 0)).toBe(false);
+    expect(canReroll({ ...scattered, bids: [bid(3, 4)] }, 0)).toBe(true); // seat 1 bid
+    expect(canReroll({ ...scattered, bids: [{ ...bid(3, 4), seat: 0 }] }, 0)).toBe(false);
+    expect(canReroll({ ...scattered, phase: "split" }, 0)).toBe(false);
   });
 });

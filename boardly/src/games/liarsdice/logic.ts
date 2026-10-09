@@ -43,6 +43,8 @@ export interface LiarsDiceState {
   split: { by: number } | null;
   /** Endless: seats voting to stop. */
   endVotes: number[];
+  /** This round's 散骰 rerolls, with the faces each cup showed. */
+  rerolls: { seat: number; dice: number[] }[];
   reveal: Reveal | null;
   winner: number | null;
   /** Endless: fewest cups when the table stopped (ties share it). */
@@ -70,6 +72,22 @@ export function canSplit(state: LiarsDiceState, mySeat: number): boolean {
     mySeat >= 0 &&
     state.bid.seat !== mySeat &&
     !isOut(state, mySeat)
+  );
+}
+
+/** 散骰: all five faces different. */
+export function isScattered(dice: number[]): boolean {
+  return dice.length === 5 && new Set(dice).size === 5;
+}
+
+/** A scattered cup may be shown and shaken again before your first bid. */
+export function canReroll(state: LiarsDiceState, mySeat: number): boolean {
+  return (
+    state.phase === "bidding" &&
+    mySeat >= 0 &&
+    !isOut(state, mySeat) &&
+    isScattered(state.myDice) &&
+    !state.bids.some((b) => b.seat === mySeat)
   );
 }
 

@@ -238,6 +238,29 @@ def test_endless_ends_by_majority_vote_and_fewest_cups_win():
         game.apply_move(start(TWO), 0, {"type": "end", "vote": True})
 
 
+def test_five_different_faces_may_be_shaken_again():
+    scattered = [[1, 2, 3, 5, 6], [4, 4, 2, 2, 6]]
+    state = start(scattered)
+    state = game.apply_move(state, 0, {"type": "reroll"})
+    assert state["rerolls"] == [{"seat": 0, "dice": [1, 2, 3, 5, 6]}]
+    assert len(state["dice"][0]) == 5 and state["turn"] == 0  # still my turn
+    with pytest.raises(GameError):  # a pair: no reroll
+        game.apply_move(state, 1, {"type": "reroll"})
+    # any time before your own first bid, even out of turn
+    state = {**start(scattered, turn=1)}
+    state = bid(state, 1, 3, 4)
+    state = game.apply_move(state, 0, {"type": "reroll"})
+    assert state["rerolls"][0]["seat"] == 0
+    # but not once you've bid
+    state = {**bid({**state, "dice": scattered}, 0, 4, 4)}
+    state = {**state, "dice": scattered}
+    with pytest.raises(GameError):
+        game.apply_move(state, 0, {"type": "reroll"})
+    # a new round starts with no rerolls
+    state = open_(state, 1)
+    assert state["rerolls"] == []
+
+
 def test_view_shows_only_your_own_dice():
     state = start(TWO)
     view = game.view_for(state, 0)
