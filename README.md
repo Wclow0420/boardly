@@ -19,6 +19,7 @@ Boardly/
 │   │       ├── liarsdice/    #   "Liar's Dice" (大话骰): bluffing dice drinking game, 2-6 players
 │   │       └── nightwatch/   #   "Seal the Manor" (守夜): hidden roles, missions on a secret map, 5-10 players
 │   ├── migrations/           # Alembic (via Flask-Migrate)
+│   ├── scripts/bots.py       # bot players for trying a game on your own
 │   ├── docker-compose.yml    # backend :5005 + postgres :5439
 │   └── Dockerfile
 └── boardly/          Expo app (SDK 57, expo-router, TypeScript)
@@ -160,6 +161,24 @@ game-agnostic — game state lives in a JSONB column and only the two
 registries know about individual games. Socket broadcasts carry no game
 state; they tell clients to refetch their own view. Moves are applied
 under a row lock, so simultaneous actions (votes) are safe.
+
+## Trying a game on your own
+
+`backend/scripts/bots.py` fills a table with bot players for solo
+testing (development only; bots currently play Seal the Manor). Create a
+table in the app, then:
+
+```bash
+cd backend
+docker compose exec backend python scripts/bots.py ABC123        # fill to the minimum
+docker compose exec backend python scripts/bots.py ABC123 -n 5   # or add 5 bots
+```
+
+Bots sign in as `bot1`, `bot2`, … (registered on first use, password
+`botbot123`), join, ready up, and move whenever the game asks them to.
+Start the game in the app as the host. Add `-v` to print every bot move
+(and their roles). To see the table through a bot's eyes, sign in as it
+in a private browser window.
 
 ## Game flow (API, base `/api/v1`)
 
