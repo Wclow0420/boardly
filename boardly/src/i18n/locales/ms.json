@@ -74,7 +74,8 @@
     "avalon": "Double Agent",
     "coup": "Hustle",
     "manor": "Midnight Manor",
-    "liarsdice": "Dadu Penipu"
+    "liarsdice": "Dadu Penipu",
+    "nightwatch": "Meterai Rumah Agam"
   },
   "friends": {
     "title": "Rakan",
@@ -455,6 +456,67 @@
             "Kalah keluar: 5 cawan dan anda mabuk — keluar. Pemain terakhir yang bertahan menang.",
             "Tanpa had: tiada siapa keluar; cawan terus dikira. Apabila lebih separuh meja mengundi berhenti, paling sedikit cawan menang.",
             "Hos memilih mod di bilik."
+          ]
+        }
+      ]
+    },
+    "nightwatch": {
+      "intro": "Rumah agam ini berhantu. Selama lima malam para pengawal mesti menyalakan pelita meterai untuk mengurung hantu — tetapi ada antara mereka yang telah dirasuk dan diam-diam menggagalkan meterai.",
+      "sections": [
+        {
+          "title": "Pihak",
+          "items": [
+            "Baik: Peramal, Perantis, Penjejak, Penjaga Pintu (6+), Pengawal Malam (8+). Jahat: Bayangan, Pertapa, Dirasuk (7+, dua untuk 10 pemain).",
+            "5 pemain: 3 baik, 2 jahat · 6: 4/2 · 7: 4/3 · 8: 5/3 · 9: 6/3 · 10: 6/4.",
+            "Pemain jahat saling mengenali. Pemain jahat di tempat duduk terendah juga pembunuh.",
+            "Peramal: tahu siapa jahat, kecuali Pertapa. Perantis: nampak Peramal dan Bayangan, tetapi tidak tahu yang mana.",
+            "Penjejak (dua kali): semasa rondaan, ikut seorang pemain ke bilik sebenar mereka, sejauh mana pun. Penjaga Pintu (sekali): sebelum rondaan, kunci satu pintu untuk malam itu — hanya pintu diumumkan, bukan siapa yang mengunci.",
+            "Bayangan (dua kali): semasa rondaan, pilih bilik sebenar dan bilik bayang, kedua-duanya boleh dicapai. Orang di bilik bayang nampak anda; di bilik sebenar tiada siapa nampak, tetapi anda masih guna fungsinya. Bayang dikira seorang dalam biliknya, tetapi bukan untuk Taman; Dapur mendengar bilik bayang; di Bilik Makan bayang kelihatan baik."
+          ]
+        },
+        {
+          "title": "Rumah",
+          "items": [
+            "3×3 bilik: Menara Loceng, Bilik Bacaan, Kapel / Galeri, Dewan, Bilik Makan / Bilik Bawah Tanah, Dapur, Taman. Bergerak atas, bawah, kiri atau kanan — tidak pepenjuru.",
+            "Semua bermula di Dewan. Kedudukan anda rahsia: selepas bergerak anda hanya nampak siapa sebilik. Di mana orang lain hanyalah apa yang mereka katakan.",
+            "Bilik misi setiap malam dicabut secara rawak — bukan Dewan, bukan bilik yang sama dua malam berturut-turut. Bilik malam seterusnya diumumkan awal."
+          ]
+        },
+        {
+          "title": "Setiap malam",
+          "items": [
+            "Pengumuman: bilik dan saiz misi malam ini, bilik malam seterusnya, dan dari malam ke-2 satu kejadian malam.",
+            "Rondaan (rahsia, serentak): kekal, atau berjalan satu bilik. Kemudian anda nampak siapa dalam bilik anda.",
+            "Bilik: guna fungsi bilik anda. Ia tidak berfungsi di bilik misi malam ini atau Dewan, atau di bilik yang fungsinya anda guna malam tadi (dihantar ke misi atau dipindahkan ke Dewan tidak dikira).",
+            "Perbincangan: surat tanpa nama ditunjukkan dahulu. Kemudian berbual — berbohong dibenarkan.",
+            "Pasukan: ketua (ikut tempat duduk; Menara Loceng memotong giliran) memilih tepat saiz pasukan. Semua mengundi secara terbuka; lebih separuh setuju, pasukan pergi. Jika tidak, ketua seterusnya mencuba tanpa rondaan baru. Lima pasukan ditolak dalam satu malam dan pihak jahat menang.",
+            "Misi: pasukan berjalan ke bilik misi — paling jauh dua bilik (pintu rahsia dan laluan Bilik Bawah Tanah dikira). Jika ada yang tidak sampai, misi terus gagal dan aplikasi menyebut siapa tidak sampai. Jika tidak, setiap ahli bermain Berjaya atau Gagal secara rahsia (pihak baik hanya Berjaya); hanya bilangan gagal ditunjukkan.",
+            "Satu kad gagal menggagalkan misi — kecuali misi ke-4 dengan 7 pemain atau lebih, yang perlu dua. Pasukan kekal di bilik misi; rondaan seterusnya bermula dari kedudukan semasa."
+          ]
+        },
+        {
+          "title": "Fungsi bilik",
+          "items": [
+            "Menara Loceng: bersendirian di sini, anda ketua pusingan ini (memotong giliran, kemudian giliran diteruskan).",
+            "Bilik Bacaan: bersendirian di sini, baca kad seorang ahli misi malam tadi.",
+            "Kapel: berdoa, dan misi malam ini kehilangan satu kad gagal. Hanya berjaya sekali, dan tidak dikira jika tiada kad gagal untuk ditarik. Hanya mereka di Kapel tahu sama ada ia berjaya.",
+            "Galeri: tulis satu ayat tanpa nama, ditunjukkan apabila perbincangan bermula.",
+            "Bilik Makan: dengan tepat dua orang di sini, anda saling tahu pihak masing-masing.",
+            "Bilik Bawah Tanah: jika dalam pasukan malam ini, anda sampai ke bilik misi dari sini sejauh mana pun; jika tidak, rondaan seterusnya boleh ke mana-mana bilik.",
+            "Dapur: ketahui di bilik mana seorang pemain berada. Taman: lihat berapa orang dalam setiap bilik. Dewan: tiada fungsi, tetapi bersebelahan empat bilik."
+          ]
+        },
+        {
+          "title": "Kejadian malam",
+          "items": [
+            "Satu dibuka setiap malam dari malam ke-2: Gelap gelita (hanya tahu sama ada ada orang), Runtuhan (satu bilik ditutup selamanya; yang di dalam ke Dewan), Pintu rahsia (dua bilik pepenjuru bersambung), Ribut (tiada siapa bergerak; tiada penjejakan), Tak boleh tidur (berjalan sehingga dua bilik), Gema (dua surat), Kabus (pasukan hanya berjalan satu bilik), Tenang."
+          ]
+        },
+        {
+          "title": "Penamat",
+          "items": [
+            "Pihak jahat menang dengan tiga misi gagal, atau lima pasukan ditolak dalam satu malam.",
+            "Apabila tiga misi berjaya, pihak jahat didedahkan dan boleh berbincang; pembunuh kemudian meneka Peramal. Betul, pihak jahat menang. Salah, pihak baik menang."
           ]
         }
       ]
@@ -962,6 +1024,284 @@
     "leopard": "Lima sama +1",
     "reroll": "Bersepah — tunjuk dan goncang semula",
     "rerolled": "{{name}} goncang semula cawan bersepah (tunjuk {{dice}})"
+  },
+  "nightwatch": {
+    "tagline": "Nyalakan pelita meterai sebelum hantu terlepas",
+    "rooms": {
+      "belltower": "Menara Loceng",
+      "study": "Bilik Bacaan",
+      "chapel": "Kapel",
+      "gallery": "Galeri",
+      "hall": "Dewan",
+      "dining": "Bilik Makan",
+      "cellar": "Bilik Bawah Tanah",
+      "kitchen": "Dapur",
+      "garden": "Taman"
+    },
+    "fns": {
+      "belltower": "Bunyikan loceng: anda bersendirian di sini, jadi anda ketua pusingan ini.",
+      "study": "Baca rekod: anda bersendirian — lihat kad yang dimainkan oleh seorang ahli misi malam tadi.",
+      "chapel": "Berdoa: misi malam ini kehilangan satu kad gagal. Hanya berjaya sekali sepermainan.",
+      "gallery": "Tulis surat tanpa nama, ditunjukkan kepada semua apabila perbincangan bermula.",
+      "hall": "Tiada fungsi — tetapi ia bersebelahan empat bilik.",
+      "dining": "Minum bersama: tepat dua orang di sini, jadi anda saling tahu pihak masing-masing.",
+      "cellar": "Laluan rahsia: jika dalam pasukan, anda sampai ke bilik misi dari sini; jika tidak, rondaan seterusnya boleh ke mana-mana bilik.",
+      "kitchen": "Curi dengar: ketahui di bilik mana seorang pemain berada.",
+      "garden": "Tinjau: anda nampak berapa orang dalam setiap bilik."
+    },
+    "sides": {
+      "good": "baik",
+      "evil": "jahat"
+    },
+    "roles": {
+      "prophet": {
+        "name": "Peramal",
+        "desc": "Baik. Anda tahu siapa yang jahat — kecuali Pertapa. Bimbing yang lain secara senyap: jika tiga misi berjaya, pembunuh akan memburu anda."
+      },
+      "apprentice": {
+        "name": "Perantis",
+        "desc": "Baik. Anda nampak dua orang: seorang Peramal, seorang lagi Bayangan — tetapi tidak tahu yang mana."
+      },
+      "tracker": {
+        "name": "Penjejak",
+        "desc": "Baik. Dua kali sepermainan, semasa rondaan, ikut seorang pemain: anda tiba di bilik sebenar mereka, sejauh mana pun."
+      },
+      "keeper": {
+        "name": "Penjaga Pintu",
+        "desc": "Baik. Sekali sepermainan, sebelum rondaan, kunci satu pintu untuk malam itu — tiada siapa boleh melaluinya semasa rondaan atau misi. Semua tahu pintu mana, bukan siapa yang mengunci."
+      },
+      "watcher": {
+        "name": "Pengawal Malam",
+        "desc": "Baik. Tiada kuasa istimewa: meronda, mendengar, dan nyalakan meterai."
+      },
+      "double": {
+        "name": "Bayangan",
+        "desc": "Jahat. Dua kali sepermainan, semasa rondaan, tinggalkan bayang palsu di bilik lain yang boleh anda capai. Orang di sana nampak anda; di bilik sebenar tiada siapa nampak. Perantis menyangka anda mungkin Peramal."
+      },
+      "hermit": {
+        "name": "Pertapa",
+        "desc": "Jahat. Peramal tidak dapat melihat anda."
+      },
+      "possessed": {
+        "name": "Dirasuk",
+        "desc": "Jahat. Gagalkan meterai."
+      }
+    },
+    "events": {
+      "blackout": {
+        "name": "Gelap gelita",
+        "desc": "Selepas rondaan anda tidak nampak siapa sebilik dengan anda — cuma sama ada ada orang."
+      },
+      "collapse": {
+        "name": "Runtuhan",
+        "desc": "Satu bilik runtuh selama-lamanya: tiada siapa boleh masuk, dan sesiapa di dalamnya dipindahkan ke Dewan."
+      },
+      "secretDoor": {
+        "name": "Pintu rahsia",
+        "desc": "Dua bilik pepenjuru kini bersambung selama-lamanya."
+      },
+      "storm": {
+        "name": "Ribut",
+        "desc": "Tiada siapa boleh bergerak dalam rondaan ini, dan Penjejak tidak boleh mengikut sesiapa."
+      },
+      "insomnia": {
+        "name": "Tak boleh tidur",
+        "desc": "Semua boleh berjalan sehingga dua bilik dalam rondaan ini."
+      },
+      "echo": {
+        "name": "Gema",
+        "desc": "Galeri boleh menghantar dua surat malam ini."
+      },
+      "fog": {
+        "name": "Kabus",
+        "desc": "Pasukan hanya boleh berjalan satu bilik ke misi malam ini, bukan dua."
+      },
+      "calm": {
+        "name": "Tenang",
+        "desc": "Tiada apa-apa berlaku."
+      }
+    },
+    "phases": {
+      "announce": "Pengumuman",
+      "patrol": "Rondaan",
+      "room": "Bilik",
+      "team": "Memilih pasukan",
+      "vote": "Mengundi",
+      "mission": "Misi",
+      "assassinate": "Peluang terakhir",
+      "finished": "Permainan tamat"
+    },
+    "bar": {
+      "night": "Malam {{n}} daripada {{total}}",
+      "rejections": "pasukan ditolak: {{count}}/5",
+      "trackHint": "Saiz pasukan setiap malam · ★ perlu dua kad gagal"
+    },
+    "role": {
+      "title": "Peranan anda",
+      "reveal": "Ketik untuk lihat peranan",
+      "hide": "Ketik untuk sembunyi",
+      "knowsEvil": "Jahat: {{names}}",
+      "knowsProphet": "Seorang ialah Peramal, seorang lagi Bayangan: {{names}}",
+      "allies": "Rakan jahat anda: {{names}}",
+      "assassin": "{{name}} ialah pembunuh dan meneka Peramal pada akhirnya",
+      "youAssassin": "Anda pembunuh: anda meneka Peramal pada akhirnya",
+      "uses": "Baki: {{count}} daripada {{total}}"
+    },
+    "announce": {
+      "title": "Malam ini",
+      "mission": "Misi di {{room}} · {{size}} orang",
+      "twoFails": "Misi ini perlu dua kad gagal untuk gagal",
+      "next": "Misi malam seterusnya: {{room}}",
+      "noEvent": "Tiada kejadian pada malam pertama.",
+      "locked": "Dikunci malam ini: {{door}}",
+      "door": "Pintu rahsia: {{door}}",
+      "collapsed": "Runtuh: {{rooms}}"
+    },
+    "map": {
+      "mission": "Malam ini",
+      "next": "Seterusnya",
+      "you": "Anda",
+      "decoy": "Bayang",
+      "sealed": "Tertutup"
+    },
+    "prompt": {
+      "readyHint": "Baca misi dan kejadian malam ini, kemudian ketik sedia.",
+      "lockTitle": "Kunci satu pintu malam ini?",
+      "lockHint": "Sekali sepermainan. Semua tahu pintu mana — bukan siapa yang mengunci.",
+      "noLock": "Jangan kunci",
+      "ready": "Saya sedia",
+      "patrol": "Ke mana anda meronda?",
+      "patrolHint": "Kekal, atau berjalan ke bilik bersebelahan. Anda juga boleh ketik peta.",
+      "patrolStorm": "Ribut memastikan semua kekal di tempat masing-masing.",
+      "patrolFree": "Laluan Bilik Bawah Tanah terbuka: pergi ke mana-mana bilik.",
+      "patrolInsomnia": "Tak boleh tidur: berjalan sehingga dua bilik.",
+      "follow": "Ikut seseorang",
+      "followHint": "Anda tiba di mana sahaja mereka sebenarnya berada. Baki {{count}}.",
+      "stay": "Kekal di {{room}}",
+      "decoy": "Tinggalkan bayang palsu",
+      "decoyHint": "Orang di bilik bayang nampak anda; di bilik sebenar tiada siapa nampak. Baki {{count}}.",
+      "decoyRoom": "Di mana bayang itu berdiri?",
+      "go": "Pergi",
+      "roomTitle": "Di {{room}}",
+      "noFn": "Bilik ini tidak berbuat apa-apa untuk anda malam ini.",
+      "study": "Kad siapa yang anda baca?",
+      "kitchen": "Siapa yang anda curi dengar?",
+      "letterHint": "Nama tidak ditunjukkan. Biarkan kosong untuk langkau.",
+      "letterPlaceholder": "Satu ayat…",
+      "pray": "Berdoa",
+      "prayHint": "Jika misi malam ini ada kad gagal, satu ditarik balik. Hanya mereka di Kapel tahu sama ada ia berjaya. Hanya berjaya sekali sepermainan.",
+      "done": "Selesai",
+      "propose": "Pilih {{size}} orang untuk misi",
+      "proposeHint": "Berbincang dulu. Sesiapa lebih {{steps}} bilik dari {{room}} tidak akan sampai — dan misi gagal.",
+      "send": "Cadang pasukan",
+      "vote": "Hantar pasukan ini?",
+      "approve": "Setuju",
+      "reject": "Tolak",
+      "mission": "Misi di {{room}}",
+      "missionHint": "Pengawal hanya boleh bermain Berjaya.",
+      "missionHintEvil": "Main Berjaya atau Gagal. Hanya bilangan kad gagal didedahkan.",
+      "success": "Berjaya",
+      "fail": "Gagal",
+      "assassinate": "Siapa Peramal?",
+      "assassinateHint": "Berbincang dengan pihak anda dulu. Teka Peramal dan pihak jahat menang.",
+      "name": "Dia orangnya"
+    },
+    "team": {
+      "team": "Pasukan: {{names}}",
+      "leader": "Dicadang oleh {{name}}"
+    },
+    "chosen": {
+      "ready": "Anda sudah sedia",
+      "lock": "Anda sedia — mengunci {{door}}",
+      "room": "Anda menuju ke {{room}}",
+      "track": "Anda mengikut {{name}}",
+      "decoy": "bayang di {{room}}",
+      "done": "Anda sudah selesai",
+      "yes": "Anda setuju",
+      "no": "Anda menolak",
+      "card": "Anda sudah bermain kad"
+    },
+    "waiting": {
+      "announce": "Semua sedang membaca pengumuman…",
+      "patrol": "Semua sedang meronda…",
+      "room": "Semua sedang menggunakan bilik…",
+      "team": "{{name}} sedang memilih pasukan — berbincanglah!",
+      "vote": "Semua sedang mengundi…",
+      "mission": "Pasukan sedang menjalankan misi…",
+      "assassinate": "{{name}} sedang meneka Peramal…",
+      "finished": "Permainan tamat",
+      "on": "Menunggu {{names}}"
+    },
+    "where": {
+      "title": "Di mana anda",
+      "freeMove": "Laluan Bilik Bawah Tanah terbuka: rondaan ini anda boleh ke mana-mana bilik.",
+      "tracked": "Anda mengikut {{name}}",
+      "someone": "Ada orang di sini — terlalu gelap untuk lihat siapa",
+      "alone": "Tiada orang lain di sini",
+      "seen": "Bersama anda: {{names}}",
+      "decoy": "Bayang anda berdiri di {{room}}",
+      "blocked": {
+        "hall": "Dewan tiada fungsi.",
+        "mission": "Bilik misi malam ini tiada fungsi.",
+        "repeat": "Anda guna bilik ini malam tadi — tiada fungsi malam ini."
+      }
+    },
+    "letters": {
+      "title": "Surat tanpa nama"
+    },
+    "players": {
+      "title": "Para pengawal",
+      "evil": "Jahat",
+      "maybeProphet": "Peramal?"
+    },
+    "notes": {
+      "bell": "Anda membunyikan loceng: anda ketua pusingan ini",
+      "cellar": "Laluan terbuka: jika dalam pasukan anda sampai ke misi dari sini; jika tidak, mana-mana bilik pada rondaan seterusnya",
+      "dining": "{{name}} di pihak {{side}}",
+      "diningDark": "Seseorang di sini di pihak {{side}}",
+      "garden": "Orang setiap bilik: {{counts}}",
+      "study": "{{name}} bermain {{card}} malam tadi",
+      "kitchen": "{{name}} berada di {{room}}",
+      "letter": "Anda menulis {{text}}",
+      "pray": "Anda berdoa",
+      "prayer": {
+        "cancelled": "Doa dimakbulkan: satu kad gagal ditarik balik",
+        "none": "Tiada kad gagal ditarik balik",
+        "noCards": "Tiada kad dimainkan — doa tidak diperlukan"
+      },
+      "collapse": "{{room}} runtuh — anda dipindahkan ke Dewan"
+    },
+    "log": {
+      "title": "Buku nota anda",
+      "hint": "Hanya anda boleh lihat. Kongsikan — atau berbohong."
+    },
+    "record": {
+      "title": "Yang semua orang tahu",
+      "collapse": "{{room}} runtuh",
+      "door": "Pintu rahsia: {{door}}",
+      "lock": "Pintu dikunci: {{door}}",
+      "proposal": "{{leader}} mencadangkan {{team}}",
+      "approved": "diterima",
+      "rejected": "ditolak",
+      "missing": "tidak sampai: {{names}}",
+      "fails": "kad gagal: {{count}}",
+      "success": "Misi di {{room}} berjaya",
+      "fail": "Misi di {{room}} gagal"
+    },
+    "result": {
+      "good": "Meterai bertahan!",
+      "evil": "Hantu terlepas",
+      "none": "Permainan tamat",
+      "youWon": "Anda menang 🎉",
+      "youLost": "Anda kalah"
+    },
+    "reasons": {
+      "missions": "Tiga misi berjaya dan pembunuh meneka {{name}} — Peramal sebenarnya {{prophet}}.",
+      "assassination": "Tiga misi berjaya, tetapi pembunuh menemui Peramal: {{prophet}}.",
+      "failedMissions": "Tiga misi gagal.",
+      "rejections": "Lima pasukan ditolak dalam satu malam.",
+      "abandoned": "Seseorang meninggalkan meja."
+    }
   },
   "profile": {
     "title": "Profil",

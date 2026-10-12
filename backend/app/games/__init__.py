@@ -9,6 +9,7 @@ from app.games.avalon.game import game as avalon
 from app.games.coup.game import game as coup
 from app.games.liarsdice.game import game as liarsdice
 from app.games.manor.game import game as manor
+from app.games.nightwatch.game import game as nightwatch
 from app.games.tictactoe.game import game as tictactoe
 
 GAMES: dict[str, BaseGame] = {
@@ -17,6 +18,7 @@ GAMES: dict[str, BaseGame] = {
     coup.key: coup,
     manor.key: manor,
     liarsdice.key: liarsdice,
+    nightwatch.key: nightwatch,
 }
 
 
