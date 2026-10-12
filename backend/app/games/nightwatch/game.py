@@ -48,6 +48,8 @@ Full state (server only — clients get `view_for`):
   "orders": [None, {...}, ...],            # announce / patrol / room
   "prayed": [False, ...],
   "chapelSpent": False,                    # the one successful prayer
+  "chapelLog": [{"round": 0, "prayed": True, "result": "none"}],
+                                           # read by anyone in the Chapel
   "leader": 2, "nextLeader": 3, "bellLeader": None,
   "rejections": 0,
   "team": [0, 2],
@@ -246,6 +248,7 @@ class Nightwatch(BaseGame):
             "orders": [None] * n,
             "prayed": [False] * n,
             "chapelSpent": False,
+            "chapelLog": [],
             "leader": None,
             "nextLeader": leader,
             "bellLeader": None,
@@ -493,6 +496,11 @@ class Nightwatch(BaseGame):
                 "blocked": blocked,
             }
             logs[s].append({"round": r, "kind": "patrol", **note})
+            if here == CHAPEL and state.get("chapelLog"):
+                # Anyone who enters can read what past prayers did, and
+                # so check what people claim (it isn't using the room)
+                logs[s].append({"round": r, "kind": "chapelRecord",
+                                "records": state["chapelLog"]})
             if blocked:
                 continue
 
@@ -790,7 +798,9 @@ class Nightwatch(BaseGame):
         n = state["numPlayers"]
         r = state["round"]
         logs = [list(log) for log in state["logs"]]
-        if any(state["prayed"]):
+        prayed = any(state["prayed"])
+        outcome = None
+        if prayed:
             # Only those who were in the Chapel tonight learn the answer
             outcome = (
                 "noCards" if cancelled is None
@@ -800,10 +810,14 @@ class Nightwatch(BaseGame):
                 if self._patrol_room(state, s) == CHAPEL:
                     logs[s].append({"round": r, "kind": "prayer",
                                     "result": outcome})
+        # The Chapel keeps a record of every night, prayer or not
+        chapel_log = state.get("chapelLog", []) + [
+            {"round": r, "prayed": prayed, "result": outcome}
+        ]
 
         results = state["results"] + [result]
         state = {**state, "results": results, "logs": logs, "team": [],
-                 "prayed": [False] * n}
+                 "prayed": [False] * n, "chapelLog": chapel_log}
         if sum(1 for x in results if not x["success"]) >= MISSIONS_TO_WIN:
             return self._finish(state, "evil", "failedMissions")
         if sum(1 for x in results if x["success"]) >= MISSIONS_TO_WIN:

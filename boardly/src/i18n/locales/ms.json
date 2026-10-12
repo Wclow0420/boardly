@@ -499,7 +499,7 @@
           "items": [
             "Menara Loceng: bersendirian di sini, anda ketua pusingan ini (memotong giliran, kemudian giliran diteruskan).",
             "Bilik Bacaan: bersendirian di sini, baca kad seorang ahli misi malam tadi.",
-            "Kapel: berdoa, dan misi malam ini kehilangan satu kad gagal. Hanya berjaya sekali, dan tidak dikira jika tiada kad gagal untuk ditarik. Hanya mereka di Kapel tahu sama ada ia berjaya.",
+            "Kapel: berdoa, dan misi malam ini kehilangan satu kad gagal. Hanya berjaya sekali, dan tidak dikira jika tiada kad gagal untuk ditarik. Hanya mereka di Kapel malam itu tahu sama ada ia berjaya. Sesiapa yang masuk ke Kapel kemudian boleh membaca rekod malam-malam lalu — sama ada ada yang berdoa dan hasilnya (bukan siapa) — untuk menyemak dakwaan orang.",
             "Galeri: tulis satu ayat tanpa nama, ditunjukkan apabila perbincangan bermula.",
             "Bilik Makan: dengan tepat dua orang di sini, anda saling tahu pihak masing-masing.",
             "Bilik Bawah Tanah: jika dalam pasukan malam ini, anda sampai ke bilik misi dari sini sejauh mana pun; jika tidak, rondaan seterusnya boleh ke mana-mana bilik.",
@@ -1269,7 +1269,15 @@
         "none": "Tiada kad gagal ditarik balik",
         "noCards": "Tiada kad dimainkan — doa tidak diperlukan"
       },
-      "collapse": "{{room}} runtuh — anda dipindahkan ke Dewan"
+      "collapse": "{{room}} runtuh — anda dipindahkan ke Dewan",
+      "chapelRecord": "Rekod Kapel:",
+      "recordNight": "Malam {{n}}: {{what}}",
+      "records": {
+        "nobody": "tiada siapa berdoa",
+        "cancelled": "doa menarik balik satu kad gagal",
+        "none": "ada doa, tiada kad gagal ditarik balik",
+        "noCards": "ada doa, tetapi tiada kad dimainkan"
+      }
     },
     "log": {
       "title": "Buku nota anda",

@@ -511,6 +511,40 @@ def test_the_chapel_answers_only_once_a_game():
     assert notes(state, 1, "prayer")[0]["result"] == "none"
 
 
+def test_anyone_who_enters_the_chapel_reads_its_records():
+    state = night(at_study(), {0: CHAPEL}, {0: {"pray": True}})
+    state = send(state, [4, 3], {4: "fail"})
+    # Night 2: nobody prays
+    state = night(state)
+    state = send(state, [2, 3, 5])
+    # Night 3: the Apprentice walks in and reads both nights
+    state = patrol_all(ready_all(state), {1: CHAPEL})
+    record = notes(state, 1, "chapelRecord")
+    assert record == [{"round": 2, "kind": "chapelRecord", "records": [
+        {"round": 0, "prayed": True, "result": "cancelled"},
+        {"round": 1, "prayed": False, "result": None},
+    ]}]
+    # Nobody outside the Chapel gets it, and it isn't in anyone's view
+    assert notes(state, 2, "chapelRecord") == []
+    assert "chapelLog" not in game.view_for(state, 1)
+
+
+def test_the_chapel_record_is_readable_even_without_its_function():
+    # Seat 0 prayed last night, stays, and can't pray again — but reads
+    state = night(at_study(), {0: CHAPEL}, {0: {"pray": True}})
+    state = send(state, [2, 3])
+    state = patrol_all(ready_all(state))
+    assert last_patrol(state, 0)["blocked"] == "repeat"
+    assert notes(state, 0, "chapelRecord")[0]["records"] == [
+        {"round": 0, "prayed": True, "result": "none"},
+    ]
+
+
+def test_no_chapel_record_on_the_first_night():
+    state = patrol_all(ready_all(at_study()), {0: CHAPEL})
+    assert notes(state, 0, "chapelRecord") == []
+
+
 # --------------------------------------------------- team, vote, mission
 
 

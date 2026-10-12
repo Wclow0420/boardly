@@ -134,6 +134,16 @@ export interface Order {
   pray?: boolean;
 }
 
+export type PrayerResult = "cancelled" | "none" | "noCards";
+
+/** One night in the Chapel's record, read by anyone who enters. */
+export interface ChapelRecord {
+  round: number;
+  prayed: boolean;
+  /** null when nobody prayed. */
+  result: PrayerResult | null;
+}
+
 /** One line of a player's private notebook. */
 export type Note =
   | {
@@ -156,7 +166,8 @@ export type Note =
   | { round: number; kind: "study"; seat: number; card: "success" | "fail" }
   | { round: number; kind: "kitchen"; seat: number; room: number }
   | { round: number; kind: "letter"; texts: string[] }
-  | { round: number; kind: "prayer"; result: "cancelled" | "none" | "noCards" }
+  | { round: number; kind: "prayer"; result: PrayerResult }
+  | { round: number; kind: "chapelRecord"; records: ChapelRecord[] }
   | { round: number; kind: "collapse"; room: number };
 
 export type TimelineEntry =

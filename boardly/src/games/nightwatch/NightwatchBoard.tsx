@@ -1451,6 +1451,15 @@ function noteLine(note: Note, names: Names, t: T): string {
       return `⛪ ${t(`nightwatch.notes.prayer.${note.result}`)}`;
     case "collapse":
       return `🧱 ${t("nightwatch.notes.collapse", { room: names.roomName(note.room) })}`;
+    case "chapelRecord":
+      return `📖 ${t("nightwatch.notes.chapelRecord")}\n${note.records
+        .map((rec) =>
+          t("nightwatch.notes.recordNight", {
+            n: rec.round + 1,
+            what: t(`nightwatch.notes.records.${rec.result ?? "nobody"}`),
+          })
+        )
+        .join("\n")}`;
   }
 }
 

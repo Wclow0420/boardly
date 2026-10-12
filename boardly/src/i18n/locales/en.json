@@ -499,7 +499,7 @@
           "items": [
             "Bell Tower: alone here, you lead this round (you cut in, then the order carries on).",
             "Study: alone here, read the card one of last night's team played.",
-            "Chapel: pray, and tonight's mission loses one fail card. It works once a game, and isn't used up if there was no fail to take back. Only those in the Chapel learn whether it worked.",
+            "Chapel: pray, and tonight's mission loses one fail card. It works once a game, and isn't used up if there was no fail to take back. Only those in the Chapel that night learn whether it worked. Anyone who enters the Chapel later can read its record of past nights — whether anyone prayed and what came of it (not who) — so you can check what people claim.",
             "Gallery: write one anonymous sentence, shown when discussion starts.",
             "Dining Room: with exactly two of you here, you each learn the other's side.",
             "Cellar: on tonight's team, you reach the mission room from here at any distance; if not, next patrol you can go to any room.",
@@ -1272,7 +1272,15 @@
         "none": "No fail card was taken back",
         "noCards": "No cards were played — the prayer wasn't needed"
       },
-      "collapse": "The {{room}} caved in — you were moved to the Hall"
+      "collapse": "The {{room}} caved in — you were moved to the Hall",
+      "chapelRecord": "The Chapel's record:",
+      "recordNight": "Night {{n}}: {{what}}",
+      "records": {
+        "nobody": "nobody prayed",
+        "cancelled": "a prayer took back a fail card",
+        "none": "a prayer, no fail card taken back",
+        "noCards": "a prayer, but no cards were played"
+      }
     },
     "log": {
       "title": "Your notebook",
