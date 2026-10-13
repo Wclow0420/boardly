@@ -18,6 +18,14 @@
         "cd boardly && node scripts/serve-web.js"
       ],
       "port": 8096
+    },
+    {
+      "name": "boardly-site",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "website/serve.js"
+      ],
+      "port": 8097
     }
   ]
 }

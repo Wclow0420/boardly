@@ -1,7 +1,6 @@
 import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import * as Linking from "expo-linking";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
@@ -45,7 +44,7 @@ import { useGameName } from "@/games/names";
 import { getGame } from "@/games/registry";
 import { fontFamily, palette, useTheme } from "@/theme";
 import { successHaptic, tapHaptic } from "@/utils/haptics";
-import { shareOrCopy } from "@/utils/share";
+import { inviteLink, shareOrCopy } from "@/utils/share";
 
 export default function LobbyScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
@@ -95,7 +94,7 @@ export default function LobbyScreen() {
 
   const shareInvite = async () => {
     if (!room) return;
-    const link = Linking.createURL(`join/${room.code}`);
+    const link = inviteLink(room.code);
     const outcome = await shareOrCopy(
       t("lobby.shareMessage", {
         game: gameName(room.gameType, room.game?.name),

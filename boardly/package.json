@@ -69,6 +69,8 @@
     "build:web": "npm run setup:skia-web && expo export --platform web --clear",
     "serve:web": "node scripts/serve-web.js",
     "setup:skia-web": "mkdir -p public && cp node_modules/canvaskit-wasm/bin/full/canvaskit.wasm public/canvaskit.wasm",
+    "update:production": "APP_ENV=production eas update --channel production --environment production",
+    "update:preview": "APP_ENV=preview eas update --channel preview --environment preview",
     "lint": "expo lint",
     "test": "jest"
   },
