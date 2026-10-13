@@ -3,16 +3,15 @@
 # In Render: New → Blueprint → pick this repository. Render creates both,
 # wires DATABASE_URL, and generates SECRET_KEY.
 #
-# Plans below are the free ones so nothing is charged by surprise. They
-# are for trying things out only: a free web service sleeps when idle
-# (dropping live game connections) and a free database is temporary.
-# Move both to paid plans before real players use it.
+# The backend and database are on Starter plans: the service stays awake
+# (a sleeping service would drop live game connections) and the database
+# is kept. The website is a static site, which costs nothing.
 
 databases:
   - name: boardly-db
     databaseName: boardly
     user: boardly
-    plan: free
+    plan: starter
     region: singapore
 
 services:
@@ -20,7 +19,7 @@ services:
     name: boardly-api
     runtime: docker
     rootDir: backend
-    plan: free
+    plan: starter
     region: singapore
     # Keep this at one instance: live game state is held in memory.
     numInstances: 1
