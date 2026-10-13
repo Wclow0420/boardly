@@ -1,4 +1,3 @@
-import { BottomSheetTextInput } from "@gorhom/bottom-sheet";
 import { forwardRef, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -9,6 +8,7 @@ import {
   BottomSheetModal,
   Button,
   GorhomBottomSheetModal,
+  SheetTextInput,
   TextField,
 } from "@/components/ui";
 import { useSession } from "@/context/SessionContext";
@@ -67,7 +67,7 @@ export const ChangePasswordSheet = forwardRef<GorhomBottomSheetModal>(
             label={t("profile.currentPassword")}
             value={current}
             onChangeText={setCurrent}
-            InputComponent={BottomSheetTextInput}
+            InputComponent={SheetTextInput}
             secureTextEntry
             autoCapitalize="none"
             autoCorrect={false}
@@ -76,7 +76,7 @@ export const ChangePasswordSheet = forwardRef<GorhomBottomSheetModal>(
             label={t("profile.newPassword")}
             value={next}
             onChangeText={setNext}
-            InputComponent={BottomSheetTextInput}
+            InputComponent={SheetTextInput}
             secureTextEntry
             autoCapitalize="none"
             autoCorrect={false}

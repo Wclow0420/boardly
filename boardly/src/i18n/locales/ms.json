@@ -462,6 +462,13 @@
     },
     "nightwatch": {
       "intro": "Rumah agam ini berhantu. Selama lima malam para pengawal mesti menyalakan pelita meterai untuk mengurung hantu — tetapi ada antara mereka yang telah dirasuk dan diam-diam menggagalkan meterai.",
+      "roles": {
+        "title": "Peranan",
+        "intro": "Lapan peranan semuanya. Peranan yang digunakan bergantung pada bilangan pemain. Pemain jahat saling mengenali, dan pemain jahat di tempat duduk terendah juga pembunuh.",
+        "everyGame": "setiap permainan",
+        "fromPlayers": "{{count}}+ pemain",
+        "twoFrom": "dua dengan {{count}}+"
+      },
       "sections": [
         {
           "title": "Pihak",
@@ -495,22 +502,10 @@
           ]
         },
         {
-          "title": "Fungsi bilik",
-          "items": [
-            "Menara Loceng: bersendirian di sini, anda ketua pusingan ini (memotong giliran, kemudian giliran diteruskan).",
-            "Bilik Bacaan: bersendirian di sini, baca kad seorang ahli misi malam tadi.",
-            "Kapel: berdoa, dan misi malam ini kehilangan satu kad gagal. Hanya berjaya sekali, dan tidak dikira jika tiada kad gagal untuk ditarik. Hanya mereka di Kapel malam itu tahu sama ada ia berjaya. Sesiapa yang masuk ke Kapel kemudian boleh membaca rekod malam-malam lalu — sama ada ada yang berdoa dan hasilnya (bukan siapa) — untuk menyemak dakwaan orang.",
-            "Galeri: tulis satu ayat tanpa nama, ditunjukkan apabila perbincangan bermula.",
-            "Bilik Makan: dengan tepat dua orang di sini, anda saling tahu pihak masing-masing.",
-            "Bilik Bawah Tanah: jika dalam pasukan malam ini, anda sampai ke bilik misi dari sini sejauh mana pun; jika tidak, rondaan seterusnya boleh ke mana-mana bilik.",
-            "Dapur: ketahui di bilik mana seorang pemain berada. Taman: lihat berapa orang dalam setiap bilik. Dewan: tiada fungsi, tetapi bersebelahan empat bilik."
-          ]
+          "title": "Fungsi bilik"
         },
         {
-          "title": "Kejadian malam",
-          "items": [
-            "Satu dibuka setiap malam dari malam ke-2: Gelap gelita (hanya tahu sama ada ada orang), Runtuhan (satu bilik ditutup selamanya; yang di dalam ke Dewan), Pintu rahsia (dua bilik pepenjuru bersambung), Ribut (tiada siapa bergerak; tiada penjejakan), Tak boleh tidur (berjalan sehingga dua bilik), Gema (dua surat), Kabus (pasukan hanya berjalan satu bilik), Tenang."
-          ]
+          "title": "Kejadian malam"
         },
         {
           "title": "Penamat",
@@ -519,7 +514,30 @@
             "Apabila tiga misi berjaya, pihak jahat didedahkan dan boleh berbincang; pembunuh kemudian meneka Peramal. Betul, pihak jahat menang. Salah, pihak baik menang."
           ]
         }
-      ]
+      ],
+      "rooms": {
+        "intro": "Selepas rondaan, anda menggunakan fungsi bilik tempat anda berada. Bilik yang memerlukan bilangan orang yang tepat tidak berfungsi dengan bilangan lain. Bilik misi malam ini dan Dewan tiada fungsi, dan fungsi sesebuah bilik tidak boleh digunakan dua pusingan berturut-turut (menyertai misi atau dipindahkan ke Dewan tidak dikira).",
+        "belltower": "Bunyikan loceng: anda ketua pusingan ini (memotong giliran, kemudian giliran diteruskan).",
+        "study": "Baca rekod: pilih seorang ahli misi malam tadi dan ketahui sama ada dia bermain berjaya atau gagal.",
+        "chapel": "Berdoa: misi malam ini kehilangan satu kad gagal. Hanya berjaya sekali sepermainan, dan tidak dikira jika tiada kad gagal untuk ditarik. Hanya mereka di Kapel malam itu tahu sama ada ia berjaya. Sesiapa yang masuk kemudian boleh membuka buku di atas rehal: sama ada ada yang berdoa pada setiap malam lalu dan hasilnya (bukan siapa).",
+        "gallery": "Surat tanpa nama: tulis satu ayat, ditunjukkan apabila perbincangan bermula tanpa nama.",
+        "hall": "Persimpangan: tiada fungsi, tetapi selangkah dari empat bilik.",
+        "dining": "Minum bersama: anda berdua saling tahu pihak masing-masing.",
+        "cellar": "Laluan rahsia: jika dinamakan untuk misi malam ini, anda sampai ke bilik misi dari sini sejauh mana pun; jika tidak, rondaan seterusnya boleh ke mana-mana bilik.",
+        "kitchen": "Curi dengar: pilih seorang pemain dan ketahui di bilik mana dia berada selepas rondaan ini.",
+        "garden": "Tinjau: ketahui berapa orang dalam setiap bilik pusingan ini (bukan siapa)."
+      },
+      "events": {
+        "intro": "Bermula malam ke-2, satu kejadian malam dibuka pada setiap pengumuman, untuk dilihat semua.",
+        "blackout": "Selepas rondaan ini anda tidak nampak siapa sebilik dengan anda — cuma sama ada ada orang.",
+        "collapse": "Satu bilik rawak ditutup selama-lamanya: tiada siapa boleh masuk lagi, dan sesiapa di dalamnya dipindahkan ke Dewan. Ia bukan bilik misi malam ini atau malam seterusnya.",
+        "secretDoor": "Dua bilik pepenjuru rawak bersambung selama-lamanya: anda boleh berjalan terus di antaranya.",
+        "storm": "Tiada siapa boleh bergerak dalam rondaan ini, dan Penjejak tidak boleh mengikut sesiapa.",
+        "insomnia": "Semua boleh berjalan sehingga dua bilik dalam rondaan ini.",
+        "echo": "Galeri boleh menghantar dua surat tanpa nama pusingan ini.",
+        "fog": "Pasukan hanya boleh berjalan satu bilik ke misi pusingan ini, bukan dua.",
+        "calm": "Tiada apa-apa berlaku."
+      }
     }
   },
   "avalon": {
@@ -1039,12 +1057,12 @@
       "garden": "Taman"
     },
     "fns": {
-      "belltower": "Bunyikan loceng: anda bersendirian di sini, jadi anda ketua pusingan ini.",
-      "study": "Baca rekod: anda bersendirian — lihat kad yang dimainkan oleh seorang ahli misi malam tadi.",
+      "belltower": "Bunyikan loceng — perlu tepat 1 orang. Anda bersendirian di sini, jadi anda ketua pusingan ini.",
+      "study": "Baca rekod — perlu tepat 1 orang. Anda bersendirian: lihat kad yang dimainkan oleh seorang ahli misi malam tadi.",
       "chapel": "Berdoa: misi malam ini kehilangan satu kad gagal. Hanya berjaya sekali sepermainan.",
       "gallery": "Tulis surat tanpa nama, ditunjukkan kepada semua apabila perbincangan bermula.",
       "hall": "Tiada fungsi — tetapi ia bersebelahan empat bilik.",
-      "dining": "Minum bersama: tepat dua orang di sini, jadi anda saling tahu pihak masing-masing.",
+      "dining": "Minum bersama — perlu tepat 2 orang. Tepat dua orang di sini, jadi anda saling tahu pihak masing-masing.",
       "cellar": "Laluan rahsia: jika dalam pasukan, anda sampai ke bilik misi dari sini; jika tidak, rondaan seterusnya boleh ke mana-mana bilik.",
       "kitchen": "Curi dengar: ketahui di bilik mana seorang pemain berada.",
       "garden": "Tinjau: anda nampak berapa orang dalam setiap bilik."
@@ -1134,7 +1152,11 @@
     "bar": {
       "night": "Malam {{n}} daripada {{total}}",
       "rejections": "pasukan ditolak: {{count}}/5",
-      "trackHint": "Saiz pasukan setiap malam · ★ perlu dua kad gagal"
+      "trackHint": "Saiz pasukan setiap malam · ★ perlu dua kad gagal",
+      "mission": "MISI MALAM INI",
+      "next": "MISI SETERUSNYA",
+      "size": "{{size}} orang",
+      "here": "anda di sini"
     },
     "role": {
       "title": "Peranan anda",
@@ -1162,7 +1184,13 @@
       "next": "Seterusnya",
       "you": "Anda",
       "decoy": "Bayang",
-      "sealed": "Tertutup"
+      "sealed": "Tertutup",
+      "nightN": "Malam {{n}}",
+      "missionThen": "Misi",
+      "notesTitle": "Nota saya",
+      "notesHint": "Pilih seorang penjaga, kemudian ketik bilik yang anda rasa dia berada pada malam itu. Hanya anda yang nampak.",
+      "notesPlace": "Ketik bilik untuk {{name}}.",
+      "notesRemove": "Buang {{name}} daripada malam ini"
     },
     "prompt": {
       "readyHint": "Baca misi dan kejadian malam ini, kemudian ketik sedia.",
@@ -1244,7 +1272,9 @@
         "hall": "Dewan tiada fungsi.",
         "mission": "Bilik misi malam ini tiada fungsi.",
         "repeat": "Anda guna bilik ini malam tadi — tiada fungsi malam ini."
-      }
+      },
+      "onMission": "Anda dihantar ke misi dan telah masuk ke {{room}}. Anda kekal di sini selepas itu: rondaan malam seterusnya bermula dari bilik ini.",
+      "afterMission": "Anda menyertai misi malam tadi, jadi anda masih di {{room}}. Rondaan malam ini bermula dari sini."
     },
     "letters": {
       "title": "Surat tanpa nama"
@@ -1259,7 +1289,7 @@
       "cellar": "Laluan terbuka: jika dalam pasukan anda sampai ke misi dari sini; jika tidak, mana-mana bilik pada rondaan seterusnya",
       "dining": "{{name}} di pihak {{side}}",
       "diningDark": "Seseorang di sini di pihak {{side}}",
-      "garden": "Orang setiap bilik: {{counts}}",
+      "garden": "Orang setiap bilik:{{counts}}",
       "study": "{{name}} bermain {{card}} malam tadi",
       "kitchen": "{{name}} berada di {{room}}",
       "letter": "Anda menulis {{text}}",
@@ -1309,6 +1339,39 @@
       "failedMissions": "Tiga misi gagal.",
       "rejections": "Lima pasukan ditolak dalam satu malam.",
       "abandoned": "Seseorang meninggalkan meja."
+    },
+    "menu": {
+      "map": "Peta",
+      "notebook": "Nota",
+      "record": "Rekod",
+      "role": "Peranan",
+      "watchers": "Pengawal"
+    },
+    "scene": {
+      "touch": "Sentuh tempat yang bercahaya untuk menggunakan bilik ini.",
+      "yourMove": "Giliran anda",
+      "news": "Apa yang berlaku"
+    },
+    "intro": {
+      "hush": "Shhh…",
+      "hushHint": "Peranan anda untuk mata anda sahaja.",
+      "continue": "Ketik untuk teruskan",
+      "flip": "Ketik kad untuk membukanya",
+      "keep": "Simpan rahsia"
+    },
+    "letter": {
+      "title": "SEPUCUK SURAT TANPA NAMA",
+      "unsigned": "tiada tandatangan"
+    },
+    "book": {
+      "title": "Rekod Kapel",
+      "hint": "Buka buku di atas rehal untuk membaca rekod Kapel.",
+      "empty": "Belum ada apa-apa yang ditulis."
+    },
+    "needs": {
+      "one": "Perlu tepat 1 orang (anda mesti bersendirian — lebih seorang, tidak berfungsi)",
+      "two": "Perlu tepat 2 orang (tidak lebih, tidak kurang)",
+      "any": "Bilangan orang tidak terhad"
     }
   },
   "profile": {

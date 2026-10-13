@@ -65,6 +65,35 @@ export const ROOM_EMOJI: Record<RoomId, string> = {
   garden: "🌙",
 };
 
+/** How many people must be in a room, counting you, for its function
+ *  to work; null when any number will do. The Hall has no function. */
+export const ROOM_NEEDS: Record<RoomId, 1 | 2 | null> = {
+  belltower: 1,
+  study: 1,
+  chapel: null,
+  gallery: null,
+  hall: null,
+  dining: 2,
+  cellar: null,
+  kitchen: null,
+  garden: null,
+};
+
+/** Each room's own colour: its name is written in it wherever the name
+ *  appears, so notes and the map can be read at a glance. Chosen to be
+ *  told apart on the game's dark table. */
+export const ROOM_COLOR: Record<RoomId, string> = {
+  belltower: "#FFB733",
+  study: "#8CCBFF",
+  chapel: "#F6F3EA",
+  gallery: "#B58CFF",
+  hall: "#F0605D",
+  dining: "#FF8442",
+  cellar: "#7F8594",
+  kitchen: "#E3CFA4",
+  garden: "#6FCF8E",
+};
+
 export const EVENT_EMOJI: Record<NightEvent, string> = {
   blackout: "🌑",
   collapse: "🧱",

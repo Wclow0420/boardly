@@ -28,6 +28,8 @@ export interface GameBoardProps<TState = Record<string, unknown>> {
   busy: boolean;
   /** The session is over (won, drawn or abandoned). */
   finished: boolean;
+  /** Identifies this game, for notes a board keeps on the device. */
+  sessionId?: string;
   /** Send a game-specific move to the backend. */
   onMove: (move: Record<string, unknown>) => void;
 }

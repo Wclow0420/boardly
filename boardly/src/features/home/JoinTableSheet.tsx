@@ -1,4 +1,3 @@
-import { BottomSheetTextInput } from "@gorhom/bottom-sheet";
 import { useRouter } from "expo-router";
 import { forwardRef, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -10,6 +9,7 @@ import {
   BottomSheetModal,
   Button,
   GorhomBottomSheetModal,
+  SheetTextInput,
   TextField,
 } from "@/components/ui";
 import { useAlreadyInRoomRedirect, useJoinRoom } from "./hooks";
@@ -66,7 +66,7 @@ export const JoinTableSheet = forwardRef<GorhomBottomSheetModal>(
             label={t("join.codeLabel")}
             value={code}
             onChangeText={(text) => setCode(text.toUpperCase())}
-            InputComponent={BottomSheetTextInput}
+            InputComponent={SheetTextInput}
             autoCapitalize="characters"
             autoCorrect={false}
             maxLength={6}

@@ -1,5 +1,6 @@
 import type { GameDefinition } from "../types";
 import { NightwatchBoard } from "./NightwatchBoard";
+import { NIGHTWATCH_RULES } from "./rules";
 import { currentSeat, taskFor, type NightwatchState } from "./logic";
 
 // Lamplight in a haunted house: ink-blue night, warm lantern red-gold.
@@ -42,6 +43,7 @@ export const nightwatch: GameDefinition<NightwatchState> = {
   Board: NightwatchBoard,
   currentSeat,
   layout: "custom",
+  rulePages: NIGHTWATCH_RULES,
   skin: {
     colors: SKIN_COLORS,
     backdrop: ["#3B1E12", "rgba(11,14,22,0)"],
