@@ -68,8 +68,12 @@
     </main>
     <script src="/site.js"></script>
     <script>
-      // Table codes are six letters or digits: /join/AB12CD
-      const match = /^\/join\/([A-Za-z0-9]{6})\/?$/.exec(location.pathname);
+      // Table codes are six letters or digits: /join/AB12CD. The home
+      // page's safety net hands the code over as /join.html?code=AB12CD.
+      const fromQuery = new URLSearchParams(location.search).get("code");
+      const match = /^\/join\/([A-Za-z0-9]{6})\/?$/.exec(
+        fromQuery === null ? location.pathname : `/join/${fromQuery}`
+      );
       const show = (id) => (document.getElementById(id).hidden = false);
 
       if (match) {

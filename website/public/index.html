@@ -2,6 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <script>
+      // Safety net. The host is meant to send /join/CODE, /privacy and
+      // /terms to their own pages (see render.yaml), but a host that
+      // answers every unknown address with this page would show the
+      // home page instead. If that happens, go to the right page.
+      (function () {
+        var path = location.pathname.replace(/\/+$/, "");
+        if (path === "/privacy" || path === "/terms") {
+          location.replace(path + ".html");
+        } else if (path.indexOf("/join/") === 0) {
+          location.replace("/join.html?code=" + encodeURIComponent(path.slice(6)));
+        }
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Boardly — Game night, anywhere.</title>
     <meta
