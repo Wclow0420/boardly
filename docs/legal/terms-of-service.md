@@ -1,8 +1,8 @@
 # Boardly Terms of Service
 
-**Effective date:** [DATE]
+**Effective date:** 14 October 2026
 
-These terms are an agreement between you and **[LEGAL NAME OF OPERATOR]** ("Boardly", "we", "us") about your use of the Boardly app and website (the "Service"). By creating an account or using the Service, you agree to these terms. If you do not agree, do not use the Service.
+These terms are an agreement between you and **Low Weng Chee** ("Boardly", "we", "us") about your use of the Boardly app and website (the "Service"). By creating an account or using the Service, you agree to these terms. If you do not agree, do not use the Service.
 
 ## 1. Who can use Boardly
 
@@ -28,7 +28,7 @@ When using Boardly, you agree not to:
 
 We have no tolerance for objectionable content or abusive behaviour. We may remove content, and suspend or close accounts, that break these rules.
 
-**Reporting.** To report a player or content, contact **[CONTACT EMAIL]**. We review reports and act on them promptly.
+**Reporting.** To report a player or content, contact **wclow0420@gmail.com**. We review reports and act on them promptly.
 
 ## 4. Your content
 
@@ -61,7 +61,7 @@ The Service is provided "as is" and "as available". To the fullest extent allowe
 
 ## 10. Limitation of liability
 
-To the fullest extent allowed by law, we are not liable for any indirect, incidental, special, consequential or punitive damages, or for any loss of data, progress, coins or items, arising from your use of the Service. Our total liability for any claim relating to the Service is limited to **[AMOUNT, e.g. USD 50]**.
+To the fullest extent allowed by law, we are not liable for any indirect, incidental, special, consequential or punitive damages, or for any loss of data, progress, coins or items, arising from your use of the Service. Our total liability for any claim relating to the Service is limited to **USD 50**.
 
 Nothing in these terms limits liability that cannot be limited under the law that applies to you, or removes consumer rights you have under that law.
 
@@ -84,9 +84,9 @@ We may update these terms. When we do, we will update the effective date above, 
 
 ## 14. Governing law
 
-These terms are governed by the laws of **[COUNTRY / STATE]**, and the courts of **[COUNTRY / STATE]** have jurisdiction over any dispute, except where the law of the place you live gives you the right to bring a claim there.
+These terms are governed by the laws of **Malaysia**, and the courts of **Malaysia** have jurisdiction over any dispute, except where the law of the place you live gives you the right to bring a claim there.
 
 ## 15. Contact
 
-**[LEGAL NAME OF OPERATOR]**
-**[CONTACT EMAIL]**
+**Low Weng Chee**
+**wclow0420@gmail.com**
