@@ -3,15 +3,16 @@
 # In Render: New → Blueprint → pick this repository. Render creates both,
 # wires DATABASE_URL, and generates SECRET_KEY.
 #
-# The backend and database are on Starter plans: the service stays awake
-# (a sleeping service would drop live game connections) and the database
-# is kept. The website is a static site, which costs nothing.
+# The backend and database are on paid plans (named below by their CPU
+# and memory, as the Render dashboard shows them): the service stays
+# awake (a sleeping service would drop live game connections) and the
+# database is kept. The website is a static site, which costs nothing.
 
 databases:
   - name: boardly-db
     databaseName: boardly
     user: boardly
-    plan: starter
+    plan: 0.1c-256mb
     region: singapore
 
 services:
@@ -19,7 +20,7 @@ services:
     name: boardly-api
     runtime: docker
     rootDir: backend
-    plan: starter
+    plan: 0.5c-512mb
     region: singapore
     # Keep this at one instance: live game state is held in memory.
     numInstances: 1
@@ -54,8 +55,14 @@ services:
     name: boardly-web
     runtime: static
     rootDir: website
+    # Render wants a build command for every static site; there is
+    # nothing to build here.
+    buildCommand: echo "Plain files, nothing to build"
     staticPublishPath: public
     autoDeploy: true
+    # Invite links use boardly.lol itself, and Apple will not follow a
+    # redirect when it checks the link file, so this must be the main
+    # domain. Render adds www.boardly.lol and redirects it here.
     domains:
       - boardly.lol
     routes:
