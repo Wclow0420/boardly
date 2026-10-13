@@ -1408,6 +1408,11 @@
       "failed": "Couldn't update your photo. Try again."
     }
   },
+  "legal": {
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "agreement": "By signing up you agree to our <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>."
+  },
   "auth": {
     "loginTitle": "Welcome back!",
     "registerTitle": "Create your account",

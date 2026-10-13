@@ -29,6 +29,7 @@ import { SUPPORTED_LANGUAGES } from "@/i18n";
 import { useLocale } from "@/i18n/LocaleContext";
 import { TABLE, fontFamily, useTheme } from "@/theme";
 import { tapHaptic } from "@/utils/haptics";
+import { openLegalPage } from "@/utils/legal";
 
 const ROW_RADIUS = 14;
 // Delete Account keeps a red tile so it stands apart from the rest
@@ -37,7 +38,14 @@ const DANGER_TILE = {
   border: "#7A2416",
 };
 
-type SettingKey = "borders" | "language" | "password" | "logout" | "delete";
+type SettingKey =
+  | "borders"
+  | "language"
+  | "password"
+  | "privacy"
+  | "terms"
+  | "logout"
+  | "delete";
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
@@ -77,6 +85,8 @@ export default function ProfileScreen() {
       value: SUPPORTED_LANGUAGES.find((lang) => lang.code === language)?.label,
     },
     { key: "password", icon: "🔑", label: t("profile.changePassword") },
+    { key: "privacy", icon: "🔒", label: t("legal.privacy") },
+    { key: "terms", icon: "📜", label: t("legal.terms") },
     { key: "logout", icon: "🚪", label: t("auth.logout") },
     {
       key: "delete",
@@ -91,6 +101,7 @@ export default function ProfileScreen() {
     if (key === "borders") router.push("/borders");
     else if (key === "language") languageSheetRef.current?.present();
     else if (key === "password") passwordSheetRef.current?.present();
+    else if (key === "privacy" || key === "terms") openLegalPage(key);
     else if (key === "logout") logout();
     else deleteSheetRef.current?.present();
   };
