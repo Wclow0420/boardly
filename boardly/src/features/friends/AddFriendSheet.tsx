@@ -1,4 +1,3 @@
-import { BottomSheetTextInput } from "@gorhom/bottom-sheet";
 import { forwardRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -7,6 +6,7 @@ import {
   AppText,
   BottomSheetModal,
   GorhomBottomSheetModal,
+  SheetTextInput,
   TextField,
 } from "@/components/ui";
 import { useTheme } from "@/theme";
@@ -42,7 +42,7 @@ export const AddFriendSheet = forwardRef<GorhomBottomSheetModal>(
             label={t("auth.username")}
             value={term}
             onChangeText={setTerm}
-            InputComponent={BottomSheetTextInput}
+            InputComponent={SheetTextInput}
             autoCapitalize="none"
             autoCorrect={false}
             maxLength={30}

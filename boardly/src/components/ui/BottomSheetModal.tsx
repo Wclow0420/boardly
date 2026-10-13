@@ -13,12 +13,23 @@ import {
   BottomSheetModal as GorhomBottomSheetModal,
   BottomSheetBackdrop,
   BottomSheetScrollView,
+  BottomSheetTextInput,
   BottomSheetView,
   type BottomSheetBackdropProps,
   type BottomSheetBackgroundProps,
 } from "@gorhom/bottom-sheet";
-import { forwardRef, useCallback, type ReactNode } from "react";
-import { View } from "react-native";
+import {
+  forwardRef,
+  useCallback,
+  type ComponentType,
+  type ReactNode,
+} from "react";
+import {
+  Platform,
+  TextInput,
+  View,
+  type TextInputProps,
+} from "react-native";
 
 import { TABLE, ThemeRelay, shade, useThemeRelay } from "@/theme";
 import { Ribbon } from "./Frames";
@@ -114,4 +125,14 @@ export const BottomSheetModal = forwardRef<
 });
 
 // Re-exports so screens import everything sheet-related from the kit.
+/** Text input for use inside a sheet (pass as TextField's
+ *  InputComponent). Gorhom's input keeps the sheet above the keyboard,
+ *  but on blur it calls TextInput.State.currentlyFocusedInput, which
+ *  react-native-web doesn't have — the web needs no keyboard handling,
+ *  so it gets the plain input. */
+export const SheetTextInput: ComponentType<TextInputProps> =
+  Platform.OS === "web"
+    ? TextInput
+    : (BottomSheetTextInput as ComponentType<TextInputProps>);
+
 export { BottomSheetScrollView, BottomSheetView, GorhomBottomSheetModal };

@@ -10,6 +10,7 @@ export {
   BottomSheetScrollView,
   BottomSheetView,
   GorhomBottomSheetModal,
+  SheetTextInput,
   type BottomSheetModalProps,
 } from "./BottomSheetModal";
 export { EmptyState, type EmptyStateProps } from "./EmptyState";

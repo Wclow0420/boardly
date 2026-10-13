@@ -280,6 +280,7 @@ function GameScreenBody({
         avatarUrl: p.avatarUrl,
       }))}
       busy={makeMove.isPending}
+      sessionId={String(session.id)}
       finished={!inProgress}
       onMove={(move) => makeMove.mutate(move)}
     />

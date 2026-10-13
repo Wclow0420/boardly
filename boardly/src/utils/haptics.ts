@@ -50,3 +50,15 @@ export function errorHaptic() {
     swallow
   );
 }
+
+/** A heavy thud for the game's big moments (a card turned, a heartbeat). */
+export function heavyHaptic() {
+  if (!enabled) return;
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(swallow);
+}
+
+/** The faintest tick, for things that repeat (letters being written). */
+export function tickHaptic() {
+  if (!enabled) return;
+  Haptics.selectionAsync().catch(swallow);
+}

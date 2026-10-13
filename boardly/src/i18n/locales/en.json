@@ -74,7 +74,8 @@
     "avalon": "Double Agent",
     "coup": "Hustle",
     "manor": "Midnight Manor",
-    "liarsdice": "Liar's Dice"
+    "liarsdice": "Liar's Dice",
+    "nightwatch": "Seal the Manor"
   },
   "friends": {
     "title": "Friends",
@@ -458,6 +459,85 @@
           ]
         }
       ]
+    },
+    "nightwatch": {
+      "intro": "The manor is haunted. Over five nights the watchers must light the seal lamp to lock the ghosts away — but some of them are possessed and quietly make the seal fail.",
+      "roles": {
+        "title": "Roles",
+        "intro": "Eight roles. Which ones are in a game depends on the number of players. Evil players know each other, and the evil player in the lowest seat is also the assassin.",
+        "everyGame": "every game",
+        "fromPlayers": "{{count}}+ players",
+        "twoFrom": "two with {{count}}+"
+      },
+      "sections": [
+        {
+          "title": "Sides",
+          "items": [
+            "Good: Prophet, Apprentice, Tracker, Keeper (6+), Watchers (8+). Evil: Double, Hermit, Possessed (7+, two with 10).",
+            "5 players: 3 good, 2 evil · 6: 4/2 · 7: 4/3 · 8: 5/3 · 9: 6/3 · 10: 6/4.",
+            "Evil players know each other. The evil player in the lowest seat is also the assassin.",
+            "Prophet: knows who is evil, except the Hermit. Apprentice: sees the Prophet and the Double, but not which is which.",
+            "Tracker (twice a game): on the patrol, follow a player to the room they really reach, however far. Keeper (once a game): before the patrol, lock one door for the night — only the door is announced, never who locked it.",
+            "Double (twice a game): on the patrol, pick a real room and a decoy room, both ones you could reach. People in the decoy's room see you; in the real room nobody does, but you still use its function there. The decoy counts as a person in its room, but not for the Garden; the Kitchen hears the decoy's room; in the Dining Room the decoy passes for good."
+          ]
+        },
+        {
+          "title": "The house",
+          "items": [
+            "3×3 rooms: Bell Tower, Study, Chapel / Gallery, Hall, Dining Room / Cellar, Kitchen, Garden. You move up, down, left or right — never diagonally.",
+            "Everyone starts in the Hall. Where you are is secret: after moving you only see who shares your room. Where others are is only what they tell you.",
+            "Each night's mission room is drawn at random — never the Hall, never the same room twice in a row. The next night's room is announced a night early."
+          ]
+        },
+        {
+          "title": "Each night",
+          "items": [
+            "Announcement: tonight's mission room and team size, the next night's room, and from night 2 a night event.",
+            "Patrol (secret, all at once): stay, or walk one room. Then you see who is in your room.",
+            "Rooms: use your room's function. It doesn't work in tonight's mission room or the Hall, or in a room whose function you used last night (being sent on a mission or moved to the Hall doesn't count as using it).",
+            "Discussion: anonymous letters are shown first. Then talk — lying is allowed.",
+            "Team: the leader (by seat; the Bell Tower cuts in) names exactly the team size. Everyone votes in public; more than half approves. Otherwise the next leader tries, with no new patrol. Five rejected teams in one night and evil wins.",
+            "Mission: the team walks to the mission room — two rooms at most (secret doors and the Cellar passage count). If anyone can't make it, the mission fails at once and the app names who didn't arrive. Otherwise each plays Success or Fail in secret (good can only play Success); only the number of fails is shown.",
+            "One fail card fails a mission — except the 4th mission with 7 or more players, which needs two. The team stays in the mission room; the next patrol starts from where everyone is."
+          ]
+        },
+        {
+          "title": "Room functions"
+        },
+        {
+          "title": "Night events"
+        },
+        {
+          "title": "How it ends",
+          "items": [
+            "Evil wins with three failed missions, or five rejected teams in one night.",
+            "When three missions succeed, evil is revealed and may talk it over; the assassin then names the Prophet. Right, and evil wins. Wrong, and good wins."
+          ]
+        }
+      ],
+      "rooms": {
+        "intro": "After the patrol you use the function of the room you're in. A room that needs an exact number of people won't work with any other number. Tonight's mission room and the Hall have no function, and a room's function can't be used two rounds running (going on a mission or being moved to the Hall doesn't count as using it).",
+        "belltower": "Ring the bell: you lead this round (you cut in, then the order carries on).",
+        "study": "Read the record: pick one of last night's team and learn whether they played success or fail.",
+        "chapel": "Pray: tonight's mission loses one fail card. It works once a game, and isn't used up if there was no fail to take back. Only those in the Chapel that night learn whether it worked. Anyone who enters later can open the book on the lectern: whether anyone prayed on each past night and what came of it (not who).",
+        "gallery": "Anonymous letter: write one sentence, shown when discussion starts with no name on it.",
+        "hall": "Crossroads: no function, but it's one step from four rooms.",
+        "dining": "Share a drink: the two of you each learn the other's side.",
+        "cellar": "Secret passage: if you're named for tonight's mission you reach the mission room from here at any distance; if not, next patrol you can go to any room.",
+        "kitchen": "Eavesdrop: pick a player and learn which room they ended up in after this patrol.",
+        "garden": "Lookout: learn how many people are in each room this round (not who)."
+      },
+      "events": {
+        "intro": "From night 2, one night event is flipped at each announcement, for everyone to see.",
+        "blackout": "After this patrol you can't see who shares your room — only whether anyone does.",
+        "collapse": "A random room is sealed for good: nobody can enter it again, and anyone inside is moved to the Hall. It is never tonight's or the next night's mission room.",
+        "secretDoor": "Two random diagonal rooms are joined for good: you can walk straight between them.",
+        "storm": "Nobody can move on this patrol, and the Tracker can't follow anyone.",
+        "insomnia": "Everyone may walk up to two rooms on this patrol.",
+        "echo": "The Gallery may post two anonymous letters this round.",
+        "fog": "The team can only walk one room to the mission this round, not two.",
+        "calm": "Nothing happens."
+      }
     }
   },
   "avalon": {
@@ -965,6 +1045,337 @@
     "leopard": "Five of a kind +1",
     "reroll": "Scattered — show and reshake",
     "rerolled": "{{name}} reshook a scattered cup (showed {{dice}})"
+  },
+  "nightwatch": {
+    "tagline": "Light the seal before the ghosts break free",
+    "rooms": {
+      "belltower": "Bell Tower",
+      "study": "Study",
+      "chapel": "Chapel",
+      "gallery": "Gallery",
+      "hall": "Hall",
+      "dining": "Dining Room",
+      "cellar": "Cellar",
+      "kitchen": "Kitchen",
+      "garden": "Garden"
+    },
+    "fns": {
+      "belltower": "Ring the bell — needs exactly 1 person. You're alone here, so you lead this round.",
+      "study": "Read the record — needs exactly 1 person. You're alone here: see the card one of last night's team played.",
+      "chapel": "Pray: tonight's mission loses one fail card. It works once a game.",
+      "gallery": "Write an anonymous letter, shown to everyone when discussion starts.",
+      "hall": "No function — but it's one step from four rooms.",
+      "dining": "Share a drink — needs exactly 2 people. There are exactly two of you here, so you each learn the other's side.",
+      "cellar": "Secret passage: on the team, you reach the mission room from here; if not, next patrol you can go anywhere.",
+      "kitchen": "Eavesdrop: learn which room one player ended up in.",
+      "garden": "Lookout: you see how many people are in each room."
+    },
+    "sides": {
+      "good": "good",
+      "evil": "evil"
+    },
+    "roles": {
+      "prophet": {
+        "name": "Prophet",
+        "desc": "Good. You know who is evil — except the Hermit. Guide the others quietly: if three missions succeed, the assassin hunts you."
+      },
+      "apprentice": {
+        "name": "Apprentice",
+        "desc": "Good. You saw two people: one is the Prophet, the other the Double — you can't tell which."
+      },
+      "tracker": {
+        "name": "Tracker",
+        "desc": "Good. Twice a game, on the patrol, follow a player: you end up in whatever room they really reach, however far."
+      },
+      "keeper": {
+        "name": "Keeper",
+        "desc": "Good. Once a game, before the patrol, lock one door for the night — nobody passes through it on the patrol or the mission. Everyone hears which door, never who locked it."
+      },
+      "watcher": {
+        "name": "Watcher",
+        "desc": "Good. No special power: patrol, listen, and light the seal."
+      },
+      "double": {
+        "name": "Double",
+        "desc": "Evil. Twice a game, on the patrol, leave a decoy in another room you could reach. People there see you; in your real room nobody does. The Apprentice sees you as a possible Prophet."
+      },
+      "hermit": {
+        "name": "Hermit",
+        "desc": "Evil. The Prophet can't see you."
+      },
+      "possessed": {
+        "name": "Possessed",
+        "desc": "Evil. Make the seal fail."
+      }
+    },
+    "events": {
+      "blackout": {
+        "name": "Blackout",
+        "desc": "After the patrol you can't see who shares your room — only whether anyone does."
+      },
+      "collapse": {
+        "name": "Collapse",
+        "desc": "A room caved in for good: nobody can enter it, and anyone inside was moved to the Hall."
+      },
+      "secretDoor": {
+        "name": "Secret door",
+        "desc": "Two diagonal rooms are now joined for good."
+      },
+      "storm": {
+        "name": "Storm",
+        "desc": "Nobody can move on this patrol, and the Tracker can't follow anyone."
+      },
+      "insomnia": {
+        "name": "Insomnia",
+        "desc": "Everyone may walk up to two rooms on this patrol."
+      },
+      "echo": {
+        "name": "Echo",
+        "desc": "The Gallery may post two letters tonight."
+      },
+      "fog": {
+        "name": "Fog",
+        "desc": "The team can only walk one room to the mission tonight, not two."
+      },
+      "calm": {
+        "name": "Calm",
+        "desc": "Nothing happens."
+      }
+    },
+    "phases": {
+      "announce": "Announcement",
+      "patrol": "Patrol",
+      "room": "Rooms",
+      "team": "Choosing a team",
+      "vote": "Voting",
+      "mission": "Mission",
+      "assassinate": "Last chance",
+      "finished": "Game over"
+    },
+    "bar": {
+      "night": "Night {{n}} of {{total}}",
+      "rejections": "rejected teams: {{count}}/5",
+      "trackHint": "Team size each night · ★ needs two fail cards",
+      "mission": "TONIGHT'S MISSION",
+      "next": "NEXT MISSION",
+      "size": "{{size}} needed",
+      "here": "you are here"
+    },
+    "role": {
+      "title": "Your role",
+      "reveal": "Tap to see your role",
+      "hide": "Tap to hide",
+      "knowsEvil": "Evil: {{names}}",
+      "knowsProphet": "One of these is the Prophet, the other the Double: {{names}}",
+      "allies": "Your fellow evil: {{names}}",
+      "assassin": "{{name}} is the assassin and names the Prophet at the end",
+      "youAssassin": "You are the assassin: you name the Prophet at the end",
+      "uses": "Uses left: {{count}} of {{total}}"
+    },
+    "announce": {
+      "title": "Tonight",
+      "mission": "Mission in the {{room}} · {{size}} people",
+      "twoFails": "This mission needs two fail cards to fail",
+      "next": "Next night's mission: {{room}}",
+      "noEvent": "No night event on the first night.",
+      "locked": "Locked tonight: {{door}}",
+      "door": "Secret door: {{door}}",
+      "collapsed": "Caved in: {{rooms}}"
+    },
+    "map": {
+      "mission": "Tonight",
+      "next": "Next",
+      "you": "You",
+      "decoy": "Decoy",
+      "sealed": "Sealed",
+      "nightN": "Night {{n}}",
+      "missionThen": "Mission",
+      "notesTitle": "My notes",
+      "notesHint": "Pick a watcher, then tap the room you think they were in that night. Only you see this.",
+      "notesPlace": "Tap a room for {{name}}.",
+      "notesRemove": "Remove {{name}} from this night"
+    },
+    "prompt": {
+      "readyHint": "Read tonight's mission and event, then tap ready.",
+      "lockTitle": "Lock a door tonight?",
+      "lockHint": "Once a game. Everyone hears which door — never who locked it.",
+      "noLock": "Don't lock",
+      "ready": "I'm ready",
+      "patrol": "Where do you patrol?",
+      "patrolHint": "Stay, or walk to a room next door. You can also tap the map.",
+      "patrolStorm": "The storm keeps everyone where they are.",
+      "patrolFree": "The Cellar's passage is open: go to any room.",
+      "patrolInsomnia": "Insomnia: walk up to two rooms.",
+      "follow": "Follow someone instead",
+      "followHint": "You end up wherever they really are. {{count}} left.",
+      "stay": "Stay in the {{room}}",
+      "decoy": "Leave a decoy",
+      "decoyHint": "People in the decoy's room see you; in your real room nobody does. {{count}} left.",
+      "decoyRoom": "Where does the decoy stand?",
+      "go": "Go",
+      "roomTitle": "In the {{room}}",
+      "noFn": "This room does nothing for you tonight.",
+      "study": "Whose card do you read?",
+      "kitchen": "Who do you listen for?",
+      "letterHint": "No name is shown. Leave it blank to skip.",
+      "letterPlaceholder": "One sentence…",
+      "pray": "Pray",
+      "prayHint": "If tonight's mission has a fail card, one is taken back. Only those in the Chapel learn whether it worked. It works once a game.",
+      "done": "Done",
+      "propose": "Pick {{size}} for the mission",
+      "proposeHint": "Talk it over first. Anyone more than {{steps}} room(s) from the {{room}} won't make it — and the mission fails.",
+      "send": "Propose team",
+      "vote": "Send this team?",
+      "approve": "Approve",
+      "reject": "Reject",
+      "mission": "The mission in the {{room}}",
+      "missionHint": "Watchers can only play Success.",
+      "missionHintEvil": "Play Success or Fail. Only the number of fail cards is revealed.",
+      "success": "Success",
+      "fail": "Fail",
+      "assassinate": "Who is the Prophet?",
+      "assassinateHint": "Talk it over with your side first. Name the Prophet and evil wins.",
+      "name": "Name them"
+    },
+    "team": {
+      "team": "Team: {{names}}",
+      "leader": "Proposed by {{name}}"
+    },
+    "chosen": {
+      "ready": "You're ready",
+      "lock": "You're ready — locking {{door}}",
+      "room": "You're heading to the {{room}}",
+      "track": "You're following {{name}}",
+      "decoy": "decoy in the {{room}}",
+      "done": "You're done",
+      "yes": "You approved",
+      "no": "You rejected",
+      "card": "You played your card"
+    },
+    "waiting": {
+      "announce": "Everyone is reading the announcement…",
+      "patrol": "Everyone is patrolling…",
+      "room": "Everyone is using their room…",
+      "team": "{{name}} is choosing a team — talk it over!",
+      "vote": "Everyone is voting…",
+      "mission": "The team is on the mission…",
+      "assassinate": "{{name}} is naming the Prophet…",
+      "finished": "Game over",
+      "on": "Waiting for {{names}}"
+    },
+    "where": {
+      "title": "Where you are",
+      "freeMove": "The Cellar's passage is open: this patrol you can go to any room.",
+      "tracked": "You followed {{name}}",
+      "someone": "Someone is here — too dark to see who",
+      "alone": "Nobody else is here",
+      "seen": "Here with you: {{names}}",
+      "decoy": "Your decoy stood in the {{room}}",
+      "blocked": {
+        "hall": "The Hall has no function.",
+        "mission": "Tonight's mission room has no function.",
+        "repeat": "You used this room last night — no function tonight."
+      },
+      "onMission": "You were sent on the mission and have walked into the {{room}}. You stay here afterwards: next night's patrol starts from this room.",
+      "afterMission": "You went on last night's mission, so you are still in the {{room}}. Tonight's patrol starts from here."
+    },
+    "letters": {
+      "title": "Anonymous letters"
+    },
+    "players": {
+      "title": "The watchers",
+      "evil": "Evil",
+      "maybeProphet": "Prophet?"
+    },
+    "notes": {
+      "bell": "You rang the bell: you lead this round",
+      "cellar": "The passage is open: on the team you reach the mission from here; otherwise any room next patrol",
+      "dining": "{{name}} is {{side}}",
+      "diningDark": "Someone in here is {{side}}",
+      "garden": "People per room:{{counts}}",
+      "study": "{{name}} played {{card}} last night",
+      "kitchen": "{{name}} is in the {{room}}",
+      "letter": "You wrote {{text}}",
+      "pray": "You prayed",
+      "prayer": {
+        "cancelled": "The prayer was answered: one fail card was taken back",
+        "none": "No fail card was taken back",
+        "noCards": "No cards were played — the prayer wasn't needed"
+      },
+      "collapse": "The {{room}} caved in — you were moved to the Hall",
+      "chapelRecord": "The Chapel's record:",
+      "recordNight": "Night {{n}}: {{what}}",
+      "records": {
+        "nobody": "nobody prayed",
+        "cancelled": "a prayer took back a fail card",
+        "none": "a prayer, no fail card taken back",
+        "noCards": "a prayer, but no cards were played"
+      }
+    },
+    "log": {
+      "title": "Your notebook",
+      "hint": "Only you can see this. Share it — or lie."
+    },
+    "record": {
+      "title": "What everyone knows",
+      "collapse": "The {{room}} caved in",
+      "door": "Secret door: {{door}}",
+      "lock": "Door locked: {{door}}",
+      "proposal": "{{leader}} proposed {{team}}",
+      "approved": "approved",
+      "rejected": "rejected",
+      "missing": "didn't arrive: {{names}}",
+      "fails": "fail cards: {{count}}",
+      "success": "Mission in the {{room}} succeeded",
+      "fail": "Mission in the {{room}} failed"
+    },
+    "result": {
+      "good": "The seal holds!",
+      "evil": "The ghosts break free",
+      "none": "Game ended",
+      "youWon": "You won 🎉",
+      "youLost": "You lost"
+    },
+    "reasons": {
+      "missions": "Three missions succeeded and the assassin named {{name}} — the Prophet was {{prophet}}.",
+      "assassination": "Three missions succeeded, but the assassin found the Prophet: {{prophet}}.",
+      "failedMissions": "Three missions failed.",
+      "rejections": "Five teams in one night were rejected.",
+      "abandoned": "Someone left the table."
+    },
+    "menu": {
+      "map": "Map",
+      "notebook": "Notebook",
+      "record": "Record",
+      "role": "Role",
+      "watchers": "Watchers"
+    },
+    "scene": {
+      "touch": "Touch the glowing spot to use this room.",
+      "yourMove": "Your move",
+      "news": "What happened"
+    },
+    "intro": {
+      "hush": "Shhh…",
+      "hushHint": "Your role is for your eyes only.",
+      "continue": "Tap to continue",
+      "flip": "Tap the card to turn it over",
+      "keep": "Keep it secret"
+    },
+    "letter": {
+      "title": "AN ANONYMOUS LETTER",
+      "unsigned": "nobody signed it"
+    },
+    "book": {
+      "title": "The Chapel's record",
+      "hint": "Open the book on the lectern to read the Chapel's record.",
+      "empty": "Nothing has been written yet."
+    },
+    "needs": {
+      "one": "Needs exactly 1 person (you must be alone here — one more and it won't work)",
+      "two": "Needs exactly 2 people (no more, no fewer)",
+      "any": "Any number of people"
+    }
   },
   "profile": {
     "title": "Profile",
