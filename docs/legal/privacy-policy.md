@@ -1,10 +1,10 @@
 # Boardly Privacy Policy
 
-**Effective date:** [DATE]
+**Effective date:** 14 October 2026
 
-Boardly ("Boardly", "we", "us") is a mobile app for playing board and party games with friends. It is operated by **[LEGAL NAME OF OPERATOR]**, based in **[COUNTRY]**.
+Boardly ("Boardly", "we", "us") is a mobile app for playing board and party games with friends. It is operated by **Low Weng Chee**, based in **Malaysia**.
 
-This policy explains what information Boardly collects, why, and what you can do about it. If you have any questions, contact us at **[CONTACT EMAIL]**.
+This policy explains what information Boardly collects, why, and what you can do about it. If you have any questions, contact us at **wclow0420@gmail.com**.
 
 ## 1. Information we collect
 
@@ -71,8 +71,8 @@ On your device, the app stores your sign-in tokens in the device's secure storag
 ## 6. Your choices and rights
 
 - **Change your profile picture or password** at any time in the Profile tab.
-- **Delete your account** in the app under **Profile → Delete Account**. Deletion is permanent. You can also ask us to delete your account by emailing **[CONTACT EMAIL]**.
-- **Access or correction.** You can ask us for a copy of the information we hold about you, or ask us to correct it, by emailing **[CONTACT EMAIL]**.
+- **Delete your account** in the app under **Profile → Delete Account**. Deletion is permanent. You can also ask us to delete your account by emailing **wclow0420@gmail.com**.
+- **Access or correction.** You can ask us for a copy of the information we hold about you, or ask us to correct it, by emailing **wclow0420@gmail.com**.
 
 Depending on where you live, you may have additional rights under local privacy law, such as the right to object to or restrict certain processing, or to complain to your local data protection authority. We will respond to requests within the time your local law requires.
 
@@ -86,7 +86,7 @@ Boardly does not currently offer password recovery. If you forget your password,
 
 ## 8. Children
 
-Boardly is not directed to children under 13 (or the minimum age for digital consent in your country, if higher). We do not knowingly collect personal information from children under that age. If you believe a child has created an account, contact us at **[CONTACT EMAIL]** and we will delete it.
+Boardly is not directed to children under 13 (or the minimum age for digital consent in your country, if higher). We do not knowingly collect personal information from children under that age. If you believe a child has created an account, contact us at **wclow0420@gmail.com** and we will delete it.
 
 ## 9. Changes to this policy
 
@@ -94,5 +94,5 @@ We may update this policy as Boardly changes. When we do, we will update the eff
 
 ## 10. Contact
 
-**[LEGAL NAME OF OPERATOR]**
-**[CONTACT EMAIL]**
+**Low Weng Chee**
+**wclow0420@gmail.com**
