@@ -69,6 +69,12 @@ services:
       - type: rewrite
         source: /join/*
         destination: /join.html
+      - type: rewrite
+        source: /privacy
+        destination: /privacy.html
+      - type: rewrite
+        source: /terms
+        destination: /terms.html
     headers:
       # Apple only accepts its link file as JSON, and it has no extension
       - path: /.well-known/apple-app-site-association

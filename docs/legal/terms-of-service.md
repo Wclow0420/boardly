@@ -28,7 +28,7 @@ When using Boardly, you agree not to:
 
 We have no tolerance for objectionable content or abusive behaviour. We may remove content, and suspend or close accounts, that break these rules.
 
-**Reporting.** To report a player or content, contact **[CONTACT EMAIL]** [or use the report option in the app]. We review reports and act on them promptly.
+**Reporting.** To report a player or content, contact **[CONTACT EMAIL]**. We review reports and act on them promptly.
 
 ## 4. Your content
 
@@ -76,7 +76,7 @@ If you downloaded Boardly from the Apple App Store or Google Play:
 
 ## 12. Privacy
 
-Our [Privacy Policy]([PRIVACY POLICY URL]) explains how we handle your information. It forms part of these terms.
+Our [Privacy Policy](/privacy) explains how we handle your information. It forms part of these terms.
 
 ## 13. Changes to these terms
 

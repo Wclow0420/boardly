@@ -1,0 +1,915 @@
+/* Home page. One long table: each section slides over the last like a
+   card being dealt on top. Colours come from site.css. */
+
+.home {
+  --cream: #fbf8f3;
+  --deep: #f25c3a;
+  --display: "Baloo 2", "Poppins", system-ui, sans-serif;
+  overflow-x: clip;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.display {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+h1.display {
+  font-size: clamp(44px, min(11vw, 13vh), 112px);
+}
+
+h2.display {
+  font-size: clamp(36px, 7.5vw, 76px);
+}
+
+h3.display {
+  font-size: clamp(28px, 4.6vw, 48px);
+}
+
+.lead {
+  max-width: 34ch;
+  font-size: clamp(16px, 2.2vw, 20px);
+  text-wrap: pretty;
+}
+
+.kicker {
+  margin: 0;
+  color: var(--orange);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* ---------- Nav ---------- */
+
+.nav {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  pointer-events: none;
+}
+
+.nav > * {
+  pointer-events: auto;
+}
+
+/* Both sit on dark pills so they stay readable over every section */
+.nav-brand,
+.nav-cta {
+  border: 1.5px solid rgba(251, 248, 243, 0.22);
+  border-radius: 999px;
+  background: rgba(24, 32, 43, 0.82);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 16px 4px 4px;
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.nav-brand img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.nav-cta {
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: transform 0.2s;
+}
+
+.nav-cta:hover {
+  transform: scale(1.06) rotate(-2deg);
+}
+
+/* ---------- 1. Hero ---------- */
+
+.hero {
+  /* --mx / --my: pointer position, -1 to 1. --sy: how far the hero has
+     scrolled away, 0 to 1. Both set by home.js. */
+  --mx: 0;
+  --my: 0;
+  --sy: 0;
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: 88px 20px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  text-align: center;
+  background:
+    radial-gradient(60% 45% at 50% 38%, rgba(255, 138, 61, 0.22), transparent 70%),
+    var(--ink);
+  overflow: clip;
+}
+
+.hero > :not(.floaters) {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-meeple {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  perspective: 700px;
+  transform: translateY(calc(var(--sy) * -60px)) scale(calc(1 - var(--sy) * 0.25));
+}
+
+.hero-meeple img {
+  display: block;
+  /* Sized by the shorter side so the hero fits one screen */
+  width: clamp(130px, min(34vw, 28vh), 260px);
+  height: auto;
+  filter: drop-shadow(0 26px 30px rgba(0, 0, 0, 0.45));
+  transform: rotateY(calc(var(--mx) * 18deg)) rotateX(calc(var(--my) * -14deg));
+  transition: transform 0.25s ease-out;
+  animation: bob 4s ease-in-out infinite;
+}
+
+.hero-meeple.hop img {
+  animation: hop 0.7s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+
+@keyframes bob {
+  50% {
+    translate: 0 -10px;
+  }
+}
+
+@keyframes hop {
+  0% {
+    scale: 1 1;
+  }
+  20% {
+    scale: 1.15 0.8;
+    translate: 0 14px;
+  }
+  55% {
+    scale: 0.92 1.12;
+    translate: 0 -70px;
+    rotate: 8deg;
+  }
+  85% {
+    scale: 1.08 0.9;
+    translate: 0 6px;
+  }
+  100% {
+    scale: 1 1;
+  }
+}
+
+.hero h1 {
+  max-width: 11ch;
+  background: linear-gradient(180deg, #fff 30%, var(--yellow) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero-cta {
+  width: auto;
+  padding-inline: 32px;
+  margin-top: 6px;
+  transition: transform 0.15s;
+}
+
+.hero-cta:hover {
+  transform: translateY(-2px) scale(1.03);
+}
+
+.hero-cta:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #d9652a;
+}
+
+.scroll-hint {
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.scroll-arrow {
+  display: inline-block;
+  margin-left: 4px;
+  animation: nudge 1.4s ease-in-out infinite;
+}
+
+@keyframes nudge {
+  50% {
+    translate: 0 6px;
+  }
+}
+
+/* The loose pieces. Each drifts on its own, leans away from the pointer
+   and lifts off as the page scrolls; --d is how "close" it is. */
+.floaters {
+  position: absolute;
+  inset: 0;
+}
+
+.floater {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  transform: translate(
+      calc(var(--mx) * var(--d) * -26px),
+      calc(var(--my) * var(--d) * -20px + var(--sy) * var(--d) * -260px)
+    )
+    rotate(var(--r));
+  transition: transform 0.35s ease-out;
+}
+
+.floater > * {
+  display: block;
+  animation: drift calc(5s + var(--d) * 2s) ease-in-out infinite;
+  animation-delay: calc(var(--d) * -3s);
+}
+
+@keyframes drift {
+  50% {
+    translate: 0 -14px;
+    rotate: 6deg;
+  }
+}
+
+.pawn {
+  width: 64px;
+  height: 64px;
+  fill: currentColor;
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.4));
+}
+
+.pawn.small {
+  width: 40px;
+  height: 40px;
+}
+
+.coin {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffe89a, var(--yellow) 45%, #e39a1c);
+  box-shadow:
+    inset 0 0 0 5px rgba(255, 255, 255, 0.25),
+    0 6px 0 #b9740f,
+    0 14px 16px rgba(0, 0, 0, 0.35);
+}
+
+.coin.small {
+  width: 34px;
+  height: 34px;
+}
+
+.flat-die {
+  width: 62px;
+  height: 62px;
+  padding: 10px;
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  border-radius: 14px;
+  background: var(--cream);
+  box-shadow:
+    0 6px 0 #cfc8ba,
+    0 16px 18px rgba(0, 0, 0, 0.35);
+}
+
+.flat-die i {
+  width: 9px;
+  height: 9px;
+  place-self: center;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+/* Five pips */
+.flat-die i:nth-child(1) { grid-area: 1 / 1; }
+.flat-die i:nth-child(2) { grid-area: 1 / 3; }
+.flat-die i:nth-child(3) { grid-area: 2 / 2; }
+.flat-die i:nth-child(4) { grid-area: 3 / 1; }
+.flat-die i:nth-child(5) { grid-area: 3 / 3; }
+
+.mini-card {
+  width: 58px;
+  height: 80px;
+  border-radius: 10px;
+  border: 4px solid var(--cream);
+  background: repeating-linear-gradient(45deg, var(--deep) 0 8px, var(--orange) 8px 16px);
+  box-shadow: 0 14px 18px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- Pinned sections ---------- */
+
+/* A tall section whose content stays on screen while you scroll through
+   it; home.js turns the distance scrolled into the animation. */
+[data-pin] {
+  position: relative;
+}
+
+.pin {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: clip;
+}
+
+/* ---------- 2. The games ---------- */
+
+.deal {
+  height: 420vh;
+  background:
+    radial-gradient(70% 50% at 50% 70%, rgba(255, 200, 61, 0.1), transparent 70%),
+    #121820;
+  border-radius: 40px 40px 0 0;
+  margin-top: -40px;
+}
+
+.deal .pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.section-head {
+  padding: 84px 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.deck {
+  --card-w: clamp(170px, 46vw, 230px);
+  position: relative;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}
+
+.game-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--card-w);
+  aspect-ratio: 5 / 7;
+  margin: calc(var(--card-w) * -0.7) 0 0 calc(var(--card-w) * -0.5);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.game-card > div {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.45);
+}
+
+.card-back {
+  border: 6px solid var(--cream);
+  background:
+    radial-gradient(circle at 50% 50%, var(--ink) 0 26%, transparent 27%),
+    repeating-linear-gradient(45deg, var(--deep) 0 12px, var(--orange) 12px 24px);
+  display: grid;
+  place-items: center;
+}
+
+.card-back svg {
+  width: 30%;
+  fill: var(--yellow);
+}
+
+.card-front {
+  transform: rotateY(180deg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 6px solid var(--cream);
+  background: linear-gradient(160deg, var(--c1), var(--c2));
+  color: #fff;
+  text-align: left;
+  overflow: hidden;
+}
+
+.card-front .glyph {
+  font-size: clamp(54px, 15vw, 80px);
+  line-height: 1;
+  filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
+}
+
+.card-front h3 {
+  margin: 0 0 4px;
+  font-family: var(--display);
+  font-size: clamp(22px, 5.6vw, 28px);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.card-front p {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.card-front .seats {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.28);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ---------- 3. How it works ---------- */
+
+.how {
+  height: 380vh;
+  background: var(--cream);
+  color: var(--ink);
+  border-radius: 40px 40px 0 0;
+  margin-top: -40px;
+}
+
+.how .pin {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-items: center;
+  justify-items: center;
+  padding: 84px 20px 24px;
+  gap: 12px;
+}
+
+.how-text {
+  width: 100%;
+  max-width: 460px;
+  text-align: center;
+}
+
+.how .kicker {
+  color: var(--deep);
+}
+
+.steps-big {
+  position: relative;
+  height: 150px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* One step at a time; the section's data-step says which */
+.steps-big li {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translateY(24px) scale(0.96);
+  transition:
+    opacity 0.35s,
+    transform 0.45s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+.how[data-step="0"] .steps-big li:nth-child(1),
+.how[data-step="1"] .steps-big li:nth-child(2),
+.how[data-step="2"] .steps-big li:nth-child(3) {
+  opacity: 1;
+  transform: none;
+}
+
+.steps-big p {
+  margin: 8px auto 0;
+  max-width: 32ch;
+  color: #5c6474;
+}
+
+.table-scene {
+  --size: min(74vw, 46vh, 420px);
+  position: relative;
+  width: var(--size);
+  height: var(--size);
+}
+
+.table-top {
+  position: absolute;
+  inset: 16%;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 30%, #a8713f, #6f4322 70%);
+  box-shadow:
+    inset 0 0 0 10px #57331a,
+    inset 0 0 0 14px rgba(255, 255, 255, 0.08),
+    0 22px 30px rgba(24, 32, 43, 0.3);
+}
+
+.code-tiles {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  scale: 0.6;
+  transition:
+    opacity 0.3s,
+    scale 0.45s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+
+.how:not([data-step="0"]) .code-tiles {
+  opacity: 1;
+  scale: 1;
+}
+
+.code-tiles span {
+  width: calc(var(--size) * 0.085);
+  aspect-ratio: 3 / 4;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--ink);
+  color: var(--yellow);
+  font-family: var(--display);
+  font-size: calc(var(--size) * 0.07);
+  font-weight: 800;
+}
+
+.seat {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--size) * 0.2);
+  height: calc(var(--size) * 0.2);
+  margin: calc(var(--size) * -0.1);
+  fill: currentColor;
+  filter: drop-shadow(0 8px 6px rgba(24, 32, 43, 0.3));
+  /* Out around the table, kept upright */
+  transform: rotate(var(--a)) translateY(calc(var(--size) * -0.42)) rotate(calc(var(--a) * -1));
+  opacity: 0;
+  scale: 0.2;
+  translate: 0 -60px;
+  transition:
+    opacity 0.2s,
+    scale 0.5s cubic-bezier(0.3, 1.7, 0.5, 1),
+    translate 0.5s cubic-bezier(0.3, 1.7, 0.5, 1);
+}
+
+.seat.in {
+  opacity: 1;
+  scale: 1;
+  translate: 0 0;
+}
+
+.confetti {
+  position: absolute;
+  inset: 50%;
+  pointer-events: none;
+}
+
+.confetti i {
+  position: absolute;
+  width: 10px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--c);
+  opacity: 0;
+}
+
+.confetti.pop i {
+  animation: confetti 1.1s cubic-bezier(0.1, 0.7, 0.3, 1) forwards;
+}
+
+@keyframes confetti {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--tx), var(--ty)) rotate(var(--rot));
+  }
+}
+
+/* ---------- 4. Roll the dice ---------- */
+
+.roll {
+  position: relative;
+  margin-top: -40px;
+  padding: 110px 20px 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  border-radius: 40px 40px 0 0;
+  background: linear-gradient(180deg, var(--yellow), var(--orange));
+  color: var(--ink);
+  text-align: center;
+}
+
+.roll .kicker {
+  color: var(--ink);
+  opacity: 0.7;
+}
+
+.dice {
+  --die: clamp(46px, 13vw, 76px);
+  display: flex;
+  gap: calc(var(--die) * 0.32);
+  margin: 34px 0 20px;
+  perspective: 900px;
+}
+
+.die {
+  width: var(--die);
+  height: var(--die);
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 1.2s cubic-bezier(0.2, 0.9, 0.3, 1.15);
+}
+
+.die .face {
+  position: absolute;
+  inset: 0;
+  padding: 16%;
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  border-radius: 18%;
+  background: var(--cream);
+  box-shadow: inset 0 0 0 2px #d9d2c4;
+}
+
+.die .face i {
+  width: 72%;
+  aspect-ratio: 1;
+  place-self: center;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+/* Ones are wild in Liar's Dice, so they get the red pip */
+.die .face-1 i {
+  background: #e85d5d;
+}
+
+.die .face-1 { transform: translateZ(calc(var(--die) / 2)); }
+.die .face-6 { transform: rotateY(180deg) translateZ(calc(var(--die) / 2)); }
+.die .face-3 { transform: rotateY(90deg) translateZ(calc(var(--die) / 2)); }
+.die .face-4 { transform: rotateY(-90deg) translateZ(calc(var(--die) / 2)); }
+.die .face-2 { transform: rotateX(90deg) translateZ(calc(var(--die) / 2)); }
+.die .face-5 { transform: rotateX(-90deg) translateZ(calc(var(--die) / 2)); }
+
+/* The little die in the result: fonts that are sure to have it */
+.roll-result b {
+  font-family: "Apple Symbols", "Segoe UI Symbol", "Noto Sans Symbols 2", "Noto Sans Symbols", sans-serif;
+  font-size: 1.5em;
+  font-weight: 400;
+  line-height: 1;
+  vertical-align: -0.12em;
+}
+
+.roll-result {
+  min-height: 1.6em;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.roll-button {
+  width: auto;
+  padding-inline: 30px;
+  background: var(--ink);
+  color: var(--cream);
+  box-shadow: 0 5px 0 rgba(24, 32, 43, 0.35);
+  transition: transform 0.15s;
+}
+
+.roll-button:hover {
+  transform: translateY(-2px) rotate(-1.5deg);
+}
+
+.roll-button:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 rgba(24, 32, 43, 0.35);
+}
+
+/* ---------- Marquee ---------- */
+
+.marquee {
+  padding: 14px 0;
+  background: var(--ink);
+  border-block: 3px solid var(--orange);
+  overflow: clip;
+  transform: rotate(-2deg) scale(1.04);
+  margin-block: -22px;
+  position: relative;
+  z-index: 2;
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 22s linear infinite;
+}
+
+.marquee-track span {
+  padding-right: 0.5em;
+  color: var(--yellow);
+  font-family: var(--display);
+  font-size: clamp(22px, 5vw, 40px);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ---------- 5. Get the app ---------- */
+
+.get {
+  min-height: 90vh;
+  padding: 130px 20px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  text-align: center;
+  background:
+    radial-gradient(60% 40% at 50% 30%, rgba(255, 138, 61, 0.2), transparent 70%),
+    var(--ink);
+}
+
+.get .stores {
+  max-width: 360px;
+  margin-top: 10px;
+}
+
+.crowd {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.crowd svg {
+  width: clamp(40px, 11vw, 64px);
+  height: clamp(40px, 11vw, 64px);
+  fill: currentColor;
+  animation: jump 1.6s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 0.14s);
+}
+
+.crowd svg:nth-child(3) {
+  width: clamp(56px, 15vw, 88px);
+  height: clamp(56px, 15vw, 88px);
+}
+
+@keyframes jump {
+  0%,
+  40%,
+  100% {
+    translate: 0 0;
+    scale: 1 1;
+  }
+  15% {
+    translate: 0 -22px;
+    scale: 0.94 1.08;
+  }
+  30% {
+    scale: 1.08 0.92;
+  }
+}
+
+/* ---------- Small screens ---------- */
+
+/* Keep the loose pieces out of the words */
+@media (max-width: 600px) {
+  .floater {
+    scale: 0.8;
+  }
+
+  .f-card {
+    --x: 80% !important;
+    --y: 78% !important;
+  }
+}
+
+/* ---------- Wider screens ---------- */
+
+@media (min-width: 860px) {
+  .how .pin {
+    grid-template: 1fr / 1fr 1fr;
+    padding-inline: 6vw;
+  }
+
+  .how-text {
+    text-align: left;
+    justify-self: end;
+    padding-right: 4vw;
+  }
+
+  .steps-big {
+    height: 220px;
+  }
+
+  .steps-big p {
+    margin-inline: 0;
+  }
+
+  .table-scene {
+    --size: min(40vw, 66vh, 520px);
+    justify-self: start;
+  }
+}
+
+/* ---------- Calm mode: no scroll-tied motion ----------
+   For people who ask their device for reduced motion. The pinned
+   sections become ordinary ones and everything is simply shown. */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .home *,
+  .home *::before,
+  .home *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .pin {
+    position: static;
+    height: auto;
+    overflow: visible;
+  }
+
+  .deal,
+  .how {
+    height: auto;
+    padding-bottom: 60px;
+  }
+
+  .deck {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 16px;
+    width: min(100%, 900px);
+    padding: 30px 20px 0;
+  }
+
+  .game-card {
+    position: relative;
+    inset: auto;
+    margin: 0;
+    width: 100%;
+    transform: rotateY(180deg) !important;
+  }
+
+  .steps-big {
+    height: auto;
+  }
+
+  .steps-big li {
+    position: static;
+    opacity: 1;
+    transform: none;
+    margin-bottom: 24px;
+  }
+
+  .seat,
+  .code-tiles {
+    opacity: 1;
+    scale: 1;
+    translate: 0 0;
+  }
+}
