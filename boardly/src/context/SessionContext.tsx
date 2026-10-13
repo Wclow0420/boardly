@@ -12,6 +12,7 @@ import {
   api,
   setAccessToken,
   setUnauthorizedHandler,
+  type AuthResult,
   type AuthUser,
 } from "@/api/client";
 import { connectUserSocket, disconnectUserSocket } from "@/api/socket";
@@ -91,7 +92,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [signOutLocally]);
 
   const applyAuthResult = useCallback(
-    async (result: Awaited<ReturnType<typeof api.auth.login>>) => {
+    async (result: AuthResult) => {
       setAccessToken(result.accessToken);
       await tokenStorage.setTokens(result.accessToken, result.refreshToken);
       setUser(result.user);

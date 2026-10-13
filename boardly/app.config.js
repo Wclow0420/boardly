@@ -19,8 +19,8 @@ const PROJECT_SLUG = "boardly";
 
 // --- Production values ---
 const PROD_APP_NAME = "Boardly";
-const PROD_BUNDLE_IDENTIFIER = "com.boardly.app";
-const PROD_PACKAGE_NAME = "com.boardly.app";
+const PROD_BUNDLE_IDENTIFIER = "com.boardly.lol";
+const PROD_PACKAGE_NAME = "com.boardly.lol";
 const PROD_SCHEME = "boardly";
 
 // Environment-specific identity (name / ids / scheme).
@@ -87,7 +87,6 @@ export default ({ config }) => {
       ...(config.ios ?? {}),
       supportsTablet: false,
       bundleIdentifier,
-      icon: "./assets/expo.icon",
       buildNumber: config.ios?.buildNumber ?? appVersion,
       infoPlist: {
         ...(config.ios?.infoPlist ?? {}),
@@ -106,7 +105,7 @@ export default ({ config }) => {
       package: packageName,
       adaptiveIcon: {
         ...(config.android?.adaptiveIcon ?? {}),
-        backgroundColor: "#E6F4FE",
+        backgroundColor: "#18202B",
         foregroundImage: "./assets/images/android-icon-foreground.png",
         backgroundImage: "./assets/images/android-icon-background.png",
         monochromeImage: "./assets/images/android-icon-monochrome.png",
@@ -151,9 +150,9 @@ export default ({ config }) => {
       [
         "expo-splash-screen",
         {
-          backgroundColor: "#208AEF",
+          backgroundColor: "#18202B",
           image: "./assets/images/splash-icon.png",
-          imageWidth: 76,
+          imageWidth: 300,
         },
       ],
     ].filter((plugin, index, self) => {
