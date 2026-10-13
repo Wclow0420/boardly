@@ -1,4 +1,5 @@
-// Deep-link landing: boardly-dev://join/CODE (and the "Join with code"
+// Deep-link landing: https://boardly.lol/join/CODE in the store app,
+// boardly-dev://join/CODE in development (and the "Join with code"
 // share links). Shows a table preview and handles every conflict case:
 // already a member -> open it; already at another table -> offer to
 // leave (forfeiting a running game) and join; full/started/not found ->

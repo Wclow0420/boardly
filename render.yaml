@@ -1,18 +1,17 @@
 # Render blueprint: the Boardly backend, its Postgres database and the
-# web version of the app.
+# website (boardly.lol).
 # In Render: New → Blueprint → pick this repository. Render creates both,
 # wires DATABASE_URL, and generates SECRET_KEY.
 #
-# Plans below are the free ones so nothing is charged by surprise. They
-# are for trying things out only: a free web service sleeps when idle
-# (dropping live game connections) and a free database is temporary.
-# Move both to paid plans before real players use it.
+# The backend and database are on Starter plans: the service stays awake
+# (a sleeping service would drop live game connections) and the database
+# is kept. The website is a static site, which costs nothing.
 
 databases:
   - name: boardly-db
     databaseName: boardly
     user: boardly
-    plan: free
+    plan: starter
     region: singapore
 
 services:
@@ -20,7 +19,7 @@ services:
     name: boardly-api
     runtime: docker
     rootDir: backend
-    plan: free
+    plan: starter
     region: singapore
     # Keep this at one instance: live game state is held in memory.
     numInstances: 1
@@ -40,30 +39,31 @@ services:
         value: "1"
       - key: PORT
         value: "5005"
-      # Set this in the dashboard to the web app's address (boardly-web
-      # below) so only that site can call the API from a browser.
+      # Browser origins allowed to call the API (comma-separated). Empty
+      # means any website may call it. The phone app is not a browser and
+      # is unaffected either way.
       - key: CORS_ORIGINS
         sync: false
 
-  # The web version of the app: static files built from the Expo project.
+  # boardly.lol: the website. Invite links (https://boardly.lol/join/CODE)
+  # open the app on a phone that has it; everyone else gets this site's
+  # "get the app" page. Plain files, nothing to build.
+  # This service used to publish the web version of the game. Boardly is
+  # a phone app only now, so the same service serves the website instead.
   - type: web
     name: boardly-web
     runtime: static
-    rootDir: boardly
-    buildCommand: npm ci && npm run build:web
-    staticPublishPath: dist
+    rootDir: website
+    staticPublishPath: public
     autoDeploy: true
-    # Single-page app: table links (/join/CODE, /lobby/CODE, /game/CODE)
-    # are handled in the browser, so every path serves index.html.
+    domains:
+      - boardly.lol
     routes:
       - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      - key: NODE_VERSION
-        value: "22"
-      - key: APP_ENV
-        value: production
-      # Baked into the build. Change it here if the backend's address changes.
-      - key: EXPO_PUBLIC_API_URL
-        value: https://boardly-api-m3y5.onrender.com
+        source: /join/*
+        destination: /join.html
+    headers:
+      # Apple only accepts its link file as JSON, and it has no extension
+      - path: /.well-known/apple-app-site-association
+        name: Content-Type
+        value: application/json

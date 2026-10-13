@@ -12,6 +12,7 @@ import {
   focusManager,
 } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
+import * as Linking from "expo-linking";
 import Head from "expo-router/head";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -27,6 +28,7 @@ import { useOtaUpdates } from "@/hooks/useOtaUpdates";
 import { LocaleProvider } from "@/i18n/LocaleContext";
 import "@/i18n";
 import { TABLE_COLORS, ThemeProvider, ThemeScope } from "@/theme";
+import { invitePathFromLink } from "@/utils/share";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -47,13 +49,16 @@ const queryClient = new QueryClient({
   },
 });
 
-// Web: an invite link (/join/CODE) opened by someone who isn't signed
-// in lands on the login screen. Remember it so they end up at the table
-// once they've logged in or registered.
-const invitePath =
+// An invite link (/join/CODE) opened by someone who isn't signed in
+// lands on the login screen. It is remembered so they end up at the
+// table once they've logged in or registered.
+const INVITE_PATH = /^\/join\/[A-Za-z0-9]{6}\/?$/;
+
+// Web: the address the page was loaded with.
+const webInvitePath =
   Platform.OS === "web" &&
   typeof window !== "undefined" &&
-  /^\/join\/[A-Za-z0-9]{6}\/?$/.test(window.location.pathname)
+  INVITE_PATH.test(window.location.pathname)
     ? window.location.pathname
     : null;
 
@@ -62,16 +67,27 @@ function RootNavigator() {
   const router = useRouter();
   useOtaUpdates();
 
+  // Phones: the link that opened the app (or arrived while it was open)
+  const linkUrl = Linking.useLinkingURL();
+  const invitePath =
+    Platform.OS === "web" ? webInvitePath : invitePathFromLink(linkUrl);
+
   const pendingInvite = useRef<string | null>(null);
+  // The last invite dealt with, so one link is only ever followed once
+  const handledInvite = useRef<string | null>(null);
   useEffect(() => {
-    if (status === "signedOut" && invitePath && pendingInvite.current === null) {
-      pendingInvite.current = invitePath;
-    } else if (status === "signedIn" && pendingInvite.current) {
+    if (status === "loading") return;
+    if (invitePath && handledInvite.current !== invitePath) {
+      handledInvite.current = invitePath;
+      // Signed in: the router has already opened the table by itself
+      if (status === "signedOut") pendingInvite.current = invitePath;
+    }
+    if (status === "signedIn" && pendingInvite.current) {
       const path = pendingInvite.current;
-      pendingInvite.current = "";
+      pendingInvite.current = null;
       router.replace(path as never);
     }
-  }, [status, router]);
+  }, [status, router, invitePath]);
 
   if (status === "loading") {
     return (

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Join a table on Boardly</title>
+    <meta name="description" content="You're invited to a table on Boardly." />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#18202b" />
+    <meta property="og:title" content="Join my table on Boardly" />
+    <meta property="og:description" content="Game night, anywhere." />
+    <meta property="og:image" content="https://boardly.lol/icon.png" />
+    <link rel="icon" href="/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+    />
+    <link rel="stylesheet" href="/site.css" />
+  </head>
+  <body>
+    <!-- Served for every /join/CODE address. With the app installed the
+         phone opens Boardly instead and this page is never seen; it is
+         for people who don't have the app yet, and for browsers inside
+         chat apps that keep the link to themselves. -->
+    <main>
+      <img class="logo" src="/icon.png" alt="" width="104" height="104" />
+
+      <div id="invite" hidden>
+        <h1 data-t="inviteTitle">You're invited to a table</h1>
+      </div>
+      <p id="invite-body" data-t="inviteBody" hidden>
+        Open Boardly to take your seat.
+      </p>
+
+      <div class="code-card" id="code-card" hidden>
+        <p class="code-label" data-t="codeLabel">Table code</p>
+        <p class="code" id="code"></p>
+        <button class="button button-quiet button-small" id="copy" type="button" data-t="copy">
+          Copy code
+        </button>
+      </div>
+
+      <a class="button button-primary" id="open" data-t="open" hidden>
+        Open in Boardly
+      </a>
+
+      <div id="bad-link" hidden>
+        <h1 data-t="badLink">This invite link doesn't look right</h1>
+        <p data-t="badLinkBody">
+          Ask your friend to send the table code again.
+        </p>
+      </div>
+
+      <p data-t="getApp">Don't have Boardly yet?</p>
+      <div class="stores">
+        <a class="button button-quiet" id="app-store">App Store</a>
+        <a class="button button-quiet" id="play-store">Google Play</a>
+      </div>
+      <ol class="steps" id="steps" hidden>
+        <li data-t="step1">Get the app and create an account.</li>
+        <li data-t="step2">
+          Tap “Join with a code” and enter the table code.
+        </li>
+      </ol>
+    </main>
+    <script src="/site.js"></script>
+    <script>
+      // Table codes are six letters or digits: /join/AB12CD
+      const match = /^\/join\/([A-Za-z0-9]{6})\/?$/.exec(location.pathname);
+      const show = (id) => (document.getElementById(id).hidden = false);
+
+      if (match) {
+        const code = match[1].toUpperCase();
+        document.getElementById("code").textContent = code;
+        document.getElementById("open").href = `${APP_SCHEME}://join/${code}`;
+        for (const id of ["invite", "invite-body", "code-card", "open", "steps"]) {
+          show(id);
+        }
+
+        const copy = document.getElementById("copy");
+        copy.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(code);
+            copy.textContent = t("copied");
+            setTimeout(() => (copy.textContent = t("copy")), 2000);
+          } catch {
+            // No clipboard access (old browser, or blocked): the code is
+            // on screen to read or select by hand.
+          }
+        });
+      } else {
+        show("bad-link");
+      }
+    </script>
+  </body>
+</html>

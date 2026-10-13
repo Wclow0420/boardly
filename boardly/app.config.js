@@ -22,6 +22,10 @@ const PROD_APP_NAME = "Boardly";
 const PROD_BUNDLE_IDENTIFIER = "com.boardly.lol";
 const PROD_PACKAGE_NAME = "com.boardly.lol";
 const PROD_SCHEME = "boardly";
+// Invite links are https://boardly.lol/join/CODE. The website (see
+// /website) vouches for the production app only, so only production
+// builds claim the domain; the others keep their own scheme links.
+const LINK_HOST = "boardly.lol";
 
 // Environment-specific identity (name / ids / scheme).
 // All environments share the same icons for now — add per-env icons in
@@ -87,6 +91,9 @@ export default ({ config }) => {
       ...(config.ios ?? {}),
       supportsTablet: false,
       bundleIdentifier,
+      ...(environment === "production"
+        ? { associatedDomains: [`applinks:${LINK_HOST}`] }
+        : {}),
       buildNumber: config.ios?.buildNumber ?? appVersion,
       infoPlist: {
         ...(config.ios?.infoPlist ?? {}),
@@ -111,6 +118,18 @@ export default ({ config }) => {
         monochromeImage: "./assets/images/android-icon-monochrome.png",
       },
       predictiveBackGestureEnabled: false,
+      ...(environment === "production"
+        ? {
+            intentFilters: [
+              {
+                action: "VIEW",
+                autoVerify: true,
+                data: [{ scheme: "https", host: LINK_HOST, pathPrefix: "/join/" }],
+                category: ["BROWSABLE", "DEFAULT"],
+              },
+            ],
+          }
+        : {}),
       permissions: Array.from(
         new Set([
           ...(config.android?.permissions ?? []),
@@ -176,6 +195,8 @@ export default ({ config }) => {
     extra: {
       ...(config.extra ?? {}),
       APP_ENV: environment,
+      // Where shared invite links point; null = use the app's own scheme
+      LINK_ORIGIN: environment === "production" ? `https://${LINK_HOST}` : null,
       router: {
         ...(config.extra?.router ?? {}),
         origin: false,

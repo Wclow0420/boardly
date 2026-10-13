@@ -1,0 +1,158 @@
+/* Boardly website — same ink and yellow-to-orange as the app. */
+:root {
+  --ink: #18202b;
+  --ink-raised: #222c3a;
+  --line: #334052;
+  --text: #fbf8f3;
+  --muted: #a9b1be;
+  --yellow: #ffc83d;
+  --orange: #ff8a3d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--ink);
+  color: var(--text);
+  font-family: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+main {
+  max-width: 440px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: 48px 20px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 20px;
+}
+
+.logo {
+  width: 104px;
+  height: 104px;
+  border-radius: 24px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.code-card {
+  width: 100%;
+  padding: 18px 16px;
+  background: var(--ink-raised);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+}
+
+.code-label {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.code {
+  margin: 4px 0 12px;
+  color: var(--yellow);
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  /* Balance the trailing letter-spacing so the code sits centred */
+  text-indent: 0.14em;
+}
+
+.button {
+  display: block;
+  width: 100%;
+  padding: 14px 18px;
+  border: 0;
+  border-radius: 16px;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button-primary {
+  background: linear-gradient(180deg, var(--yellow), var(--orange));
+  color: var(--ink);
+  box-shadow: 0 4px 0 #d9652a;
+}
+
+.button-quiet {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text);
+}
+
+.button-small {
+  width: auto;
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.button:focus-visible {
+  outline: 3px solid var(--text);
+  outline-offset: 3px;
+}
+
+.stores {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.store-soon {
+  color: var(--muted);
+  border-style: dashed;
+  cursor: default;
+}
+
+.steps {
+  width: 100%;
+  margin: 0;
+  padding: 0 0 0 20px;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: left;
+}
+
+.steps li + li {
+  margin-top: 4px;
+}
+
+footer {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+[hidden] {
+  display: none !important;
+}

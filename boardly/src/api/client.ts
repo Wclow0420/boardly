@@ -7,8 +7,10 @@
 
 import { tokenStorage } from "./tokenStorage";
 
-export const API_URL =
-  process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:5005";
+// A trailing slash is dropped so paths can be appended as "/api/v1/...".
+export const API_URL = (
+  process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:5005"
+).replace(/\/+$/, "");
 
 const API_BASE = `${API_URL}/api/v1`;
 

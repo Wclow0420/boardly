@@ -2,3 +2,6 @@
 /Game Image/
 /ChatGPT Image*.png
 .DS_Store
+# Seal the Manor working files kept on this machine only
+/nightwatch-*-preview.png
+/守夜_规则v2.txt

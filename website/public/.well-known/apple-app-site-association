@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["STUF6G52TN.com.boardly.lol"],
+        "components": [
+          {
+            "/": "/join/*",
+            "comment": "Table invites open in the app"
+          }
+        ]
+      }
+    ]
+  }
+}
