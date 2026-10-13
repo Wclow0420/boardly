@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Preview the website locally, following the same rules as the host
-// (see render.yaml): /join/CODE serves join.html, and the Apple link
-// file is sent as JSON.
+// (see render.yaml): /join/CODE serves join.html, /privacy and /terms
+// serve their pages, and the Apple link file is sent as JSON.
 //   node website/serve.js   (PORT=8097 by default)
 
 const fs = require("fs");
@@ -23,6 +23,7 @@ http
     let urlPath = decodeURIComponent(new URL(req.url, "http://x").pathname);
     if (urlPath.startsWith("/join/")) urlPath = "/join.html";
     if (urlPath === "/") urlPath = "/index.html";
+    if (urlPath === "/privacy" || urlPath === "/terms") urlPath += ".html";
 
     const file = path.join(root, path.normalize(urlPath));
     if (!file.startsWith(root) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {

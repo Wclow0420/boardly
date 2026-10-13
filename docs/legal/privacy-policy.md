@@ -2,7 +2,7 @@
 
 **Effective date:** [DATE]
 
-Boardly ("Boardly", "we", "us") is a mobile and web app for playing board and party games with friends. It is operated by **[LEGAL NAME OF OPERATOR]**, based in **[COUNTRY]**.
+Boardly ("Boardly", "we", "us") is a mobile app for playing board and party games with friends. It is operated by **[LEGAL NAME OF OPERATOR]**, based in **[COUNTRY]**.
 
 This policy explains what information Boardly collects, why, and what you can do about it. If you have any questions, contact us at **[CONTACT EMAIL]**.
 
@@ -28,6 +28,7 @@ We do not ask for your real name, email address, phone number, date of birth, co
 
 - **IP address and request logs.** Our servers receive your IP address with every request. We use it to limit abuse (for example, too many login attempts) and it appears in server logs kept for troubleshooting and security.
 - **App update checks.** The mobile app checks for updates through Expo's update service (EAS Update). These requests include technical details such as the app version and platform.
+- **Our website.** boardly.lol sets no cookies and has no analytics. It loads its fonts from Google Fonts, so Google receives your IP address when you open a page.
 
 Boardly does not contain advertising, does not use third-party analytics or tracking, and does not track you across other apps or websites.
 
@@ -70,7 +71,7 @@ On your device, the app stores your sign-in tokens in the device's secure storag
 ## 6. Your choices and rights
 
 - **Change your profile picture or password** at any time in the Profile tab.
-- **Delete your account** in the app under **Profile → Delete Account**. Deletion is permanent. You can also ask us to delete your account by emailing **[CONTACT EMAIL]** [or at **[ACCOUNT DELETION WEB URL]**].
+- **Delete your account** in the app under **Profile → Delete Account**. Deletion is permanent. You can also ask us to delete your account by emailing **[CONTACT EMAIL]**.
 - **Access or correction.** You can ask us for a copy of the information we hold about you, or ask us to correct it, by emailing **[CONTACT EMAIL]**.
 
 Depending on where you live, you may have additional rights under local privacy law, such as the right to object to or restrict certain processing, or to complain to your local data protection authority. We will respond to requests within the time your local law requires.
@@ -95,4 +96,3 @@ We may update this policy as Boardly changes. When we do, we will update the eff
 
 **[LEGAL NAME OF OPERATOR]**
 **[CONTACT EMAIL]**
-**[POSTAL ADDRESS, IF REQUIRED IN YOUR COUNTRY]**

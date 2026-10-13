@@ -6,7 +6,7 @@
     <title>Boardly — Game night, anywhere.</title>
     <meta
       name="description"
-      content="Board and party games to play with your friends, on your phone."
+      content="Bluffing, hidden roles and dice games to play with your friends, on your phone."
     />
     <meta name="theme-color" content="#18202b" />
     <meta property="og:title" content="Boardly" />
@@ -17,24 +17,169 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Poppins:wght@400;500;600;700&display=swap"
     />
     <link rel="stylesheet" href="/site.css" />
+    <link rel="stylesheet" href="/home.css" />
   </head>
-  <body>
-    <main>
-      <img class="logo" src="/icon.png" alt="" width="104" height="104" />
-      <h1>Boardly</h1>
-      <p data-t="tagline">Game night, anywhere.</p>
-      <p data-t="homeBody">
-        Board and party games to play with your friends, on your phone.
+  <body class="home">
+    <!-- One meeple shape, reused in every colour around the page -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="meeple" viewBox="0 0 100 100">
+        <path
+          d="M50 4c11 0 18 8 18 18 0 6-3 11-7 14 17 4 35 12 35 22 0 8-8 10-16 8l-8-2c4 12 12 24 12 30 0 3-2 4-6 4H60c-2 0-3-1-4-3l-6-15-6 15c-1 2-2 3-4 3H22c-4 0-6-1-6-4 0-6 8-18 12-30l-8 2c-8 2-16 0-16-8 0-10 18-18 35-22-4-3-7-8-7-14C32 12 39 4 50 4Z"
+        />
+      </symbol>
+    </svg>
+
+    <header class="nav">
+      <a class="nav-brand" href="#top">
+        <img src="/icon.png" alt="" width="36" height="36" />
+        <span>Boardly</span>
+      </a>
+      <a class="nav-cta" href="#get" data-t="navCta">Get the app</a>
+    </header>
+
+    <!-- 1. Hero: the meeple follows the pointer, the pieces drift -->
+    <section class="hero" id="top">
+      <div class="floaters" aria-hidden="true">
+        <span class="floater f-die" style="--x: 9%; --y: 20%; --d: 1.4; --r: -14deg">
+          <span class="flat-die"><i></i><i></i><i></i><i></i><i></i></span>
+        </span>
+        <span class="floater f-coin" style="--x: 84%; --y: 16%; --d: 0.9; --r: 10deg">
+          <span class="coin"></span>
+        </span>
+        <span class="floater f-card" style="--x: 80%; --y: 62%; --d: 1.8; --r: 16deg">
+          <span class="mini-card"></span>
+        </span>
+        <span class="floater" style="--x: 12%; --y: 68%; --d: 1.1; --r: -8deg">
+          <svg class="pawn" style="color: #4a8fe8"><use href="#meeple" /></svg>
+        </span>
+        <span class="floater" style="--x: 90%; --y: 40%; --d: 0.6; --r: 12deg">
+          <svg class="pawn small" style="color: #46b96b"><use href="#meeple" /></svg>
+        </span>
+        <span class="floater" style="--x: 4%; --y: 44%; --d: 0.5; --r: 6deg">
+          <svg class="pawn small" style="color: #e85d5d"><use href="#meeple" /></svg>
+        </span>
+        <span class="floater f-coin" style="--x: 24%; --y: 86%; --d: 1.5; --r: -20deg">
+          <span class="coin small"></span>
+        </span>
+      </div>
+
+      <button class="hero-meeple" type="button" aria-label="Boardly">
+        <img src="/meeple.png" alt="" width="260" height="276" />
+      </button>
+      <h1 class="display" data-t="heroTitle">Game night, anywhere.</h1>
+      <p class="lead" data-t="heroBody">
+        Bluff your friends, back your team, betray them at the last second.
+        All from your phone.
       </p>
+      <a class="button button-primary hero-cta" href="#get" data-t="navCta">
+        Get the app
+      </a>
+      <p class="scroll-hint">
+        <span data-t="scrollHint">Scroll to take a seat</span>
+        <span class="scroll-arrow" aria-hidden="true">↓</span>
+      </p>
+    </section>
+
+    <!-- 2. The games: a deck that fans out, flips and deals as you scroll -->
+    <section class="deal" data-pin="deal">
+      <div class="pin">
+        <div class="section-head">
+          <p class="kicker" data-t="dealKicker">The games</p>
+          <h2 class="display" data-t="dealTitle">Six games. One table.</h2>
+          <p class="lead" data-t="dealBody">
+            Hidden roles, bluffing, dice and the odd betrayal. Scroll to deal
+            them out.
+          </p>
+        </div>
+        <div class="deck" id="deck"></div>
+      </div>
+    </section>
+
+    <!-- 3. How it works: the table fills up as you scroll -->
+    <section class="how" data-pin="how" data-step="0">
+      <div class="pin">
+        <div class="how-text">
+          <p class="kicker" data-t="howKicker">How it works</p>
+          <ol class="steps-big">
+            <li>
+              <h3 class="display" data-t="step1Title">Open a table</h3>
+              <p data-t="step1Body">
+                Pick a game and you've got a table. It takes one tap.
+              </p>
+            </li>
+            <li>
+              <h3 class="display" data-t="step2Title">Share the code</h3>
+              <p data-t="step2Body">
+                Send the six-character code or the invite link to your group
+                chat.
+              </p>
+            </li>
+            <li>
+              <h3 class="display" data-t="step3Title">Everyone's in</h3>
+              <p data-t="step3Body">
+                Friends take their seats and the game deals itself. No board
+                to set up, no pieces to lose.
+              </p>
+            </li>
+          </ol>
+        </div>
+        <div class="table-scene" aria-hidden="true">
+          <div class="table-top">
+            <div class="code-tiles" id="code-tiles"></div>
+          </div>
+          <svg class="seat" style="--a: 0deg; color: #ffb627"><use href="#meeple" /></svg>
+          <svg class="seat" style="--a: 60deg; color: #4a8fe8"><use href="#meeple" /></svg>
+          <svg class="seat" style="--a: 120deg; color: #46b96b"><use href="#meeple" /></svg>
+          <svg class="seat" style="--a: 180deg; color: #e85d5d"><use href="#meeple" /></svg>
+          <svg class="seat" style="--a: 240deg; color: #7c5cd6"><use href="#meeple" /></svg>
+          <svg class="seat" style="--a: 300deg; color: #f25c3a"><use href="#meeple" /></svg>
+          <div class="confetti" id="confetti"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. A toy: roll five dice -->
+    <section class="roll">
+      <p class="kicker" data-t="rollKicker">Go on</p>
+      <h2 class="display" data-t="rollTitle">Feeling lucky?</h2>
+      <div class="dice" id="dice" aria-hidden="true"></div>
+      <p class="roll-result" id="roll-result" aria-live="polite">&nbsp;</p>
+      <button class="button roll-button" id="roll-button" type="button" data-t="rollButton">
+        Roll the dice
+      </button>
+    </section>
+
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        <span data-t="marquee">BLUFF · DEAL · BETRAY · LAUGH · REPEAT ·</span>
+        <span data-t="marquee">BLUFF · DEAL · BETRAY · LAUGH · REPEAT ·</span>
+        <span data-t="marquee">BLUFF · DEAL · BETRAY · LAUGH · REPEAT ·</span>
+        <span data-t="marquee">BLUFF · DEAL · BETRAY · LAUGH · REPEAT ·</span>
+      </div>
+    </div>
+
+    <!-- 5. Get the app -->
+    <section class="get" id="get">
+      <div class="crowd" aria-hidden="true">
+        <svg style="color: #4a8fe8; --i: 0"><use href="#meeple" /></svg>
+        <svg style="color: #46b96b; --i: 1"><use href="#meeple" /></svg>
+        <svg style="color: #ffb627; --i: 2"><use href="#meeple" /></svg>
+        <svg style="color: #e85d5d; --i: 3"><use href="#meeple" /></svg>
+        <svg style="color: #7c5cd6; --i: 4"><use href="#meeple" /></svg>
+      </div>
+      <h2 class="display" data-t="ctaTitle">Your table is waiting.</h2>
+      <p class="lead" data-t="ctaBody">Grab the app, grab your friends.</p>
       <div class="stores">
         <a class="button button-quiet" id="app-store">App Store</a>
         <a class="button button-quiet" id="play-store">Google Play</a>
       </div>
       <footer>© Boardly</footer>
-    </main>
+    </section>
+
     <script src="/site.js"></script>
+    <script src="/home.js"></script>
   </body>
 </html>
