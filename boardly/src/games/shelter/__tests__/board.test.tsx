@@ -34,7 +34,7 @@ it("asks for a place, then a card", async () => {
 
   await view.rerender(board({ ...base, phase: "play", myPlace: "market", myHand: ["f2", "zombie"] }, onMove));
   expect(screen.getByText(/play one card face down/)).toBeTruthy();
-  expect(screen.queryByLabelText("Sabotage")).toBeNull();
+  expect(screen.queryByLabelText("Mould (sabotage)")).toBeNull();
   await fireEvent.press(screen.getAllByLabelText("Food")[0]);
   expect(onMove).toHaveBeenLastCalledWith({ type: "play", card: 0 });
 });
@@ -44,7 +44,7 @@ it("gives the Infected sabotage and tells the night apart", async () => {
   const infected = { ...base, myRole: "infected", coughs: 1 };
   const view = await render(board({ ...infected, phase: "play", myPlace: "farm", myHand: ["f1"] }, onMove));
   await fireEvent.press(screen.getByLabelText("Tap to continue"));
-  await fireEvent.press(screen.getByLabelText("Sabotage"));
+  await fireEvent.press(screen.getByLabelText("Mould (sabotage)"));
   expect(onMove).toHaveBeenLastCalledWith({ type: "play", card: "sabotage" });
 
   await view.rerender(board({ ...infected, phase: "night", myStealth: 1 }, onMove));
