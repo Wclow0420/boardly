@@ -57,6 +57,7 @@
     "playersRange": "{{min}} - {{max}} Pemain",
     "filters": {
       "all": "Semua",
+      "faction": "Pihak",
       "strategy": "Strategi",
       "party": "Parti",
       "classic": "Klasik",
@@ -66,7 +67,8 @@
       "classic": "Klasik",
       "card": "Kad",
       "strategy": "Strategi",
-      "party": "Parti"
+      "party": "Parti",
+      "faction": "Pihak"
     }
   },
   "gameNames": {
@@ -75,7 +77,8 @@
     "coup": "Hustle",
     "manor": "Midnight Manor",
     "liarsdice": "Dadu Penipu",
-    "nightwatch": "Meterai Rumah Agam"
+    "nightwatch": "Meterai Rumah Agam",
+    "shelter": "Tempat Perlindungan"
   },
   "friends": {
     "title": "Rakan",
@@ -548,6 +551,120 @@
         "echo": "Galeri boleh menghantar dua surat tanpa nama pusingan ini.",
         "fog": "Pasukan hanya boleh berjalan satu bilik ke misi pusingan ini, bukan dua.",
         "calm": "Tiada apa-apa berlaku."
+      },
+      "counts": {
+        "title": "Bilangan pemain",
+        "intro": "5 hingga 10 pemain. Bilangan menentukan berapa baik dan jahat, peranan yang diberi, dan saiz pasukan setiap malam:",
+        "players": "Pemain",
+        "good": "Baik",
+        "evil": "Jahat",
+        "night": "M{{n}}",
+        "votes": "Undi",
+        "star": "* Misi malam ini perlukan 2 kad Gagal untuk gagal.",
+        "table": "{{n}} pemain"
+      },
+      "countNotes": {
+        "items": [
+          "M1–M5: berapa orang pergi misi malam itu; ketua memilih tepat sebanyak itu.",
+          "Undi: persetujuan yang diperlukan supaya pasukan bertolak (lebih separuh).",
+          "Lima pasukan ditolak berturut-turut dalam satu malam, pihak jahat menang, pada sebarang bilangan.",
+          "Pemain jahat di tempat duduk terendah juga pembunuh upahan, yang meneka Peramal jika tiga misi berjaya."
+        ]
+      }
+    },
+    "shelter": {
+      "intro": "Musim sejuk tiba dan pekan sudah musnah. Anda berlindung dalam sebuah rumah lama dan mesti bertahan 6 hari sehingga konvoi bantuan tiba. Semua bermula di pihak yang sama — tetapi pada malam ke-2 atau ke-3, penyakit menjangkiti seorang. Sejak itu dia mahu semua kelaparan, dan tiada siapa tahu siapa.",
+      "clashes": {
+        "items": [
+          "Siang: semua di satu tempat main satu kad tertutup; kad dikocok dan dibuka. Terjangkit boleh menyelitkan Sabotaj −2 — semua nampak, tiada siapa tahu siapa.",
+          "Malam: semua secara rahsia mengawal stor, mengawal pintu atau tidur; Terjangkit pada masa sama mencuri, membuka pintu atau tidur. Bertembung dengan pengawal, dia dilihat; tidak bertembung, dia berjaya.",
+          "Pagi: hanya pengawal yang nampak Terjangkit. Bila dia bercakap, semua perlu memutuskan sama ada percaya.",
+          "Pengawal letih esoknya dan cabut 1 kad — makin ketat berkawal, makin sedikit makanan."
+        ],
+        "0": "Siang: semua di satu tempat main satu kad tertutup; kad dikocok dan dibuka. Terjangkit boleh main Berkulat −2 yang kelihatan sama seperti kulat sebenar dalam dek — tiada siapa boleh beza nasib malang dengan sabotaj."
+      },
+      "roles": {
+        "title": "Peranan",
+        "intro": "Semua bermula sebagai Mangsa Selamat. Terjangkit berubah secara rahsia di pertengahan permainan.",
+        "survivor": [
+          "Matlamat: bertahan hingga bantuan pada hari 6, atau halau semua Terjangkit.",
+          "Siang mencari makanan; malam mengawal stor, mengawal pintu atau tidur.",
+          "Berkawal di tempat Terjangkit menyerang menunjukkan siapa dia."
+        ],
+        "infected": [
+          "Pada malam ke-2 atau ke-3 seorang Mangsa Selamat rawak terjangkit (6+ pemain: seorang lagi dua malam kemudian).",
+          "Matlamat: kosongkan stor, buat Mangsa Selamat rebah, atau biar terlalu sedikit yang berdiri bila bantuan tiba.",
+          "Siang hari boleh main Berkulat (sabotaj) −2, yang dibuka sebagai kulat biasa; malam hari boleh curi satu pertiga makanan stor (sekurang-kurangnya 2) atau buka pintu kepada zombi.",
+          "Dengan 5 pemain, Terjangkit boleh Menyelinap sekali: malam itu dia berjaya walaupun dikawal, tanpa dilihat.",
+          "Dua Terjangkit tidak mengenali satu sama lain."
+        ]
+      },
+      "places": {
+        "title": "Tempat & posisi",
+        "intro": "Siang hari semua secara rahsia memilih tempat, cabut 2 kad (1 jika letih atau lemah) dan main 1 tertutup. Kad dicabut secara rawak daripada dek di bawah.",
+        "always": "Setiap permainan",
+        "fivePlus": "5+ pemain",
+        "farm": "Tempat stabil: kebanyakannya makanan, tetapi ada yang kosong atau berkulat.",
+        "market": "Paling banyak makanan, tetapi banyak yang rosak dan zombi berkeliaran. Yang digigit tidak boleh keluar esoknya.",
+        "hospital": "Ubat: waktu subuh, setiap satu merawat seorang yang cedera atau lemah."
+      },
+      "posts": {
+        "title": "Tiga posisi pada waktu malam",
+        "intro": "Malam hari semua secara rahsia mengetik satu tempat dalam rumah. Terjangkit nampak tiga tempat yang sama, dengan makna lain.",
+        "store": {
+          "survivor": "Kawal stor: jika ada yang datang mencuri, anda nampak siapa. Seorang pengawal sahaja setiap posisi — yang pertama memilih; yang lain kembali tidur. Letih esok.",
+          "infected": "Curi: jika tiada pengawal, ambil satu pertiga makanan stor (sekurang-kurangnya 2) dan makan. Makin penuh stor, makin banyak dicuri."
+        },
+        "door": {
+          "survivor": "Kawal pintu: jika ada yang datang membukanya, anda nampak siapa. Seorang pengawal sahaja setiap posisi. Letih esok.",
+          "infected": "Buka pintu: jika tiada pengawal, zombi masuk, stor kurang 1 dan seorang yang tidur cedera."
+        },
+        "sleep": {
+          "survivor": "Tidur: berehat, dan cabut 2 kad esok.",
+          "infected": "Pura-pura tidur: tidak buat apa-apa, dan tidak boleh dilihat."
+        }
+      },
+      "flow": {
+        "title": "Setiap hari",
+        "items": [
+          "Pagi (selepas batuk pertama): bincang tentang malam tadi, kemudian undi. Lebih separuh yang berdiri mengundi satu nama, dia dihalau dan peranannya ditunjukkan.",
+          "Siang: semua secara rahsia memilih tempat (ladang, pasar raya, dan hospital dengan 5+). Yang cedera duduk di rumah.",
+          "Kad: cabut 2, main 1 tertutup. Kad di satu tempat dikocok dan dibuka; jumlahnya masuk ke stor.",
+          "Malam: semua secara rahsia mengetik stor, pintu atau katil. Seorang pengawal sahaja setiap posisi (yang pertama memilih). Terjangkit berjaya di tempat tanpa pengawal; bertembung dengan pengawal, dia gagal dan dilihat.",
+          "Makan malam: setiap yang berdiri makan 1 dari stor. Tidak cukup? Ada yang kelaparan: satu malam lemah (esok 1 kad), dua malam berturut-turut dia rebah.",
+          "Yang rebah tidak boleh buat apa-apa selain menonton.",
+          "Pada awal malam ke-2 atau ke-3, aplikasi mengumumkan batuk. Dengan 6+, batuk kedua datang dua malam kemudian."
+        ]
+      },
+      "counts": {
+        "title": "Bilangan pemain",
+        "intro": "4 hingga 8 pemain. Bilangan menentukan jumlah Terjangkit, makanan awal dan had kemenangan:",
+        "players": "Pemain",
+        "infected": "Terjangkit",
+        "survivors": "Selamat",
+        "food": "Makanan awal",
+        "rescue": "Bantuan perlu",
+        "famine": "Kebuluran",
+        "votes": "Undi"
+      },
+      "countNotes": {
+        "items": [
+          "Bantuan perlu: Mangsa Selamat yang masih berdiri selepas makan malam ke-6.",
+          "Kebuluran: jika stor kosong dan sebanyak ini kelaparan, Terjangkit menang.",
+          "Undi: diperlukan bila semua berdiri. Ia berkurang bila ada yang rebah atau dihalau (sentiasa lebih separuh yang berdiri).",
+          "5 pemain: hospital dibuka dan Terjangkit boleh Menyelinap sekali.",
+          "6–8 pemain: 2 Terjangkit; yang kedua berubah dua malam selepas yang pertama, dan mereka tidak mengenali satu sama lain. Kedua-duanya mesti dihalau untuk menang cara itu."
+        ]
+      },
+      "winning": {
+        "title": "Kemenangan",
+        "items": [
+          "Mangsa Selamat menang: selepas makan malam ke-6, sekurang-kurangnya bilangan 'bantuan perlu' masih berdiri; atau semua Terjangkit telah dihalau.",
+          "Terjangkit menang: stor kosong dan bilangan 'kebuluran' kelaparan.",
+          "Terjangkit menang: bila-bila masa, Mangsa Selamat yang berdiri tidak lebih daripada Terjangkit yang berdiri.",
+          "Terjangkit menang: bila bantuan tiba, terlalu sedikit Mangsa Selamat berdiri.",
+          "Menghalau Mangsa Selamat tidak menamatkan permainan: kurang seorang pencari, tetapi kurang satu mulut juga."
+        ]
       }
     }
   },
@@ -1383,6 +1500,12 @@
       "one": "Perlu tepat 1 orang (anda mesti bersendirian — lebih seorang, tidak berfungsi)",
       "two": "Perlu tepat 2 orang (tidak lebih, tidak kurang)",
       "any": "Bilangan orang tidak terhad"
+    },
+    "journal": {
+      "news": "Berita",
+      "teams": "Pasukan & undian",
+      "mission": "Misi",
+      "private": "Hanya anda tahu"
     }
   },
   "profile": {
@@ -1497,6 +1620,153 @@
           "desc": "Tiada siapa keluar — terus minum. Undi untuk berhenti; paling sedikit cawan menang."
         }
       }
+    }
+  },
+  "shelter": {
+    "tagline": "Bertahan enam hari musim sejuk — tetapi seseorang berubah pada waktu malam",
+    "places": {
+      "farm": "Ladang",
+      "market": "Pasar raya",
+      "hospital": "Hospital"
+    },
+    "placeHints": {
+      "farm": "Stabil, tidak banyak",
+      "market": "Banyak, ada zombi",
+      "hospital": "Ada ubat, ada zombi"
+    },
+    "posts": {
+      "store": "Stor",
+      "door": "Pintu",
+      "sleep": "Tidur"
+    },
+    "acts": {
+      "store": "Curi makanan",
+      "door": "Buka pintu",
+      "sleep": "Pura-pura tidur"
+    },
+    "cards": {
+      "f1": "Makanan",
+      "f2": "Makanan",
+      "f3": "Makanan",
+      "none": "Kosong",
+      "mold1": "Berkulat",
+      "mold2": "Berkulat",
+      "zombie": "Zombi",
+      "medicine": "Ubat",
+      "sabotage": "Berkulat (sabotaj)"
+    },
+    "cardHints": {
+      "f1": "Bawa balik 1 makanan",
+      "f2": "Bawa balik 2 makanan",
+      "f3": "Bawa balik 3 makanan",
+      "none": "Tiada apa-apa",
+      "mold1": "Rosak: kurang 1",
+      "mold2": "Rosak: kurang 2",
+      "zombie": "Digigit: esok duduk di rumah",
+      "medicine": "Waktu subuh, merawat seorang yang cedera atau lemah",
+      "sabotage": "Hanya Terjangkit: kurang 2, dan bila dibuka sama seperti kulat sebenar"
+    },
+    "bar": {
+      "day": "Hari {{n}} daripada {{total}}",
+      "coughs": "batuk {{count}}/{{total}}",
+      "need": "{{count}} perlu makan malam ini"
+    },
+    "phases": {
+      "vote": "Pagi: undi",
+      "search": "Siang: pilih tempat",
+      "play": "Siang: main kad",
+      "night": "Malam: pilih posisi",
+      "finished": "Permainan tamat"
+    },
+    "role": {
+      "survivor": "Anda Mangsa Selamat",
+      "infected": "Anda Terjangkit"
+    },
+    "status": {
+      "fallen": "rebah",
+      "exiled": "dihalau"
+    },
+    "record": {
+      "title": "Rekod"
+    },
+    "news": {
+      "title": "Apa yang berlaku",
+      "dayHeading": "Hari {{n}} · mencari",
+      "nightHeading": "Malam {{n}}",
+      "voteHeading": "Hari {{n}} · undian pagi",
+      "zombieHurt": "{{names}} digigit dan duduk di rumah esok",
+      "cough": "Seseorang batuk dalam gelap…",
+      "store": "Stor: {{before}} → {{after}} makanan",
+      "stolen": "{{count}} makanan hilang",
+      "opened": "Pintu dibuka dan zombi masuk",
+      "injured": "{{names}} cedera dan duduk di rumah esok",
+      "hungry": "Kelaparan: {{names}}",
+      "fallen": "Rebah: {{names}}",
+      "nobody": "tiada siapa",
+      "noExile": "Tiada siapa dihalau",
+      "exiledInfected": "{{name}} dihalau — Terjangkit!",
+      "exiledSurvivor": "{{name}} dihalau — Mangsa Selamat"
+    },
+    "notes": {
+      "saw": "Anda mengawal {{post}} dan nampak {{names}}!",
+      "quiet": "Anda mengawal {{post}} (bersama {{with}}); tiada apa berlaku",
+      "alone": "tiada siapa",
+      "caught": "Anda dilihat: {{names}} berkawal di situ",
+      "stole": "Anda mencuri {{count}} makanan",
+      "stoleSneaked": "Anda menyelinap dan mencuri {{count}} makanan tanpa dilihat",
+      "opened": "Anda membuka pintu",
+      "openedSneaked": "Anda menyelinap dan membuka pintu tanpa dilihat",
+      "bumped": "Sudah ada yang mengawal {{post}}, jadi anda kembali tidur (tidak letih esok)",
+      "played": "Di {{place}} anda main: {{card}}"
+    },
+    "cough": {
+      "title": "Seseorang batuk dalam gelap…",
+      "body": "Seseorang telah terjangkit. Mulai malam ini, dia mahu semua kelaparan.",
+      "youTitle": "Anda terjangkit",
+      "youBody": "Mulai sekarang anda Terjangkit. Siang hari boleh main Berkulat (sabotaj), yang kelihatan seperti kulat sebenar; malam hari boleh curi makanan atau buka pintu — jangan sampai dilihat.",
+      "continue": "Ketik untuk teruskan"
+    },
+    "waiting": "Menunggu {{names}}",
+    "task": {
+      "fallen": "Anda rebah kelaparan dan hanya boleh menonton.",
+      "exiled": "Anda dihalau dari tempat perlindungan dan hanya boleh menonton.",
+      "injured": "Anda cedera dan duduk di rumah hari ini.",
+      "posted": "Malam ini anda pilih: {{post}}",
+      "vote": "Halau seseorang?",
+      "voteHint": "{{count}} undi menghalau seseorang. Peranannya akan ditunjukkan.",
+      "voteNobody": "Tiada siapa hari ini",
+      "search": "Ke mana mencari hari ini?",
+      "tired": "Anda berkawal semalam: hari ini hanya cabut 1 kad.",
+      "play": "Di {{place}}: main satu kad tertutup",
+      "playHint": "Kad di tempat yang sama dikocok dan dibuka: semua nampak apa yang keluar, bukan siapa yang main.",
+      "night": "Di mana anda berkawal malam ini?",
+      "nightHint": "Ketik stor, pintu atau katil. Pengawal nampak sesiapa yang datang membuat jahat, tetapi letih esok.",
+      "nightInfected": "Apa yang anda buat malam ini?",
+      "nightInfectedHint": "Ketik stor untuk mencuri, pintu untuk membukanya, atau katil untuk pura-pura tidur. Jika ada yang berkawal, anda akan dilihat.",
+      "stealthOn": "Menyelinap: aktif (sekali sepermainan)",
+      "stealthOff": "Menyelinap (sekali sepermainan)"
+    },
+    "result": {
+      "survivors": "Bantuan tiba! Mangsa Selamat menang",
+      "infected": "Terjangkit menang",
+      "none": "Permainan tamat",
+      "wasInfected": "{{name}} ialah Terjangkit"
+    },
+    "reasons": {
+      "rescue": "Mereka bertahan hingga hari 6 dan konvoi tiba.",
+      "exiled": "Semua Terjangkit telah dihalau.",
+      "famine": "Stor kosong dan terlalu ramai kelaparan.",
+      "outnumbered": "Terjangkit yang berdiri tidak kurang daripada Mangsa Selamat.",
+      "lateRescue": "Konvoi tiba, tetapi terlalu sedikit Mangsa Selamat masih berdiri.",
+      "abandoned": "Seseorang keluar; permainan tamat."
+    },
+    "journal": {
+      "day": "Hari {{n}}",
+      "vote": "Undian pagi",
+      "search": "Mencari",
+      "night": "Malam",
+      "private": "Hanya anda tahu",
+      "who": "Pergi: "
     }
   }
 }

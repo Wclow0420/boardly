@@ -8,7 +8,8 @@ import { fontFamily, useTheme } from "@/theme";
 import { moveHaptic, tapHaptic } from "@/utils/haptics";
 import type { GameBoardProps, GamePlayer } from "../types";
 import { ManorMap } from "./ManorMap";
-import { Popup } from "./Popup";
+import { Journal, type JournalPage, type JournalSection } from "@/features/game/Journal";
+import { Popup } from "@/features/game/Popup";
 import { arrivalOf } from "./arrival";
 import { LetterScene, RoleIntro } from "./Immersion";
 import { NightMap } from "./NightMap";
@@ -33,7 +34,6 @@ import {
   doorLabel,
   lettersFor,
   missionTrack,
-  notesByRound,
   others,
   sideOf,
   taskFor,
@@ -212,38 +212,23 @@ export function NightwatchBoard({
     state.myRoom === lastMission.room;
 
   // What happened since the player last looked, private notes first
-  const news = [
-    ...state.log
-      .slice(seen.log)
+  const news = manorPages(
+    state,
+    {
       // the Chapel's record is read from its book, not announced
-      .filter((note) => note.kind !== "chapelRecord")
-      .flatMap((note) =>
-        note.kind === "patrol"
-          ? [noteLine(note, names, t), ...patrolLines(note, names, t)]
-          : [noteLine(note, names, t)]
-      ),
-    ...state.history.slice(seen.history).flatMap((proposal) => [
-      `🗳️ ${t("nightwatch.record.proposal", {
-        leader: nameOf(proposal.leader),
-        team: names.namesOf(proposal.team),
-      })} — ${t(`nightwatch.record.${proposal.approved ? "approved" : "rejected"}`)}`,
+      log: state.log.slice(seen.log).filter((note) => note.kind !== "chapelRecord"),
+      history: state.history.slice(seen.history),
+      results: state.results.slice(seen.results),
+      timeline: [],
       // being sent on the mission walks me to its room: say so
-      ...(walked && proposal.approved && proposal.round === state.round
-        ? [`🚶 ${t("nightwatch.where.onMission", { room: names.roomName(state.missionRoom) })}`]
-        : []),
-    ]),
-    ...state.results.slice(seen.results).map(
-      (result) =>
-        `${result.success ? "✅" : "❌"} ${t(
-          `nightwatch.record.${result.success ? "success" : "fail"}`,
-          { room: names.roomName(result.room) }
-        )}${
-          result.fails !== null
-            ? ` · ${t("nightwatch.record.fails", { count: result.fails })}`
-            : ""
-        }`
-    ),
-  ];
+      walked:
+        walked && state.history.slice(seen.history).some((p) => p.approved && p.round === state.round)
+          ? `🚶 ${t("nightwatch.where.onMission", { room: names.roomName(state.missionRoom) })}`
+          : undefined,
+    },
+    names,
+    t
+  );
   const readNews = () =>
     setSeen({
       log: state.log.length,
@@ -491,11 +476,7 @@ export function NightwatchBoard({
       >
         {showing === "news" ? (
           <View style={{ gap: spacing.sm }}>
-            {news.map((line, i) => (
-              <AppText key={i} variant="bodyMedium">
-                {line}
-              </AppText>
-            ))}
+            <Journal pages={news} Text={AppText} order="oldest" />
             <Button
               label={t("common.ok")}
               style={{ marginTop: spacing.md }}
@@ -1791,32 +1772,23 @@ function noteLine(note: Note, names: Names, t: T): string {
 /** My private notes, newest night first. */
 function Notebook({ state, names }: { state: NightwatchState; names: Names }) {
   const { t } = useTranslation();
-  const { colors, spacing } = useTheme();
+  const { spacing } = useTheme();
   if (state.log.length === 0) return null;
-
   return (
-    <View>
-      <AppText variant="label">{`📓  ${t("nightwatch.log.title")}`}</AppText>
-      <AppText variant="tiny" color="textSubtle" style={{ marginBottom: spacing.sm }}>
+    <View style={{ gap: spacing.sm }}>
+      <AppText variant="tiny" color="textSubtle">
         {t("nightwatch.log.hint")}
       </AppText>
-      {notesByRound(state.log).map(({ round, notes }) => (
-        <View key={round} style={[styles.record, { borderBottomColor: colors.divider }]}>
-          <AppText variant="caption" style={styles.bold}>
-            {t("nightwatch.bar.night", { n: round + 1, total: state.rounds })}
-          </AppText>
-          {notes.flatMap((note, i) =>
-            (note.kind === "patrol"
-              ? [noteLine(note, names, t), ...patrolLines(note, names, t)]
-              : [noteLine(note, names, t)]
-            ).map((line, j) => (
-              <AppText key={`${i}-${j}`} variant="tiny" color="textMuted" style={{ marginTop: 3 }}>
-                {line}
-              </AppText>
-            ))
-          )}
-        </View>
-      ))}
+      <Journal
+        // the whole notebook is private: no need to box each night's notes
+        pages={manorPages(state, { log: state.log, history: [], results: [], timeline: [] }, names, t).map(
+          (page) => ({
+            ...page,
+            sections: page.sections.map((section) => ({ ...section, title: undefined, private: false })),
+          })
+        )}
+        Text={AppText}
+      />
     </View>
   );
 }
@@ -1824,10 +1796,39 @@ function Notebook({ state, names }: { state: NightwatchState; names: Names }) {
 /** Everything public, night by night: events, letters, votes, missions. */
 function PublicRecord({ state, names }: { state: NightwatchState; names: Names }) {
   const { t } = useTranslation();
-  const { colors, spacing } = useTheme();
-  const rounds = Array.from({ length: state.round + 1 }, (_, r) => r).reverse();
-  const hasAny = state.timeline.length + state.history.length + state.results.length > 0;
-  if (!hasAny) return null;
+  return (
+    <Journal
+      pages={manorPages(
+        state,
+        { log: [], history: state.history, results: state.results, timeline: state.timeline },
+        names,
+        t
+      )}
+      Text={AppText}
+    />
+  );
+}
+
+/** What happened, as Journal pages: one per night, holding its news (the
+ *  event, doors, letters), the teams and votes, the mission, and what
+ *  only this player knows. Pass only some records (the news) to get
+ *  only those nights. */
+function manorPages(
+  state: NightwatchState,
+  parts: {
+    log: Note[];
+    history: NightwatchState["history"];
+    results: NightwatchState["results"];
+    timeline: TimelineEntry[];
+    walked?: string;
+  },
+  names: Names,
+  t: T
+): JournalPage[] {
+  const evil = state.myRole !== null && sideOf(state.myRole) === "evil";
+  const rounds = [
+    ...new Set([...parts.log, ...parts.history, ...parts.results, ...parts.timeline].map((e) => e.round)),
+  ].sort((a, b) => a - b);
 
   const timelineLine = (e: TimelineEntry) => {
     switch (e.kind) {
@@ -1844,70 +1845,76 @@ function PublicRecord({ state, names }: { state: NightwatchState; names: Names }
     }
   };
 
-  return (
-    <View>
-      <AppText variant="label" style={{ marginBottom: spacing.sm }}>
-        {`🗞️  ${t("nightwatch.record.title")}`}
-      </AppText>
-      {rounds.map((r) => {
-        const lines: { text: string; tone?: "good" | "bad" }[] = [];
-        for (const e of state.timeline.filter((x) => x.round === r)) {
-          lines.push({ text: timelineLine(e) });
-        }
-        for (const p of state.history.filter((x) => x.round === r)) {
-          const yes = p.votes.map((v, s) => (v ? s : -1)).filter((s) => s >= 0);
-          const no = p.votes.map((v, s) => (v ? -1 : s)).filter((s) => s >= 0);
-          lines.push({
-            text: `${p.bell ? "🔔" : "👑"} ${t("nightwatch.record.proposal", {
-              leader: names.nameOf(p.leader),
-              team: names.namesOf(p.team),
-            })} — ${t(p.approved ? "nightwatch.record.approved" : "nightwatch.record.rejected")}\n👍 ${
-              yes.length ? names.namesOf(yes) : "—"
-            }   👎 ${no.length ? names.namesOf(no) : "—"}`,
-          });
-        }
-        const result = state.results.find((x) => x.round === r);
-        if (result) {
-          const detail =
-            result.missing.length > 0
-              ? t("nightwatch.record.missing", { names: names.namesOf(result.missing) })
-              : t("nightwatch.record.fails", { count: result.fails ?? 0 });
-          lines.push({
-            text: `🎯 ${t(
-              result.success ? "nightwatch.record.success" : "nightwatch.record.fail",
-              { room: names.roomName(result.room) }
-            )} · ${detail}`,
-            tone: result.success ? "good" : "bad",
-          });
-        }
-        if (lines.length === 0) return null;
-        return (
-          <View key={r} style={[styles.record, { borderBottomColor: colors.divider }]}>
-            <AppText variant="caption" style={styles.bold}>
-              {t("nightwatch.bar.night", { n: r + 1, total: state.rounds })}
-            </AppText>
-            {lines.map((line, i) => (
-              <AppText
-                key={i}
-                variant="tiny"
-                style={{
-                  marginTop: 3,
-                  color:
-                    line.tone === "good"
-                      ? colors.successStrong
-                      : line.tone === "bad"
-                        ? colors.danger
-                        : colors.textMuted,
-                }}
-              >
-                {line.text}
-              </AppText>
-            ))}
-          </View>
-        );
-      })}
-    </View>
-  );
+  return rounds.map((r) => {
+    const result = parts.results.find((x) => x.round === r);
+    const sections: JournalSection[] = [
+      {
+        key: "news",
+        title: `🗞️  ${t("nightwatch.journal.news")}`,
+        entries: parts.timeline.filter((e) => e.round === r).map((e) => ({ text: timelineLine(e) })),
+      },
+      {
+        key: "teams",
+        title: `🗳️  ${t("nightwatch.journal.teams")}`,
+        entries: parts.history
+          .filter((p) => p.round === r)
+          .map((p) => {
+            const yes = p.votes.map((v, seat) => (v ? seat : -1)).filter((seat) => seat >= 0);
+            const no = p.votes.map((v, seat) => (v ? -1 : seat)).filter((seat) => seat >= 0);
+            return {
+              text: `${p.bell ? "🔔" : "👑"} ${t("nightwatch.record.proposal", {
+                leader: names.nameOf(p.leader),
+                team: names.namesOf(p.team),
+              })} — ${t(p.approved ? "nightwatch.record.approved" : "nightwatch.record.rejected")}`,
+              detail: [
+                `👍 ${yes.length ? names.namesOf(yes) : "—"}`,
+                `👎 ${no.length ? names.namesOf(no) : "—"}`,
+              ],
+            };
+          }),
+      },
+      {
+        key: "mission",
+        title: `🎯  ${t("nightwatch.journal.mission")}`,
+        entries: result
+          ? [
+              {
+                text: `${result.success ? "✅" : "❌"} ${t(
+                  result.success ? "nightwatch.record.success" : "nightwatch.record.fail",
+                  { room: names.roomName(result.room) }
+                )}`,
+                detail: [
+                  result.missing.length > 0
+                    ? t("nightwatch.record.missing", { names: names.namesOf(result.missing) })
+                    : t("nightwatch.record.fails", { count: result.fails ?? 0 }),
+                ],
+                tone: result.success !== evil ? ("good" as const) : ("bad" as const),
+              },
+            ]
+          : [],
+      },
+      {
+        key: "mine",
+        title: `🔒  ${t("nightwatch.journal.private")}`,
+        private: true,
+        entries: [
+          ...parts.log
+            .filter((note) => note.round === r)
+            .map((note) => ({
+              text: noteLine(note, names, t),
+              detail: note.kind === "patrol" ? patrolLines(note, names, t) : undefined,
+            })),
+          ...(parts.walked && r === state.round ? [{ text: parts.walked }] : []),
+        ],
+      },
+    ];
+    return {
+      key: `night-${r}`,
+      title: t("nightwatch.map.nightN", { n: r + 1 }),
+      subtitle: result ? `🎯 ${names.roomName(result.room)}` : undefined,
+      sections,
+    };
+  });
 }
 
 function Result({

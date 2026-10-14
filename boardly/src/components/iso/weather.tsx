@@ -72,6 +72,30 @@ half4 main(vec2 xy) {
   return half4(vec3(0.7, 0.8, 1.0) * a, a);
 }`;
 
+const SNOW = `
+uniform float t;
+uniform vec2 origin;
+uniform vec2 size;
+${NOISE}
+half4 main(vec2 xy) {
+  vec2 uv = (xy - origin) / size;
+  float a = 0.0;
+  for (int i = 0; i < 3; i++) {
+    float layer = float(i);
+    float speed = 0.05 + layer * 0.035;
+    vec2 g = vec2(uv.x * (9.0 + layer * 5.0) + sin(t * 0.6 + uv.y * 6.0 + layer) * 0.35,
+                  uv.y * (6.0 + layer * 3.0) - t * speed * 10.0);
+    vec2 cell = floor(g);
+    vec2 f = fract(g) - 0.5;
+    vec2 off = vec2(hash(cell + 1.7) - 0.5, hash(cell + 4.3) - 0.5) * 0.5;
+    float r = 0.022 + 0.014 * (2.0 - layer);
+    float flake = 1.0 - smoothstep(r * 0.4, r, length(f - off));
+    a += flake * smoothstep(0.45, 0.55, hash(cell + layer * 3.1)) * (0.95 - layer * 0.25);
+  }
+  a = min(a, 1.0) * 0.75;
+  return half4(vec3(0.94, 0.96, 1.0) * a, a);
+}`;
+
 function Weather({
   x,
   y,
@@ -104,6 +128,9 @@ export const Fog = (props: Area) => <Weather {...props} sksl={FOG} />;
 export const Dust = ({ amount = 1, ...props }: Area & { amount?: number }) => (
   <Weather {...props} sksl={DUST} amount={amount} />
 );
+
+/** Snow drifting down in three layers. */
+export const Snow = (props: Area) => <Weather {...props} sksl={SNOW} />;
 
 /** Rain slanting down. */
 export const Rain = (props: Area) => <Weather {...props} sksl={RAIN} />;

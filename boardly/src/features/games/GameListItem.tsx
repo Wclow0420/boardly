@@ -18,6 +18,7 @@ const TAG_VARIANTS = {
   card: "info",
   strategy: "ready",
   party: "info",
+  faction: "danger",
 } as const;
 
 /** Catalogue row: emoji tile, name + tag, player range, rating. */

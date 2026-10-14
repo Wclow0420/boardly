@@ -85,8 +85,8 @@ class Avalon(BaseGame):
     coins_play = 8
     emoji = "🕵️"
     tile_color = "#EDE4FF"
-    category = "party"
-    tag = "party"
+    category = "faction"
+    tag = "faction"
 
     def initial_state(self, num_players: int, rng: random.Random | None = None) -> dict:
         if num_players not in ROLE_SETS:

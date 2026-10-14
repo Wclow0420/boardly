@@ -20,8 +20,9 @@ export interface PopupProps {
   children: ReactNode;
 }
 
-/** A card in the middle of the screen, over the room: the game's
- *  panels (map, notebook, role...) and its prompts all open in one. */
+/** A card in the middle of the screen, over the board: a game's panels
+ *  (map, notebook, role...) and its prompts all open in one. Shared by
+ *  the games that use it (Seal the Manor, Shelter). */
 export function Popup({ visible, title, onClose, children }: PopupProps) {
   const { t } = useTranslation();
   const { colors, radius, spacing } = useTheme();

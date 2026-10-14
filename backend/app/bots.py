@@ -14,7 +14,7 @@ from pathlib import Path
 from flask import current_app
 
 # Games scripts/bots.py has a policy for
-BOT_GAMES = {"nightwatch"}
+BOT_GAMES = {"nightwatch", "shelter"}
 
 SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "bots.py"
 

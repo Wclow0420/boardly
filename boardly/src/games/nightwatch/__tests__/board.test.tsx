@@ -2,7 +2,7 @@
 // panels open as popups over it. jest.mock calls are hoisted above the
 // imports by babel-jest.
 import "@/i18n";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { ThemeProvider } from "@/theme";
 import { NightwatchBoard } from "../NightwatchBoard";
 
@@ -10,6 +10,15 @@ import { NightwatchBoard } from "../NightwatchBoard";
 jest.mock("@gorhom/bottom-sheet", () => { const { TextInput, View } = jest.requireActual("react-native"); return { BottomSheetTextInput: TextInput, BottomSheetModal: View, BottomSheetView: View, BottomSheetScrollView: View, BottomSheetBackdrop: View, BottomSheetModalProvider: View }; });
 jest.mock("@/features/cosmetics/AvatarBorder", () => ({ AvatarBorder: ({ children }: any) => children ?? null }));
 jest.mock("@/utils/haptics", () => ({ moveHaptic: jest.fn(), tapHaptic: jest.fn(), successHaptic: jest.fn(), heavyHaptic: jest.fn(), tickHaptic: jest.fn() }));
+// Set pieces (the hush, the role card, walking in) run on real
+// animations and timers, and popups wait for them. On fake timers they
+// advance with the test (waitFor steps the clock), not with how busy the
+// machine is.
+beforeEach(() => jest.useFakeTimers());
+afterEach(() => {
+  jest.runOnlyPendingTimers();
+  jest.useRealTimers();
+});
 const base: any = {"numPlayers": 5, "phase": "announce", "round": 0, "rounds": 5, "missionRoom": 6, "nextMissionRoom": 1, "missionSizes": [2, 3, 2, 3, 3], "failsRequired": [1, 1, 1, 1, 1], "event": null, "collapsed": [], "doors": [], "lockedDoor": null, "leader": null, "nextLeader": 1, "rejections": 0, "team": [], "results": [], "history": [], "timeline": [], "rolesInGame": ["apprentice", "double", "hermit", "prophet", "tracker"], "ready": [false, true, true, true, true], "voted": [false, false, false, false, false], "missionPlayed": [], "myRole": "prophet", "known": [{"seat": 2, "as": "evil"}], "assassinSeat": null, "evilSeats": null, "myRoom": 4, "myFake": null, "myFn": null, "abilityLeft": 0, "lastUsed": null, "freeMove": false, "patrolRooms": [1, 3, 4, 5, 7], "doorOptions": [], "studyOptions": [], "letterLimit": 1, "myOrder": null, "myVote": null, "myCard": null, "log": [], "assassinTarget": null, "winner": null, "winReason": null, "roles": null, "positions": null};
 const players = [0, 1, 2, 3, 4].map((s) => ({ seat: s, userId: "u" + s, username: "p" + s, borderId: "wood", avatarUrl: null }));
 const board = (state: any) => (
@@ -18,6 +27,8 @@ const board = (state: any) => (
   </ThemeProvider>
 );
 
+// The longest test: it renders every phase and panel, so give it room on
+// a busy machine (its timing no longer depends on the clock).
 it("walks announce → patrol → room → news and every panel", async () => {
   const view = await render(board(base));
   // the game opens on the hush, then the role card face down
@@ -50,7 +61,7 @@ it("walks announce → patrol → room → news and every panel", async () => {
     expect(screen.getAllByText(expected[label]).length).toBeGreaterThan(0);
     await fireEvent.press(screen.getAllByLabelText("Got it")[0]);
   }
-});
+}, 20000);
 
 it("opens the map night by night, with notes only on nights so far", async () => {
   const patrol = { round: 0, kind: "patrol", room: 0, seen: [2], company: true, fake: null, tracked: null, blocked: null };
@@ -87,6 +98,8 @@ it("keeps the Chapel's record in its book until the book is opened", async () =>
   const record = { round: 1, kind: "chapelRecord", records: [{ round: 0, prayed: true, result: "cancelled" }] };
   const chapel = { ...base, round: 1, phase: "room", myRoom: 2, myFn: "chapel", ready: [false, false, false, false, false], log: [patrol, record] };
   await render(board(chapel));
+  // the player walks into the Chapel first; nothing opens over the walk
+  await act(() => jest.advanceTimersByTime(2000));
   expect(screen.queryByText(/Night 1:/)).toBeNull();
   await fireEvent.press(screen.getByLabelText("The Chapel's record"));
   expect(screen.getByText(/Night 1:/)).toBeTruthy();
