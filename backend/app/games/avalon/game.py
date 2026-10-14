@@ -36,7 +36,7 @@ Moves:
 
 import random
 
-from app.games.base import BaseGame, GameError
+from app.games.base import BaseGame, GameError, Badge, won_as
 
 EVIL_ROLES = {"assassin", "morgana", "mordred", "oberon", "minion"}
 
@@ -87,6 +87,15 @@ class Avalon(BaseGame):
     tile_color = "#EDE4FF"
     category = "faction"
     tag = "faction"
+
+    badges = [
+        Badge("avalon.firstOp", "bronze", 1, won_as("good")),
+        Badge("avalon.mole", "silver", 1, won_as("evil")),
+        Badge("avalon.hitman", "gold", 1,
+              lambda o: o.won and o.role == "assassin"
+              and (o.facts or {}).get("reason") == "assassination"),
+        Badge("avalon.spymaster", "legendary", 25),
+    ]
 
     def initial_state(self, num_players: int, rng: random.Random | None = None) -> dict:
         if num_players not in ROLE_SETS:
@@ -264,6 +273,14 @@ class Avalon(BaseGame):
         return {**state, "phase": "finished", "winner": winner, "winReason": reason}
 
     # ----------------------------------------------------------- result
+
+    def player_outcome(self, state: dict, seat: int) -> dict:
+        role = state["roles"][seat]
+        return {
+            "side": "evil" if is_evil(role) else "good",
+            "role": role,
+            "facts": {"reason": state.get("winReason")},
+        }
 
     def get_result(self, state: dict) -> dict | None:
         if state["phase"] != "finished":

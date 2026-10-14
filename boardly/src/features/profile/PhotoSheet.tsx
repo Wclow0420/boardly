@@ -39,7 +39,7 @@ export const PhotoSheet = forwardRef<GorhomBottomSheetModal>(
         setError(
           err instanceof ApiError
             ? t([`errors.${err.code}`, err.message])
-            : t("profile.photo.failed")
+            : t("profile.photo.failed"),
         );
       } finally {
         setBusy(null);

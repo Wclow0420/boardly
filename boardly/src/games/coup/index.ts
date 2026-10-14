@@ -1,3 +1,4 @@
+import { BADGE_GLYPHS as G } from "@/components/badges/glyphs";
 import type { GameDefinition } from "../types";
 import { BACKDROP, LOGO, SKIN_COLORS } from "./art";
 import { CoupBoard } from "./CoupBoard";
@@ -22,4 +23,8 @@ export const coup: GameDefinition<CoupState> = {
   },
   needsMe: (state, mySeat) =>
     state.phase !== "finished" && taskFor(state, mySeat) !== null,
+  badges: {
+    "coup.firstWin": { glyph: G.cards, loop: "sway" },
+    "coup.kingpin": { glyph: G.coins, loop: "spin" },
+  },
 };

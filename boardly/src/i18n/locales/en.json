@@ -1543,6 +1543,22 @@
       "choose": "Choose a Photo",
       "remove": "Remove Photo",
       "failed": "Couldn't update your photo. Try again."
+    },
+    "card": {
+      "newcomer": "Newcomer",
+      "badges": "Badges",
+      "byGame": "By game",
+      "winRate": "Win rate",
+      "bestStreak": "Best streak",
+      "good": "Good",
+      "evil": "Evil",
+      "playedWon": "{{played}} played · {{wins}} won",
+      "earned": "Earned {{date}}",
+      "progress": "{{n}} / {{goal}}",
+      "locked": "Not yet earned",
+      "newBadge": "New badge!",
+      "unlocked": "{{n}} of {{total}} earned",
+      "noGames": "Finish a game to start your record."
     }
   },
   "legal": {
@@ -1773,6 +1789,158 @@
       "night": "The night",
       "private": "Only you know",
       "who": "Went: "
+    }
+  },
+  "badges": {
+    "tiers": {
+      "bronze": "Bronze",
+      "silver": "Silver",
+      "gold": "Gold",
+      "legendary": "Legendary"
+    },
+    "boardly": {
+      "firstTable": {
+        "name": "First Seat",
+        "desc": "Sit down at your first table."
+      },
+      "firstWin": {
+        "name": "First Victory",
+        "desc": "Win a game."
+      },
+      "regular": {
+        "name": "Regular",
+        "desc": "Play 10 games."
+      },
+      "streak": {
+        "name": "On Fire",
+        "desc": "Win 3 games in a row."
+      },
+      "company": {
+        "name": "Good Company",
+        "desc": "Play with 5 different people."
+      },
+      "veteran": {
+        "name": "Veteran",
+        "desc": "Play 50 games."
+      },
+      "champion": {
+        "name": "Champion",
+        "desc": "Win 25 games."
+      },
+      "legend": {
+        "name": "Legend of the Table",
+        "desc": "Play 100 games."
+      }
+    },
+    "nightwatch": {
+      "sealed": {
+        "name": "Seal Keeper",
+        "desc": "Seal the manor as a watcher."
+      },
+      "possessed": {
+        "name": "Possessed",
+        "desc": "Win on the ghosts' side."
+      },
+      "prophet": {
+        "name": "Hidden Prophet",
+        "desc": "Win as the Prophet."
+      },
+      "sharpEye": {
+        "name": "Sharp Eye",
+        "desc": "As the assassin, find the Prophet."
+      },
+      "ghostbreaker": {
+        "name": "Ghostbreaker",
+        "desc": "Win 25 games of Seal the Manor."
+      }
+    },
+    "shelter": {
+      "rescued": {
+        "name": "Rescued",
+        "desc": "Last until the convoy comes."
+      },
+      "patientZero": {
+        "name": "Patient Zero",
+        "desc": "Win as the Infected."
+      },
+      "caught": {
+        "name": "Caught It",
+        "desc": "Send the Infected out and win."
+      },
+      "fullLarder": {
+        "name": "Full Larder",
+        "desc": "Be rescued with 10 or more food in store."
+      },
+      "lastWinter": {
+        "name": "The Last Winter",
+        "desc": "Win 25 games of Shelter."
+      }
+    },
+    "avalon": {
+      "firstOp": {
+        "name": "Mission Complete",
+        "desc": "Win as an agent."
+      },
+      "mole": {
+        "name": "The Mole",
+        "desc": "Win as a mole."
+      },
+      "hitman": {
+        "name": "Hitman",
+        "desc": "As the assassin, take out the right target."
+      },
+      "spymaster": {
+        "name": "Spymaster",
+        "desc": "Win 25 games of Double Agent."
+      }
+    },
+    "manor": {
+      "dawn": {
+        "name": "Until Dawn",
+        "desc": "Keep the old man alive until 6 AM."
+      },
+      "intruder": {
+        "name": "Intruder",
+        "desc": "Win as an intruder."
+      },
+      "caught": {
+        "name": "Caught Red-Handed",
+        "desc": "Catch the intruders and win."
+      },
+      "lord": {
+        "name": "Lord of the Manor",
+        "desc": "Win 25 games of Midnight Manor."
+      }
+    },
+    "coup": {
+      "firstWin": {
+        "name": "Open for Business",
+        "desc": "Win a game of Hustle."
+      },
+      "kingpin": {
+        "name": "Kingpin",
+        "desc": "Win 10 games of Hustle."
+      }
+    },
+    "liarsdice": {
+      "firstWin": {
+        "name": "Straight Face",
+        "desc": "Win a game of Liar's Dice."
+      },
+      "bluffer": {
+        "name": "Master Bluffer",
+        "desc": "Win 10 games of Liar's Dice."
+      }
+    },
+    "tictactoe": {
+      "firstWin": {
+        "name": "Three in a Row",
+        "desc": "Win a game of Tic-Tac-Toe."
+      },
+      "master": {
+        "name": "Grid Master",
+        "desc": "Win 10 games of Tic-Tac-Toe."
+      }
     }
   }
 }

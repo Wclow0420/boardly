@@ -40,7 +40,7 @@ Moves:
 import copy
 import random
 
-from app.games.base import BaseGame, GameError
+from app.games.base import BaseGame, GameError, Badge
 
 ROLES = ["duke", "assassin", "captain", "ambassador", "contessa"]
 COPIES_PER_ROLE = 3
@@ -107,6 +107,11 @@ class Coup(BaseGame):
     tile_color = "#FFEBD6"
     category = "strategy"
     tag = "card"
+
+    badges = [
+        Badge("coup.firstWin", "bronze", 1),
+        Badge("coup.kingpin", "gold", 10),
+    ]
 
     def initial_state(self, num_players: int, rng: random.Random | None = None) -> dict:
         if not self.min_players <= num_players <= self.max_players:

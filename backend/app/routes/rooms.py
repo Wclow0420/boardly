@@ -8,6 +8,7 @@ from app.bots import BOT_GAMES, bots_available, spawn_bots
 from app.extensions import db, socketio
 from app.games import GameError, get_game
 from app.models import GameSession, Room, RoomPlayer
+from app.outcomes import record_outcomes
 from app.rewards import grant_game_rewards
 from app.utils import api_error
 
@@ -295,6 +296,7 @@ def make_move(room_id):
         session.winner_user_ids = [str(user_id) for user_id in winners]
         session.winner_user_id = winners[0] if len(winners) == 1 else None
         grant_game_rewards(room, session)
+        record_outcomes(room, session)
     db.session.commit()
 
     socketio.emit("game_updated", {"roomId": str(room.id)}, to=f"room:{room.id}")
@@ -386,6 +388,7 @@ def leave(room, player):
                 session.winner_user_id = remaining[0].user_id
                 session.winner_user_ids = [str(remaining[0].user_id)]
             grant_game_rewards(room, session, abandoned=True, exclude=user_id)
+            record_outcomes(room, session, abandoned=True, exclude=user_id)
         db.session.commit()
         socketio.emit(
             "game_updated", {"roomId": str(room.id)}, to=f"room:{room.id}"

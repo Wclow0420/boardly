@@ -1,3 +1,4 @@
+import { GLYPHS } from "./icons";
 import type { GameDefinition } from "../types";
 import { ShelterBoxArt } from "./BoxArt";
 import { ShelterBoard } from "./ShelterBoard";
@@ -52,4 +53,11 @@ export const shelter: GameDefinition<ShelterState> = {
   },
   needsMe: (state) => state.canAct,
   boxArt: ShelterBoxArt,
+  badges: {
+    "shelter.rescued": { glyph: GLYPHS.rescue, loop: "bob" },
+    "shelter.patientZero": { glyph: GLYPHS.infected, loop: "spin" },
+    "shelter.caught": { glyph: GLYPHS.exile, loop: "pulse" },
+    "shelter.fullLarder": { glyph: GLYPHS.food, loop: "pulse" },
+    "shelter.lastWinter": { glyph: GLYPHS.fire, loop: "flicker" },
+  },
 };

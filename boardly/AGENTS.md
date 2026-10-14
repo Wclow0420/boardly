@@ -89,6 +89,27 @@ otherwise.
   Pass the game's `GameText` as `Text`. See `shelterPages`
   (`shelter/ShelterBoard.tsx`) and `manorPages`
   (`nightwatch/NightwatchBoard.tsx`).
+- **Stats and badges.** Every game feeds the profile's player card.
+  Backend (`backend/app/games/<key>/game.py`):
+  - `player_outcome(state, seat)` returns the player's `side`
+    ("good"/"evil" — required in any game with hidden sides), `role`,
+    and `facts` (anything a badge needs: the win reason, food left…).
+  - `badges = [Badge("<key>.<name>", tier, goal, match)]`. Ship at
+    least: a bronze first win (in faction games, one per side), one or
+    two silver/gold badges for the game's signature feats (the
+    assassin finding the Prophet, being rescued with a full larder),
+    and a legendary for 25 wins. `match` gets the outcome row (`won`,
+    `side`, `role`, `facts`); use `won_as(side)` and keep wins handed
+    over by a walk-out out of it.
+  App (`src/games/<key>/index.ts`): a `badges` entry for every key —
+  `{ glyph, loop }`, the emblem drawn from the game's own icon set
+  (`icons.tsx`) or `components/badges/glyphs.ts`, and how it moves
+  (`flicker`, `sway`, `spin`, `bob`, `pulse`, `tumble`; pick what
+  suits the object). Name and description under
+  `badges.<key>.<name>.{name,desc}` in all three locales. The badge
+  itself (metal rim by tier, enamel in the game's colour, halo, light
+  sweep, sparkles, the stamp when earned) is shared: never draw your
+  own. Check them all at `boardly-dev://dev/badges`.
 - **Player counts** get their own rules page: a table built from the
   game's count tables in `logic.ts` (sides, roles, team sizes, win
   thresholds) plus notes — see `CountsPage` in both games' `rules.tsx`.

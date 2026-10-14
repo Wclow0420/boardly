@@ -55,7 +55,7 @@ Moves:
 
 import random
 
-from app.games.base import BaseGame, GameError
+from app.games.base import BaseGame, GameError, Badge, won_as
 
 ROOMS = [
     "study", "library", "bedroom",
@@ -116,6 +116,13 @@ class Manor(BaseGame):
     tile_color = "#E9E2F7"
     category = "faction"
     tag = "faction"
+
+    badges = [
+        Badge("manor.dawn", "bronze", 1, lambda o: o.won and o.side == "good" and (o.facts or {}).get("reason") == "dawn"),
+        Badge("manor.intruder", "silver", 1, won_as("evil")),
+        Badge("manor.caught", "gold", 1, lambda o: o.won and o.side == "good" and (o.facts or {}).get("reason") == "caught"),
+        Badge("manor.lord", "legendary", 25),
+    ]
 
     def __init__(self, rng: random.Random | None = None):
         # The old man's wandering and tie-breaks; tests pass a seeded one
@@ -573,6 +580,14 @@ class Manor(BaseGame):
         }
 
     # ----------------------------------------------------------- result
+
+    def player_outcome(self, state: dict, seat: int) -> dict:
+        role = state["roles"][seat]
+        return {
+            "side": "evil" if is_evil(role) else "good",
+            "role": role,
+            "facts": {"reason": state.get("winReason")},
+        }
 
     def get_result(self, state: dict) -> dict | None:
         if state["phase"] != "finished":

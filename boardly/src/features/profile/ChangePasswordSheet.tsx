@@ -45,7 +45,7 @@ export const ChangePasswordSheet = forwardRef<GorhomBottomSheetModal>(
         setError(
           err instanceof ApiError
             ? t([`errors.${err.code}`, err.message])
-            : t("common.errorTitle")
+            : t("common.errorTitle"),
         );
       } finally {
         setSaving(false);
@@ -93,7 +93,7 @@ export const ChangePasswordSheet = forwardRef<GorhomBottomSheetModal>(
         </View>
       </BottomSheetModal>
     );
-  }
+  },
 );
 
 const styles = StyleSheet.create({

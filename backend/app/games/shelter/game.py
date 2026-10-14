@@ -71,7 +71,7 @@ Moves:
 
 import random
 
-from app.games.base import BaseGame, GameError
+from app.games.base import BaseGame, GameError, Badge, won_as
 
 DAYS = 6
 PLACES = ("farm", "market", "hospital")
@@ -132,6 +132,17 @@ class Shelter(BaseGame):
     tile_color = "#E3ECF5"
     category = "faction"
     tag = "faction"
+
+    badges = [
+        Badge("shelter.rescued", "bronze", 1, won_as("good")),
+        Badge("shelter.patientZero", "silver", 1, won_as("evil")),
+        Badge("shelter.caught", "silver", 1, lambda o: o.won and o.side == "good" and (o.facts or {}).get("reason") == "exiled"),
+        Badge("shelter.fullLarder", "gold", 1,
+              lambda o: o.won and o.side == "good"
+              and (o.facts or {}).get("reason") == "rescue"
+              and (o.facts or {}).get("store", 0) >= 10),
+        Badge("shelter.lastWinter", "legendary", 25),
+    ]
 
     def __init__(self, rng: random.Random | None = None):
         # Who turns and when, card draws, who goes hungry; tests pass a
@@ -570,6 +581,14 @@ class Shelter(BaseGame):
                 "winReason": reason, "posts": [None] * n, "votes": [None] * n}
 
     # ------------------------------------------------------------- result
+
+    def player_outcome(self, state: dict, seat: int) -> dict:
+        role = state["roles"][seat]
+        return {
+            "side": "evil" if role == "infected" else "good",
+            "role": role,
+            "facts": {"reason": state.get("winReason"), "store": state.get("store", 0)},
+        }
 
     def get_result(self, state: dict) -> dict | None:
         if state["phase"] != "finished":

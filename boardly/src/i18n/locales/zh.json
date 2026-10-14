@@ -1536,6 +1536,22 @@
       "choose": "选择照片",
       "remove": "移除照片",
       "failed": "头像更新失败，请重试。"
+    },
+    "card": {
+      "newcomer": "新人",
+      "badges": "徽章",
+      "byGame": "各游戏战绩",
+      "winRate": "胜率",
+      "bestStreak": "最佳连胜",
+      "good": "好人",
+      "evil": "坏人",
+      "playedWon": "玩了 {{played}} 局 · 赢 {{wins}} 局",
+      "earned": "{{date}} 获得",
+      "progress": "{{n}} / {{goal}}",
+      "locked": "尚未获得",
+      "newBadge": "新徽章！",
+      "unlocked": "已获得 {{n}} / {{total}}",
+      "noGames": "玩完一局就会开始记录。"
     }
   },
   "legal": {
@@ -1766,6 +1782,158 @@
       "night": "夜里",
       "private": "只有你知道",
       "who": "去的人："
+    }
+  },
+  "badges": {
+    "tiers": {
+      "bronze": "铜",
+      "silver": "银",
+      "gold": "金",
+      "legendary": "传说"
+    },
+    "boardly": {
+      "firstTable": {
+        "name": "初次入座",
+        "desc": "坐上你的第一张桌子。"
+      },
+      "firstWin": {
+        "name": "首胜",
+        "desc": "赢下一局。"
+      },
+      "regular": {
+        "name": "常客",
+        "desc": "玩 10 局。"
+      },
+      "streak": {
+        "name": "连胜",
+        "desc": "连赢 3 局。"
+      },
+      "company": {
+        "name": "好伙伴",
+        "desc": "和 5 个不同的人一起玩。"
+      },
+      "veteran": {
+        "name": "老玩家",
+        "desc": "玩 50 局。"
+      },
+      "champion": {
+        "name": "冠军",
+        "desc": "赢 25 局。"
+      },
+      "legend": {
+        "name": "桌游传奇",
+        "desc": "玩 100 局。"
+      }
+    },
+    "nightwatch": {
+      "sealed": {
+        "name": "封印守护者",
+        "desc": "以守夜人阵营封印庄园。"
+      },
+      "possessed": {
+        "name": "附身",
+        "desc": "以坏人阵营获胜。"
+      },
+      "prophet": {
+        "name": "隐藏的先知",
+        "desc": "以先知身份获胜。"
+      },
+      "sharpEye": {
+        "name": "锐眼",
+        "desc": "作为刺客找出先知。"
+      },
+      "ghostbreaker": {
+        "name": "驱灵大师",
+        "desc": "赢 25 局守夜。"
+      }
+    },
+    "shelter": {
+      "rescued": {
+        "name": "获救",
+        "desc": "撑到救援车队到来。"
+      },
+      "patientZero": {
+        "name": "零号病人",
+        "desc": "以感染者身份获胜。"
+      },
+      "caught": {
+        "name": "揪出来了",
+        "desc": "赶走感染者并获胜。"
+      },
+      "fullLarder": {
+        "name": "满仓",
+        "desc": "获救时储藏室还有 10 份以上食物。"
+      },
+      "lastWinter": {
+        "name": "最后的冬天",
+        "desc": "赢 25 局避难所。"
+      }
+    },
+    "avalon": {
+      "firstOp": {
+        "name": "任务完成",
+        "desc": "以特工阵营获胜。"
+      },
+      "mole": {
+        "name": "内鬼",
+        "desc": "以内鬼阵营获胜。"
+      },
+      "hitman": {
+        "name": "杀手",
+        "desc": "作为刺客刺中正确目标。"
+      },
+      "spymaster": {
+        "name": "间谍头子",
+        "desc": "赢 25 局双面间谍。"
+      }
+    },
+    "manor": {
+      "dawn": {
+        "name": "撑到天亮",
+        "desc": "让老人活到早上 6 点。"
+      },
+      "intruder": {
+        "name": "闯入者",
+        "desc": "以闯入者身份获胜。"
+      },
+      "caught": {
+        "name": "当场抓获",
+        "desc": "抓住闯入者并获胜。"
+      },
+      "lord": {
+        "name": "庄园之主",
+        "desc": "赢 25 局午夜庄园。"
+      }
+    },
+    "coup": {
+      "firstWin": {
+        "name": "开张大吉",
+        "desc": "赢一局夜市风云。"
+      },
+      "kingpin": {
+        "name": "地头蛇",
+        "desc": "赢 10 局夜市风云。"
+      }
+    },
+    "liarsdice": {
+      "firstWin": {
+        "name": "面不改色",
+        "desc": "赢一局大话骰。"
+      },
+      "bluffer": {
+        "name": "吹牛大王",
+        "desc": "赢 10 局大话骰。"
+      }
+    },
+    "tictactoe": {
+      "firstWin": {
+        "name": "三连",
+        "desc": "赢一局井字棋。"
+      },
+      "master": {
+        "name": "井字大师",
+        "desc": "赢 10 局井字棋。"
+      }
     }
   }
 }

@@ -1,3 +1,4 @@
+import { BADGE_GLYPHS as G } from "@/components/badges/glyphs";
 import type { GameDefinition } from "../types";
 import { BACKDROP, LOGO, SKIN_COLORS } from "./art";
 import { AvalonBoard } from "./AvalonBoard";
@@ -22,4 +23,10 @@ export const avalon: GameDefinition<AvalonState> = {
   },
   needsMe: (state, mySeat) =>
     state.phase !== "finished" && pendingAction(state, mySeat) !== null,
+  badges: {
+    "avalon.firstOp": { glyph: G.star, loop: "pulse" },
+    "avalon.mole": { glyph: G.mask, loop: "bob" },
+    "avalon.hitman": { glyph: G.target, loop: "spin" },
+    "avalon.spymaster": { glyph: G.crown, loop: "pulse" },
+  },
 };

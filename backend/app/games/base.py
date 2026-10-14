@@ -1,4 +1,34 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Any, Callable
+
+# Badge tiers, rarest last
+TIERS = ("bronze", "silver", "gold", "legendary")
+
+
+@dataclass(frozen=True)
+class Badge:
+    """An achievement: earned once `goal` of a player's finished games
+    match `match`. `match` gets that game's outcome row (SessionPlayer:
+    won, side, role, facts...). Wins handed over by someone walking out
+    never count: a game's own badges skip those games entirely, and the
+    default `match` (a win) skips them too.
+
+    The app names it from badges.<key> in its locales and draws it from
+    the game's badge list (see boardly/AGENTS.md)."""
+
+    key: str
+    tier: str
+    goal: int = 1
+    match: Callable[[Any], bool] = lambda outcome: outcome.won and not outcome.abandoned
+
+
+def won_as(side: str) -> Callable[[Any], bool]:
+    return lambda o: o.won and not o.abandoned and o.side == side
+
+
+def fact(name: str, value=True) -> Callable[[Any], bool]:
+    return lambda o: (o.facts or {}).get(name) == value
 
 
 class GameError(Exception):
@@ -34,6 +64,9 @@ class BaseGame(ABC):
     # Settings the host picks in the lobby, as {name: [choices]}; the
     # first choice is the default. E.g. {"mode": ["knockout", "endless"]}.
     options: dict[str, list[str]] = {}
+
+    # Achievements for this game, keyed "<game key>.<name>" (see Badge)
+    badges: list[Badge] = []
 
     @abstractmethod
     def initial_state(self, num_players: int) -> dict:
@@ -71,6 +104,13 @@ class BaseGame(ABC):
         """Start a game with the lobby's settings. Games with options
         override this; the rest ignore them."""
         return self.initial_state(num_players)
+
+    def player_outcome(self, state: dict, seat: int) -> dict:
+        """What to remember about one player once the game is over, for
+        stats and badges: {"side": "good" | "evil" | None, "role": str |
+        None, "facts": {...}}. Games with hidden sides must give the
+        side; facts are whatever the game's badges look at."""
+        return {}
 
     def view_for(self, state: dict, seat: int) -> dict:
         """State as seen by one player. Override for games with hidden

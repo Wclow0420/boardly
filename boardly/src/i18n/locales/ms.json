@@ -1540,6 +1540,22 @@
       "choose": "Pilih Foto",
       "remove": "Buang Foto",
       "failed": "Foto tidak dapat dikemas kini. Cuba lagi."
+    },
+    "card": {
+      "newcomer": "Pendatang Baharu",
+      "badges": "Lencana",
+      "byGame": "Ikut permainan",
+      "winRate": "Kadar menang",
+      "bestStreak": "Rentetan terbaik",
+      "good": "Baik",
+      "evil": "Jahat",
+      "playedWon": "{{played}} dimain · {{wins}} menang",
+      "earned": "Diperoleh {{date}}",
+      "progress": "{{n}} / {{goal}}",
+      "locked": "Belum diperoleh",
+      "newBadge": "Lencana baharu!",
+      "unlocked": "{{n}} daripada {{total}} diperoleh",
+      "noGames": "Habiskan satu permainan untuk mula merekod."
     }
   },
   "legal": {
@@ -1770,6 +1786,158 @@
       "night": "Malam",
       "private": "Hanya anda tahu",
       "who": "Pergi: "
+    }
+  },
+  "badges": {
+    "tiers": {
+      "bronze": "Gangsa",
+      "silver": "Perak",
+      "gold": "Emas",
+      "legendary": "Lagenda"
+    },
+    "boardly": {
+      "firstTable": {
+        "name": "Tempat Pertama",
+        "desc": "Duduk di meja pertama anda."
+      },
+      "firstWin": {
+        "name": "Kemenangan Pertama",
+        "desc": "Menang satu permainan."
+      },
+      "regular": {
+        "name": "Pelanggan Tetap",
+        "desc": "Main 10 permainan."
+      },
+      "streak": {
+        "name": "Panas Membara",
+        "desc": "Menang 3 permainan berturut-turut."
+      },
+      "company": {
+        "name": "Teman Baik",
+        "desc": "Main bersama 5 orang berbeza."
+      },
+      "veteran": {
+        "name": "Veteran",
+        "desc": "Main 50 permainan."
+      },
+      "champion": {
+        "name": "Juara",
+        "desc": "Menang 25 permainan."
+      },
+      "legend": {
+        "name": "Lagenda Meja",
+        "desc": "Main 100 permainan."
+      }
+    },
+    "nightwatch": {
+      "sealed": {
+        "name": "Penjaga Meterai",
+        "desc": "Meterai rumah agam sebagai penjaga."
+      },
+      "possessed": {
+        "name": "Dirasuk",
+        "desc": "Menang di pihak hantu."
+      },
+      "prophet": {
+        "name": "Peramal Tersembunyi",
+        "desc": "Menang sebagai Peramal."
+      },
+      "sharpEye": {
+        "name": "Mata Tajam",
+        "desc": "Sebagai pembunuh upahan, cari Peramal."
+      },
+      "ghostbreaker": {
+        "name": "Pemburu Hantu",
+        "desc": "Menang 25 permainan Meterai Rumah Agam."
+      }
+    },
+    "shelter": {
+      "rescued": {
+        "name": "Diselamatkan",
+        "desc": "Bertahan sehingga konvoi tiba."
+      },
+      "patientZero": {
+        "name": "Pesakit Sifar",
+        "desc": "Menang sebagai yang Dijangkiti."
+      },
+      "caught": {
+        "name": "Dapat Tangkap",
+        "desc": "Halau yang Dijangkiti dan menang."
+      },
+      "fullLarder": {
+        "name": "Stor Penuh",
+        "desc": "Diselamatkan dengan 10 makanan atau lebih dalam stor."
+      },
+      "lastWinter": {
+        "name": "Musim Sejuk Terakhir",
+        "desc": "Menang 25 permainan Tempat Perlindungan."
+      }
+    },
+    "avalon": {
+      "firstOp": {
+        "name": "Misi Selesai",
+        "desc": "Menang sebagai ejen."
+      },
+      "mole": {
+        "name": "Si Tikus",
+        "desc": "Menang sebagai tikus."
+      },
+      "hitman": {
+        "name": "Pembunuh Upahan",
+        "desc": "Sebagai pembunuh upahan, kena sasaran yang betul."
+      },
+      "spymaster": {
+        "name": "Ketua Pengintip",
+        "desc": "Menang 25 permainan Double Agent."
+      }
+    },
+    "manor": {
+      "dawn": {
+        "name": "Hingga Subuh",
+        "desc": "Pastikan orang tua itu hidup sehingga 6 pagi."
+      },
+      "intruder": {
+        "name": "Penceroboh",
+        "desc": "Menang sebagai penceroboh."
+      },
+      "caught": {
+        "name": "Tertangkap Basah",
+        "desc": "Tangkap penceroboh dan menang."
+      },
+      "lord": {
+        "name": "Tuan Rumah Agam",
+        "desc": "Menang 25 permainan Midnight Manor."
+      }
+    },
+    "coup": {
+      "firstWin": {
+        "name": "Buka Kedai",
+        "desc": "Menang satu permainan Hustle."
+      },
+      "kingpin": {
+        "name": "Taiko",
+        "desc": "Menang 10 permainan Hustle."
+      }
+    },
+    "liarsdice": {
+      "firstWin": {
+        "name": "Muka Selamba",
+        "desc": "Menang satu permainan Dadu Penipu."
+      },
+      "bluffer": {
+        "name": "Raja Temberang",
+        "desc": "Menang 10 permainan Dadu Penipu."
+      }
+    },
+    "tictactoe": {
+      "firstWin": {
+        "name": "Tiga Sebaris",
+        "desc": "Menang satu permainan Tic-Tac-Toe."
+      },
+      "master": {
+        "name": "Pakar Grid",
+        "desc": "Menang 10 permainan Tic-Tac-Toe."
+      }
     }
   }
 }

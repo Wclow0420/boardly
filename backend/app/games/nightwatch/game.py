@@ -82,7 +82,7 @@ Moves:
 
 import random
 
-from app.games.base import BaseGame, GameError
+from app.games.base import BaseGame, GameError, Badge, won_as
 
 ROOMS = [
     "belltower", "study", "chapel",
@@ -210,6 +210,16 @@ class Nightwatch(BaseGame):
     tile_color = "#F7E6D5"
     category = "faction"
     tag = "faction"
+
+    badges = [
+        Badge("nightwatch.sealed", "bronze", 1, won_as("good")),
+        Badge("nightwatch.possessed", "silver", 1, won_as("evil")),
+        Badge("nightwatch.prophet", "silver", 1, lambda o: o.won and o.role == "prophet"),
+        Badge("nightwatch.sharpEye", "gold", 1,
+              lambda o: o.won and (o.facts or {}).get("assassin")
+              and (o.facts or {}).get("reason") == "assassination"),
+        Badge("nightwatch.ghostbreaker", "legendary", 25),
+    ]
 
     def __init__(self, rng: random.Random | None = None):
         # Room draws, night events and the first leader; tests pass a
@@ -920,6 +930,14 @@ class Nightwatch(BaseGame):
                 "winner": winner, "winReason": reason}
 
     # ----------------------------------------------------------- result
+
+    def player_outcome(self, state: dict, seat: int) -> dict:
+        role = state["roles"][seat]
+        return {
+            "side": "evil" if is_evil(role) else "good",
+            "role": role,
+            "facts": {"reason": state.get("winReason"), "assassin": seat == assassin_seat(state["roles"])},
+        }
 
     def get_result(self, state: dict) -> dict | None:
         if state["phase"] != "finished":
