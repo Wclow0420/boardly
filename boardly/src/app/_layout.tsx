@@ -19,8 +19,10 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef } from "react";
 import { ActivityIndicator, AppState, Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import Animated, { useSharedValue } from "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { AppIntro, useIntroAppStyle } from "@/components/AppIntro";
 import { WebFrame } from "@/components/ui";
 import { SessionProvider, useSession } from "@/context/SessionContext";
 import { FriendsRealtime } from "@/features/friends/FriendsRealtime";
@@ -89,11 +91,20 @@ function RootNavigator() {
     }
   }, [status, router, invitePath]);
 
+  // Phones open by flying in through the logo; the app zooms along
+  const introScale = useSharedValue(1);
+  const appStyle = useIntroAppStyle(introScale);
+  const intro =
+    Platform.OS === "web" ? null : <AppIntro ready={status !== "loading"} scale={introScale} />;
+
   if (status === "loading") {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator />
-      </View>
+      <>
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <ActivityIndicator />
+        </View>
+        {intro}
+      </>
     );
   }
 
@@ -101,6 +112,7 @@ function RootNavigator() {
 
   return (
     <>
+      <Animated.View style={appStyle}>
       {Platform.OS === "web" ? (
         <Head>
           <title>Boardly</title>
@@ -119,7 +131,9 @@ function RootNavigator() {
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
       </Stack>
+      </Animated.View>
       {signedIn ? <FriendsRealtime /> : null}
+      {intro}
     </>
   );
 }
@@ -133,7 +147,8 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (fontsLoaded) {
+    // On phones the intro (AppIntro) takes over from the splash itself
+    if (fontsLoaded && Platform.OS === "web") {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
