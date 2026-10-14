@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 
 import { ApiError } from "@/api/client";
 import {
@@ -16,6 +16,7 @@ import {
 import { useSession } from "@/context/SessionContext";
 import { useTheme } from "@/theme";
 import { tapHaptic } from "@/utils/haptics";
+import { openLegalPage } from "@/utils/legal";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const { t } = useTranslation();
@@ -101,6 +102,31 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           loading={submitting}
           disabled={!valid}
         />
+        {mode === "register" ? (
+          <AppText variant="caption" color="textSubtle" align="center">
+            <Trans
+              i18nKey="legal.agreement"
+              components={{
+                terms: (
+                  <AppText
+                    variant="caption"
+                    color="primary"
+                    accessibilityRole="link"
+                    onPress={() => openLegalPage("terms")}
+                  />
+                ),
+                privacy: (
+                  <AppText
+                    variant="caption"
+                    color="primary"
+                    accessibilityRole="link"
+                    onPress={() => openLegalPage("privacy")}
+                  />
+                ),
+              }}
+            />
+          </AppText>
+        ) : null}
       </Frame>
 
       {/* Switch mode */}

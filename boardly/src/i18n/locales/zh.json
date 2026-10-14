@@ -1412,6 +1412,11 @@
       "failed": "头像更新失败，请重试。"
     }
   },
+  "legal": {
+    "privacy": "隐私政策",
+    "terms": "服务条款",
+    "agreement": "注册即表示你同意我们的<terms>服务条款</terms>和<privacy>隐私政策</privacy>。"
+  },
   "auth": {
     "loginTitle": "欢迎回来！",
     "registerTitle": "创建账号",
