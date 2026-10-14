@@ -1,0 +1,138 @@
+<!doctype html>
+<!-- The picture chat apps show when a boardly.lol link is pasted
+     (1200 × 630). Not part of the published site: it is the drawing
+     the two PNGs in public/ are made from.
+
+     To remake them after a change, from the repo root:
+
+       CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+       for v in home invite; do
+         "$CHROME" --headless --hide-scrollbars --window-size=1200,630 \
+           --virtual-time-budget=4000 \
+           --screenshot="website/public/og-$v.png" \
+           "file://$PWD/website/og-image.html?$v"
+       done
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@800&family=Poppins:wght@500;600&display=swap"
+    />
+    <style>
+      html,
+      body {
+        margin: 0;
+      }
+
+      body {
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 56px;
+        padding: 0 84px;
+        box-sizing: border-box;
+        background:
+          radial-gradient(520px 420px at 290px 320px, rgba(255, 138, 61, 0.34), transparent 70%),
+          #18202b;
+        color: #fbf8f3;
+        font-family: "Poppins", sans-serif;
+      }
+
+      .meeple {
+        width: 360px;
+        flex: none;
+        filter: drop-shadow(0 30px 34px rgba(0, 0, 0, 0.5));
+        transform: rotate(-6deg);
+      }
+
+      .kicker {
+        margin: 0 0 14px;
+        color: #ff8a3d;
+        font-size: 26px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-family: "Baloo 2", sans-serif;
+        font-size: 104px;
+        font-weight: 800;
+        line-height: 0.95;
+        letter-spacing: -0.01em;
+        background: linear-gradient(180deg, #fff 35%, #ffc83d 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .sub {
+        margin: 22px 0 0;
+        color: #a9b1be;
+        font-size: 34px;
+        font-weight: 500;
+      }
+
+      /* Loose pieces in the corners */
+      .pawn {
+        position: absolute;
+        fill: currentColor;
+        filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.4));
+      }
+
+      .coin {
+        position: absolute;
+        right: 70px;
+        top: 56px;
+        width: 84px;
+        height: 84px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 30%, #ffe89a, #ffc83d 45%, #e39a1c);
+        box-shadow:
+          inset 0 0 0 8px rgba(255, 255, 255, 0.25),
+          0 9px 0 #b9740f,
+          0 22px 24px rgba(0, 0, 0, 0.35);
+        transform: rotate(12deg);
+      }
+
+      body:not(.invite) .only-invite,
+      body.invite .only-home {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute">
+      <symbol id="m" viewBox="0 0 100 100">
+        <path
+          d="M50 4c11 0 18 8 18 18 0 6-3 11-7 14 17 4 35 12 35 22 0 8-8 10-16 8l-8-2c4 12 12 24 12 30 0 3-2 4-6 4H60c-2 0-3-1-4-3l-6-15-6 15c-1 2-2 3-4 3H22c-4 0-6-1-6-4 0-6 8-18 12-30l-8 2c-8 2-16 0-16-8 0-10 18-18 35-22-4-3-7-8-7-14C32 12 39 4 50 4Z"
+        />
+      </symbol>
+    </svg>
+
+    <img class="meeple" src="public/meeple.png" alt="" />
+    <div>
+      <p class="kicker only-invite">You're invited</p>
+      <h1 class="only-invite">Join my table on Boardly</h1>
+      <h1 class="only-home">Boardly</h1>
+      <p class="sub only-invite">Tap to take your seat.</p>
+      <p class="sub only-home">Game night, anywhere.</p>
+    </div>
+
+    <div class="coin"></div>
+    <svg class="pawn" style="color: #4a8fe8; width: 92px; right: 150px; bottom: 44px; transform: rotate(10deg)" viewBox="0 0 100 100"><use href="#m" /></svg>
+    <svg class="pawn" style="color: #46b96b; width: 60px; right: 60px; bottom: 150px; transform: rotate(-12deg)" viewBox="0 0 100 100"><use href="#m" /></svg>
+    <svg class="pawn" style="color: #e85d5d; width: 56px; left: 40px; top: 44px; transform: rotate(-14deg)" viewBox="0 0 100 100"><use href="#m" /></svg>
+
+    <script>
+      // og-image.html?invite draws the invite picture, ?home the other
+      if (location.search === "?invite") document.body.classList.add("invite");
+    </script>
+  </body>
+</html>

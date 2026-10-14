@@ -1539,6 +1539,11 @@
       "failed": "Foto tidak dapat dikemas kini. Cuba lagi."
     }
   },
+  "legal": {
+    "privacy": "Dasar Privasi",
+    "terms": "Terma Perkhidmatan",
+    "agreement": "Dengan mendaftar, anda bersetuju dengan <terms>Terma Perkhidmatan</terms> dan <privacy>Dasar Privasi</privacy> kami."
+  },
   "auth": {
     "loginTitle": "Selamat kembali!",
     "registerTitle": "Cipta akaun anda",
