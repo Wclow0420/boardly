@@ -25,7 +25,8 @@ import { useGameName } from "@/games/names";
 import { TABLE, fontFamily } from "@/theme";
 import { heavyHaptic, tapHaptic } from "@/utils/haptics";
 import { badgeArt } from "./art";
-import { sortBadges } from "./order";
+import { NextBadge } from "./NextBadge";
+import { nextLevel, sortBadges } from "./order";
 import { badgeText } from "./strings";
 
 const COLUMNS = 4;
@@ -85,7 +86,12 @@ export function BadgeGrid({
             }}
           />
         ))}
-      <BadgeDetail badge={open} clock={clock} onClose={() => setOpen(null)} />
+      <BadgeDetail
+        badge={open}
+        badges={badges}
+        clock={clock}
+        onClose={() => setOpen(null)}
+      />
     </View>
   );
 }
@@ -204,10 +210,13 @@ function BadgeCell({
 
 function BadgeDetail({
   badge,
+  badges,
   clock,
   onClose,
 }: {
   badge: BadgeRecord | null;
+  /** All of them, to find the next level up. */
+  badges: BadgeRecord[];
   clock: SharedValue<number>;
   onClose: () => void;
 }) {
@@ -224,6 +233,10 @@ function BadgeDetail({
         year: "numeric",
       })
     : null;
+  // the first level above this one still to earn (skipping any already won)
+  let up = earned ? nextLevel(badges, badge) : null;
+  while (up?.unlockedAt) up = nextLevel(badges, up);
+  const top = earned && badge.series !== null && up === null;
   return (
     <Popup visible title={text.name} onClose={onClose}>
       <View style={styles.detail}>
@@ -243,9 +256,24 @@ function BadgeDetail({
           {text.desc}
         </AppText>
         {earned ? (
-          <AppText variant="caption" color="textMuted" align="center">
-            {t("profile.card.earned", { date: earned })}
-          </AppText>
+          <>
+            <AppText variant="caption" color="textMuted" align="center">
+              {t("profile.card.earned", { date: earned })}
+            </AppText>
+            {up ? (
+              <View style={styles.up}>
+                <NextBadge
+                  badge={up}
+                  clock={clock}
+                  label={t("badges.celebrate.nextLevel")}
+                />
+              </View>
+            ) : top ? (
+              <AppText style={[styles.tier, { color: metal.glow }]}>
+                {`★  ${t("badges.celebrate.topLevel")}`}
+              </AppText>
+            ) : null}
+          </>
         ) : (
           <View style={styles.barWrap}>
             <View style={styles.bar}>
@@ -257,10 +285,10 @@ function BadgeDetail({
               />
             </View>
             <AppText variant="caption" color="textMuted">
-              {t("profile.card.progress", {
-                n: badge.progress,
-                goal: badge.goal,
-              })}
+              {`${t("profile.card.progress", { n: badge.progress, goal: badge.goal })}  ·  `}
+              <AppText variant="caption" style={styles.toGo}>
+                {t("badges.celebrate.toGo", { n: badge.goal - badge.progress })}
+              </AppText>
             </AppText>
           </View>
         )}
@@ -296,6 +324,14 @@ const styles = StyleSheet.create({
   },
   detail: { alignItems: "center", gap: 8, paddingBottom: 4 },
   tier: { fontFamily: fontFamily.semiBold, fontSize: 13, letterSpacing: 0.5 },
+  up: {
+    alignSelf: "stretch",
+    marginTop: 8,
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: "rgba(0,0,0,0.25)",
+  },
+  toGo: { color: "#F2B630", fontFamily: fontFamily.semiBold },
   barWrap: { alignSelf: "stretch", alignItems: "center", gap: 6, marginTop: 4 },
   bar: {
     alignSelf: "stretch",

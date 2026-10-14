@@ -21,6 +21,9 @@ class Badge:
     tier: str
     goal: int = 1
     match: Callable[[Any], bool] = lambda outcome: outcome.won and not outcome.abandoned
+    # Badges that count the same thing with bigger goals are levels of one
+    # series ("wins": 1, 10, 25...): the app shows the next level up.
+    series: str | None = None
 
 
 def won_as(side: str) -> Callable[[Any], bool]:

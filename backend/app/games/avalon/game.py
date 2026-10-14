@@ -94,7 +94,7 @@ class Avalon(BaseGame):
         Badge("avalon.hitman", "gold", 1,
               lambda o: o.won and o.role == "assassin"
               and (o.facts or {}).get("reason") == "assassination"),
-        Badge("avalon.spymaster", "legendary", 25),
+        Badge("avalon.spymaster", "legendary", 25, series="wins"),
     ]
 
     def initial_state(self, num_players: int, rng: random.Random | None = None) -> dict:

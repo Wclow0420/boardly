@@ -232,6 +232,9 @@ export interface BadgeRecord {
   key: string;
   gameType: string | null;
   tier: "bronze" | "silver" | "gold" | "legendary";
+  /** Badges counting the same thing with bigger goals share a series
+   *  ("played", "wins"): each is a level of it. */
+  series: string | null;
   goal: number;
   progress: number;
   /** When it was earned (ISO), null while locked. */

@@ -1945,7 +1945,9 @@
       "toGo": "{{n}} lagi",
       "viewProfile": "Lihat profil",
       "nice": "Hebat!",
-      "tapNext": "Ketik untuk yang seterusnya"
+      "tapNext": "Ketik untuk yang seterusnya",
+      "nextLevel": "Tahap seterusnya",
+      "topLevel": "Tahap tertinggi dicapai"
     }
   }
 }

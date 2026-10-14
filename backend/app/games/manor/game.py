@@ -121,7 +121,7 @@ class Manor(BaseGame):
         Badge("manor.dawn", "bronze", 1, lambda o: o.won and o.side == "good" and (o.facts or {}).get("reason") == "dawn"),
         Badge("manor.intruder", "silver", 1, won_as("evil")),
         Badge("manor.caught", "gold", 1, lambda o: o.won and o.side == "good" and (o.facts or {}).get("reason") == "caught"),
-        Badge("manor.lord", "legendary", 25),
+        Badge("manor.lord", "legendary", 25, series="wins"),
     ]
 
     def __init__(self, rng: random.Random | None = None):

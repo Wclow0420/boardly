@@ -65,3 +65,22 @@ export function nextBadge(
     pick(locked.filter((b) => b.gameType === null))
   );
 }
+
+/** The next level up from `badge` in its series (the next bigger goal),
+ *  or null at the top or outside any series. */
+export function nextLevel(
+  badges: BadgeRecord[],
+  badge: BadgeRecord,
+): BadgeRecord | null {
+  if (!badge.series) return null;
+  return (
+    badges
+      .filter(
+        (b) =>
+          b.series === badge.series &&
+          b.gameType === badge.gameType &&
+          b.goal > badge.goal,
+      )
+      .sort((a, b) => a.goal - b.goal)[0] ?? null
+  );
+}

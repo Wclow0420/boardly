@@ -1,5 +1,11 @@
 import type { BadgeRecord } from "@/api/client";
-import { earnedLastGame, nextBadge, sortBadges, titleBadge } from "../order";
+import {
+  earnedLastGame,
+  nextBadge,
+  nextLevel,
+  sortBadges,
+  titleBadge,
+} from "../order";
 
 const badge = (
   key: string,
@@ -11,6 +17,7 @@ const badge = (
   key,
   gameType: null,
   tier,
+  series: null,
   goal,
   progress,
   unlockedAt,
@@ -62,4 +69,21 @@ it("points at the closest badge still to earn, the game's own first", () => {
   expect(nextBadge(badges, "other")?.key).toBe("boardly.veteran");
   // on the player card: the closest of all
   expect(nextBadge(badges)?.key).toBe("boardly.veteran");
+});
+
+it("finds the next level up in a badge's series", () => {
+  const played = (key: string, goal: number, progress: number) => ({
+    ...badge(key, "gold", progress, goal),
+    series: "played",
+  });
+  const badges = [
+    played("first", 1, 1),
+    played("regular", 10, 10),
+    played("veteran", 50, 31),
+    played("legend", 100, 31),
+    badge("feat", "gold", 0, 1),
+  ];
+  expect(nextLevel(badges, badges[1])?.key).toBe("veteran");
+  expect(nextLevel(badges, badges[3])).toBeNull();
+  expect(nextLevel(badges, badges[4])).toBeNull();
 });

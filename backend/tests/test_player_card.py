@@ -57,6 +57,16 @@ def test_a_forfeit_counts_as_a_win_but_earns_no_badge(client, make_user):
     assert _badge(stayed, "boardly.firstWin")["unlockedAt"] is None
 
 
+def test_a_series_climbs_in_levels(client, make_user):
+    card = _card(client, make_user("alice"))
+    played = sorted(
+        (b for b in card["badges"] if b["series"] == "played" and b["gameType"] is None),
+        key=lambda b: b["goal"],
+    )
+    assert [b["goal"] for b in played] == [1, 10, 50, 100]
+    assert _badge(card, "coup.kingpin")["series"] == "wins"
+
+
 def test_every_badge_is_well_formed():
     keys = set()
     for key, game in GAMES.items():

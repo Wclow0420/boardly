@@ -218,7 +218,7 @@ class Nightwatch(BaseGame):
         Badge("nightwatch.sharpEye", "gold", 1,
               lambda o: o.won and (o.facts or {}).get("assassin")
               and (o.facts or {}).get("reason") == "assassination"),
-        Badge("nightwatch.ghostbreaker", "legendary", 25),
+        Badge("nightwatch.ghostbreaker", "legendary", 25, series="wins"),
     ]
 
     def __init__(self, rng: random.Random | None = None):

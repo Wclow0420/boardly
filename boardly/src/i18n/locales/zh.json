@@ -1941,7 +1941,9 @@
       "toGo": "还差 {{n}}",
       "viewProfile": "查看个人资料",
       "nice": "太棒了！",
-      "tapNext": "点一下看下一个"
+      "tapNext": "点一下看下一个",
+      "nextLevel": "下一级",
+      "topLevel": "已达最高等级"
     }
   }
 }

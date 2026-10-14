@@ -32,8 +32,8 @@ class TicTacToe(BaseGame):
     tag = "classic"
 
     badges = [
-        Badge("tictactoe.firstWin", "bronze", 1),
-        Badge("tictactoe.master", "silver", 10),
+        Badge("tictactoe.firstWin", "bronze", 1, series="wins"),
+        Badge("tictactoe.master", "silver", 10, series="wins"),
     ]
 
     def initial_state(self, num_players: int) -> dict:

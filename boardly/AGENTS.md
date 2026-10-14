@@ -100,7 +100,9 @@ otherwise.
     assassin finding the Prophet, being rescued with a full larder),
     and a legendary for 25 wins. `match` gets the outcome row (`won`,
     `side`, `role`, `facts`); use `won_as(side)` and keep wins handed
-    over by a walk-out out of it.
+    over by a walk-out out of it. Badges counting the same thing with
+    bigger goals are levels of one `series` ("wins": 1 → 10 → 25):
+    give them the same series and the app shows the next level up.
   App (`src/games/<key>/index.ts`): a `badges` entry for every key —
   `{ glyph, loop }`, the emblem drawn from the game's own icon set
   (`icons.tsx`) or `components/badges/glyphs.ts`, and how it moves

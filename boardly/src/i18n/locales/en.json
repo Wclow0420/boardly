@@ -1948,7 +1948,9 @@
       "toGo": "{{n}} to go",
       "viewProfile": "View profile",
       "nice": "Nice!",
-      "tapNext": "Tap for the next one"
+      "tapNext": "Tap for the next one",
+      "nextLevel": "Next level",
+      "topLevel": "Top level reached"
     }
   }
 }

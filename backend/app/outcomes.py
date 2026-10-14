@@ -159,6 +159,7 @@ def _badge(badge, game_type, progress, unlocked):
         "key": badge.key,
         "gameType": game_type,
         "tier": badge.tier,
+        "series": badge.series,
         "goal": badge.goal,
         "progress": min(progress, badge.goal),
         "unlockedAt": _iso(unlocked),

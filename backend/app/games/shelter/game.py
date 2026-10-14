@@ -141,7 +141,7 @@ class Shelter(BaseGame):
               lambda o: o.won and o.side == "good"
               and (o.facts or {}).get("reason") == "rescue"
               and (o.facts or {}).get("store", 0) >= 10),
-        Badge("shelter.lastWinter", "legendary", 25),
+        Badge("shelter.lastWinter", "legendary", 25, series="wins"),
     ]
 
     def __init__(self, rng: random.Random | None = None):

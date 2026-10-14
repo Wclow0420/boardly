@@ -18,8 +18,11 @@ export function NextBadge({
   clock,
   color = "#FFF6E6",
   muted = "rgba(255,246,230,0.7)",
+  label,
 }: {
   badge: BadgeRecord;
+  /** The line above its name (default "Next badge"). */
+  label?: string;
   clock: SharedValue<number>;
   /** Text colours, to sit on the table or on a game's own skin. */
   color?: string;
@@ -42,7 +45,7 @@ export function NextBadge({
       />
       <View style={styles.body}>
         <AppText variant="tiny" style={{ color: muted }}>
-          {t("badges.celebrate.nextUp")}
+          {label ?? t("badges.celebrate.nextUp")}
         </AppText>
         <View style={styles.head}>
           <AppText numberOfLines={1} style={[styles.name, { color }]}>

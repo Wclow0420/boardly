@@ -102,8 +102,8 @@ class LiarsDice(BaseGame):
     tag = "party"
 
     badges = [
-        Badge("liarsdice.firstWin", "bronze", 1),
-        Badge("liarsdice.bluffer", "gold", 10),
+        Badge("liarsdice.firstWin", "bronze", 1, series="wins"),
+        Badge("liarsdice.bluffer", "gold", 10, series="wins"),
     ]
     options = {"mode": ["knockout", "endless"]}
 

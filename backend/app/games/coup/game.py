@@ -109,8 +109,8 @@ class Coup(BaseGame):
     tag = "card"
 
     badges = [
-        Badge("coup.firstWin", "bronze", 1),
-        Badge("coup.kingpin", "gold", 10),
+        Badge("coup.firstWin", "bronze", 1, series="wins"),
+        Badge("coup.kingpin", "gold", 10, series="wins"),
     ]
 
     def initial_state(self, num_players: int, rng: random.Random | None = None) -> dict:
