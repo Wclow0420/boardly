@@ -25,7 +25,10 @@ def _outcome(game, state: dict, seat: int) -> dict:
 
 def record_outcomes(room, session, abandoned=False, exclude=None):
     """Write how every seated player did (`exclude` walked out). Does not
-    commit. Call once, when the session finishes."""
+    commit. Call once, when the session finishes. Games with a bot at
+    the table are practice: they count towards no stats or badges."""
+    if any(p.user is not None and p.user.is_bot for p in room.players):
+        return
     game = get_game(session.game_type)
     winners = set(session.winner_user_ids or [])
     finished = session.finished_at or datetime.now(timezone.utc)

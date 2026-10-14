@@ -38,10 +38,11 @@ class Config:
     # RATELIMIT_ENABLED=0 turns the per-IP auth limits off — for a LAN
     # session behind Docker's NAT, where every player shares one IP.
     RATELIMIT_ENABLED = os.environ.get("RATELIMIT_ENABLED", "1") != "0"
-    # The lobby's "add bots" button starts bot players for a table (see
-    # app/bots.py). On wherever APP_ENV isn't production, unless
-    # BOTS_ENABLED=0; never in production.
-    BOTS_ENABLED = APP_ENV != "production" and os.environ.get("BOTS_ENABLED", "1") != "0"
+    # The lobby's "add bots" button: the host fills empty seats with bot
+    # players the server plays (see app/bots.py). On unless BOTS_ENABLED=0.
+    BOTS_ENABLED = os.environ.get("BOTS_ENABLED", "1") != "0"
+    # Seconds a bot "thinks" before each move (a random pick in between)
+    BOT_DELAY = (0.6, 1.4)
 
 
 def validate_production(config) -> None:

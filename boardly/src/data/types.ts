@@ -55,4 +55,6 @@ export interface LobbyPlayer {
   avatarUrl?: string | null;
   isHost: boolean;
   ready: boolean;
+  /** A bot player the server plays. */
+  isBot?: boolean;
 }

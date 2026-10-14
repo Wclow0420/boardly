@@ -71,6 +71,9 @@ class BaseGame(ABC):
     # Achievements for this game, keyed "<game key>.<name>" (see Badge)
     badges: list[Badge] = []
 
+    # Whether bot players can fill seats (the game implements bot_move)
+    has_bots: bool = False
+
     @abstractmethod
     def initial_state(self, num_players: int) -> dict:
         """Return the starting state for a new session."""
@@ -114,6 +117,12 @@ class BaseGame(ABC):
         None, "facts": {...}}. Games with hidden sides must give the
         side; facts are whatever the game's badges look at."""
         return {}
+
+    def bot_move(self, view: dict, seat: int, rng) -> dict | None:
+        """The move a bot in this seat makes now, from its own view (the
+        same one a player gets), or None when the game isn't waiting on
+        it. Games that set has_bots override this."""
+        return None
 
     def view_for(self, state: dict, seat: int) -> dict:
         """State as seen by one player. Override for games with hidden

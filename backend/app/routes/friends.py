@@ -83,6 +83,7 @@ def list_friends():
             RoomPlayer.room_id.in_(my_room_ids),
             RoomPlayer.user_id != me.id,
             User.deleted_at.is_(None),
+            User.is_bot.is_(False),
         )
         .order_by(RoomPlayer.joined_at.desc())
         .limit(RECENT_LIMIT * 5)
@@ -138,6 +139,7 @@ def search_users():
             User.username.ilike(f"{escaped}%", escape="\\"),
             User.id != me.id,
             User.deleted_at.is_(None),
+            User.is_bot.is_(False),
         )
         .order_by(User.username)
         .limit(SEARCH_LIMIT)
@@ -163,7 +165,7 @@ def send_request():
         target = db.session.get(User, uuid.UUID(str(data.get("userId"))))
     except ValueError:
         target = None
-    if target is None or target.deleted_at is not None:
+    if target is None or target.deleted_at is not None or target.is_bot:
         return api_error("user_not_found", "User not found", 404)
     if target.id == me.id:
         return api_error("cannot_friend_self", "You can't add yourself", 400)

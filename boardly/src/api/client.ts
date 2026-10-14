@@ -158,6 +158,8 @@ export interface RoomPlayerInfo {
   avatarUrl?: string | null;
   seat: number;
   ready: boolean;
+  /** A bot player the server plays (seated by the host). */
+  isBot?: boolean;
 }
 
 export interface RoomInfo {
@@ -172,7 +174,7 @@ export interface RoomInfo {
   options?: Record<string, string>;
   /** Code of the open "play again" table for this finished room. */
   rematchCode: string | null;
-  /** The host can fill seats with bot players (development only). */
+  /** The host can fill seats with bot players (see backend/app/bots.py). */
   botsAvailable?: boolean;
   session?: GameSessionInfo | null;
 }
@@ -388,9 +390,14 @@ export const api = {
     }),
 
   addBots: (roomId: string, count: number) =>
-    request<{ added: number }>(`/rooms/${roomId}/bots`, {
+    request<{ added: number; room: RoomInfo }>(`/rooms/${roomId}/bots`, {
       method: "POST",
       body: JSON.stringify({ count }),
+    }),
+
+  removeBot: (roomId: string, userId: string) =>
+    request<{ room: RoomInfo }>(`/rooms/${roomId}/bots/${userId}`, {
+      method: "DELETE",
     }),
 
   setReady: (roomId: string, ready: boolean) =>

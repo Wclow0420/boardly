@@ -160,14 +160,16 @@
     "settingsHostOnly": "Only the host can change these.",
     "bots": {
       "title": "Bot players",
-      "hint": "Fill empty seats with bots to try the game on your own. They join in a few seconds and play their own moves.",
+      "hint": "A player or two short? Fill empty seats with bots. They sit down ready and the server plays their moves. A game with bots is practice: you earn the coins for playing, but no win bonus, stats or badges.",
       "fewer": "Fewer bots",
       "more": "More bots",
       "add_one": "Add {{count}} bot",
       "add_other": "Add {{count}} bots",
       "failed": "Couldn't add bots.",
       "seats": "{{free}} seats free",
-      "full": "Every seat is taken."
+      "full": "Every seat is taken.",
+      "bot": "Bot",
+      "remove": "Remove {{name}}"
     }
   },
   "table": {
