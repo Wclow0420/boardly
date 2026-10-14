@@ -151,7 +151,17 @@
     "inviteFriends": "Invite Friends",
     "noFriends": "Add friends to invite them straight to your table.",
     "settings": "Game settings",
-    "settingsHostOnly": "Only the host can change these."
+    "settingsHostOnly": "Only the host can change these.",
+    "bots": {
+      "title": "Bot players",
+      "hint": "Fill empty seats with bots to try the game on your own. They join in a few seconds and play their own moves.",
+      "fewer": "Fewer bots",
+      "more": "More bots",
+      "add_one": "Add {{count}} bot",
+      "add_other": "Add {{count}} bots",
+      "joining": "Bots are joining…",
+      "failed": "Couldn't add bots."
+    }
   },
   "table": {
     "inProgress": "In Progress",

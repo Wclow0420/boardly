@@ -30,6 +30,7 @@ import {
   RulesSheet,
   useHasRules,
 } from "@/features/game/RulesSheet";
+import { AddBots } from "@/features/lobby/AddBots";
 import { ConfettiBackdrop } from "@/features/lobby/ConfettiBackdrop";
 import { InviteFriendsSheet } from "@/features/lobby/InviteFriendsSheet";
 import { GameSettings } from "@/features/lobby/GameSettings";
@@ -286,6 +287,9 @@ export default function LobbyScreen() {
           <>
           {room ? (
             <GameSettings room={room} code={roomCode} isHost={isHost} />
+          ) : null}
+          {room && isHost && room.botsAvailable && room.status === "waiting" ? (
+            <AddBots room={room} minPlayers={minPlayers} maxPlayers={maxPlayers} />
           ) : null}
           <View style={styles.playersGrid}>
             {room?.players.map((player) => (

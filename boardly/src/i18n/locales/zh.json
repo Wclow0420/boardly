@@ -151,7 +151,17 @@
     "inviteFriends": "邀请好友",
     "noFriends": "添加好友后，可以直接邀请他们来你的牌桌。",
     "settings": "游戏设置",
-    "settingsHostOnly": "只有房主可以修改。"
+    "settingsHostOnly": "只有房主可以修改。",
+    "bots": {
+      "title": "机器人玩家",
+      "hint": "用机器人坐满空位，一个人也能试玩。几秒内就会加入，并自己出招。",
+      "fewer": "减少机器人",
+      "more": "增加机器人",
+      "add_one": "加入 {{count}} 个机器人",
+      "add_other": "加入 {{count}} 个机器人",
+      "joining": "机器人正在加入……",
+      "failed": "加入机器人失败。"
+    }
   },
   "table": {
     "inProgress": "进行中",

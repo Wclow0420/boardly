@@ -1,9 +1,10 @@
 from datetime import datetime, timezone
 
-from flask import Blueprint, g, request
+from flask import Blueprint, current_app, g, request
 
 from app import presence
 from app.auth import require_auth
+from app.bots import BOT_GAMES, bots_available, spawn_bots
 from app.extensions import db, socketio
 from app.games import GameError, get_game
 from app.models import GameSession, Room, RoomPlayer
@@ -47,6 +48,7 @@ def _room_payload(room: Room, viewer_id=None) -> dict:
     session filtered through that player's view (hidden information
     stays on the server)."""
     payload = room.to_dict()
+    payload["botsAvailable"] = bots_available(room)
     if viewer_id is not None:
         session = (
             GameSession.query.filter_by(room_id=room.id)
@@ -188,6 +190,31 @@ def set_options(room_id):
     db.session.commit()
     _broadcast_room(room)
     return {"room": _room_payload(room, g.current_user.id)}
+
+
+@rooms_bp.post("/<uuid:room_id>/bots")
+@require_auth
+def add_bots(room_id):
+    """Body: {"count": 3} — the host fills seats with bot players
+    (development only). They join over the next few seconds, like
+    anyone else, so the lobby updates as they arrive."""
+    if not current_app.config.get("BOTS_ENABLED"):
+        return api_error("not_found", "Not found", 404)
+    room = db.session.get(Room, room_id)
+    if room is None:
+        return api_error("room_not_found", "Room not found", 404)
+    if room.host_id != g.current_user.id:
+        return api_error("not_host", "Only the host can add bots", 403)
+    if room.status != "waiting":
+        return api_error("game_started", "Game already started", 409)
+    if room.game_type not in BOT_GAMES:
+        return api_error("no_bots", "There are no bots for this game yet", 409)
+    count = (request.get_json(silent=True) or {}).get("count")
+    free = get_game(room.game_type).max_players - len(room.players)
+    if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= free:
+        return api_error("invalid_request", f"Ask for between 1 and {free} bots", 400)
+    spawn_bots(room.code, count)
+    return {"added": count}, 202
 
 
 @rooms_bp.post("/<uuid:room_id>/start")
