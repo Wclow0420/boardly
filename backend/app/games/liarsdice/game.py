@@ -63,7 +63,7 @@ Moves:
 
 import random
 
-from app.games.base import BaseGame, GameError
+from app.games.base import BaseGame, GameError, Badge
 
 DICE_EACH = 5
 KNOCKOUT_CUPS = 5
@@ -100,6 +100,11 @@ class LiarsDice(BaseGame):
     tile_color = "#FFE0E0"
     category = "party"
     tag = "party"
+
+    badges = [
+        Badge("liarsdice.firstWin", "bronze", 1, series="wins"),
+        Badge("liarsdice.bluffer", "gold", 10, series="wins"),
+    ]
     options = {"mode": ["knockout", "endless"]}
 
     def __init__(self, rng: random.Random | None = None):

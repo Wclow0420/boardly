@@ -141,6 +141,13 @@ Backend:
    `get_result` may return `{"winnerSeats": [...]}` for a winning team,
    and `on_abandon` decides what to store when a player leaves mid-game.
 2. Register it in `backend/app/games/__init__.py` (`GAMES` dict).
+3. Stats and badges: implement `player_outcome(state, seat)` — the
+   player's `side` ("good"/"evil", required for games with hidden
+   sides), `role`, and any `facts` the badges need — and list the
+   game's `badges` (`Badge("<key>.<name>", tier, goal, match)`, see
+   `app/games/base.py`). Every finished game writes one
+   `SessionPlayer` row per player (`app/outcomes.py`); the profile's
+   player card (`GET /auth/me/stats`) is built from those rows.
 
 Frontend:
 1. Create `boardly/src/games/<key>/` with `logic.ts` (client-side rules
@@ -155,6 +162,9 @@ Frontend:
    `<BottomSheetModal>`), never with your own `present()`/`dismiss()`
    effect. A sheet asked to open while it is still closing gets dropped,
    and the player sees no prompt until they reload; the hook re-opens it.
+4. Give the game its `boxArt` and the look of each badge (`badges` in
+   the GameDefinition), with badge names under `badges.<key>` in all
+   three locales — see `boardly/AGENTS.md`.
 
 The rooms/lobby/session plumbing (REST + Socket.IO broadcasts) is
 game-agnostic — game state lives in a JSONB column and only the two

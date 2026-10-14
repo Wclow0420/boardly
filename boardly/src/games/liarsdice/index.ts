@@ -1,3 +1,4 @@
+import { BADGE_GLYPHS as G } from "@/components/badges/glyphs";
 import type { GameDefinition } from "../types";
 import { LiarsDiceBoard } from "./LiarsDiceBoard";
 import { currentSeat, taskFor, type LiarsDiceState } from "./logic";
@@ -48,4 +49,8 @@ export const liarsdice: GameDefinition<LiarsDiceState> = {
     taglineKey: "liarsdice.tagline",
   },
   needsMe: (state, mySeat) => taskFor(state, mySeat) !== null,
+  badges: {
+    "liarsdice.firstWin": { glyph: G.cup, loop: "sway" },
+    "liarsdice.bluffer": { glyph: G.die, loop: "tumble" },
+  },
 };

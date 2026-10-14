@@ -10,7 +10,7 @@ State shape:
 Move shape: {"cell": 0-8}
 """
 
-from app.games.base import BaseGame, GameError
+from app.games.base import BaseGame, GameError, Badge
 
 WIN_LINES = [
     (0, 1, 2), (3, 4, 5), (6, 7, 8),  # rows
@@ -30,6 +30,11 @@ class TicTacToe(BaseGame):
     tile_color = "#E3F0FF"
     category = "classic"
     tag = "classic"
+
+    badges = [
+        Badge("tictactoe.firstWin", "bronze", 1, series="wins"),
+        Badge("tictactoe.master", "silver", 10, series="wins"),
+    ]
 
     def initial_state(self, num_players: int) -> dict:
         return {

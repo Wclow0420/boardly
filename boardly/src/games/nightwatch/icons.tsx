@@ -17,7 +17,7 @@ interface Glyph {
   fill?: string;
 }
 
-const GLYPHS = {
+export const GLYPHS = {
   night: {
     line: "M12 2v2M9 4h6l1 2H8zM8 6v11a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V6M7 21h10M12 18v3",
     fill: `M12 9${FLAME}`,

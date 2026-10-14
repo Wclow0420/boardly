@@ -187,10 +187,12 @@ def test_in_game_presence_recent_players_and_stats(app, client, make_user):
     client.post(f"/api/v1/rooms/{room['id']}/leave", headers=bob["headers"])
     assert _listing(client, carol)["friends"][0]["presence"] == "online"
 
-    stats = client.get("/api/v1/auth/me/stats", headers=alice["headers"]).get_json()
-    assert stats == {"stats": {"gamesPlayed": 1, "wins": 1, "friends": 1}}
-    stats = client.get("/api/v1/auth/me/stats", headers=bob["headers"]).get_json()
-    assert stats == {"stats": {"gamesPlayed": 1, "wins": 0, "friends": 0}}
+    def counters(user):
+        stats = client.get("/api/v1/auth/me/stats", headers=user["headers"]).get_json()["stats"]
+        return {key: stats[key] for key in ("gamesPlayed", "wins", "friends")}
+
+    assert counters(alice) == {"gamesPlayed": 1, "wins": 1, "friends": 1}
+    assert counters(bob) == {"gamesPlayed": 1, "wins": 0, "friends": 0}
 
 
 def test_table_invite(app, client, make_user):

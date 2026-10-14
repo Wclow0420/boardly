@@ -27,6 +27,7 @@ import {
   RulesSheet,
   useHasRules,
 } from "@/features/game/RulesSheet";
+import { GameOverBadges } from "@/features/badges/GameOverBadges";
 import { useAlreadyInRoomRedirect } from "@/features/home/hooks";
 import { useLeaveRoom, useRoom } from "@/features/lobby/hooks";
 import { useGameName } from "@/games/names";
@@ -113,8 +114,7 @@ function GameScreenBody({
 
   const state = session.state as never;
   const Board = gameDef.Board;
-  const mySeat =
-    room.players.find((p) => p.userId === user?.id)?.seat ?? -1;
+  const mySeat = room.players.find((p) => p.userId === user?.id)?.seat ?? -1;
   const currentSeat = gameDef.currentSeat(state);
   const currentPlayer = room.players.find((p) => p.seat === currentSeat);
   const inProgress = session.status === "in_progress";
@@ -184,8 +184,7 @@ function GameScreenBody({
   );
 
   const skin = gameDef.skin;
-  const needsMe =
-    inProgress && (gameDef.needsMe?.(state, mySeat) ?? isMyTurn);
+  const needsMe = inProgress && (gameDef.needsMe?.(state, mySeat) ?? isMyTurn);
 
   // Skinned games: art backdrop, big title, "your move" badge
   const skinHeader = skin ? (
@@ -213,7 +212,11 @@ function GameScreenBody({
         </IconButton>
         <View style={styles.skinTitle}>
           {skin.logo ? (
-            <Image source={skin.logo} style={styles.logo} contentFit="contain" />
+            <Image
+              source={skin.logo}
+              style={styles.logo}
+              contentFit="contain"
+            />
           ) : (
             <View style={styles.headerTitle}>
               <AppText style={styles.skinEmoji}>
@@ -237,7 +240,10 @@ function GameScreenBody({
         </View>
         <View style={styles.headerRight}>
           {hasRules ? (
-            <RulesButton color={colors.icon} onPress={() => setRulesOpen(true)} />
+            <RulesButton
+              color={colors.icon}
+              onPress={() => setRulesOpen(true)}
+            />
           ) : null}
         </View>
       </View>
@@ -293,6 +299,7 @@ function GameScreenBody({
       {mySeat >= 0 ? (
         <>
           <EarnedCoins sessionId={session.id} />
+          <GameOverBadges gameType={room.gameType} />
           {room.rematchCode ? (
             <AppText variant="caption" color="textMuted" align="center">
               {t("game.rematchOpen")}
@@ -381,7 +388,8 @@ function GameScreenBody({
                 </AppText>
                 <AppText variant="tiny" color="textSubtle">
                   {String(
-                    (state as { symbols?: string[] }).symbols?.[player.seat] ?? ""
+                    (state as { symbols?: string[] }).symbols?.[player.seat] ??
+                      "",
                   )}
                 </AppText>
               </View>
@@ -399,9 +407,7 @@ function GameScreenBody({
               : t("game.turn", { name: currentPlayer?.username ?? "…" })}
           </AppText>
         ) : (
-          <AppText style={styles.resultEmoji}>
-            {winner ? "🏆" : "🤝"}
-          </AppText>
+          <AppText style={styles.resultEmoji}>{winner ? "🏆" : "🤝"}</AppText>
         )}
         {!inProgress ? (
           <AppText variant="title" style={{ marginTop: spacing.xs }}>

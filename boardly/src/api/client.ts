@@ -213,10 +213,46 @@ export interface TableInvite {
   game: GameInfo | null;
 }
 
+export interface SideRecord {
+  played: number;
+  wins: number;
+}
+
+/** One game's line on the player card. */
+export interface GameRecord {
+  gameType: string;
+  played: number;
+  wins: number;
+  /** "good" / "evil", for games with hidden sides. */
+  sides: Partial<Record<"good" | "evil", SideRecord>>;
+}
+
+export interface BadgeRecord {
+  /** "<game key>.<name>", or "boardly.<name>" for Boardly's own. */
+  key: string;
+  gameType: string | null;
+  tier: "bronze" | "silver" | "gold" | "legendary";
+  /** Badges counting the same thing with bigger goals share a series
+   *  ("played", "wins"): each is a level of it. */
+  series: string | null;
+  goal: number;
+  progress: number;
+  /** When it was earned (ISO), null while locked. */
+  unlockedAt: string | null;
+}
+
 export interface UserStats {
   gamesPlayed: number;
   wins: number;
   friends: number;
+  streak: number;
+  bestStreak: number;
+  favourite: string | null;
+  games: GameRecord[];
+  badges: BadgeRecord[];
+  /** When the latest finished game ended (ISO); badges unlocked at
+   *  exactly this time were earned in it. */
+  lastGameAt: string | null;
 }
 
 export const api = {

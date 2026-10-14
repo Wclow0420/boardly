@@ -5,14 +5,14 @@ from datetime import datetime, timezone
 
 import jwt as pyjwt
 from flask import Blueprint, g, request
-from sqlalchemy import or_
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app import presence
 from app.cosmetics import BORDER_IDS, BORDER_PRICES, DEFAULT_BORDER, owns_border
 from app.auth import issue_tokens, require_auth, user_from_token
 from app.extensions import db, limiter, socketio
-from app.models import Avatar, Friendship, GameSession, Room, RoomPlayer, User
+from app.models import Avatar, Friendship, Room, RoomPlayer, User
+from app.outcomes import player_card
 from app.utils import api_error
 
 auth_bp = Blueprint("auth", __name__)
@@ -257,21 +257,12 @@ def delete_account():
 @auth_bp.get("/me/stats")
 @require_auth
 def my_stats():
-    """Profile counters: finished games I took part in, wins, friends."""
+    """The profile's player card: totals, a line per game (with good and
+    evil sides apart), streaks, and every badge with its progress."""
     me = g.current_user
-    my_room_ids = db.session.query(RoomPlayer.room_id).filter_by(user_id=me.id)
-    finished = GameSession.query.filter(
-        GameSession.status == "finished", GameSession.room_id.in_(my_room_ids)
-    )
     return {
         "stats": {
-            "gamesPlayed": finished.count(),
-            "wins": finished.filter(
-                or_(
-                    GameSession.winner_user_id == me.id,
-                    GameSession.winner_user_ids.contains([str(me.id)]),
-                )
-            ).count(),
+            **player_card(me.id),
             "friends": len(presence.friend_ids(me.id)),
         }
     }

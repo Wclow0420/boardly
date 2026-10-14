@@ -1,3 +1,4 @@
+import type { BadgeArt } from "@/components/badges/types";
 import type { ComponentType } from "react";
 import type { ImageSourcePropType } from "react-native";
 
@@ -81,6 +82,10 @@ export interface GameDefinition<TState = Record<string, unknown>> {
    *  drawn `width` wide. Without it the lid shows the skin's logo, or
    *  the game's emoji. */
   boxArt?: ComponentType<{ width: number }>;
+  /** How each of the game's badges looks, keyed like the server's
+   *  badges ("<game key>.<name>"): an emblem from the game's own icons
+   *  and the way it moves. Names live under badges.<key> in the locales. */
+  badges?: Record<string, BadgeArt>;
   /** Whether the game is waiting on this player — drives the
    *  "Your move" badge in the header of skinned games. */
   needsMe?: (state: TState, mySeat: number) => boolean;
