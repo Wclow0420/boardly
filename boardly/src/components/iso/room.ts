@@ -22,6 +22,7 @@ import {
   flame,
   flat,
   line,
+  moonShaft,
   n,
   onX,
   onY,
@@ -171,7 +172,9 @@ export function windowOn(
   z0: number,
   spring: number,
   pointed = false,
-  glass: string = INK.night
+  glass: string = INK.night,
+  /** The colour of the light it lets in. */
+  light: string = INK.glass
 ): Shape[] {
   const on = wall === "x" ? onX : onY;
   const mid = (from + to) / 2;
@@ -188,6 +191,11 @@ export function windowOn(
     line([at(from, spring), at(to, spring)], STONE[1], 0.7),
     on(0, from - 0.04, to + 0.04, z0 - 0.045, z0 - 0.02, STONE[0]),
     tint(pool, INK.glass, 0.08),
+    ...moonShaft(
+      [at(from, top), at(to, top)],
+      [pool[2], pool[3]],
+      light
+    ),
   ];
 }
 

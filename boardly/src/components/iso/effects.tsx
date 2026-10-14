@@ -22,23 +22,10 @@ import {
   type SharedValue,
 } from "react-native-reanimated";
 
+import { Shaft } from "./bursts";
+import { NOISE } from "./noise";
 import type { Effect } from "./kit";
-
-export const NOISE = `
-float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-float noise(vec2 p) {
-  vec2 i = floor(p);
-  vec2 f = fract(p);
-  f = f * f * (3.0 - 2.0 * f);
-  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
-             mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
-}
-float fbm(vec2 p) {
-  float v = 0.0;
-  float a = 0.5;
-  for (int i = 0; i < 4; i++) { v += a * noise(p); p *= 2.0; a *= 0.5; }
-  return v;
-}`;
+import { Dust } from "./weather";
 
 // uv.x runs -0.5..0.5 across the flame, uv.y 0..1 from its foot up
 const FIRE = `
@@ -207,6 +194,8 @@ export function IsoEffects({
               return <Steam key={index} {...effect} clock={clock} />;
             case "firefly":
               return <Firefly key={index} x={effect.x} y={effect.y} clock={clock} />;
+            case "shaft":
+              return <ShaftOfLight key={index} effect={effect} clock={clock} />;
             case "pool":
               return (
                 <LightPool
@@ -222,5 +211,30 @@ export function IsoEffects({
           }
         })}
     </>
+  );
+}
+
+/** Moonlight from a window, with dust hanging in it. */
+function ShaftOfLight({
+  effect,
+  clock,
+}: {
+  effect: Extract<Effect, { kind: "shaft" }>;
+  clock: SharedValue<number>;
+}) {
+  const bounds = useMemo(() => Skia.Path.MakeFromSVGString(effect.d)?.getBounds(), [effect.d]);
+  return (
+    <Shaft d={effect.d} from={effect.from} to={effect.to} color={effect.color} clock={clock}>
+      {bounds ? (
+        <Dust
+          x={bounds.x}
+          y={bounds.y}
+          width={bounds.width}
+          height={bounds.height}
+          clock={clock}
+          amount={0.7}
+        />
+      ) : null}
+    </Shaft>
   );
 }

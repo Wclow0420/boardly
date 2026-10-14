@@ -38,6 +38,7 @@ import {
   line,
   live,
   moon,
+  moonShaft,
   n,
   onX,
   onY,
@@ -82,6 +83,7 @@ import {
   windowOn,
   type Side,
 } from "@/components/iso/room";
+import type { BurstSpec } from "@/components/iso/bursts";
 import { doorBetween, inScene, paintAs } from "./manorShapes";
 
 export type { Side } from "@/components/iso/room";
@@ -112,6 +114,7 @@ export interface Scene {
   /** The glowing spot over the room's object. */
   touch: { x: number; y: number; r: number };
   motion: Motion;
+  payoff: Payoff;
   /** A book in the room that can be opened and read, if it has one. */
   book: { x: number; y: number; r: number } | null;
 }
@@ -143,6 +146,8 @@ function belltower(accent: string): Shape[] {
     moon(P(0.5, 0, 0.5)[0] + 1, P(0.5, 0, 0.5)[1], 2.6),
     ...stars([[0.38, 0, 0.36], [0.62, 0, 0.3], [0, 0.42, 0.5], [0, 0.6, 0.34], [0, 0.5, 0.26]]),
     tint([[0.3, 0.06, 0], [0.7, 0.06, 0], [0.86, 0.5, 0], [0.46, 0.5, 0]], INK.glass, 0.07),
+    ...moonShaft([[0.3, 0, 0.64], [0.7, 0, 0.64]], [[0.86, 0.5, 0], [0.46, 0.5, 0]], INK.glass),
+    ...moonShaft([[0, 0.3, 0.64], [0, 0.7, 0.64]], [[0.5, 0.86, 0], [0.5, 0.46, 0]], INK.glass),
     // a crate of candles with a lantern on it
     ...solid(0.74, 0.06, 0.18, 0.16, 0.13, WOOD),
     line([[0.74, 0.22, 0.09], [0.92, 0.22, 0.09]], WOOD[2]),
@@ -262,8 +267,9 @@ function chapel(accent: string): Shape[] {
   return [
     ...shell(),
     ...flags(4),
-    ...windowOn("y", 0.1, 0.26, 0.3, 0.44, true, INK.glass),
-    ...windowOn("y", 0.74, 0.9, 0.3, 0.44, true, INK.glass),
+    // stained glass: the light comes in coloured
+    ...windowOn("y", 0.1, 0.26, 0.3, 0.44, true, INK.glass, "#E7A3C8"),
+    ...windowOn("y", 0.74, 0.9, 0.3, 0.44, true, INK.glass, "#F2C46B"),
     // rose window over the altar
     ball([0.5, 0, 0.66], 4.4, STONE[1], INK.line),
     ball([0.5, 0, 0.66], 3.6, INK.glass, GOLD[2]),
@@ -700,38 +706,90 @@ const BUILDERS: Record<RoomId, (accent: string) => Shape[]> = {
   garden,
 };
 
-/** The thing in each room the player touches to use the room, and how
- *  it answers. */
-const OBJECT: Record<RoomId, { at: V3; radius: number; motion: () => Motion }> = {
+/** What using a room looks and feels like: a burst on the canvas, and
+ *  a haptic pattern to go with it. */
+export interface Payoff {
+  burst: BurstSpec;
+  haptic: "ring" | "bless" | "thud" | "tick" | "clink" | "ripple";
+}
+
+/** The thing in each room the player touches to use the room, how it
+ *  moves, and what using it does. */
+const OBJECT: Record<
+  RoomId,
+  { at: V3; radius: number; motion: () => Motion; payoff: () => Payoff }
+> = {
   belltower: {
     at: [0.5, 0.34, 0.36],
     radius: 17,
     motion: () => ({ kind: "swing", pivot: P(0.5, 0.34, 0.66), degrees: 16 }),
+    payoff: () => {
+      const [x, y] = P(0.5, 0.34, 0.4);
+      return {
+        burst: { kind: "rings", x, y, size: 24, color: "#F0C87A", duration: 1400 },
+        haptic: "ring",
+      };
+    },
   },
   study: {
     at: [0.76, 0.3, 0.24],
     radius: 13,
     motion: () => ({ kind: "pop", pivot: P(0.76, 0.3, 0.224), scale: 1.25, lift: 7 }),
+    payoff: () => {
+      const [x, y] = P(0.76, 0.3, 0.26);
+      return {
+        burst: { kind: "glow", x, y, size: 16, color: "#FFE3A8", duration: 900 },
+        haptic: "tick",
+      };
+    },
   },
   chapel: {
     at: [0.5, 0.13, 0.46],
     radius: 17,
     motion: () => ({ kind: "pop", pivot: P(0.5, 0.125, 0.28), scale: 1.12, lift: 3 }),
+    payoff: () => {
+      const [x, y] = P(0.5, 0.13, 0.3);
+      return {
+        burst: { kind: "beam", x, y, size: 26, color: "#FFD98A", duration: 1800 },
+        haptic: "bless",
+      };
+    },
   },
   gallery: {
     at: [0.76, 0.22, 0.28],
     radius: 15,
     motion: () => ({ kind: "swing", pivot: P(0.69, 0.2, 0.25), degrees: 20 }),
+    payoff: () => {
+      const [x, y] = P(0.68, 0.18, 0.4);
+      return {
+        burst: { kind: "sparks", x, y, size: 14, color: "#B58CFF", duration: 900 },
+        haptic: "tick",
+      };
+    },
   },
   hall: {
     at: [0.28, 0.28, 0.36],
     radius: 13,
     motion: () => ({ kind: "swing", pivot: P(0.28, 0.28, 0), degrees: 5 }),
+    payoff: () => {
+      const [x, y] = P(0.28, 0.28, 0.44);
+      return {
+        burst: { kind: "glow", x, y, size: 20, color: "#FFB45E", duration: 900 },
+        haptic: "tick",
+      };
+    },
   },
   dining: {
     at: [0.5, 0.41, 0.3],
     radius: 16,
     motion: () => ({ kind: "pop", pivot: P(0.505, 0.41, 0.24), scale: 1.2, lift: 6 }),
+    payoff: () => {
+      const [x, y] = P(0.505, 0.41, 0.31);
+      return {
+        burst: { kind: "sparks", x, y, size: 12, color: "#F0C87A", duration: 800 },
+        haptic: "clink",
+      };
+    },
   },
   cellar: {
     at: [0.56, 0.56, 0.02],
@@ -741,16 +799,37 @@ const OBJECT: Record<RoomId, { at: V3; radius: number; motion: () => Motion }> =
       const [x1, y1] = P(-0.15, 0);
       return { kind: "slide", dx: x1 - x0, dy: y1 - y0 };
     },
+    payoff: () => {
+      const [x, y] = P(0.56, 0.56, 0.02);
+      return {
+        burst: { kind: "puff", x, y, size: 18, color: "#05060B", duration: 1400, dark: true },
+        haptic: "thud",
+      };
+    },
   },
   kitchen: {
     at: [0.8, 0.34, 0.16],
     radius: 15,
     motion: () => ({ kind: "swing", pivot: P(0.8, 0.34, 0.08), degrees: 6 }),
+    payoff: () => {
+      const [x, y] = P(0.8, 0.34, 0.2);
+      return {
+        burst: { kind: "puff", x, y, size: 14, color: "#EDE8DC", duration: 1200 },
+        haptic: "tick",
+      };
+    },
   },
   garden: {
     at: [0.76, 0.3, 0.22],
     radius: 16,
     motion: () => ({ kind: "slide", dx: 0, dy: -0.07 * unit() }),
+    payoff: () => {
+      const [x, y] = P(0.76, 0.3, 0.12);
+      return {
+        burst: { kind: "ripples", x, y, size: 13, color: "#9CB8FF", duration: 1300 },
+        haptic: "ripple",
+      };
+    },
   },
 };
 
@@ -835,6 +914,7 @@ function assemble(room: number, { accent, collapsed, lockedDoor }: SceneOptions)
       exits: out,
       touch: { x, y, r: object.radius },
       motion: object.motion(),
+      payoff: object.payoff(),
       book: book ? { x: bookX, y: bookY, r: 9 } : null,
     };
   });
@@ -890,29 +970,4 @@ export function pawnShapes([x, y]: [number, number], fill: string, edge: string)
 /** The top of a pawn's head, for its name. */
 export function pawnTop([x, y]: [number, number]): Pt {
   return inScene(() => P(x, y, 0.19));
-}
-
-/** The seal drawn on the floor of tonight's mission room, round the
- *  player's own spot, and the seal lamp standing in it. */
-export function sealShapes(color: string): Shape[] {
-  return inScene(() => {
-    const [x, y] = SPOTS[0];
-    const spoke = (angle: number): Shape => {
-      const [c, s] = [Math.cos(angle), Math.sin(angle)];
-      return line(
-        [
-          [x + c * 0.13, y + s * 0.13, 0],
-          [x + c * 0.17, y + s * 0.17, 0],
-        ],
-        color,
-        0.9
-      );
-    };
-    return [
-      disc(x, y, 0, 0.17, color, undefined, 0.14),
-      disc(x, y, 0, 0.17, undefined, color, undefined, 1.1),
-      disc(x, y, 0, 0.13, undefined, color, undefined, 0.6),
-      ...Array.from({ length: 8 }, (_, i) => spoke((i * Math.PI) / 4)),
-    ];
-  });
 }

@@ -471,3 +471,31 @@ export function inScene<T>(draw: () => T): T {
   return withView(SCENE_VIEW, draw);
 }
 
+
+/** Footprints along the way a player went, room to room: `rooms` in the
+ *  order they were in them. Older steps are fainter. */
+export function footprints(rooms: number[], color: string): Shape[] {
+  const shapes: Shape[] = [];
+  const legs = rooms.length - 1;
+  for (let leg = 0; leg < legs; leg++) {
+    const [a, b] = [rooms[leg], rooms[leg + 1]];
+    if (a === b) continue;
+    const [x1, y1] = floorPoint(a, 0.5, 0.5);
+    const [x2, y2] = floorPoint(b, 0.5, 0.5);
+    const length = Math.hypot(x2 - x1, y2 - y1);
+    // across the way, for the left and right foot
+    const [nx, ny] = [-(y2 - y1) / length, (x2 - x1) / length];
+    const steps = Math.floor(length / 7);
+    const opacity = 0.25 + (0.6 * (leg + 1)) / legs;
+    for (let i = 1; i < steps; i++) {
+      const side = i % 2 ? 1.6 : -1.6;
+      const [x, y] = [x1 + ((x2 - x1) * i) / steps + nx * side, y1 + ((y2 - y1) * i) / steps + ny * side];
+      shapes.push({
+        d: `M${n(x - 1.4)} ${n(y)}a1.4 0.9 0 1 0 2.8 0a1.4 0.9 0 1 0 -2.8 0Z`,
+        fill: color,
+        opacity,
+      });
+    }
+  }
+  return shapes;
+}

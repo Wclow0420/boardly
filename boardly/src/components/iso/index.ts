@@ -13,5 +13,6 @@ export {
   type LightPoolProps,
   type PlumeProps,
 } from "./effects";
-export { Darkness, Dust, Flash, Fog, Rain, type Area } from "./weather";
+export { Darkness, Dust, Flash, Fog, Rain, Vignette, type Area } from "./weather";
+export { Burst, GlowArea, Passage, Seal, Shaft, type BurstSpec } from "./bursts";
 export type { Effect, RoomInk, Shape, View } from "./kit";

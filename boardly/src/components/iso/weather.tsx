@@ -7,7 +7,7 @@ import { useMemo } from "react";
 import { RadialGradient, Rect, Shader, Skia, vec } from "@shopify/react-native-skia";
 import { useDerivedValue, type SharedValue } from "react-native-reanimated";
 
-import { NOISE } from "./effects";
+import { NOISE } from "./noise";
 
 /** The part of the picture a weather fills. */
 export interface Area {
@@ -35,6 +35,7 @@ half4 main(vec2 xy) {
 
 const DUST = `
 uniform float t;
+uniform float amount;
 uniform vec2 origin;
 uniform vec2 size;
 ${NOISE}
@@ -50,7 +51,7 @@ half4 main(vec2 xy) {
     float speck = 1.0 - smoothstep(0.02, 0.07, length(f - off));
     a += speck * smoothstep(0.86, 0.92, hash(cell + layer));
   }
-  a *= 0.45 * smoothstep(0.0, 0.15, uv.y);
+  a *= 0.45 * amount * smoothstep(0.0, 0.15, uv.y);
   return half4(vec3(0.86, 0.8, 0.7) * a, a);
 }`;
 
@@ -71,12 +72,21 @@ half4 main(vec2 xy) {
   return half4(vec3(0.7, 0.8, 1.0) * a, a);
 }`;
 
-function Weather({ x, y, width, height, clock, sksl }: Area & { sksl: string }) {
+function Weather({
+  x,
+  y,
+  width,
+  height,
+  clock,
+  sksl,
+  amount,
+}: Area & { sksl: string; amount?: number }) {
   const source = useMemo(() => Skia.RuntimeEffect.Make(sksl), [sksl]);
   const uniforms = useDerivedValue(() => ({
     t: clock.value,
     origin: [x, y],
     size: [width, height],
+    ...(amount === undefined ? {} : { amount }),
   }));
   if (!source) return null;
   return (
@@ -89,8 +99,11 @@ function Weather({ x, y, width, height, clock, sksl }: Area & { sksl: string }) 
 /** Fog lying low and drifting, thickest near the bottom of the area. */
 export const Fog = (props: Area) => <Weather {...props} sksl={FOG} />;
 
-/** Specks of dust falling slowly, as after something has come down. */
-export const Dust = (props: Area) => <Weather {...props} sksl={DUST} />;
+/** Specks of dust falling slowly, as after something has come down;
+ *  `amount` thins them (dust hanging in a shaft of light). */
+export const Dust = ({ amount = 1, ...props }: Area & { amount?: number }) => (
+  <Weather {...props} sksl={DUST} amount={amount} />
+);
 
 /** Rain slanting down. */
 export const Rain = (props: Area) => <Weather {...props} sksl={RAIN} />;
@@ -137,5 +150,31 @@ export function Flash({
   const opacity = useDerivedValue(() => flash.value * 0.5);
   return (
     <Rect x={0} y={0} width={width} height={height} color="#D6E4FF" opacity={opacity} blendMode="screen" />
+  );
+}
+
+/** A slow, uneasy pulse of colour at the edges, as on a sleepless night. */
+export function Vignette({
+  width,
+  height,
+  color,
+  clock,
+}: {
+  width: number;
+  height: number;
+  color: string;
+  clock: SharedValue<number>;
+}) {
+  const opacity = useDerivedValue(() => 0.45 + 0.35 * Math.sin(clock.value * 1.1));
+  const centre = vec(width / 2, height * 0.55);
+  return (
+    <Rect x={0} y={0} width={width} height={height} opacity={opacity}>
+      <RadialGradient
+        c={centre}
+        r={Math.max(width, height) * 0.62}
+        colors={[`${color}00`, `${color}00`, `${color}88`]}
+        positions={[0, 0.55, 1]}
+      />
+    </Rect>
   );
 }

@@ -254,6 +254,7 @@ export type Effect = { layer: 0 | 1 | 2 } & (
   | { kind: "steam"; x: number; y: number; width: number; height: number }
   | { kind: "firefly"; x: number; y: number }
   | { kind: "pool"; x: number; y: number; radius: number }
+  | { kind: "shaft"; d: string; from: Pt; to: Pt; color: string }
 );
 type Asked = Effect extends infer E ? (E extends Effect ? Omit<E, "layer"> : never) : never;
 
@@ -323,6 +324,19 @@ export function steam(at: V3, width: number, height: number): Shape[] {
 export function lightPool(at: V3, radius: number): Shape[] {
   const [x, y] = P(...at);
   ask({ kind: "pool", x, y, radius: radius * view.scale });
+  return [];
+}
+
+/** A shaft of light from an opening in a wall (`opening`, its top edge
+ *  first) to the patch of floor it lights (`pool`, the far edge first).
+ *  Nothing when drawn as shapes: the patch itself is drawn by the
+ *  builder. */
+export function moonShaft(opening: [V3, V3], pool: [V3, V3], color: string): Shape[] {
+  if (!effects) return [];
+  const [a, b] = opening.map(([x, y, z]) => P(x, y, z));
+  const [c, d] = pool.map(([x, y, z]) => P(x, y, z));
+  const mid = (p: Pt, q: Pt): Pt => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+  ask({ kind: "shaft", d: path([a, b, c, d]), from: mid(a, b), to: mid(c, d), color });
   return [];
 }
 

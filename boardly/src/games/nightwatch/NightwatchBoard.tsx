@@ -362,6 +362,7 @@ export function NightwatchBoard({
                   : undefined
               }
               event={over ? null : state.event}
+              secretDoors={state.doors}
               paused={showing !== null || dealing || delivering}
             />
           ) : (

@@ -8,18 +8,50 @@ import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppText } from "@/components/ui";
+import { ManorMap } from "@/games/nightwatch/ManorMap";
 import { RoomScene } from "@/games/nightwatch/RoomScene";
-import { ROOMS, type NightEvent } from "@/games/nightwatch/logic";
+import { ROOMS, type NightEvent, type NightwatchState } from "@/games/nightwatch/logic";
 import { useTheme } from "@/theme";
 
 const NONE: number[] = [];
-const EVENTS: (NightEvent | null)[] = [null, "blackout", "fog", "storm", "collapse"];
+const NONE_DOORS: number[][] = [];
+
+/** A game three nights in, for the map: you went from the Hall to the
+ *  Study, on to the Chapel's mission, then the Dining Room and Garden. */
+const patrol = (round: number, room: number) => ({
+  round,
+  kind: "patrol" as const,
+  room,
+  seen: [],
+  company: false,
+  fake: null,
+  tracked: null,
+  blocked: null,
+});
+const SAMPLE = {
+  phase: "patrol",
+  round: 2,
+  rounds: 5,
+  missionRoom: 6,
+  nextMissionRoom: 3,
+  results: [{ round: 0, room: 2, team: [0, 1], missing: [], fails: 0, success: true }],
+  collapsed: [],
+  lockedDoor: null,
+  doors: [[0, 4]],
+  myRoom: 8,
+  myFake: null,
+  log: [patrol(0, 1), patrol(1, 5), patrol(2, 8)],
+  positions: null,
+} as unknown as NightwatchState;
+const EVENTS: (NightEvent | null)[] = [null, "blackout", "fog", "storm", "collapse", "insomnia", "echo"];
 
 export default function IsoPreview() {
   const { colors, spacing } = useTheme();
   const [room, setRoom] = useState(ROOMS.indexOf("kitchen"));
   const [active, setActive] = useState(true);
   const [event, setEvent] = useState<NightEvent | null>(null);
+  const [mission, setMission] = useState(false);
+  const [door, setDoor] = useState(false);
   if (!__DEV__) return <Redirect href="/" />;
 
   return (
@@ -70,13 +102,33 @@ export default function IsoPreview() {
             { key: "me", label: "You", kind: "me" },
             { key: "a", label: "Ming", kind: "other" },
           ]}
-          missionRoom={null}
+          missionRoom={mission ? room : null}
+          secretDoors={door ? [[room, room === 4 ? 0 : 4]] : NONE_DOORS}
           nextMissionRoom={null}
           collapsed={NONE}
           lockedDoor={null}
           roomName={(other) => ROOMS[other]}
           onExit={setRoom}
         />
+        <AppText variant="h2">Map</AppText>
+        <ManorMap
+          state={SAMPLE}
+          mySeat={0}
+          selectable={[]}
+          onSelect={() => {}}
+          nameOf={(seat) => (seat === 0 ? "You" : `#${seat}`)}
+          roomName={(other) => ROOMS[other]}
+        />
+        <Pressable onPress={() => setMission(!mission)}>
+          <AppText variant="caption" color="primary">
+            {mission ? "Mission room: on" : "Mission room: off"}
+          </AppText>
+        </Pressable>
+        <Pressable onPress={() => setDoor(!door)}>
+          <AppText variant="caption" color="primary">
+            {door ? "Secret door: on" : "Secret door: off"}
+          </AppText>
+        </Pressable>
         <Pressable onPress={() => setActive(!active)}>
           <AppText variant="caption" color="primary">
             {active ? "Object glowing — tap it" : "Make the object glow again"}

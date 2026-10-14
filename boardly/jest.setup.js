@@ -23,5 +23,11 @@ jest.mock("@/components/iso", () => ({
   Flash: () => null,
   Fog: () => null,
   Rain: () => null,
+  Vignette: () => null,
+  Burst: () => null,
+  Seal: () => null,
+  Shaft: () => null,
+  GlowArea: () => null,
+  Passage: () => null,
   useIsoClock: () => ({ value: 0 }),
 }));

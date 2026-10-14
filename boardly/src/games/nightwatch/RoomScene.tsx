@@ -13,8 +13,10 @@ import {
 } from "react-native-reanimated";
 
 import {
+  Burst,
   Darkness,
   Dust,
+  Firefly,
   Flash,
   Fog,
   IsoCanvas,
@@ -22,11 +24,14 @@ import {
   IsoEffects,
   IsoGroup,
   IsoLayer,
+  LightPool,
   Rain,
+  Seal,
+  Vignette,
   useIsoClock,
 } from "@/components/iso";
 import { fontFamily, useTheme } from "@/theme";
-import { heavyHaptic } from "@/utils/haptics";
+import { heavyHaptic, successHaptic, tapHaptic, tickHaptic } from "@/utils/haptics";
 import { ROOMS, ROOM_COLOR, type NightEvent } from "./logic";
 import { SCENE_HEIGHT, SCENE_WIDTH, type Shape } from "./manorShapes";
 import {
@@ -36,12 +41,39 @@ import {
   pawnTop,
   sceneOutline,
   scenePoint,
-  sealShapes,
   type Motion,
+  type Payoff,
   type SceneExit,
 } from "./roomScenes";
 
 const GLOW = "#FFE3A8";
+const NO_DOORS: number[][] = [];
+
+/** How using the room feels in the hand. */
+function feel(haptic: Payoff["haptic"]) {
+  const later = (fn: () => void, ms: number) => setTimeout(fn, ms);
+  switch (haptic) {
+    case "ring":
+      heavyHaptic();
+      [220, 440, 660].forEach((ms) => later(tickHaptic, ms));
+      break;
+    case "bless":
+      successHaptic();
+      break;
+    case "thud":
+      heavyHaptic();
+      break;
+    case "clink":
+      tickHaptic();
+      later(tickHaptic, 90);
+      break;
+    case "ripple":
+      [0, 140, 280].forEach((ms) => later(tickHaptic, ms));
+      break;
+    default:
+      tapHaptic();
+  }
+}
 const HALO = "#0B0E16";
 const PAPER = "#E9E2CF";
 const SHADE = "#3A4263";
@@ -77,6 +109,8 @@ export interface RoomSceneProps {
   event?: NightEvent | null;
   /** Something covers the room (a popup): it stops moving. */
   paused?: boolean;
+  /** Secret doors joining two diagonal rooms, for good. */
+  secretDoors?: number[][];
 }
 
 const VIEW_BOX = `0 0 ${SCENE_WIDTH} ${SCENE_HEIGHT}`;
@@ -102,15 +136,6 @@ function Shapes({ shapes }: { shapes: Shape[] }) {
         />
       ))}
     </>
-  );
-}
-
-/** Shapes over the canvas, in the scene's units. */
-function Layer({ shapes }: { shapes: Shape[] }) {
-  return (
-    <Svg viewBox={VIEW_BOX} style={StyleSheet.absoluteFill}>
-      <Shapes shapes={shapes} />
-    </Svg>
   );
 }
 
@@ -207,6 +232,7 @@ export function RoomScene({
   book,
   event = null,
   paused = false,
+  secretDoors = NO_DOORS,
 }: RoomSceneProps) {
   const { colors } = useTheme();
   const scene = useMemo(
@@ -228,6 +254,9 @@ export function RoomScene({
   // one clock for the canvas: when it stops, nothing is drawn
   const clock = useIsoClock(resting || still);
   const flash = useSharedValue(0);
+  // a touch's payoff, and the echo of an echoing night: both play 0 → 1
+  const burst = useSharedValue(1);
+  const echo = useSharedValue(1);
   const [pulse] = useState(() => new Animated.Value(0));
   const [drift] = useState(() => new Animated.Value(1));
   // the moving part, on the canvas: a touch, and a little stir while it waits
@@ -276,6 +305,16 @@ export function RoomScene({
     return () => clearTimeout(timer);
   }, [event, resting, still, flash]);
 
+  // an echoing night: the room rings faintly now and then
+  useEffect(() => {
+    if (event !== "echo" || resting || still) return;
+    const ring = setInterval(() => {
+      echo.value = 0;
+      echo.value = withTiming(1, { duration: 2600, easing: Ease.out(Ease.quad) });
+    }, 5200);
+    return () => clearInterval(ring);
+  }, [event, resting, still, echo]);
+
   // the slow breathing of the mission seal and an unread book
   useEffect(() => {
     if (still || resting) return;
@@ -318,8 +357,13 @@ export function RoomScene({
   }, [room, still, act, enter]);
 
   const press = () => {
+    if (active) feel(scene.payoff.haptic);
     if (!still) {
       answer(act, motion);
+      if (active) {
+        burst.value = 0;
+        burst.value = withTiming(1, { duration: scene.payoff.burst.duration, easing: Ease.linear });
+      }
       ripple.setValue(0);
       Animated.timing(ripple, {
         toValue: 1,
@@ -357,6 +401,21 @@ export function RoomScene({
   // in a blackout, all the light there is: the lantern at your own spot
   const lantern = scenePoint(SPOTS[0][0], SPOTS[0][1], 0.12);
   const outline = useMemo(() => sceneOutline(), []);
+  // the seal under your own feet, as wide as the floor foreshortens it
+  const seal = scenePoint(SPOTS[0][0], SPOTS[0][1], 0);
+  const sealSize = SCENE_WIDTH / 190;
+  const centre = scenePoint(0.5, 0.5, 0);
+  // a secret door glows in the corner that leads to its room
+  const passage = secretDoors
+    .filter((door) => door.includes(room))
+    .map((door) => {
+      const other = door[0] === room ? door[1] : door[0];
+      const [x, y] = [
+        other % 3 > room % 3 ? 0.9 : 0.1,
+        Math.floor(other / 3) > Math.floor(room / 3) ? 0.9 : 0.1,
+      ];
+      return scenePoint(x, y, 0.03);
+    });
 
   const exitLabel = (exit: SceneExit): { text: string; fill: string } => {
     const name = roomName(exit.room);
@@ -379,8 +438,42 @@ export function RoomScene({
         </IsoGroup>
         <IsoLayer shapes={scene.front} />
         <IsoEffects effects={scene.effects} layer={2} clock={clock} />
+        {sealed ? (
+          <Seal
+            x={seal[0]}
+            y={seal[1]}
+            rx={20.8 * sealSize}
+            ry={12 * sealSize}
+            color={colors.danger}
+            clock={clock}
+          />
+        ) : null}
+        {passage.map(([x, y], index) => (
+          <IsoGroup key={index}>
+            <LightPool x={x} y={y} radius={26} color="#9CB8FF" flatten={0.58} strength={0.6} clock={clock} />
+            <Firefly x={x} y={y - 6} clock={clock} />
+          </IsoGroup>
+        ))}
+        <Burst spec={scene.payoff.burst} progress={burst} />
         {/* the night's weather lies over the room and nothing else */}
         <IsoClip d={outline}>
+          {event === "insomnia" ? (
+            <Vignette width={SCENE_WIDTH} height={SCENE_HEIGHT} color="#7C5CFF" clock={clock} />
+          ) : null}
+          {event === "echo" ? (
+            <Burst
+              spec={{
+                kind: "ripples",
+                x: centre[0],
+                y: centre[1],
+                size: 70,
+                color: "#B9A8FF",
+                duration: 2600,
+                strength: 0.45,
+              }}
+              progress={echo}
+            />
+          ) : null}
           {event === "fog" ? (
             <Fog x={0} y={70} width={SCENE_WIDTH} height={SCENE_HEIGHT - 70} clock={clock} />
           ) : null}
@@ -405,23 +498,6 @@ export function RoomScene({
           ) : null}
         </IsoClip>
       </IsoCanvas>
-
-      {sealed ? (
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              opacity: drift.interpolate({
-                inputRange: [0.3, 1],
-                outputRange: [0.55, 1],
-              }),
-            },
-          ]}
-        >
-          <Layer shapes={sealShapes(colors.danger)} />
-        </Animated.View>
-      ) : null}
 
       <Animated.View
         pointerEvents="none"
