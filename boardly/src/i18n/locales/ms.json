@@ -39,7 +39,9 @@
     "noTablesSubtitle": "Buka meja dan mulakan permainan!",
     "inviteTitle": "Jemput rakan bermain",
     "inviteSubtitle": "Lebih seronok bersama!",
-    "inviteMore": "Jemput lagi"
+    "inviteMore": "Jemput lagi",
+    "rolling": "Membaling dadu…",
+    "newTable": "Meja baharu"
   },
   "join": {
     "title": "Sertai Meja",
@@ -69,7 +71,8 @@
       "strategy": "Strategi",
       "party": "Parti",
       "faction": "Pihak"
-    }
+    },
+    "openTable": "Buka meja"
   },
   "gameNames": {
     "tictactoe": "Tic-Tac-Toe",

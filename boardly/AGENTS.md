@@ -99,6 +99,13 @@ otherwise.
 - **Strings** in all three locales (`en`, `zh`, `ms`) under the game's
   key. Rules pages: overview, roles, then one card per room/event with
   its picture where there is one (`nightwatch/rules.tsx`).
+- **Box art.** Every game sits on the Games shelf and on Home's felt
+  as a box (`features/games/GameBox.tsx`). Give it a `boxArt` in its
+  GameDefinition — a picture `width` wide, e.g. a still of its own
+  scene (`shelter/BoxArt.tsx`, `nightwatch/BoxArt.tsx`); without one
+  the lid falls back to the skin's logo, then the game's emoji. Shared
+  table pieces live in `src/components/tabletop/` (`Die`, `Meeple`);
+  `boardly-dev://dev/tabletop` shows them all.
 - **Artwork** is listed per game in `assets/games/<game>/README.md`
   (file, size, what it replaces), with generator prompts beside it.
   Draw small icons in code rather than asking for images.
