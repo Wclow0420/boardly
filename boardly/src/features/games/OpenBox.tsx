@@ -1,7 +1,6 @@
-// A box taken off the shelf and opened: the lid lifts and leans back,
-// and in the felt tray are the pieces — one meeple for every seat the
-// game has. Below, what the game is, and the ways in: its rules, or a
-// table of your own.
+// A game taken off the shelf and opened like a folder: its cover falls
+// open and the card inside, with our meeple, rises out. Below, what the
+// game is, and the ways in: its rules, or a table of your own.
 
 import { useEffect } from "react";
 import {
@@ -19,18 +18,16 @@ import Animated, {
   useReducedMotion,
   useSharedValue,
   withDelay,
-  withSpring,
   withTiming,
 } from "react-native-reanimated";
 
 import { AppText, Button, StatusPill } from "@/components/ui";
-import { MEEPLE_COLORS, Meeple } from "@/components/tabletop/Meeple";
 import type { GameCatalogEntry } from "@/data/types";
 import { useGameName } from "@/games/names";
 import { getGame } from "@/games/registry";
 import { fontFamily, useTheme } from "@/theme";
 import { moveHaptic } from "@/utils/haptics";
-import { GameBox } from "./GameBox";
+import { GameFolder } from "./GameFolder";
 
 const TAG_VARIANTS = {
   classic: "host",
@@ -74,8 +71,11 @@ export function OpenBox({
     }
     arrive.set(0);
     open.set(0);
-    // in from the shelf, then the lid comes off
-    arrive.set(withSpring(1, { damping: 14, stiffness: 160 }));
+    // it appears where it is — no slide, no bounce — and only the folder
+    // springs open
+    arrive.set(
+      withTiming(1, { duration: 200, easing: Easing.out(Easing.quad) }),
+    );
     open.set(
       withDelay(
         260,
@@ -87,25 +87,11 @@ export function OpenBox({
   }, [key, still, arrive, open]);
 
   const panel = Math.min(360, screen - 32);
-  const box = Math.min(170, panel * 0.5);
+  const folder = Math.min(230, panel * 0.68);
 
   const card = useAnimatedStyle(() => ({
     opacity: arrive.value,
-    transform: [
-      { translateY: interpolate(arrive.value, [0, 1], [40, 0]) },
-      { scale: interpolate(arrive.value, [0, 1], [0.9, 1]) },
-    ],
-  }));
-  // the lid lifts and leans back against the box
-  const lid = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: interpolate(open.value, [0, 1], [0, -box * 0.58]) },
-      { rotate: `${interpolate(open.value, [0, 1], [0, -6])}deg` },
-      { scale: interpolate(open.value, [0, 1], [1, 0.9]) },
-    ],
-  }));
-  const tray = useAnimatedStyle(() => ({
-    opacity: interpolate(open.value, [0, 0.35, 1], [0, 1, 1]),
+    transform: [{ scale: interpolate(arrive.value, [0, 1], [0.9, 1]) }],
   }));
 
   if (!game) return null;
@@ -113,10 +99,6 @@ export function OpenBox({
   const tagline = def?.skin?.taglineKey ? t(def.skin.taglineKey) : null;
   const introKey = `rules.${game.id}.intro`;
   const intro = i18n.exists(introKey) ? t(introKey) : null;
-  const seats = Array.from({ length: game.maxPlayers }, (_, i) => i);
-  // the pieces fill the tray: up to five a row
-  const perRow = Math.min(5, Math.ceil(game.maxPlayers / 2));
-  const meeple = Math.floor((box - 20 - (perRow - 1) * 6) / perRow) * 0.86;
 
   return (
     <Modal
@@ -147,43 +129,15 @@ export function OpenBox({
             card,
           ]}
         >
-          {/* the box, opened */}
-          <View
-            style={{
-              height: box * 1.62,
-              alignItems: "center",
-              justifyContent: "flex-end",
-            }}
-          >
-            <Animated.View style={[styles.layer, lid]}>
-              <GameBox
-                gameKey={game.id}
-                emoji={game.emoji}
-                tileColor={game.tileColor}
-                width={box}
-              />
-            </Animated.View>
-            <Animated.View
-              style={[
-                styles.tray,
-                {
-                  width: box,
-                  height: box,
-                  borderRadius: Math.max(6, box * 0.07),
-                },
-                tray,
-              ]}
-            >
-              <View style={styles.pieces}>
-                {seats.map((seat) => (
-                  <Meeple
-                    key={seat}
-                    size={meeple}
-                    color={MEEPLE_COLORS[seat % MEEPLE_COLORS.length]}
-                  />
-                ))}
-              </View>
-            </Animated.View>
+          {/* the game, opened like a folder */}
+          <View style={styles.stage}>
+            <GameFolder
+              gameKey={game.id}
+              emoji={game.emoji}
+              tileColor={game.tileColor}
+              width={folder}
+              open={open}
+            />
           </View>
 
           <AppText align="center" style={styles.title}>
@@ -246,23 +200,9 @@ export function OpenBox({
 
 const styles = StyleSheet.create({
   grow: { flex: 1 },
+  stage: { alignItems: "center", paddingTop: 4 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   panel: { borderWidth: 1 },
-  layer: { position: "absolute", bottom: 0 },
-  tray: {
-    backgroundColor: "#2B5A3A",
-    borderWidth: 4,
-    borderColor: "#1C3A26",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  pieces: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 6,
-    padding: 10,
-  },
   title: { fontFamily: fontFamily.bold, fontSize: 20, marginTop: 10 },
   facts: {
     flexDirection: "row",

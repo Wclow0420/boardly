@@ -20,6 +20,8 @@ export interface GameBoxProps {
   width: number;
   /** Lid height ÷ width (1 = square). */
   aspect?: number;
+  /** Just the lid, without the box's side (a folder's cover). */
+  flat?: boolean;
 }
 
 /** How far the box's side shows. */
@@ -55,6 +57,7 @@ export function GameBox({
   tileColor,
   width,
   aspect = 1,
+  flat = false,
 }: GameBoxProps) {
   const game = getGame(gameKey);
   const Art = game?.boxArt;
@@ -64,21 +67,28 @@ export function GameBox({
   const radius = Math.max(6, width * 0.07);
 
   return (
-    <View style={{ width: width + DEPTH, height: height + DEPTH }}>
+    <View
+      style={{
+        width: width + (flat ? 0 : DEPTH),
+        height: height + (flat ? 0 : DEPTH),
+      }}
+    >
       {/* the box's side, peeking out under the lid */}
-      <View
-        style={[
-          styles.side,
-          {
-            left: DEPTH,
-            top: DEPTH,
-            width,
-            height,
-            borderRadius: radius,
-            backgroundColor: shade(top),
-          },
-        ]}
-      />
+      {flat ? null : (
+        <View
+          style={[
+            styles.side,
+            {
+              left: DEPTH,
+              top: DEPTH,
+              width,
+              height,
+              borderRadius: radius,
+              backgroundColor: shade(top),
+            },
+          ]}
+        />
+      )}
       <LinearGradient
         colors={[top, foot]}
         style={[styles.lid, { width, height, borderRadius: radius }]}
