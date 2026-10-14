@@ -9,9 +9,11 @@ interface Watched {
   dealt: boolean;
   letters: number | null;
   books: number[];
+  /** The last move shown as a walk in (see arrival.ts). */
+  walked: string | null;
 }
 
-const FRESH: Watched = { dealt: false, letters: null, books: [] };
+const FRESH: Watched = { dealt: false, letters: null, books: [], walked: null };
 const keyFor = (sessionId: string) => `boardly.nightwatch.watched.${sessionId}`;
 
 /** Remembers on the device what has been watched, so each moment plays

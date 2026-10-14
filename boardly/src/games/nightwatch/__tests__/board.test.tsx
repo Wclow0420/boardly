@@ -34,7 +34,8 @@ it("walks announce → patrol → room → news and every panel", async () => {
   const note = { round: 0, kind: "patrol", room: 0, seen: [2], company: true, fake: null, tracked: null, blocked: null };
   const room = { ...base, phase: "room", myRoom: 0, myFn: "belltower", ready: [false, false, false, false, false], log: [note] };
   await view.rerender(board(room));
-  expect(screen.getByText(/What happened/)).toBeTruthy();
+  // the walk into the room comes first, then the news
+  await waitFor(() => expect(screen.getByText(/What happened/)).toBeTruthy(), { timeout: 4000 });
   await fireEvent.press(screen.getByText("OK"));
   expect(screen.getByText(/Touch the glowing spot/)).toBeTruthy();
   await fireEvent.press(screen.getByLabelText("In the Bell Tower"));

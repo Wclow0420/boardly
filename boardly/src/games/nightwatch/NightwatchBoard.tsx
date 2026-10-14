@@ -9,6 +9,7 @@ import { moveHaptic, tapHaptic } from "@/utils/haptics";
 import type { GameBoardProps, GamePlayer } from "../types";
 import { ManorMap } from "./ManorMap";
 import { Popup } from "./Popup";
+import { arrivalOf } from "./arrival";
 import { LetterScene, RoleIntro } from "./Immersion";
 import { NightMap } from "./NightMap";
 import { RoomPicture } from "./RoomPicture";
@@ -149,6 +150,12 @@ export function NightwatchBoard({
     setPost({ round: state.round, texts: letters });
   }
   const delivering = post !== null && !dealing;
+
+  // Moved by the game (a patrol, a mission, a collapse), the player is
+  // shown walking in, once, before anything else opens over the room.
+  const arrival = over ? null : arrivalOf(state, mySeat);
+  const walking =
+    arrival !== null && pieces.ready && !dealing && !delivering && pieces.watched.walked !== arrival.key;
   // A prompt opens by itself, except the room's: that one waits for the
   // player to touch the thing in the room. Both are tagged with the step.
   const [putAway, setPutAway] = useState<string | null>(null);
@@ -246,7 +253,7 @@ export function NightwatchBoard({
 
   const taskOpen = needsMe && (task === "room" ? touched === step : putAway !== step);
   const showing: "news" | "panel" | "book" | "task" | null =
-    !pieces.ready || dealing || delivering
+    !pieces.ready || dealing || delivering || walking
       ? null
       : news.length > 0
         ? "news"
@@ -361,6 +368,13 @@ export function NightwatchBoard({
                     }
                   : undefined
               }
+              event={over ? null : state.event}
+              secretDoors={state.doors}
+              arrival={walking && arrival ? arrival : undefined}
+              onArrived={() => {
+                if (arrival) pieces.mark({ walked: arrival.key });
+              }}
+              paused={showing !== null || dealing || delivering}
             />
           ) : (
             map

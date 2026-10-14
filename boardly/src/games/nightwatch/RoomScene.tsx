@@ -1,27 +1,82 @@
-import { useEffect, useMemo, useState } from "react";
-import {
-  AccessibilityInfo,
-  Animated,
-  Easing,
-  Pressable,
-  StyleSheet,
-} from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AccessibilityInfo, Animated, AppState, Easing, Pressable, StyleSheet } from "react-native";
 import Svg, { Circle, G, Path, Text as SvgText } from "react-native-svg";
+import {
+  cancelAnimation,
+  Easing as Ease,
+  useDerivedValue,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+  type SharedValue,
+} from "react-native-reanimated";
 
+import {
+  Burst,
+  Darkness,
+  Dust,
+  Firefly,
+  Flash,
+  Fog,
+  IsoCanvas,
+  IsoClip,
+  IsoEffects,
+  IsoGroup,
+  IsoLayer,
+  LightPool,
+  Rain,
+  Seal,
+  Vignette,
+  useIsoClock,
+} from "@/components/iso";
 import { fontFamily, useTheme } from "@/theme";
-import { ROOMS, ROOM_COLOR } from "./logic";
+import { heavyHaptic, successHaptic, tapHaptic, tickHaptic } from "@/utils/haptics";
+import type { Arrival } from "./arrival";
+import { ROOMS, ROOM_COLOR, type NightEvent } from "./logic";
 import { SCENE_HEIGHT, SCENE_WIDTH, type Shape } from "./manorShapes";
 import {
   SPOTS,
   buildScene,
+  entryPoint,
+  walkPrints,
   pawnShapes,
   pawnTop,
-  sealShapes,
+  sceneOutline,
+  scenePoint,
   type Motion,
+  type Payoff,
   type SceneExit,
 } from "./roomScenes";
 
 const GLOW = "#FFE3A8";
+const NO_DOORS: number[][] = [];
+
+/** How using the room feels in the hand. */
+function feel(haptic: Payoff["haptic"]) {
+  const later = (fn: () => void, ms: number) => setTimeout(fn, ms);
+  switch (haptic) {
+    case "ring":
+      heavyHaptic();
+      [220, 440, 660].forEach((ms) => later(tickHaptic, ms));
+      break;
+    case "bless":
+      successHaptic();
+      break;
+    case "thud":
+      heavyHaptic();
+      break;
+    case "clink":
+      tickHaptic();
+      later(tickHaptic, 90);
+      break;
+    case "ripple":
+      [0, 140, 280].forEach((ms) => later(tickHaptic, ms));
+      break;
+    default:
+      tapHaptic();
+  }
+}
 const HALO = "#0B0E16";
 const PAPER = "#E9E2CF";
 const SHADE = "#3A4263";
@@ -53,6 +108,16 @@ export interface RoomSceneProps {
   onExit: (room: number) => void;
   /** The room's book can be opened; it glows until it has been. */
   book?: { label: string; unread: boolean; onOpen: () => void };
+  /** Tonight's event, shown in the room: blackout, fog, storm... */
+  event?: NightEvent | null;
+  /** Something covers the room (a popup): it stops moving. */
+  paused?: boolean;
+  /** Secret doors joining two diagonal rooms, for good. */
+  secretDoors?: number[][];
+  /** The player has just come in this way: they are shown walking in. */
+  arrival?: Arrival;
+  /** They have reached their spot. */
+  onArrived?: () => void;
 }
 
 const VIEW_BOX = `0 0 ${SCENE_WIDTH} ${SCENE_HEIGHT}`;
@@ -78,14 +143,6 @@ function Shapes({ shapes }: { shapes: Shape[] }) {
         />
       ))}
     </>
-  );
-}
-
-function Layer({ shapes }: { shapes: Shape[] }) {
-  return (
-    <Svg viewBox={VIEW_BOX} style={StyleSheet.absoluteFill}>
-      <Shapes shapes={shapes} />
-    </Svg>
   );
 }
 
@@ -122,27 +179,44 @@ function Label({
   );
 }
 
+const sway = Ease.inOut(Ease.sin);
+const glide = (value: number, duration: number) => withTiming(value, { duration, easing: sway });
+
 /** The object's answer to a touch: a bell swings out and settles, a
  *  ledger is lifted and put back, a hatch slides open and shut. */
-function answer(value: Animated.Value, motion: Motion): Animated.CompositeAnimation {
-  const to = (toValue: number, duration: number) =>
-    Animated.timing(value, { toValue, duration, easing: ease, useNativeDriver: true });
-  return motion.kind === "swing"
-    ? Animated.sequence([
-        to(1, 180),
-        to(-0.75, 300),
-        to(0.5, 280),
-        to(-0.28, 260),
-        to(0.12, 240),
-        to(0, 220),
-      ])
-    : Animated.sequence([to(1, 280), Animated.delay(520), to(0, 420)]);
+function answer(value: SharedValue<number>, motion: Motion) {
+  value.value =
+    motion.kind === "swing"
+      ? withSequence(
+          glide(1, 180),
+          glide(-0.75, 300),
+          glide(0.5, 280),
+          glide(-0.28, 260),
+          glide(0.12, 240),
+          glide(0, 220),
+        )
+      : withSequence(glide(1, 280), glide(1, 520), glide(0, 420));
+}
+
+/** How the moving part stands for a given swing of its motion. */
+function placed(motion: Motion, v: number) {
+  "worklet";
+  if (motion.kind === "swing") return [{ rotate: (v * motion.degrees * Math.PI) / 180 }];
+  if (motion.kind === "pop") {
+    return [{ translateY: -motion.lift * v }, { scale: 1 + (motion.scale - 1) * v }];
+  }
+  return [{ translateX: motion.dx * v }, { translateY: motion.dy * v }];
 }
 
 /** A slow, endless there-and-back between two values. */
 function breathe(value: Animated.Value, from: number, to: number, duration: number) {
   const step = (toValue: number) =>
-    Animated.timing(value, { toValue, duration, easing: ease, useNativeDriver: true });
+    Animated.timing(value, {
+      toValue,
+      duration,
+      easing: ease,
+      useNativeDriver: true,
+    });
   return Animated.loop(Animated.sequence([step(to), step(from)]));
 }
 
@@ -163,22 +237,48 @@ export function RoomScene({
   roomName,
   onExit,
   book,
+  event = null,
+  paused = false,
+  secretDoors = NO_DOORS,
+  arrival,
+  onArrived,
 }: RoomSceneProps) {
   const { colors } = useTheme();
   const scene = useMemo(
-    () => buildScene(room, { accent: colors.primary, collapsed, lockedDoor }),
-    [room, colors.primary, collapsed, lockedDoor]
+    () =>
+      buildScene(room, {
+        accent: colors.primary,
+        collapsed,
+        lockedDoor,
+        live: true,
+      }),
+    [room, colors.primary, collapsed, lockedDoor],
   );
   const { touch, motion } = scene;
 
-  // drawing units to points, for the moves that are lengths
-  const [scale, setScale] = useState(1);
   const [still, setStill] = useState(false);
+  // with the app in the background nobody is looking either
+  const [away, setAway] = useState(AppState.currentState !== "active");
+  const resting = paused || away;
+  // one clock for the canvas: when it stops, nothing is drawn
+  const clock = useIsoClock(resting || still);
+  const flash = useSharedValue(0);
+  // a touch's payoff, and the echo of an echoing night: both play 0 → 1
+  const burst = useSharedValue(1);
+  // walking in: 0 at the doorway, 1 at your spot; the prints fade after
+  const [walk] = useState(() => new Animated.Value(1));
+  const [trace] = useState(() => new Animated.Value(0));
+  const [scale, setScale] = useState(0);
+  const arrived = useRef(onArrived);
+  useEffect(() => {
+    arrived.current = onArrived;
+  });
+  const echo = useSharedValue(1);
   const [pulse] = useState(() => new Animated.Value(0));
-  const [flicker] = useState(() => new Animated.Value(1));
   const [drift] = useState(() => new Animated.Value(1));
-  const [act] = useState(() => new Animated.Value(0));
-  const [beckon] = useState(() => new Animated.Value(0));
+  // the moving part, on the canvas: a touch, and a little stir while it waits
+  const act = useSharedValue(0);
+  const beckon = useSharedValue(0);
   const [ripple] = useState(() => new Animated.Value(1));
   const [enter] = useState(() => new Animated.Value(1));
 
@@ -194,29 +294,102 @@ export function RoomScene({
     };
   }, []);
 
-  // candlelight, and the slower drift of steam and fireflies
   useEffect(() => {
-    if (still) return;
-    const loops = [breathe(flicker, 1, 0.5, 620), breathe(drift, 1, 0.3, 1700)];
-    loops.forEach((loop) => loop.start());
-    return () => loops.forEach((loop) => loop.stop());
-  }, [still, flicker, drift]);
+    const watch = AppState.addEventListener("change", (status) => setAway(status !== "active"));
+    return () => watch.remove();
+  }, []);
+
+  // a storm: lightning now and then, felt as well as seen
+  useEffect(() => {
+    if (event !== "storm" || resting || still) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const strike = () => {
+      timer = setTimeout(
+        () => {
+          flash.value = withSequence(
+            withTiming(1, { duration: 60 }),
+            withTiming(0.25, { duration: 90 }),
+            withTiming(0.85, { duration: 50 }),
+            withTiming(0, { duration: 650 }),
+          );
+          heavyHaptic();
+          strike();
+        },
+        4000 + Math.random() * 6000,
+      );
+    };
+    strike();
+    return () => clearTimeout(timer);
+  }, [event, resting, still, flash]);
+
+  // the player walks in from where they came, a tick for every step
+  const walkKey = arrival?.key;
+  useEffect(() => {
+    if (!walkKey) return;
+    if (still) {
+      arrived.current?.();
+      return;
+    }
+    walk.setValue(0);
+    trace.setValue(1);
+    const steps = [180, 420, 660, 900].map((ms) => setTimeout(tickHaptic, ms));
+    const going = Animated.timing(walk, {
+      toValue: 1,
+      duration: 1150,
+      easing: Easing.inOut(Easing.quad),
+      useNativeDriver: true,
+    });
+    going.start(({ finished }) => {
+      if (!finished) return;
+      arrived.current?.();
+      Animated.timing(trace, { toValue: 0, duration: 2600, useNativeDriver: true }).start();
+    });
+    return () => {
+      steps.forEach(clearTimeout);
+      going.stop();
+      walk.setValue(1);
+    };
+  }, [walkKey, still, walk, trace]);
+
+  // an echoing night: the room rings faintly now and then
+  useEffect(() => {
+    if (event !== "echo" || resting || still) return;
+    const ring = setInterval(() => {
+      echo.value = 0;
+      echo.value = withTiming(1, { duration: 2600, easing: Ease.out(Ease.quad) });
+    }, 5200);
+    return () => clearInterval(ring);
+  }, [event, resting, still, echo]);
+
+  // the slow breathing of the mission seal and an unread book
+  useEffect(() => {
+    if (still || resting) return;
+    const loop = breathe(drift, 1, 0.3, 1700);
+    loop.start();
+    return () => loop.stop();
+  }, [still, resting, drift]);
 
   // while the object can be used it glows, and stirs a little
   useEffect(() => {
     if (!active) return;
-    const loops = [breathe(pulse, 0, 1, 900)];
-    if (!still) loops.push(breathe(beckon, motion.kind === "swing" ? -0.1 : 0, 0.1, 1300));
-    loops.forEach((loop) => loop.start());
+    const loop = breathe(pulse, 0, 1, 900);
+    loop.start();
+    if (!still && !resting) {
+      const from = motion.kind === "swing" ? -0.1 : 0;
+      beckon.value = from;
+      beckon.value = withRepeat(withSequence(glide(0.1, 1300), glide(from, 1300)), -1);
+    }
     return () => {
-      loops.forEach((loop) => loop.stop());
-      beckon.setValue(0);
+      loop.stop();
+      cancelAnimation(beckon);
+      beckon.value = 0;
     };
-  }, [active, still, motion.kind, pulse, beckon]);
+  }, [active, still, resting, motion.kind, pulse, beckon]);
 
   // walking into a room: it comes up out of the dark
   useEffect(() => {
-    act.setValue(0);
+    cancelAnimation(act);
+    act.value = 0;
     if (still) return;
     enter.setValue(0);
     const walk = Animated.timing(enter, {
@@ -230,8 +403,13 @@ export function RoomScene({
   }, [room, still, act, enter]);
 
   const press = () => {
+    if (active) feel(scene.payoff.haptic);
     if (!still) {
-      answer(act, motion).start();
+      answer(act, motion);
+      if (active) {
+        burst.value = 0;
+        burst.value = withTiming(1, { duration: scene.payoff.burst.duration, easing: Ease.linear });
+      }
       ripple.setValue(0);
       Animated.timing(ripple, {
         toValue: 1,
@@ -243,50 +421,9 @@ export function RoomScene({
     if (active) onTouch();
   };
 
-  const moved = Animated.add(act, beckon);
-  const origin = (pivot: [number, number]) => `${pivot[0] * scale}px ${pivot[1] * scale}px`;
-  const propStyle =
-    motion.kind === "swing"
-      ? {
-          transformOrigin: origin(motion.pivot),
-          transform: [
-            {
-              rotate: moved.interpolate({
-                inputRange: [-1, 1],
-                outputRange: [`-${motion.degrees}deg`, `${motion.degrees}deg`],
-              }),
-            },
-          ],
-        }
-      : motion.kind === "pop"
-        ? {
-            transformOrigin: origin(motion.pivot),
-            transform: [
-              {
-                translateY: moved.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, -motion.lift * scale],
-                }),
-              },
-              { scale: moved.interpolate({ inputRange: [0, 1], outputRange: [1, motion.scale] }) },
-            ],
-          }
-        : {
-            transform: [
-              {
-                translateX: moved.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, motion.dx * scale],
-                }),
-              },
-              {
-                translateY: moved.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, motion.dy * scale],
-                }),
-              },
-            ],
-          };
+  const propTransform = useDerivedValue(() => placed(motion, act.value + beckon.value));
+  const pivot =
+    motion.kind === "slide" ? { x: 0, y: 0 } : { x: motion.pivot[0], y: motion.pivot[1] };
 
   /** A box of the drawing, as a place on the page. */
   const place = (x: number, y: number, w: number, h: number) =>
@@ -305,10 +442,43 @@ export function RoomScene({
     spot: SPOTS[index],
   }));
   // far before near, so a watcher in front hides the one behind
-  const byDepth = [...standing].sort(
-    (a, b) => a.spot[0] + a.spot[1] - (b.spot[0] + b.spot[1])
+  const byDepth = [...standing]
+    .filter(({ person }) => person.kind !== "me")
+    .sort((a, b) => a.spot[0] + a.spot[1] - (b.spot[0] + b.spot[1]));
+  const me = standing.find(({ person }) => person.kind === "me");
+  // the way in, from the doorway to your spot, and how far that is on the page
+  const mySpot = scenePoint(SPOTS[0][0], SPOTS[0][1], 0);
+  const entry = arrival ? entryPoint(room, arrival.from, arrival.how) : null;
+  const prints = useMemo(
+    () => (entry ? walkPrints(entry.at, mySpot, PAPER) : []),
+    // the prints belong to one walk
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [walkKey],
   );
+  const [dx, dy] = entry
+    ? [(entry.at[0] - mySpot[0]) * scale, (entry.at[1] - mySpot[1]) * scale]
+    : [0, 0];
+  const bob = 1.6 * scale;
+  const stepsAt = [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1];
   const sealed = missionRoom === room;
+  // in a blackout, all the light there is: the lantern at your own spot
+  const lantern = scenePoint(SPOTS[0][0], SPOTS[0][1], 0.12);
+  const outline = useMemo(() => sceneOutline(), []);
+  // the seal under your own feet, as wide as the floor foreshortens it
+  const seal = scenePoint(SPOTS[0][0], SPOTS[0][1], 0);
+  const sealSize = SCENE_WIDTH / 190;
+  const centre = scenePoint(0.5, 0.5, 0);
+  // a secret door glows in the corner that leads to its room
+  const passage = secretDoors
+    .filter((door) => door.includes(room))
+    .map((door) => {
+      const other = door[0] === room ? door[1] : door[0];
+      const [x, y] = [
+        other % 3 > room % 3 ? 0.9 : 0.1,
+        Math.floor(other / 3) > Math.floor(room / 3) ? 0.9 : 0.1,
+      ];
+      return scenePoint(x, y, 0.03);
+    });
 
   const exitLabel = (exit: SceneExit): { text: string; fill: string } => {
     const name = roomName(exit.room);
@@ -324,23 +494,84 @@ export function RoomScene({
       style={[styles.frame, { opacity: enter }]}
       onLayout={(event) => setScale(event.nativeEvent.layout.width / SCENE_WIDTH)}
     >
-      <Layer shapes={scene.back} />
-      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, propStyle]}>
-        <Layer shapes={scene.prop} />
-      </Animated.View>
-      <Layer shapes={scene.front} />
-
-      {sealed ? (
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            StyleSheet.absoluteFill,
-            { opacity: drift.interpolate({ inputRange: [0.3, 1], outputRange: [0.55, 1] }) },
-          ]}
-        >
-          <Layer shapes={sealShapes(colors.danger)} />
-        </Animated.View>
-      ) : null}
+      {/* the room itself, its moving part and its live light, on Skia */}
+      <IsoCanvas width={SCENE_WIDTH} height={SCENE_HEIGHT}>
+        <IsoLayer shapes={scene.back} />
+        <IsoEffects effects={scene.effects} layer={0} clock={clock} />
+        <IsoGroup transform={propTransform} origin={pivot}>
+          <IsoLayer shapes={scene.prop} />
+          <IsoEffects effects={scene.effects} layer={1} clock={clock} />
+        </IsoGroup>
+        <IsoLayer shapes={scene.front} />
+        <IsoEffects effects={scene.effects} layer={2} clock={clock} />
+        {sealed ? (
+          <Seal
+            x={seal[0]}
+            y={seal[1]}
+            rx={20.8 * sealSize}
+            ry={12 * sealSize}
+            color={colors.danger}
+            clock={clock}
+          />
+        ) : null}
+        {passage.map(([x, y], index) => (
+          <IsoGroup key={index}>
+            <LightPool
+              x={x}
+              y={y}
+              radius={26}
+              color="#9CB8FF"
+              flatten={0.58}
+              strength={0.6}
+              clock={clock}
+            />
+            <Firefly x={x} y={y - 6} clock={clock} />
+          </IsoGroup>
+        ))}
+        <Burst spec={scene.payoff.burst} progress={burst} />
+        {/* the night's weather lies over the room and nothing else */}
+        <IsoClip d={outline}>
+          {event === "insomnia" ? (
+            <Vignette width={SCENE_WIDTH} height={SCENE_HEIGHT} color="#7C5CFF" clock={clock} />
+          ) : null}
+          {event === "echo" ? (
+            <Burst
+              spec={{
+                kind: "ripples",
+                x: centre[0],
+                y: centre[1],
+                size: 70,
+                color: "#B9A8FF",
+                duration: 2600,
+                strength: 0.45,
+              }}
+              progress={echo}
+            />
+          ) : null}
+          {event === "fog" ? (
+            <Fog x={0} y={70} width={SCENE_WIDTH} height={SCENE_HEIGHT - 70} clock={clock} />
+          ) : null}
+          {event === "collapse" ? (
+            <Dust x={0} y={0} width={SCENE_WIDTH} height={SCENE_HEIGHT} clock={clock} />
+          ) : null}
+          {event === "storm" && ROOMS[room] === "garden" ? (
+            <Rain x={0} y={0} width={SCENE_WIDTH} height={SCENE_HEIGHT} clock={clock} />
+          ) : null}
+          {event === "storm" ? (
+            <Flash width={SCENE_WIDTH} height={SCENE_HEIGHT} flash={flash} />
+          ) : null}
+          {event === "blackout" ? (
+            <Darkness
+              x={lantern[0]}
+              y={lantern[1]}
+              radius={46}
+              width={SCENE_WIDTH}
+              height={SCENE_HEIGHT}
+              clock={clock}
+            />
+          ) : null}
+        </IsoClip>
+      </IsoCanvas>
 
       <Animated.View
         pointerEvents="none"
@@ -348,7 +579,12 @@ export function RoomScene({
           StyleSheet.absoluteFill,
           {
             transform: [
-              { translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [-6, 0] }) },
+              {
+                translateY: enter.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-6, 0],
+                }),
+              },
             ],
           },
         ]}
@@ -358,15 +594,13 @@ export function RoomScene({
             <Shapes
               key={person.key}
               shapes={
-                person.kind === "me"
-                  ? pawnShapes(spot, colors.primary, PAPER)
-                  : person.kind === "other"
-                    ? pawnShapes(spot, colors.info, PAPER)
-                    : pawnShapes(spot, SHADE, "#6C769C")
+                person.kind === "other"
+                  ? pawnShapes(spot, colors.info, PAPER)
+                  : pawnShapes(spot, SHADE, "#6C769C")
               }
             />
           ))}
-          {standing.map(({ person, spot }) => {
+          {byDepth.map(({ person, spot }) => {
             const [x, y] = pawnTop(spot);
             return (
               <Label
@@ -384,19 +618,63 @@ export function RoomScene({
         </Svg>
       </Animated.View>
 
-      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: flicker }]}>
-        <Layer shapes={scene.glow} />
-      </Animated.View>
-      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: drift }]}>
-        <Layer shapes={scene.glow2} />
-      </Animated.View>
+      {/* the prints of the walk in, fading once you have arrived */}
+      {prints.length > 0 ? (
+        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: trace }]}>
+          <Svg viewBox={VIEW_BOX} style={StyleSheet.absoluteFill}>
+            <Shapes shapes={prints} />
+          </Svg>
+        </Animated.View>
+      ) : null}
+
+      {/* you: walking in from the doorway, then standing at your spot */}
+      {me ? (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              opacity: entry?.fade
+                ? walk.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0, 1, 1] })
+                : 1,
+              transform: [
+                { translateX: walk.interpolate({ inputRange: [0, 1], outputRange: [dx, 0] }) },
+                {
+                  translateY: walk.interpolate({
+                    inputRange: stepsAt,
+                    outputRange: stepsAt.map((t, i) => dy * (1 - t) - (i % 2 ? bob : 0)),
+                  }),
+                },
+                {
+                  translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [-6, 0] }),
+                },
+              ],
+            },
+          ]}
+        >
+          <Svg viewBox={VIEW_BOX} style={StyleSheet.absoluteFill}>
+            <Shapes shapes={pawnShapes(me.spot, colors.primary, PAPER)} />
+            <Label
+              x={pawnTop(me.spot)[0]}
+              y={pawnTop(me.spot)[1] - 2}
+              text={short(me.person.label)}
+              fill={colors.primary}
+            />
+          </Svg>
+        </Animated.View>
+      ) : null}
 
       {active ? (
         <Animated.View
           pointerEvents="none"
           style={[
             StyleSheet.absoluteFill,
-            { opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.35, 1] }) },
+            {
+              opacity: pulse.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.35, 1],
+              }),
+            },
           ]}
         >
           <Svg viewBox={VIEW_BOX} style={StyleSheet.absoluteFill}>
@@ -425,7 +703,13 @@ export function RoomScene({
       {book && scene.book && book.unread ? (
         <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: drift }]}>
           <Svg viewBox={VIEW_BOX} style={StyleSheet.absoluteFill}>
-            <Circle cx={scene.book.x} cy={scene.book.y} r={scene.book.r} fill={GLOW} opacity={0.16} />
+            <Circle
+              cx={scene.book.x}
+              cy={scene.book.y}
+              r={scene.book.r}
+              fill={GLOW}
+              opacity={0.16}
+            />
             <Circle
               cx={scene.book.x}
               cy={scene.book.y}
@@ -444,9 +728,17 @@ export function RoomScene({
           place(touch.x - touch.r, touch.y - touch.r, touch.r * 2, touch.r * 2),
           styles.ripple,
           {
-            opacity: ripple.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 0.8, 0] }),
+            opacity: ripple.interpolate({
+              inputRange: [0, 0.15, 1],
+              outputRange: [0, 0.8, 0],
+            }),
             transform: [
-              { scale: ripple.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1.9] }) },
+              {
+                scale: ripple.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.6, 1.9],
+                }),
+              },
             ],
           },
         ]}
@@ -470,10 +762,7 @@ export function RoomScene({
           accessibilityRole="button"
           accessibilityLabel={book.label}
           onPress={book.onOpen}
-          style={[
-            place(scene.book.x - 13, scene.book.y - 13, 26, 26),
-            styles.round,
-          ]}
+          style={[place(scene.book.x - 13, scene.book.y - 13, 26, 26), styles.round]}
         />
       ) : null}
       <Pressable

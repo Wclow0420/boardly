@@ -1,14 +1,17 @@
-import { View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { AppState, StyleSheet, View } from "react-native";
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 
+import { GlowArea, IsoCanvas, IsoLayer, Passage, useIsoClock } from "@/components/iso";
 import { fontFamily, useTheme } from "@/theme";
-import { ROOMS, ROOM_COLOR, type NightwatchState } from "./logic";
+import { HALL, ROOMS, ROOM_COLOR, type NightwatchState } from "./logic";
 import { GameText as AppText } from "./GameText";
 import {
   MANOR_HEIGHT,
   MANOR_WIDTH,
   floorPath,
+  footprints,
   floorPoint,
   manorShapes,
   type Tint,
@@ -36,7 +39,7 @@ function markersByRoom(
   notes: Record<number, number>,
   nameOf: (seat: number) => string,
   you: string,
-  decoyLabel: string
+  decoyLabel: string,
 ): Map<number, Marker[]> {
   const rooms = new Map<number, Marker[]>();
   const known = new Set<number>([mySeat]);
@@ -48,7 +51,7 @@ function markersByRoom(
       room,
       seat === mySeat
         ? { key: "me", label: you, kind: "me" }
-        : { key: `seat-${seat}`, label: nameOf(seat), kind: "other" }
+        : { key: `seat-${seat}`, label: nameOf(seat), kind: "other" },
     );
   };
   const tonight = round === state.round;
@@ -85,6 +88,22 @@ function markersByRoom(
   return rooms;
 }
 
+/** The rooms a player was in, night by night, up to `round`: the Hall
+ *  at the start, each patrol, and the mission room when a mission they
+ *  went on took them there. */
+function wayWent(state: NightwatchState, mySeat: number, round: number): number[] {
+  const rooms = [HALL];
+  for (let night = 0; night <= round; night++) {
+    const patrol = state.log.find((note) => note.kind === "patrol" && note.round === night);
+    if (patrol?.kind === "patrol") rooms.push(patrol.room);
+    const mission = state.results.find((result) => result.round === night);
+    if (mission?.team.includes(mySeat) && !mission.missing.includes(mySeat)) {
+      rooms.push(mission.room);
+    }
+  }
+  return rooms;
+}
+
 /** Names are cut to fit beside a dot. */
 const short = (name: string) => (name.length > 9 ? `${name.slice(0, 8)}…` : name);
 
@@ -93,7 +112,10 @@ const NAME_SIZE = 7.5;
 /** How wide a name is drawn, near enough: Chinese characters are square,
  *  Latin letters a little over half as wide. */
 const widthOf = (text: string) =>
-  [...text].reduce((sum, char) => sum + (char > "\u2e7f" || char === "■" || char === "□" ? 1 : 0.58), 0) * NAME_SIZE;
+  [...text].reduce(
+    (sum, char) => sum + (char > "\u2e7f" || char === "■" || char === "□" ? 1 : 0.58),
+    0,
+  ) * NAME_SIZE;
 
 /** Each room's name on a plate, well inside its own floor: the people
  *  stand behind it, and no name strays next door. Tonight's mission
@@ -116,8 +138,7 @@ export function RoomNames({
         const mark = missionRoom === room ? "■ " : nextRoom === room ? "□ " : "";
         const name = `${mark}${roomName(room)}`;
         const width = widthOf(name) + 8;
-        const tint =
-          missionRoom === room ? colors.danger : nextRoom === room ? colors.info : null;
+        const tint = missionRoom === room ? colors.danger : nextRoom === room ? colors.info : null;
         return (
           <G key={id}>
             <Rect
@@ -272,9 +293,25 @@ export function ManorMap({
     accent: colors.primary,
     collapsed: state.collapsed,
     lockedDoor: tonight ? state.lockedDoor : null,
-    secretDoors: state.doors,
+    // the canvas lights them instead
+    secretDoors: [],
     tints,
   });
+  const trail = footprints(wayWent(state, mySeat, round), PAPER);
+  const passages = state.doors.map(
+    ([a, b]) => [floorPoint(a, 0.5, 0.5, 0.02), floorPoint(b, 0.5, 0.5, 0.02)] as const,
+  );
+  // the map only moves while the app is in front
+  const [away, setAway] = useState(AppState.currentState !== "active");
+  useEffect(() => {
+    const watch = AppState.addEventListener("change", (status) => setAway(status !== "active"));
+    return () => watch.remove();
+  }, []);
+  const clock = useIsoClock(away);
+  const missionFloor = useMemo(
+    () => (missionRoom === null ? null : floorPath(missionRoom)),
+    [missionRoom],
+  );
   const markers = markersByRoom(
     state,
     mySeat,
@@ -283,17 +320,10 @@ export function ManorMap({
     notes,
     nameOf,
     t("nightwatch.map.you"),
-    t("nightwatch.map.decoy")
+    t("nightwatch.map.decoy"),
   );
 
-  const label = (
-    key: string,
-    x: number,
-    y: number,
-    text: string,
-    fill: string,
-    size: number
-  ) => (
+  const label = (key: string, x: number, y: number, text: string, fill: string, size: number) => (
     <G key={key}>
       <SvgText
         x={x}
@@ -323,78 +353,73 @@ export function ManorMap({
 
   return (
     <View>
-      <Svg
-        viewBox={`0 0 ${MANOR_WIDTH} ${MANOR_HEIGHT}`}
-        style={{ width: "100%", aspectRatio: MANOR_WIDTH / MANOR_HEIGHT }}
-      >
-        {shapes.map((shape, index) => (
-          <Path
-            key={index}
-            d={shape.d}
-            fill={shape.fill ?? "none"}
-            stroke={shape.stroke}
-            strokeWidth={shape.strokeWidth}
-            strokeDasharray={shape.dash}
-            strokeLinejoin="round"
-            strokeLinecap="round"
-            opacity={shape.opacity}
-          />
-        ))}
+      <View style={{ width: "100%", aspectRatio: MANOR_WIDTH / MANOR_HEIGHT }}>
+        {/* the house, lit: tonight's mission glows, secret doors shine,
+            and the way you have come is marked in footprints */}
+        <IsoCanvas width={MANOR_WIDTH} height={MANOR_HEIGHT}>
+          <IsoLayer shapes={shapes} />
+          {missionFloor ? <GlowArea d={missionFloor} color={colors.danger} clock={clock} /> : null}
+          {passages.map(([from, to], index) => (
+            <Passage key={index} from={from} to={to} color="#9CB8FF" clock={clock} />
+          ))}
+          <IsoLayer shapes={trail} />
+        </IsoCanvas>
+        <Svg viewBox={`0 0 ${MANOR_WIDTH} ${MANOR_HEIGHT}`} style={StyleSheet.absoluteFill}>
+          <RoomNames roomName={roomName} missionRoom={missionRoom} nextRoom={nextRoom} />
 
-        <RoomNames roomName={roomName} missionRoom={missionRoom} nextRoom={nextRoom} />
+          {[...markers].map(([room, here]) => {
+            const at = spots(room, here.length);
+            return here.map((marker, i) => {
+              const [x, y] = at[i];
+              const me = marker.kind === "me";
+              const mine = me || marker.kind === "decoy";
+              // a decoy and a note are drawn hollow: neither is a sighting
+              const hollow = marker.kind === "decoy" || marker.kind === "note";
+              return (
+                <G key={`${room}-${marker.key}`}>
+                  <Circle
+                    cx={x}
+                    cy={y}
+                    r={me ? 4.2 : 3.4}
+                    fill={
+                      hollow
+                        ? HALO
+                        : me
+                          ? colors.primary
+                          : marker.kind === "unknown"
+                            ? SHADE
+                            : colors.info
+                    }
+                    stroke={marker.kind === "decoy" ? colors.primary : PAPER}
+                    strokeWidth={1.2}
+                    strokeDasharray={hollow ? "2 1.5" : undefined}
+                  />
+                  {label(
+                    "label",
+                    x,
+                    // neighbours take turns above and below so names don't collide
+                    i % 2 === 0 ? y - 6.5 : y + 11,
+                    short(marker.label),
+                    mine ? colors.primary : marker.kind === "note" ? colors.textMuted : colors.text,
+                    7,
+                  )}
+                </G>
+              );
+            });
+          })}
 
-        {[...markers].map(([room, here]) => {
-          const at = spots(room, here.length);
-          return here.map((marker, i) => {
-            const [x, y] = at[i];
-            const me = marker.kind === "me";
-            const mine = me || marker.kind === "decoy";
-            // a decoy and a note are drawn hollow: neither is a sighting
-            const hollow = marker.kind === "decoy" || marker.kind === "note";
-            return (
-              <G key={`${room}-${marker.key}`}>
-                <Circle
-                  cx={x}
-                  cy={y}
-                  r={me ? 4.2 : 3.4}
-                  fill={
-                    hollow
-                      ? HALO
-                      : me
-                        ? colors.primary
-                        : marker.kind === "unknown"
-                          ? SHADE
-                          : colors.info
-                  }
-                  stroke={marker.kind === "decoy" ? colors.primary : PAPER}
-                  strokeWidth={1.2}
-                  strokeDasharray={hollow ? "2 1.5" : undefined}
-                />
-                {label(
-                  "label",
-                  x,
-                  // neighbours take turns above and below so names don't collide
-                  i % 2 === 0 ? y - 6.5 : y + 11,
-                  short(marker.label),
-                  mine ? colors.primary : marker.kind === "note" ? colors.textMuted : colors.text,
-                  7
-                )}
-              </G>
-            );
-          });
-        })}
-
-        {/* touch targets, one per floor, above everything else */}
-        {selectable.map((room) => (
-          <Path
-            key={`tap-${room}`}
-            d={floorPath(room)}
-            fill="#000000"
-            fillOpacity={0.01}
-            onPress={() => onSelect(room)}
-          />
-        ))}
-      </Svg>
+          {/* touch targets, one per floor, above everything else */}
+          {selectable.map((room) => (
+            <Path
+              key={`tap-${room}`}
+              d={floorPath(room)}
+              fill="#000000"
+              fillOpacity={0.01}
+              onPress={() => onSelect(room)}
+            />
+          ))}
+        </Svg>
+      </View>
 
       <View
         style={{

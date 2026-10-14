@@ -16,7 +16,7 @@ export function RoomPicture({ room, width }: { room: number; width: number }) {
       collapsed: NO_ROOMS,
       lockedDoor: null,
     });
-    return [...scene.back, ...scene.prop, ...scene.front, ...scene.glow, ...scene.glow2];
+    return [...scene.back, ...scene.prop, ...scene.front];
   }, [room, colors.primary]);
 
   return (
