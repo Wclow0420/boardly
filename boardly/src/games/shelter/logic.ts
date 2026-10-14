@@ -101,6 +101,7 @@ export type Note =
   | { day: number; kind: "played"; card: Card; place: Place }
   | { day: number; kind: "guarded"; post: Post; with: number[]; saw: number[] }
   | { day: number; kind: "caught"; post: Post; by: number[] }
+  | { day: number; kind: "bumped"; post: Post }
   | { day: number; kind: "stole"; food: number; sneaked: boolean }
   | { day: number; kind: "opened"; sneaked: boolean };
 

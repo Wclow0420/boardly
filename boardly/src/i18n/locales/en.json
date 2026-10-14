@@ -573,7 +573,7 @@
         "infected": [
           "On the 2nd or 3rd night a random Survivor is infected (with 6+, a second one two nights later).",
           "Goal: empty the storeroom, make Survivors fall, or leave too few standing when the rescue comes.",
-          "By day you can play Mould (sabotage) −2, which turns over as ordinary mould; at night steal 2 food from the storeroom or open the door to a zombie.",
+          "By day you can play Mould (sabotage) −2, which turns over as ordinary mould; at night steal a third of the storeroom (at least 2) or open the door to a zombie.",
           "With 5 players the Infected can Sneak once: that night they succeed even if guarded, unseen.",
           "Two Infected don't know each other."
         ]
@@ -591,11 +591,11 @@
         "title": "The three posts at night",
         "intro": "At night everyone secretly taps one spot in the house. The Infected sees the same three spots, meaning something else.",
         "store": {
-          "survivor": "Guard the storeroom: if someone comes to steal, you see who. Tired tomorrow.",
-          "infected": "Steal: if nobody guards it, the storeroom loses 2 food and you eat it."
+          "survivor": "Guard the storeroom: if someone comes to steal, you see who. One guard to a post — the first to choose it; anyone later goes back to bed. Tired tomorrow.",
+          "infected": "Steal: if nobody guards it, take a third of the storeroom (at least 2) and eat it. The fuller the storeroom, the more you take."
         },
         "door": {
-          "survivor": "Guard the door: if someone comes to open it, you see who. Tired tomorrow.",
+          "survivor": "Guard the door: if someone comes to open it, you see who. One guard to a post. Tired tomorrow.",
           "infected": "Open the door: if nobody guards it, a zombie gets in, the storeroom loses 1 and a sleeper is hurt."
         },
         "sleep": {
@@ -609,7 +609,7 @@
           "Morning (after the first cough): talk about the night, then vote. More than half of those standing on one name sends them out, and their role is shown.",
           "Day: everyone secretly picks a place (farm, market, and the hospital with 5+). The injured stay home.",
           "Cards: draw 2, play 1 face down. Cards at one place are shuffled and turned over; their total goes into the storeroom.",
-          "Night: everyone secretly taps the storeroom, the door or a bed. The Infected succeeds where nobody guards; meeting a guard fails and gets them seen.",
+          "Night: everyone secretly taps the storeroom, the door or a bed. One guard to a post (the first to choose it). The Infected succeeds where nobody guards; meeting a guard fails and gets them seen.",
           "Supper: everyone standing eats 1 from the storeroom. Short? Someone goes hungry: one night weak (1 card tomorrow), two nights running and they fall.",
           "The fallen can do nothing but watch.",
           "At the start of the 2nd or 3rd night the app announces a cough. With 6+, a second cough comes two nights later."
@@ -1686,7 +1686,8 @@
       "stole": "You stole {{count}} food",
       "stoleSneaked": "You sneaked in and stole {{count}} food unseen",
       "opened": "You opened the door",
-      "openedSneaked": "You sneaked to the door and opened it unseen"
+      "openedSneaked": "You sneaked to the door and opened it unseen",
+      "bumped": "Someone was already guarding the {{post}}, so you went back to bed (not tired tomorrow)"
     },
     "cough": {
       "title": "Someone is coughing in the dark…",

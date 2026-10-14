@@ -139,9 +139,10 @@ def test_an_unguarded_theft_and_an_opened_door():
     state = search_all(game, state)
     before = state["store"]
     state = night_all(game, state, posts={1: "store"})
-    # two stolen; the thief eats from it, the other three from the store
-    assert state["nights"][-1]["stolen"] == 2
-    assert state["store"] == before - 2 - 3
+    # a third of the twelve; the thief eats from it, the others from the store
+    assert before == 12
+    assert state["nights"][-1]["stolen"] == 4
+    assert state["store"] == before - 4 - 3
 
 
 def test_the_door_lets_a_zombie_in():
@@ -165,7 +166,7 @@ def test_stealth_slips_past_a_guard_once():
     guard = 0 if infected != 0 else 2
     state = night_all(game, state, posts={guard: "store", infected: "store"},
                       stealth=(infected,))
-    assert state["nights"][-1]["stolen"] == 2
+    assert state["nights"][-1]["stolen"] == 15 // 3
     assert notes(state, guard, "guarded")[-1]["saw"] == []
     assert state["stealth"][infected] == 0
 
@@ -255,3 +256,20 @@ def test_bots_finish_games_at_every_size():
                         break
             assert state["phase"] == "finished", (n, seed)
             assert game.get_result(state) is not None
+
+
+def test_one_guard_to_a_post():
+    game, state = make(4, card="f2", turns=[0], pick=1)
+    state = search_all(game, state)
+    # 3 chooses the storeroom first, then 0; 1 (Infected) strikes there
+    for seat, post in ((3, "store"), (0, "store"), (1, "store"), (2, "sleep")):
+        state = game.apply_move(state, seat, {"type": "night", "post": post})
+    assert notes(state, 3, "guarded")[-1]["saw"] == [1]
+    assert notes(state, 0, "bumped")
+    assert not notes(state, 0, "guarded")
+    assert state["tired"] == [False, True, False, True]
+
+
+def test_a_theft_grows_with_the_storeroom():
+    from app.games.shelter.game import steal_amount
+    assert [steal_amount(s) for s in (0, 3, 6, 9, 12, 20)] == [2, 2, 2, 3, 4, 6]

@@ -15,8 +15,10 @@ The three clashes:
   night   everyone secretly picks a post: storeroom, door or bed. The
           Infected picks the same three, meaning steal / open / nothing.
           If a survivor guards where the Infected strikes, the strike
-          fails and the guard sees who it was. Guards are tired the next
-          day (one card instead of two).
+          fails and the guard sees who it was. One guard to a post (the
+          first to choose it; anyone later goes back to bed). Guards are
+          tired the next day (one card instead of two). A theft takes a
+          third of the storeroom, at least 2.
   morning a public vote; more than half of those standing exiles one.
 
 Places: farm and market; the hospital opens with 5+ players.
@@ -85,6 +87,12 @@ FOOD = {"f1": 1, "f2": 2, "f3": 3, "none": 0, "mold1": -1, "mold2": -2,
         "zombie": 0, "medicine": 0, "sabotage": -2}
 
 STEAL = 2
+
+
+def steal_amount(store: int) -> int:
+    """Food one theft takes: a third of the storeroom, at least 2. It grows
+    with the stock, so a run of lucky days doesn't shut the Infected out."""
+    return max(STEAL, store // 3)
 
 # Players: (infected in all, survivors needed at the rescue, starving
 # players that make a famine)
@@ -387,7 +395,9 @@ class Shelter(BaseGame):
                         or state["stealth"][seat] < 1 or post == "sleep"):
             raise GameError("You can't sneak")
         posts = list(state["posts"])
-        posts[seat] = {"post": post, "stealth": stealth}
+        # The order of choosing decides who guards a post first
+        at = sum(1 for p in posts if p is not None)
+        posts[seat] = {"post": post, "stealth": stealth, "at": at}
         state = {**state, "posts": posts}
         if all(posts[s] is not None for s in standing):
             return self._resolve_night(state)
@@ -399,11 +409,24 @@ class Shelter(BaseGame):
         roles = state["roles"]
         standing = self.standing(state)
         posts = state["posts"]
-        guards = {
-            p: [s for s in standing
-                if roles[s] == "survivor" and posts[s]["post"] == p]
-            for p in ("store", "door")
-        }
+        # One guard to a post: the first survivor to choose it. Anyone who
+        # chose a post already taken goes back to bed (and isn't tired).
+        guards = {"store": [], "door": []}
+        bumped = []
+        for p in ("store", "door"):
+            here = sorted(
+                (s for s in standing
+                 if roles[s] == "survivor" and posts[s]["post"] == p),
+                key=lambda s: posts[s]["at"],
+            )
+            guards[p] = here[:1]
+            for s in here[1:]:
+                bumped.append(s)
+                state = self._log(state, s, {"kind": "bumped", "post": p})
+        posts = [
+            {**p, "post": "sleep"} if s in bumped else p
+            for s, p in enumerate(posts)
+        ]
         before = state["store"]
         store = before
         stealth = list(state["stealth"])
@@ -441,7 +464,7 @@ class Shelter(BaseGame):
                     state = {**state, "logs": logs}
                 continue
             if post == "store":
-                take = min(STEAL, store)
+                take = min(steal_amount(store), store)
                 store -= take
                 stolen += take
                 thieves.append(s)

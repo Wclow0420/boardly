@@ -573,7 +573,7 @@
         "infected": [
           "Pada malam ke-2 atau ke-3 seorang Mangsa Selamat rawak terjangkit (6+ pemain: seorang lagi dua malam kemudian).",
           "Matlamat: kosongkan stor, buat Mangsa Selamat rebah, atau biar terlalu sedikit yang berdiri bila bantuan tiba.",
-          "Siang hari boleh main Berkulat (sabotaj) −2, yang dibuka sebagai kulat biasa; malam hari boleh curi 2 makanan dari stor atau buka pintu kepada zombi.",
+          "Siang hari boleh main Berkulat (sabotaj) −2, yang dibuka sebagai kulat biasa; malam hari boleh curi satu pertiga makanan stor (sekurang-kurangnya 2) atau buka pintu kepada zombi.",
           "Dengan 5 pemain, Terjangkit boleh Menyelinap sekali: malam itu dia berjaya walaupun dikawal, tanpa dilihat.",
           "Dua Terjangkit tidak mengenali satu sama lain."
         ]
@@ -591,11 +591,11 @@
         "title": "Tiga posisi pada waktu malam",
         "intro": "Malam hari semua secara rahsia mengetik satu tempat dalam rumah. Terjangkit nampak tiga tempat yang sama, dengan makna lain.",
         "store": {
-          "survivor": "Kawal stor: jika ada yang datang mencuri, anda nampak siapa. Letih esok.",
-          "infected": "Curi: jika tiada pengawal, stor kurang 2 makanan dan anda memakannya."
+          "survivor": "Kawal stor: jika ada yang datang mencuri, anda nampak siapa. Seorang pengawal sahaja setiap posisi — yang pertama memilih; yang lain kembali tidur. Letih esok.",
+          "infected": "Curi: jika tiada pengawal, ambil satu pertiga makanan stor (sekurang-kurangnya 2) dan makan. Makin penuh stor, makin banyak dicuri."
         },
         "door": {
-          "survivor": "Kawal pintu: jika ada yang datang membukanya, anda nampak siapa. Letih esok.",
+          "survivor": "Kawal pintu: jika ada yang datang membukanya, anda nampak siapa. Seorang pengawal sahaja setiap posisi. Letih esok.",
           "infected": "Buka pintu: jika tiada pengawal, zombi masuk, stor kurang 1 dan seorang yang tidur cedera."
         },
         "sleep": {
@@ -609,7 +609,7 @@
           "Pagi (selepas batuk pertama): bincang tentang malam tadi, kemudian undi. Lebih separuh yang berdiri mengundi satu nama, dia dihalau dan peranannya ditunjukkan.",
           "Siang: semua secara rahsia memilih tempat (ladang, pasar raya, dan hospital dengan 5+). Yang cedera duduk di rumah.",
           "Kad: cabut 2, main 1 tertutup. Kad di satu tempat dikocok dan dibuka; jumlahnya masuk ke stor.",
-          "Malam: semua secara rahsia mengetik stor, pintu atau katil. Terjangkit berjaya di tempat tanpa pengawal; bertembung dengan pengawal, dia gagal dan dilihat.",
+          "Malam: semua secara rahsia mengetik stor, pintu atau katil. Seorang pengawal sahaja setiap posisi (yang pertama memilih). Terjangkit berjaya di tempat tanpa pengawal; bertembung dengan pengawal, dia gagal dan dilihat.",
           "Makan malam: setiap yang berdiri makan 1 dari stor. Tidak cukup? Ada yang kelaparan: satu malam lemah (esok 1 kad), dua malam berturut-turut dia rebah.",
           "Yang rebah tidak boleh buat apa-apa selain menonton.",
           "Pada awal malam ke-2 atau ke-3, aplikasi mengumumkan batuk. Dengan 6+, batuk kedua datang dua malam kemudian."
@@ -1683,7 +1683,8 @@
       "stole": "Anda mencuri {{count}} makanan",
       "stoleSneaked": "Anda menyelinap dan mencuri {{count}} makanan tanpa dilihat",
       "opened": "Anda membuka pintu",
-      "openedSneaked": "Anda menyelinap dan membuka pintu tanpa dilihat"
+      "openedSneaked": "Anda menyelinap dan membuka pintu tanpa dilihat",
+      "bumped": "Sudah ada yang mengawal {{post}}, jadi anda kembali tidur (tidak letih esok)"
     },
     "cough": {
       "title": "Seseorang batuk dalam gelap…",

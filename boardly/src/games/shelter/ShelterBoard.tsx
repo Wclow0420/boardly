@@ -579,6 +579,8 @@ function privateLine(note: Note, nameOf: (seat: number) => string, t: T): string
             post: t(`shelter.posts.${note.post}`),
             with: note.with.length ? note.with.map(nameOf).join("、") : t("shelter.notes.alone"),
           })}`;
+    case "bumped":
+      return `🛏 ${t("shelter.notes.bumped", { post: t(`shelter.posts.${note.post}`) })}`;
     case "caught":
       return `👀 ${t("shelter.notes.caught", { names: note.by.map(nameOf).join("、") })}`;
     case "stole":
