@@ -165,8 +165,16 @@ under a row lock, so simultaneous actions (votes) are safe.
 ## Trying a game on your own
 
 `backend/scripts/bots.py` fills a table with bot players for solo
-testing (development only; bots currently play Seal the Manor). Create a
-table in the app, then:
+testing (development only; bots currently play Seal the Manor).
+
+The easy way: create a table in the app and, as its host, use the **Bot
+players** card in the lobby — pick how many and tap Add. The backend
+starts the bots for you (`POST /rooms/<id>/bots {count}`; their output
+goes to the backend log). It is on wherever `APP_ENV` isn't
+`production` and can be turned off with `BOTS_ENABLED=0`; production
+never offers it.
+
+Or run the script by hand:
 
 ```bash
 cd backend

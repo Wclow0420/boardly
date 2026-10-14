@@ -265,10 +265,10 @@ def main():
     code = args.code.strip().upper()
     rng = random.Random(args.seed)
 
-    # Look at the table through the first bot to size the crew
-    first = Bot(args.api, "bot1", args.verbose)
-    first.sign_in()
-    room = first.room(code)
+    # Look at the table through bot1 to size the crew
+    scout = Bot(args.api, "bot1", args.verbose)
+    scout.sign_in()
+    room = scout.room(code)
     game = room["gameType"]
     if game not in POLICIES:
         raise SystemExit(f"No bot policy for {game!r} yet "
@@ -276,11 +276,15 @@ def main():
     seated = len(room["players"])
     count = args.count or max(1, MIN_PLAYERS.get(game, 2) - seated)
 
+    # Bots already at the table (added earlier) keep playing there: take
+    # the next free names, so no bot is played twice
+    seated_names = {p["username"] for p in room["players"]}
+    names = [f"bot{i}" for i in range(1, 100) if f"bot{i}" not in seated_names][:count]
     print(f"Table {code} ({game}): adding {count} bot(s)…")
-    bots = [first] + [Bot(args.api, f"bot{i}", args.verbose)
-                      for i in range(2, count + 1)]
+    bots = [scout if name == "bot1" else Bot(args.api, name, args.verbose)
+            for name in names]
     for bot in bots:
-        if bot is not first:
+        if bot is not scout:
             bot.sign_in()
         bot.join(code)
         print(f"  {bot.name} joined and is ready")
@@ -292,6 +296,9 @@ def main():
             for bot in bots:
                 room = bot.room(code)
                 session = room.get("session")
+                if room["status"] == "closed":
+                    print(f"Table {code} was closed.")
+                    return
                 if room["status"] == "waiting" or session is None:
                     continue
                 view = session["state"]

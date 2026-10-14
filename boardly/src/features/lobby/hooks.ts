@@ -100,6 +100,18 @@ export function useLeaveRoom(roomId: string | undefined) {
   });
 }
 
+/** The host fills seats with bot players (development only). */
+export function useAddBots(roomId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (count: number) => api.addBots(roomId, count),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["room"] });
+    },
+  });
+}
+
 export function useStartGame(roomId: string | undefined) {
   const queryClient = useQueryClient();
 

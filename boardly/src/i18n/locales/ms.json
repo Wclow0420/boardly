@@ -151,7 +151,18 @@
     "inviteFriends": "Jemput Rakan",
     "noFriends": "Tambah rakan untuk menjemput mereka terus ke meja anda.",
     "settings": "Tetapan permainan",
-    "settingsHostOnly": "Hanya hos boleh menukarnya."
+    "settingsHostOnly": "Hanya hos boleh menukarnya.",
+    "bots": {
+      "title": "Pemain bot",
+      "hint": "Isi kerusi kosong dengan bot untuk mencuba permainan seorang diri. Mereka menyertai dalam beberapa saat dan bermain sendiri.",
+      "fewer": "Kurangkan bot",
+      "more": "Tambah bot",
+      "add_one": "Tambah {{count}} bot",
+      "add_other": "Tambah {{count}} bot",
+      "failed": "Tidak dapat menambah bot.",
+      "seats": "{{free}} kerusi kosong",
+      "full": "Semua kerusi sudah diisi."
+    }
   },
   "table": {
     "inProgress": "Sedang Berlangsung",

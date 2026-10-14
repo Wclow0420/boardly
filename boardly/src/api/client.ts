@@ -172,6 +172,8 @@ export interface RoomInfo {
   options?: Record<string, string>;
   /** Code of the open "play again" table for this finished room. */
   rematchCode: string | null;
+  /** The host can fill seats with bot players (development only). */
+  botsAvailable?: boolean;
   session?: GameSessionInfo | null;
 }
 
@@ -347,6 +349,12 @@ export const api = {
     request<{ room: RoomInfo }>(`/rooms/${roomId}/options`, {
       method: "PATCH",
       body: JSON.stringify({ options }),
+    }),
+
+  addBots: (roomId: string, count: number) =>
+    request<{ added: number }>(`/rooms/${roomId}/bots`, {
+      method: "POST",
+      body: JSON.stringify({ count }),
     }),
 
   setReady: (roomId: string, ready: boolean) =>
