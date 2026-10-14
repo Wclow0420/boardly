@@ -115,7 +115,9 @@ def test_sabotage_is_hidden_in_the_shuffled_haul():
     before = state["store"]
     state = search_all(game, state, plays={1: "sabotage"})
     farm = state["searches"][-1]["places"]["farm"]
-    assert sorted(farm["cards"]) == ["f2", "f2", "f2", "sabotage"]
+    # it turns over as mould, like any other
+    assert sorted(farm["cards"]) == ["f2", "f2", "f2", "mold2"]
+    assert notes(state, 1, "played")[-1]["card"] == "sabotage"
     assert farm["food"] == 6 - 2
     assert state["store"] == before + 4
 

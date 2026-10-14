@@ -559,7 +559,8 @@
           "Night: everyone secretly guards the storeroom, guards the door or sleeps; the Infected at the same time steals, opens the door or sleeps. Meet a guard and you're seen; miss them and it works.",
           "Morning: only a guard saw the Infected. When they say so, everyone has to decide whether to believe them.",
           "Guards are tired the next day and draw 1 card — the harder you guard, the less food you find."
-        ]
+        ],
+        "0": "Day: everyone at a place plays one card face down; they're shuffled and turned over. The Infected can play a Mould −2 that looks exactly like the real mould in the decks — nobody can tell bad luck from sabotage."
       },
       "roles": {
         "title": "Roles",
@@ -572,7 +573,7 @@
         "infected": [
           "On the 2nd or 3rd night a random Survivor is infected (with 6+, a second one two nights later).",
           "Goal: empty the storeroom, make Survivors fall, or leave too few standing when the rescue comes.",
-          "By day you can play Sabotage −2; at night steal 2 food from the storeroom or open the door to a zombie.",
+          "By day you can play Mould (sabotage) −2, which turns over as ordinary mould; at night steal 2 food from the storeroom or open the door to a zombie.",
           "With 5 players the Infected can Sneak once: that night they succeed even if guarded, unseen.",
           "Two Infected don't know each other."
         ]
@@ -582,8 +583,8 @@
         "intro": "By day everyone secretly picks a place, draws 2 cards (1 when tired or weak) and plays 1 face down. Cards are drawn at random from the decks below.",
         "always": "Every game",
         "fivePlus": "5+ players",
-        "farm": "The steady place: mostly food, few bad cards.",
-        "market": "The most food, but it rots and zombies roam. Anyone bitten can't go out the next day.",
+        "farm": "The steady place: mostly food, but some come back empty or mouldy.",
+        "market": "The most food, but plenty of it rots, and zombies roam. Anyone bitten can't go out the next day.",
         "hospital": "Medicine: at dawn, each one treats an injured or weak player."
       },
       "posts": {
@@ -1623,7 +1624,7 @@
       "mold2": "Mould",
       "zombie": "Zombie",
       "medicine": "Medicine",
-      "sabotage": "Sabotage"
+      "sabotage": "Mould (sabotage)"
     },
     "cardHints": {
       "f1": "Brings back 1 food",
@@ -1634,7 +1635,7 @@
       "mold2": "Gone bad: 2 less",
       "zombie": "Bitten: you stay home tomorrow",
       "medicine": "At dawn, treats one injured or weak player",
-      "sabotage": "Infected only: 2 less, and nobody can tell whose"
+      "sabotage": "Infected only: 2 less, and it turns over exactly like real mould"
     },
     "bar": {
       "day": "Day {{n}} of {{total}}",
@@ -1691,7 +1692,7 @@
       "title": "Someone is coughing in the dark…",
       "body": "Someone is infected. From tonight, they want the shelter to starve.",
       "youTitle": "You are infected",
-      "youBody": "From now on you are the Infected. By day you can play Sabotage; at night you can steal food or open the door — don't get seen.",
+      "youBody": "From now on you are the Infected. By day you can play Mould (sabotage), which looks just like real mould; at night you can steal food or open the door — don't get seen.",
       "continue": "Tap to continue"
     },
     "waiting": "Waiting for {{names}}",

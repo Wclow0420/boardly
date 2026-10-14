@@ -42,7 +42,7 @@ const CARD_EMOJI: Record<Card, string> = {
   mold2: "🦠",
   zombie: "🧟",
   medicine: "💊",
-  sabotage: "💀",
+  sabotage: "🦠",
 };
 
 const PLACE_EMOJI: Record<Place, string> = { farm: "🌾", market: "🛒", hospital: "🏥" };

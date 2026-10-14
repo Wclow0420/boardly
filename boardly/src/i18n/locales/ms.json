@@ -559,7 +559,8 @@
           "Malam: semua secara rahsia mengawal stor, mengawal pintu atau tidur; Terjangkit pada masa sama mencuri, membuka pintu atau tidur. Bertembung dengan pengawal, dia dilihat; tidak bertembung, dia berjaya.",
           "Pagi: hanya pengawal yang nampak Terjangkit. Bila dia bercakap, semua perlu memutuskan sama ada percaya.",
           "Pengawal letih esoknya dan cabut 1 kad — makin ketat berkawal, makin sedikit makanan."
-        ]
+        ],
+        "0": "Siang: semua di satu tempat main satu kad tertutup; kad dikocok dan dibuka. Terjangkit boleh main Berkulat −2 yang kelihatan sama seperti kulat sebenar dalam dek — tiada siapa boleh beza nasib malang dengan sabotaj."
       },
       "roles": {
         "title": "Peranan",
@@ -572,7 +573,7 @@
         "infected": [
           "Pada malam ke-2 atau ke-3 seorang Mangsa Selamat rawak terjangkit (6+ pemain: seorang lagi dua malam kemudian).",
           "Matlamat: kosongkan stor, buat Mangsa Selamat rebah, atau biar terlalu sedikit yang berdiri bila bantuan tiba.",
-          "Siang boleh main Sabotaj −2; malam boleh curi 2 makanan dari stor atau buka pintu kepada zombi.",
+          "Siang hari boleh main Berkulat (sabotaj) −2, yang dibuka sebagai kulat biasa; malam hari boleh curi 2 makanan dari stor atau buka pintu kepada zombi.",
           "Dengan 5 pemain, Terjangkit boleh Menyelinap sekali: malam itu dia berjaya walaupun dikawal, tanpa dilihat.",
           "Dua Terjangkit tidak mengenali satu sama lain."
         ]
@@ -582,8 +583,8 @@
         "intro": "Siang hari semua secara rahsia memilih tempat, cabut 2 kad (1 jika letih atau lemah) dan main 1 tertutup. Kad dicabut secara rawak daripada dek di bawah.",
         "always": "Setiap permainan",
         "fivePlus": "5+ pemain",
-        "farm": "Tempat stabil: kebanyakannya makanan, sedikit kad buruk.",
-        "market": "Paling banyak makanan, tetapi ada yang rosak dan zombi berkeliaran. Yang digigit tidak boleh keluar esoknya.",
+        "farm": "Tempat stabil: kebanyakannya makanan, tetapi ada yang kosong atau berkulat.",
+        "market": "Paling banyak makanan, tetapi banyak yang rosak dan zombi berkeliaran. Yang digigit tidak boleh keluar esoknya.",
         "hospital": "Ubat: waktu subuh, setiap satu merawat seorang yang cedera atau lemah."
       },
       "posts": {
@@ -1620,7 +1621,7 @@
       "mold2": "Berkulat",
       "zombie": "Zombi",
       "medicine": "Ubat",
-      "sabotage": "Sabotaj"
+      "sabotage": "Berkulat (sabotaj)"
     },
     "cardHints": {
       "f1": "Bawa balik 1 makanan",
@@ -1631,7 +1632,7 @@
       "mold2": "Rosak: kurang 2",
       "zombie": "Digigit: esok duduk di rumah",
       "medicine": "Waktu subuh, merawat seorang yang cedera atau lemah",
-      "sabotage": "Hanya Terjangkit: kurang 2, tiada siapa tahu siapa"
+      "sabotage": "Hanya Terjangkit: kurang 2, dan bila dibuka sama seperti kulat sebenar"
     },
     "bar": {
       "day": "Hari {{n}} daripada {{total}}",
@@ -1688,7 +1689,7 @@
       "title": "Seseorang batuk dalam gelap…",
       "body": "Seseorang telah terjangkit. Mulai malam ini, dia mahu semua kelaparan.",
       "youTitle": "Anda terjangkit",
-      "youBody": "Mulai sekarang anda Terjangkit. Siang hari boleh main Sabotaj; malam hari boleh curi makanan atau buka pintu — jangan sampai dilihat.",
+      "youBody": "Mulai sekarang anda Terjangkit. Siang hari boleh main Berkulat (sabotaj), yang kelihatan seperti kulat sebenar; malam hari boleh curi makanan atau buka pintu — jangan sampai dilihat.",
       "continue": "Ketik untuk teruskan"
     },
     "waiting": "Menunggu {{names}}",

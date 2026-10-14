@@ -29,7 +29,7 @@ const POST_EMOJI = { store: "📦", door: "🚪", sleep: "🛏" } as const;
 const ACT_EMOJI = { store: "✋", door: "🔓", sleep: "🛏" } as const;
 const CARD_EMOJI: Record<Card, string> = {
   f1: "🍞", f2: "🍞", f3: "🍞", none: "⭕", mold1: "🦠", mold2: "🦠",
-  zombie: "🧟", medicine: "💊", sabotage: "💀",
+  zombie: "🧟", medicine: "💊", sabotage: "🦠",
 };
 
 function OverviewPage() {

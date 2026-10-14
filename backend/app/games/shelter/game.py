@@ -10,7 +10,8 @@ Every morning after the cough, the shelter may vote someone out.
 
 The three clashes:
   day     everyone at a place plays one card face down; the cards are
-          shuffled and revealed, so a sabotage is seen but not whose.
+          shuffled and revealed. The Infected's sabotage turns over as
+          mould (−2), the same as the mould already in the decks.
   night   everyone secretly picks a post: storeroom, door or bed. The
           Infected picks the same three, meaning steal / open / nothing.
           If a survivor guards where the Infected strikes, the strike
@@ -76,8 +77,8 @@ POSTS = ("store", "door", "sleep")
 
 # Each deck as {card: copies}; cards are drawn with replacement
 DECKS = {
-    "farm": {"f1": 6, "f2": 3, "none": 2, "mold1": 1},
-    "market": {"f2": 4, "f3": 2, "none": 2, "mold2": 2, "zombie": 2},
+    "farm": {"f1": 6, "f2": 3, "none": 3, "mold1": 2, "mold2": 1},
+    "market": {"f2": 4, "f3": 2, "none": 4, "mold2": 4, "zombie": 2},
     "hospital": {"f1": 5, "f2": 2, "none": 2, "medicine": 2, "zombie": 1},
 }
 FOOD = {"f1": 1, "f2": 2, "f3": 3, "none": 0, "mold1": -1, "mold2": -2,
@@ -314,7 +315,8 @@ class Shelter(BaseGame):
         else:
             raise GameError("Pick a card from your hand")
         plays = list(state["plays"])
-        plays[seat] = card
+        # Sabotage goes down as mould: turned over, nobody can tell it apart
+        plays[seat] = "mold2" if card == "sabotage" else card
         state = {**state, "plays": plays}
         state = self._log(state, seat, {"kind": "played", "card": card,
                                         "place": state["places"][seat]})

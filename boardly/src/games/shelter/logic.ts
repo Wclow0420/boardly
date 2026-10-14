@@ -36,8 +36,8 @@ export const FOOD: Record<Card, number> = {
 
 /** What each place's deck holds, as {card: copies} (mirrors the server). */
 export const DECKS: Record<Place, Partial<Record<Card, number>>> = {
-  farm: { f1: 6, f2: 3, none: 2, mold1: 1 },
-  market: { f2: 4, f3: 2, none: 2, mold2: 2, zombie: 2 },
+  farm: { f1: 6, f2: 3, none: 3, mold1: 2, mold2: 1 },
+  market: { f2: 4, f3: 2, none: 4, mold2: 4, zombie: 2 },
   hospital: { f1: 5, f2: 2, none: 2, medicine: 2, zombie: 1 },
 };
 
