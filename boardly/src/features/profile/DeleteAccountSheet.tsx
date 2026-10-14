@@ -33,7 +33,7 @@ export const DeleteAccountSheet = forwardRef<GorhomBottomSheetModal>(
         setError(
           err instanceof ApiError
             ? t([`errors.${err.code}`, err.message])
-            : t("common.errorTitle"),
+            : t("common.errorTitle")
         );
         setDeleting(false);
       }
@@ -76,7 +76,7 @@ export const DeleteAccountSheet = forwardRef<GorhomBottomSheetModal>(
         </View>
       </BottomSheetModal>
     );
-  },
+  }
 );
 
 const styles = StyleSheet.create({
