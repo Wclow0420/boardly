@@ -6,6 +6,12 @@
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet, View } from "react-native";
+import Svg, {
+  Defs,
+  LinearGradient as SvgGradient,
+  Path,
+  Stop,
+} from "react-native-svg";
 import Animated, {
   Extrapolation,
   interpolate,
@@ -17,7 +23,39 @@ import { GameBox } from "./GameBox";
 
 /** The folder's kraft paper: light on the cover, darker behind. */
 const KRAFT_COVER: [string, string] = ["#F2C77E", "#D49A4E"];
-const KRAFT_BACK: [string, string] = ["#C98E45", "#A8702F"];
+const KRAFT_BACK: [string, string] = ["#B98240", "#94622A"];
+
+/** The folder's back and its tab, as one outline: `tab` tall tab on the
+ *  left, a slanted shoulder, then the back `height` tall below it. */
+function backPath(
+  width: number,
+  height: number,
+  tab: number,
+  r: number,
+): string {
+  const t0 = width * 0.07;
+  const t1 = width * 0.4;
+  const rt = Math.min(r, tab * 0.7);
+  const bottom = tab + height;
+  return [
+    `M0 ${tab + r}`,
+    `Q0 ${tab} ${r} ${tab}`,
+    `L${t0 - rt * 0.4} ${tab}`,
+    `Q${t0} ${tab} ${t0} ${tab - rt * 0.6}`,
+    `L${t0} ${rt}`,
+    `Q${t0} 0 ${t0 + rt} 0`,
+    `L${t1 - rt} 0`,
+    `Q${t1} 0 ${t1 + rt * 0.5} ${rt * 0.6}`,
+    `L${t1 + tab * 0.7} ${tab}`,
+    `L${width - r} ${tab}`,
+    `Q${width} ${tab} ${width} ${tab + r}`,
+    `L${width} ${bottom - r}`,
+    `Q${width} ${bottom} ${width - r} ${bottom}`,
+    `L${r} ${bottom}`,
+    `Q0 ${bottom} 0 ${bottom - r}`,
+    "Z",
+  ].join(" ");
+}
 
 const LOGO = require("../../../assets/images/splash-icon.png");
 /** The meeple takes up this share of the splash picture's width. */
@@ -62,51 +100,39 @@ export function GameFolder({
         translateY: interpolate(
           open.value,
           [0, 1],
-          [height * 0.1, -height * 0.3],
+          // up to just under the tab's top, which stays in view
+          [height * 0.1, -(tab * 0.45 + height * 0.1)],
           // the cover may bounce as it opens; the card just rises
           Extrapolation.CLAMP,
         ),
-      },
-      {
-        scale: interpolate(open.value, [0, 1], [0.92, 1], Extrapolation.CLAMP),
       },
     ],
   }));
 
   return (
     <View style={{ width, height: height + tab + drop }}>
-      {/* the back, with its tab */}
-      <LinearGradient
-        colors={KRAFT_BACK}
-        style={[
-          styles.tab,
-          {
-            left: width * 0.07,
-            width: width * 0.38,
-            height: tab + radius,
-            borderTopLeftRadius: radius,
-            borderTopRightRadius: radius,
-          },
-        ]}
-      />
-      <LinearGradient
-        colors={KRAFT_BACK}
-        style={[styles.back, { top: tab, width, height, borderRadius: radius }]}
-      >
-        <View
-          style={[
-            StyleSheet.absoluteFill,
-            styles.inside,
-            { borderRadius: radius },
-          ]}
+      {/* the back and its tab: one shape */}
+      <Svg width={width} height={height + tab} style={styles.back}>
+        <Defs>
+          <SvgGradient id="kraft" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor={KRAFT_BACK[0]} />
+            <Stop offset="1" stopColor={KRAFT_BACK[1]} />
+          </SvgGradient>
+        </Defs>
+        <Path
+          d={backPath(width, height, tab, radius)}
+          fill="url(#kraft)"
+          stroke="rgba(255,240,210,0.35)"
+          strokeWidth={1}
         />
-      </LinearGradient>
+      </Svg>
 
       {/* the game, inside */}
       <Animated.View
         style={[
           styles.card,
           {
+            zIndex: 1,
             top: tab + height * 0.1,
             left: width * 0.08,
             width: cardWidth,
@@ -131,6 +157,7 @@ export function GameFolder({
         style={[
           styles.cover,
           {
+            zIndex: 2,
             top: tab + drop,
             width,
             height,
@@ -168,21 +195,7 @@ export function GameFolder({
 }
 
 const styles = StyleSheet.create({
-  tab: {
-    position: "absolute",
-    top: 0,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    borderColor: "rgba(255,240,210,0.35)",
-  },
-  back: {
-    position: "absolute",
-    left: 0,
-    borderWidth: 1,
-    borderColor: "rgba(255,240,210,0.35)",
-  },
-  // the inside of the folder, in shadow
-  inside: { backgroundColor: "rgba(60,30,5,0.28)" },
+  back: { position: "absolute", top: 0, left: 0, zIndex: 0 },
   crease: {
     position: "absolute",
     left: 0,
