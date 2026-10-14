@@ -57,6 +57,7 @@
     "playersRange": "{{min}} - {{max}} Players",
     "filters": {
       "all": "All",
+      "faction": "Factions",
       "strategy": "Strategy",
       "party": "Party",
       "classic": "Classic",
@@ -66,7 +67,8 @@
       "classic": "Classic",
       "card": "Card",
       "strategy": "Strategy",
-      "party": "Party"
+      "party": "Party",
+      "faction": "Factions"
     }
   },
   "gameNames": {

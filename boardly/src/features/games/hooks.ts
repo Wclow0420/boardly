@@ -10,14 +10,16 @@ export type GameFilter = "all" | GameCategory;
 
 export const GAME_FILTERS: GameFilter[] = [
   "all",
+  // hidden sides: who is on whose side is the game
+  "faction",
   "strategy",
   "party",
   "classic",
   "custom",
 ];
 
-const KNOWN_TAGS = ["classic", "card", "strategy", "party"] as const;
-const KNOWN_CATEGORIES = ["strategy", "party", "classic", "custom"] as const;
+const KNOWN_TAGS = ["classic", "card", "strategy", "party", "faction"] as const;
+const KNOWN_CATEGORIES = ["faction", "strategy", "party", "classic", "custom"] as const;
 
 function toCatalogEntry(game: GameInfo): GameCatalogEntry {
   return {

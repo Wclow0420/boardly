@@ -130,8 +130,8 @@ class Shelter(BaseGame):
     coins_play = 8
     emoji = "🔥"
     tile_color = "#E3ECF5"
-    category = "party"
-    tag = "party"
+    category = "faction"
+    tag = "faction"
 
     def __init__(self, rng: random.Random | None = None):
         # Who turns and when, card draws, who goes hungry; tests pass a

@@ -57,6 +57,7 @@
     "playersRange": "{{min}} - {{max}} 位玩家",
     "filters": {
       "all": "全部",
+      "faction": "阵营",
       "strategy": "策略",
       "party": "聚会",
       "classic": "经典",
@@ -66,7 +67,8 @@
       "classic": "经典",
       "card": "卡牌",
       "strategy": "策略",
-      "party": "聚会"
+      "party": "聚会",
+      "faction": "阵营"
     }
   },
   "gameNames": {

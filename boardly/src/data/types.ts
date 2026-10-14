@@ -1,7 +1,7 @@
 import type { PresenceStatus } from "@/components/ui";
 
 export type TableStatus = "inProgress" | "waiting" | "finished" | "closed";
-export type GameCategory = "strategy" | "party" | "classic" | "custom";
+export type GameCategory = "faction" | "strategy" | "party" | "classic" | "custom";
 
 export interface GameCatalogEntry {
   id: string;
@@ -12,7 +12,7 @@ export interface GameCatalogEntry {
   tileColor: string;
   category: GameCategory;
   /** Tag chip: i18n key under games.tags.* */
-  tagKey: "classic" | "card" | "strategy" | "party";
+  tagKey: "classic" | "card" | "strategy" | "party" | "faction";
   minPlayers: number;
   maxPlayers: number;
   /** Community rating — not provided by the backend yet. */

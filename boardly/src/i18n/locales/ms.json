@@ -57,6 +57,7 @@
     "playersRange": "{{min}} - {{max}} Pemain",
     "filters": {
       "all": "Semua",
+      "faction": "Pihak",
       "strategy": "Strategi",
       "party": "Parti",
       "classic": "Klasik",
@@ -66,7 +67,8 @@
       "classic": "Klasik",
       "card": "Kad",
       "strategy": "Strategi",
-      "party": "Parti"
+      "party": "Parti",
+      "faction": "Pihak"
     }
   },
   "gameNames": {

@@ -208,8 +208,8 @@ class Nightwatch(BaseGame):
     coins_play = 8
     emoji = "🏮"
     tile_color = "#F7E6D5"
-    category = "party"
-    tag = "party"
+    category = "faction"
+    tag = "faction"
 
     def __init__(self, rng: random.Random | None = None):
         # Room draws, night events and the first leader; tests pass a

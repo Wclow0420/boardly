@@ -114,8 +114,8 @@ class Manor(BaseGame):
     coins_play = 8
     emoji = "🕯️"
     tile_color = "#E9E2F7"
-    category = "party"
-    tag = "party"
+    category = "faction"
+    tag = "faction"
 
     def __init__(self, rng: random.Random | None = None):
         # The old man's wandering and tie-breaks; tests pass a seeded one

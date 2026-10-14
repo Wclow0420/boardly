@@ -28,7 +28,7 @@ class BaseGame(ABC):
     # Display metadata consumed by the app's catalogue/lobby UI
     emoji: str = "🎲"
     tile_color: str = "#FFF2D6"  # pastel behind the emoji tile
-    category: str = "classic"  # strategy | party | classic | custom
+    category: str = "classic"  # faction | strategy | party | classic | custom
     tag: str = "classic"  # tag chip: classic | card | strategy | party
 
     # Settings the host picks in the lobby, as {name: [choices]}; the

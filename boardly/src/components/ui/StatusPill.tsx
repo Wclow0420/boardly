@@ -3,7 +3,7 @@ import { View } from "react-native";
 import { fontFamily, useTheme } from "@/theme";
 import { AppText } from "./AppText";
 
-export type StatusPillVariant = "host" | "ready" | "waiting" | "info";
+export type StatusPillVariant = "host" | "ready" | "waiting" | "info" | "danger";
 
 export interface StatusPillProps {
   label: string;
@@ -19,6 +19,8 @@ export function StatusPill({ label, variant }: StatusPillProps) {
     ready: { bg: colors.successSoft, fg: colors.successStrong },
     waiting: { bg: colors.chip, fg: colors.textSubtle },
     info: { bg: colors.infoSoft, fg: colors.info },
+    // danger is a hex colour: add ~15% alpha for the tint
+    danger: { bg: `${colors.danger}26`, fg: colors.danger },
   };
   const tint = tints[variant];
 
