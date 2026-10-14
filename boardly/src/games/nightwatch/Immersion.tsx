@@ -5,10 +5,10 @@
 
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Animated, Easing, Modal, Pressable, StyleSheet, View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui";
+import { EdgeGlow } from "@/features/game/EdgeGlow";
 import { useTheme } from "@/theme";
 import { GameText as AppText } from "./GameText";
 import { heavyHaptic, moveHaptic, successHaptic, tapHaptic, tickHaptic } from "@/utils/haptics";
@@ -18,42 +18,6 @@ const PAPER = "#E9E2CF";
 const INK = "#2A2433";
 const BEAT_MS = 1150;
 
-const clear = (color: string) => `${color}00`;
-
-/** Light bleeding in from the four edges of the screen, beating like a
- *  heart. `color` is a six-digit hex. */
-export function EdgeGlow({ color, calm = false }: { color: string; calm?: boolean }) {
-  const [beat] = useState(() => new Animated.Value(0.4));
-
-  useEffect(() => {
-    const to = (toValue: number, duration: number) =>
-      Animated.timing(beat, {
-        toValue,
-        duration,
-        easing: Easing.inOut(Easing.sin),
-        useNativeDriver: true,
-      });
-    const loop = Animated.loop(
-      calm
-        ? Animated.sequence([to(0.85, 1600), to(0.4, 1600)])
-        : // two beats and a rest
-          Animated.sequence([to(1, 130), to(0.55, 170), to(0.95, 130), to(0.35, BEAT_MS - 430)])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [beat, calm]);
-
-  // a thin rim: strong at the very edge, gone within a finger's width
-  const fade = [`${color}CC`, clear(color)] as const;
-  return (
-    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: beat }]}>
-      <LinearGradient colors={fade} style={[styles.edge, styles.top]} />
-      <LinearGradient colors={fade} start={{ x: 0, y: 1 }} end={{ x: 0, y: 0 }} style={[styles.edge, styles.bottom]} />
-      <LinearGradient colors={fade} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.edge, styles.left]} />
-      <LinearGradient colors={fade} start={{ x: 1, y: 0 }} end={{ x: 0, y: 0 }} style={[styles.edge, styles.right]} />
-    </Animated.View>
-  );
-}
 
 interface Box {
   x: number;
@@ -386,11 +350,6 @@ export function LetterScene({ visible, letters, onDone }: LetterSceneProps) {
 }
 
 const styles = StyleSheet.create({
-  edge: { position: "absolute" },
-  top: { top: 0, left: 0, right: 0, height: 56 },
-  bottom: { bottom: 0, left: 0, right: 0, height: 56 },
-  left: { top: 0, bottom: 0, left: 0, width: 36 },
-  right: { top: 0, bottom: 0, right: 0, width: 36 },
   centre: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   stack: { alignItems: "center", gap: 12, width: "100%", maxWidth: 380 },
   foot: { position: "absolute", bottom: 56, opacity: 0.7 },

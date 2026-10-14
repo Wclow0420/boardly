@@ -8,7 +8,7 @@ import { fontFamily, useTheme } from "@/theme";
 import { moveHaptic, tapHaptic } from "@/utils/haptics";
 import type { GameBoardProps, GamePlayer } from "../types";
 import { ManorMap } from "./ManorMap";
-import { Popup } from "./Popup";
+import { Popup } from "@/features/game/Popup";
 import { arrivalOf } from "./arrival";
 import { LetterScene, RoleIntro } from "./Immersion";
 import { NightMap } from "./NightMap";

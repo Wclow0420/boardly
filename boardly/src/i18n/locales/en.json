@@ -75,7 +75,8 @@
     "coup": "Hustle",
     "manor": "Midnight Manor",
     "liarsdice": "Liar's Dice",
-    "nightwatch": "Seal the Manor"
+    "nightwatch": "Seal the Manor",
+    "shelter": "Shelter"
   },
   "friends": {
     "title": "Friends",
@@ -548,6 +549,100 @@
         "echo": "The Gallery may post two anonymous letters this round.",
         "fog": "The team can only walk one room to the mission this round, not two.",
         "calm": "Nothing happens."
+      }
+    },
+    "shelter": {
+      "intro": "Winter has come and the town is gone. You've barricaded yourselves into an old house and must last 6 days until the rescue convoy arrives. Everyone starts on the same side — but on the 2nd or 3rd night the sickness takes one of you. From then on they want the shelter to starve, and nobody knows who it is.",
+      "clashes": {
+        "items": [
+          "Day: everyone at a place plays one card face down; they're shuffled and turned over. The Infected can slip in Sabotage −2 — everyone sees it, nobody knows whose.",
+          "Night: everyone secretly guards the storeroom, guards the door or sleeps; the Infected at the same time steals, opens the door or sleeps. Meet a guard and you're seen; miss them and it works.",
+          "Morning: only a guard saw the Infected. When they say so, everyone has to decide whether to believe them.",
+          "Guards are tired the next day and draw 1 card — the harder you guard, the less food you find."
+        ]
+      },
+      "roles": {
+        "title": "Roles",
+        "intro": "Everyone starts as a Survivor. The Infected turns in secret partway through.",
+        "survivor": [
+          "Goal: last until the rescue on day 6, or send every Infected out.",
+          "By day, scavenge; at night, guard the storeroom, guard the door or sleep.",
+          "Guarding where the Infected strikes shows you who it is."
+        ],
+        "infected": [
+          "On the 2nd or 3rd night a random Survivor is infected (with 6+, a second one two nights later).",
+          "Goal: empty the storeroom, make Survivors fall, or leave too few standing when the rescue comes.",
+          "By day you can play Sabotage −2; at night steal 2 food from the storeroom or open the door to a zombie.",
+          "With 5 players the Infected can Sneak once: that night they succeed even if guarded, unseen.",
+          "Two Infected don't know each other."
+        ]
+      },
+      "places": {
+        "title": "Places & posts",
+        "intro": "By day everyone secretly picks a place, draws 2 cards (1 when tired or weak) and plays 1 face down. Cards are drawn at random from the decks below.",
+        "always": "Every game",
+        "fivePlus": "5+ players",
+        "farm": "The steady place: mostly food, few bad cards.",
+        "market": "The most food, but it rots and zombies roam. Anyone bitten can't go out the next day.",
+        "hospital": "Medicine: at dawn, each one treats an injured or weak player."
+      },
+      "posts": {
+        "title": "The three posts at night",
+        "intro": "At night everyone secretly taps one spot in the house. The Infected sees the same three spots, meaning something else.",
+        "store": {
+          "survivor": "Guard the storeroom: if someone comes to steal, you see who. Tired tomorrow.",
+          "infected": "Steal: if nobody guards it, the storeroom loses 2 food and you eat it."
+        },
+        "door": {
+          "survivor": "Guard the door: if someone comes to open it, you see who. Tired tomorrow.",
+          "infected": "Open the door: if nobody guards it, a zombie gets in, the storeroom loses 1 and a sleeper is hurt."
+        },
+        "sleep": {
+          "survivor": "Sleep: rest, and draw 2 cards tomorrow.",
+          "infected": "Pretend to sleep: do nothing, and can't be seen."
+        }
+      },
+      "flow": {
+        "title": "Each day",
+        "items": [
+          "Morning (after the first cough): talk about the night, then vote. More than half of those standing on one name sends them out, and their role is shown.",
+          "Day: everyone secretly picks a place (farm, market, and the hospital with 5+). The injured stay home.",
+          "Cards: draw 2, play 1 face down. Cards at one place are shuffled and turned over; their total goes into the storeroom.",
+          "Night: everyone secretly taps the storeroom, the door or a bed. The Infected succeeds where nobody guards; meeting a guard fails and gets them seen.",
+          "Supper: everyone standing eats 1 from the storeroom. Short? Someone goes hungry: one night weak (1 card tomorrow), two nights running and they fall.",
+          "The fallen can do nothing but watch.",
+          "At the start of the 2nd or 3rd night the app announces a cough. With 6+, a second cough comes two nights later."
+        ]
+      },
+      "counts": {
+        "title": "Player counts",
+        "intro": "4 to 8 players. The count sets the number of Infected, the starting food and the win thresholds:",
+        "players": "Players",
+        "infected": "Infected",
+        "survivors": "Survivors",
+        "food": "Start food",
+        "rescue": "Rescue needs",
+        "famine": "Famine at",
+        "votes": "Votes"
+      },
+      "countNotes": {
+        "items": [
+          "Rescue needs: Survivors still standing after supper on night 6.",
+          "Famine at: if the storeroom runs out and this many go hungry, the Infected win.",
+          "Votes: needed with everyone standing. It drops as people fall or are sent out (always more than half of those standing).",
+          "5 players: the hospital opens and the Infected can Sneak once.",
+          "6–8 players: 2 Infected; the second turns two nights after the first, and they don't know each other. Both must be sent out to win that way."
+        ]
+      },
+      "winning": {
+        "title": "Winning",
+        "items": [
+          "Survivors win: after supper on night 6, at least the 'rescue needs' number are standing; or every Infected has been sent out.",
+          "The Infected win: the storeroom runs out and the 'famine at' number go hungry.",
+          "The Infected win: at any time, Survivors standing are no more than Infected standing.",
+          "The Infected win: when the rescue comes, too few Survivors are standing.",
+          "Sending out a Survivor doesn't end the game: one fewer to scavenge, but one fewer mouth too."
+        ]
       }
     }
   },
@@ -1495,6 +1590,143 @@
           "desc": "Nobody's out — just keep drinking. Vote to stop; fewest cups wins."
         }
       }
+    }
+  },
+  "shelter": {
+    "tagline": "Last six winter days — but someone turns in the night",
+    "places": {
+      "farm": "Farm",
+      "market": "Market",
+      "hospital": "Hospital"
+    },
+    "placeHints": {
+      "farm": "Steady, not much",
+      "market": "Plenty, and zombies",
+      "hospital": "Medicine, and zombies"
+    },
+    "posts": {
+      "store": "Storeroom",
+      "door": "Door",
+      "sleep": "Sleep"
+    },
+    "acts": {
+      "store": "Steal food",
+      "door": "Open the door",
+      "sleep": "Pretend to sleep"
+    },
+    "cards": {
+      "f1": "Food",
+      "f2": "Food",
+      "f3": "Food",
+      "none": "Nothing",
+      "mold1": "Mould",
+      "mold2": "Mould",
+      "zombie": "Zombie",
+      "medicine": "Medicine",
+      "sabotage": "Sabotage"
+    },
+    "cardHints": {
+      "f1": "Brings back 1 food",
+      "f2": "Brings back 2 food",
+      "f3": "Brings back 3 food",
+      "none": "Found nothing",
+      "mold1": "Gone bad: 1 less",
+      "mold2": "Gone bad: 2 less",
+      "zombie": "Bitten: you stay home tomorrow",
+      "medicine": "At dawn, treats one injured or weak player",
+      "sabotage": "Infected only: 2 less, and nobody can tell whose"
+    },
+    "bar": {
+      "day": "Day {{n}} of {{total}}",
+      "coughs": "coughs {{count}}/{{total}}",
+      "need": "{{count}} to eat tonight"
+    },
+    "phases": {
+      "vote": "Morning: vote",
+      "search": "Day: pick a place",
+      "play": "Day: play a card",
+      "night": "Night: take a post",
+      "finished": "Game over"
+    },
+    "role": {
+      "survivor": "You are a Survivor",
+      "infected": "You are Infected"
+    },
+    "status": {
+      "fallen": "fallen",
+      "exiled": "exiled"
+    },
+    "record": {
+      "title": "Record"
+    },
+    "news": {
+      "title": "What happened",
+      "dayHeading": "Day {{n}} · scavenging",
+      "nightHeading": "Night {{n}}",
+      "voteHeading": "Day {{n}} · morning vote",
+      "zombieHurt": "{{names}} got bitten and stays home tomorrow",
+      "cough": "Someone is coughing in the dark…",
+      "store": "Storeroom: {{before}} → {{after}} food",
+      "stolen": "{{count}} food went missing",
+      "opened": "The door was opened and a zombie got in",
+      "injured": "{{names}} got hurt and stays home tomorrow",
+      "hungry": "Went hungry: {{names}}",
+      "fallen": "Fell: {{names}}",
+      "nobody": "no one",
+      "noExile": "Nobody was sent out",
+      "exiledInfected": "{{name}} was sent out — Infected!",
+      "exiledSurvivor": "{{name}} was sent out — a Survivor"
+    },
+    "notes": {
+      "saw": "You guarded the {{post}} and saw {{names}}!",
+      "quiet": "You guarded the {{post}} (with {{with}}); nothing happened",
+      "alone": "nobody",
+      "caught": "You were seen: {{names}} stood guard there",
+      "stole": "You stole {{count}} food",
+      "stoleSneaked": "You sneaked in and stole {{count}} food unseen",
+      "opened": "You opened the door",
+      "openedSneaked": "You sneaked to the door and opened it unseen"
+    },
+    "cough": {
+      "title": "Someone is coughing in the dark…",
+      "body": "Someone is infected. From tonight, they want the shelter to starve.",
+      "youTitle": "You are infected",
+      "youBody": "From now on you are the Infected. By day you can play Sabotage; at night you can steal food or open the door — don't get seen.",
+      "continue": "Tap to continue"
+    },
+    "waiting": "Waiting for {{names}}",
+    "task": {
+      "fallen": "You collapsed from hunger and can only watch now.",
+      "exiled": "You were sent out of the shelter and can only watch now.",
+      "injured": "You're hurt and stay home today.",
+      "posted": "Tonight you chose: {{post}}",
+      "vote": "Send someone out?",
+      "voteHint": "{{count}} votes send someone out. Their role is shown.",
+      "voteNobody": "Nobody today",
+      "search": "Where do you scavenge today?",
+      "tired": "You stood guard last night: you draw only 1 card today.",
+      "play": "At the {{place}}: play one card face down",
+      "playHint": "Cards at the same place are shuffled and turned over: everyone sees what came up, not who played it.",
+      "night": "Where do you keep watch tonight?",
+      "nightHint": "Tap the storeroom, the door or a bed. A guard sees anyone who comes to do harm, but is tired tomorrow.",
+      "nightInfected": "What do you do tonight?",
+      "nightInfectedHint": "Tap the storeroom to steal, the door to open it, or a bed to pretend to sleep. If someone guards it, you'll be seen.",
+      "stealthOn": "Sneak: on (once a game)",
+      "stealthOff": "Sneak (once a game)"
+    },
+    "result": {
+      "survivors": "The rescue came! Survivors win",
+      "infected": "The Infected win",
+      "none": "Game over",
+      "wasInfected": "{{name}} was Infected"
+    },
+    "reasons": {
+      "rescue": "They made it to day 6 and the convoy arrived.",
+      "exiled": "Every Infected was sent out of the shelter.",
+      "famine": "The storeroom ran empty and too many went hungry.",
+      "outnumbered": "The Infected standing were no fewer than the Survivors.",
+      "lateRescue": "The convoy came, but too few Survivors were still standing.",
+      "abandoned": "Someone left; the game ended."
     }
   }
 }

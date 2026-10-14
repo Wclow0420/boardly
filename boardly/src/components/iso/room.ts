@@ -31,6 +31,7 @@ import {
   setLayer,
   unit,
   type Door,
+  type Pt,
   type Shape,
   type Tones,
   type V3,
@@ -394,3 +395,50 @@ export function roomOutline(): string {
     ).map(([x, y, z]) => P(x, y, z))
   );
 }
+
+/** A watcher standing on a floor point: a turned pawn, lit from the left. */
+export function pawn([x, y]: [number, number], fill: string, edge: string): Shape[] {
+  const rx = 0.042 * unit() * 1.2247;
+  const ry = 0.042 * unit() * 0.7071;
+  const neck = rx * 0.36;
+  const [bx, by] = P(x, y, 0);
+  const [, ny] = P(x, y, 0.115);
+  const [hx, hy] = P(x, y, 0.15);
+  return [
+    { d: oval(bx + 2.2, by + 0.8, rx * 1.2, ry * 1.2), fill: "#000000", opacity: 0.35 },
+    {
+      d: `M${n(bx - rx)} ${n(by)} A${n(rx)} ${n(ry)} 0 0 0 ${n(bx + rx)} ${n(by)} L${n(bx + neck)} ${n(ny)} L${n(bx - neck)} ${n(ny)} Z`,
+      fill,
+      stroke: edge,
+      strokeWidth: 0.6,
+    },
+    {
+      d: `M${n(bx)} ${n(by + ry)} A${n(rx)} ${n(ry)} 0 0 0 ${n(bx + rx)} ${n(by)} L${n(bx + neck)} ${n(ny)} L${n(bx)} ${n(ny)} Z`,
+      fill: "#000000",
+      opacity: 0.22,
+    },
+    { d: oval(bx, ny, neck * 1.5, neck * 0.7), fill, stroke: edge, strokeWidth: 0.5 },
+    { d: oval(hx, hy, 3.6, 3.6), fill, stroke: edge, strokeWidth: 0.6 },
+    { d: oval(hx - 1.1, hy - 1.2, 1.1, 1.1), fill: "#FFFFFF", opacity: 0.35 },
+  ];
+}
+
+/** The top of a pawn's head on a floor point, for its name. */
+export const pawnTop = ([x, y]: [number, number]): Pt => P(x, y, 0.19);
+
+/** Spots where watchers stand, nearest the middle first: three rows across
+ *  the clear front of a room (x + y > 1.3), each in the gaps of the last. */
+export const SPOTS: [number, number][] = [
+  [0.86, 0.86],
+  [0.98, 0.74],
+  [0.74, 0.98],
+  [0.81, 0.69],
+  [0.69, 0.81],
+  [0.93, 0.57],
+  [0.57, 0.93],
+  [0.65, 0.65],
+  [0.77, 0.53],
+  [0.53, 0.77],
+  [0.89, 0.41],
+  [0.41, 0.89],
+];

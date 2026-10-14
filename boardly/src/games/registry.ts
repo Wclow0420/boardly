@@ -8,6 +8,7 @@ import { coup } from "./coup";
 import { liarsdice } from "./liarsdice";
 import { manor } from "./manor";
 import { nightwatch } from "./nightwatch";
+import { shelter } from "./shelter";
 import { tictactoe } from "./tictactoe";
 
 export const GAMES: Record<string, GameDefinition<any>> = {
@@ -17,6 +18,7 @@ export const GAMES: Record<string, GameDefinition<any>> = {
   [manor.key]: manor,
   [liarsdice.key]: liarsdice,
   [nightwatch.key]: nightwatch,
+  [shelter.key]: shelter,
 };
 
 export function getGame(key: string): GameDefinition<any> | undefined {
