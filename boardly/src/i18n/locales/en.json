@@ -1941,6 +1941,14 @@
         "name": "Grid Master",
         "desc": "Win 10 games of Tic-Tac-Toe."
       }
+    },
+    "celebrate": {
+      "newBadge": "New badge!",
+      "nextUp": "Next badge",
+      "toGo": "{{n}} to go",
+      "viewProfile": "View profile",
+      "nice": "Nice!",
+      "tapNext": "Tap for the next one"
     }
   }
 }

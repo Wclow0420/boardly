@@ -33,7 +33,8 @@ import {
 } from "@/components/ui";
 import { useSession } from "@/context/SessionContext";
 import { BadgeGrid } from "@/features/badges/BadgeGrid";
-import { titleBadge } from "@/features/badges/order";
+import { NextBadge } from "@/features/badges/NextBadge";
+import { nextBadge, titleBadge } from "@/features/badges/order";
 import { badgeText } from "@/features/badges/strings";
 import { useSeenBadges } from "@/features/badges/useSeenBadges";
 import { CoinPill } from "@/features/coins/CoinPill";
@@ -97,6 +98,7 @@ export default function ProfileScreen() {
   const onStamped = useCallback((keys: string[]) => markSeen(keys), [markSeen]);
 
   const title = card ? titleBadge(card.badges) : null;
+  const next = card ? nextBadge(card.badges) : null;
   const earned = card?.badges.filter((b) => b.unlockedAt).length ?? 0;
   const tokens = [
     { label: t("profile.gamesPlayed"), value: card?.gamesPlayed },
@@ -213,6 +215,11 @@ export default function ProfileScreen() {
               </View>
             ))}
           </View>
+          {next ? (
+            <View style={styles.next}>
+              <NextBadge badge={next} clock={still} />
+            </View>
+          ) : null}
         </Frame>
 
         {/* Badges */}
@@ -311,6 +318,11 @@ const styles = StyleSheet.create({
   },
   tokenValue: { fontFamily: fontFamily.bold, fontSize: 16, color: TABLE.cream },
   tokenLabel: { color: TABLE.creamMuted },
+  next: {
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,230,190,0.14)",
+    paddingTop: 12,
+  },
   sectionHead: {
     flexDirection: "row",
     alignItems: "flex-start",

@@ -1934,6 +1934,14 @@
         "name": "井字大师",
         "desc": "赢 10 局井字棋。"
       }
+    },
+    "celebrate": {
+      "newBadge": "获得新徽章！",
+      "nextUp": "下一个徽章",
+      "toGo": "还差 {{n}}",
+      "viewProfile": "查看个人资料",
+      "nice": "太棒了！",
+      "tapNext": "点一下看下一个"
     }
   }
 }

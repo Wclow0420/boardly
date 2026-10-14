@@ -1938,6 +1938,14 @@
         "name": "Pakar Grid",
         "desc": "Menang 10 permainan Tic-Tac-Toe."
       }
+    },
+    "celebrate": {
+      "newBadge": "Lencana baharu!",
+      "nextUp": "Lencana seterusnya",
+      "toGo": "{{n}} lagi",
+      "viewProfile": "Lihat profil",
+      "nice": "Hebat!",
+      "tapNext": "Ketik untuk yang seterusnya"
     }
   }
 }

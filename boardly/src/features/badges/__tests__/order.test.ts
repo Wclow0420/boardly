@@ -1,5 +1,5 @@
 import type { BadgeRecord } from "@/api/client";
-import { sortBadges, titleBadge } from "../order";
+import { earnedLastGame, nextBadge, sortBadges, titleBadge } from "../order";
 
 const badge = (
   key: string,
@@ -35,4 +35,31 @@ it("names the player after their rarest badge, or nothing yet", () => {
       badge("c", "legendary", 1, 1, "2026-10-01"),
     ])?.key,
   ).toBe("c");
+});
+
+it("celebrates only what the latest game earned and this device hasn't shown", () => {
+  const badges = [
+    badge("old", "bronze", 1, 1, "2026-10-01T10:00:00"),
+    badge("new", "silver", 1, 1, "2026-10-14T09:00:00"),
+    badge("shown", "bronze", 1, 1, "2026-10-14T09:00:00"),
+  ];
+  const keys = earnedLastGame(
+    badges,
+    "2026-10-14T09:00:00",
+    new Set(["shown"]),
+  ).map((b) => b.key);
+  expect(keys).toEqual(["new"]);
+  expect(earnedLastGame(badges, null, new Set())).toEqual([]);
+});
+
+it("points at the closest badge still to earn, the game's own first", () => {
+  const badges = [
+    { ...badge("game.feat", "gold", 0, 1), gameType: "game" },
+    { ...badge("game.wins", "gold", 4, 10), gameType: "game" },
+    badge("boardly.veteran", "gold", 40, 50),
+  ];
+  expect(nextBadge(badges, "game")?.key).toBe("game.wins");
+  expect(nextBadge(badges, "other")?.key).toBe("boardly.veteran");
+  // on the player card: the closest of all
+  expect(nextBadge(badges)?.key).toBe("boardly.veteran");
 });

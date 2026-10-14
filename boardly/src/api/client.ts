@@ -247,6 +247,9 @@ export interface UserStats {
   favourite: string | null;
   games: GameRecord[];
   badges: BadgeRecord[];
+  /** When the latest finished game ended (ISO); badges unlocked at
+   *  exactly this time were earned in it. */
+  lastGameAt: string | null;
 }
 
 export const api = {

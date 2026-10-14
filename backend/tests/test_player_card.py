@@ -21,6 +21,7 @@ def test_a_new_player_has_an_empty_card(client, make_user):
     card = _card(client, make_user("alice"))
     assert (card["gamesPlayed"], card["wins"], card["streak"]) == (0, 0, 0)
     assert card["games"] == [] and card["favourite"] is None
+    assert card["lastGameAt"] is None
     first = _badge(card, "boardly.firstTable")
     assert (first["progress"], first["goal"], first["unlockedAt"]) == (0, 1, None)
 
@@ -40,6 +41,8 @@ def test_finishing_a_game_fills_both_cards(client, make_user):
     assert _badge(lost, "tictactoe.firstWin")["unlockedAt"] is None
     assert _badge(lost, "boardly.firstTable")["unlockedAt"] is not None
     assert _badge(won, "boardly.company")["progress"] == 1
+    # badges earned in this game carry its finishing time
+    assert won["lastGameAt"] == _badge(won, "tictactoe.firstWin")["unlockedAt"]
 
 
 def test_a_forfeit_counts_as_a_win_but_earns_no_badge(client, make_user):

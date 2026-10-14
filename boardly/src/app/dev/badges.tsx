@@ -11,10 +11,40 @@ import { Badge } from "@/components/badges/Badge";
 import type { BadgeTier } from "@/components/badges/types";
 import { useIsoClock } from "@/components/iso";
 import { AppText } from "@/components/ui";
+import type { BadgeRecord } from "@/api/client";
 import { badgeArt } from "@/features/badges/art";
+import { BadgeCelebration } from "@/features/badges/BadgeCelebration";
 import { badgeText } from "@/features/badges/strings";
 import { GAMES } from "@/games/registry";
 import { useTheme } from "@/theme";
+
+/** What a game might have earned, and what comes next. */
+const SAMPLE: BadgeRecord[] = [
+  {
+    key: "shelter.fullLarder",
+    gameType: "shelter",
+    tier: "gold",
+    goal: 1,
+    progress: 1,
+    unlockedAt: "now",
+  },
+  {
+    key: "boardly.legend",
+    gameType: null,
+    tier: "legendary",
+    goal: 100,
+    progress: 100,
+    unlockedAt: "now",
+  },
+];
+const NEXT: BadgeRecord = {
+  key: "shelter.lastWinter",
+  gameType: "shelter",
+  tier: "legendary",
+  goal: 25,
+  progress: 7,
+  unlockedAt: null,
+};
 
 const TIERS: BadgeTier[] = ["bronze", "silver", "gold", "legendary"];
 const GENERAL = [
@@ -29,6 +59,7 @@ export default function BadgesPreview() {
   const { colors, spacing } = useTheme();
   const clock = useIsoClock(false);
   const [locked, setLocked] = useState(false);
+  const [party, setParty] = useState<BadgeRecord[]>([]);
   if (!__DEV__) return <Redirect href="/" />;
 
   const all: { key: string; game: string | null }[] = [
@@ -43,6 +74,17 @@ export default function BadgesPreview() {
       <ScrollView
         contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}
       >
+        <Pressable
+          accessibilityLabel="Celebrate"
+          onPress={() => setParty(SAMPLE)}
+          style={{
+            alignSelf: "flex-end",
+            paddingTop: 40,
+            paddingHorizontal: 8,
+          }}
+        >
+          <AppText>Celebrate ▶</AppText>
+        </Pressable>
         <Pressable
           accessibilityLabel="Toggle locked"
           onPress={() => setLocked(!locked)}
@@ -117,6 +159,13 @@ export default function BadgesPreview() {
           })}
         </View>
       </ScrollView>
+      <BadgeCelebration
+        key={party.length ? "on" : "off"}
+        badges={party}
+        next={NEXT}
+        onShown={() => {}}
+        onProfile={() => setParty([])}
+      />
     </SafeAreaView>
   );
 }

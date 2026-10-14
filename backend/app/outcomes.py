@@ -145,6 +145,9 @@ def player_card(user_id) -> dict:
         "streak": current,
         "bestStreak": best,
         "favourite": by_game[0]["gameType"] if by_game else None,
+        # When the latest game ended: badges unlocked at this moment were
+        # earned in it (the app celebrates those when the game ends)
+        "lastGameAt": _iso(played[-1].finished_at) if played else None,
         "games": by_game,
         "badges": badges,
         "tiers": list(TIERS),

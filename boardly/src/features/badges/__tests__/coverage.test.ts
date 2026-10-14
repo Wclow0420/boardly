@@ -1,12 +1,13 @@
 // Every badge a game declares in the app is named in all three locales.
 // (The badge list itself comes from the server; see AGENTS.md.)
-// Only the games' data is read here: nothing is drawn
-jest.mock("@shopify/react-native-skia", () => ({}));
-
 import en from "@/i18n/locales/en.json";
 import ms from "@/i18n/locales/ms.json";
 import zh from "@/i18n/locales/zh.json";
 import { GAMES } from "@/games/registry";
+
+// Only the games' data is read here: nothing is drawn (babel-jest
+// hoists this above the imports)
+jest.mock("@shopify/react-native-skia", () => ({}));
 
 const LOCALES = { en, zh, ms } as Record<
   string,
