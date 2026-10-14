@@ -361,6 +361,8 @@ export function NightwatchBoard({
                     }
                   : undefined
               }
+              event={over ? null : state.event}
+              paused={showing !== null || dealing || delivering}
             />
           ) : (
             map

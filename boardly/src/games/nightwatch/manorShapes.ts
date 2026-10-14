@@ -1,28 +1,53 @@
 // The manor as one connected isometric cutaway: nine rooms on a shared
 // floor, tall walls along the two far sides, low walls with door gaps
-// between neighbours, and a few solid furnishings in each room.
-// Everything is plain SVG path data so it renders the same through
-// react-native-svg on phones and on the web (see ManorMap.tsx). The
-// same drawing kit builds each room on its own, in full detail, for the
-// page the player stands in (see roomScenes.ts).
-//
-// World: each room is a unit square of floor; column (x) runs to the
-// right-front and row (y) to the left-front, z is up. The viewer stands
-// off the front corner, so rooms and their contents are listed back to
-// front — painter's order.
+// between neighbours, and a few solid furnishings in each room. Drawn
+// with the shared kit (components/iso/kit.ts); ManorMap shows it. The
+// rooms on their own, in full detail, are built in roomScenes.ts.
 
+import {
+  BOOKS,
+  GOLD,
+  INK,
+  LEAF,
+  LOCK,
+  STONE,
+  WALL,
+  WALLS,
+  WOOD,
+  CARPET,
+  DOOR,
+  P,
+  arch,
+  ball,
+  box,
+  candle,
+  cylinder,
+  flame,
+  flat,
+  hoop,
+  k,
+  line,
+  moon,
+  n,
+  onX,
+  onY,
+  paint,
+  path,
+  setInk,
+  setOrigin,
+  setView,
+  unit,
+  withView,
+  type Door,
+  type Pt,
+  type RoomInk,
+  type Shape,
+  type Tones,
+  type View,
+} from "@/components/iso/kit";
 import { ROOMS, type RoomId } from "./logic";
 
-export interface Shape {
-  d: string;
-  fill?: string;
-  stroke?: string;
-  strokeWidth?: number;
-  opacity?: number;
-  dash?: string;
-  /** Scene only: the moving layer this shape is drawn in. */
-  layer?: "prop" | "glow" | "glow2";
-}
+export type { Door, Pt, Shape, Tones, V3 } from "@/components/iso/kit";
 
 /** How a room's floor is marked (selected, tonight's mission, ...). */
 export interface Tint {
@@ -39,61 +64,19 @@ export const SCENE_WIDTH = 190;
 export const SCENE_HEIGHT = 208;
 
 /** Units per room and where the back corner sits. */
-const MANOR_VIEW = { scale: 54, cx: 150, cy: 50 };
-const SCENE_VIEW = { scale: 100, cx: 95, cy: 92 };
-let view = MANOR_VIEW;
-export const WALL = 0.8;
+const MANOR_VIEW: View = { scale: 54, cx: 150, cy: 50 };
+const SCENE_VIEW: View = { scale: 100, cx: 95, cy: 92 };
 const LOW = 0.2;
 const THICK = 0.05;
-export const DOOR: [number, number] = [0.36, 0.64];
-/** Sizes given in drawing units were tuned at 40 units per room. */
-export const k = () => view.scale / 40;
 
-export type Pt = [number, number];
-export type V3 = [number, number, number];
-
-/** Top, +y face (lit), +x face (shaded). */
-export type Tones = [string, string, string];
-
-export type Door = "open" | "locked" | "shut";
-
-/** The room being drawn: builders work in its own unit square. `solo`
- *  is the room on its own, filling the page, where the glow of a flame
- *  is set apart so it can flicker. */
+/** The map's cell being drawn: its doors and floor marking. */
 let cell = {
   col: 0,
   row: 0,
   doorX: "open" as Door,
   doorY: "open" as Door,
   tint: null as Tint | null,
-  solo: false,
 };
-
-export const INK = {
-  line: "#465280",
-  floor: "#2B3350",
-  floorLine: "#384266",
-  wallLit: "#252C46",
-  wallShade: "#1C2238",
-  night: "#0D1020",
-  glass: "#9CB8FF",
-  paper: "#E9E2CF",
-  gold: "#D9A95B",
-  red: "#8E3B3F",
-  redDark: "#6E2C31",
-  iron: "#1A1E30",
-  grass: "#22382F",
-  grassLine: "#2D4A3D",
-};
-/** A room's own colours: floor, the lines drawn on it, its two walls,
- *  and the lighter tile of a patterned floor. */
-export interface RoomInk {
-  floor: string;
-  line: string;
-  lit: string;
-  shade: string;
-  tile: string;
-}
 
 /** Every room is painted in its own colour (see ROOM_COLOR in logic.ts
  *  for the bright version its name is written in), so a room is known
@@ -110,175 +93,10 @@ export const ROOM_INK: Record<RoomId, RoomInk> = {
   garden: { floor: "#22382F", line: "#2D4A3D", lit: "#22382F", shade: "#1B2C25", tile: "#2D4A3D" },
 };
 
-/** The colours of the room being drawn. */
-let ink: RoomInk = ROOM_INK.hall;
-export const paint = () => ink;
+/** Paints the rooms that follow in a room's own colours. */
 export function paintAs(room: RoomId) {
-  ink = ROOM_INK[room];
+  setInk(ROOM_INK[room]);
 }
-
-/** A carpet that shows on any of those floors. */
-export const CARPET = { fill: "#262B45", edge: "#A87C3A" };
-
-export const STONE: Tones = ["#56628C", "#3D476B", "#2C3454"];
-export const WOOD: Tones = ["#8A6548", "#674A36", "#4A3527"];
-export const LEAF: Tones = ["#4C8F6C", "#3A7256", "#2B5742"];
-export const GOLD: Tones = ["#F0C87A", "#D9A95B", "#A87C3A"];
-export const BOOKS = ["#8E3B3F", "#3A7256", "#D9A95B", "#5A6FA8", "#B4683C"];
-
-export const n = (v: number) => Math.round(v * 100) / 100;
-
-export const P = (x: number, y: number, z = 0): Pt => [
-  view.cx + (x + cell.col - y - cell.row) * 0.866 * view.scale,
-  view.cy + (x + cell.col + y + cell.row) * 0.5 * view.scale - z * view.scale,
-];
-
-export const path = (pts: Pt[], close = true) =>
-  pts.map(([x, y], i) => `${i ? "L" : "M"}${n(x)} ${n(y)}`).join(" ") +
-  (close ? " Z" : "");
-
-export const poly = (pts: V3[], fill: string, stroke: string = INK.line): Shape => ({
-  d: path(pts.map(([x, y, z]) => P(x, y, z))),
-  fill,
-  stroke,
-  strokeWidth: 0.5,
-});
-
-export const line = (pts: V3[], stroke: string = INK.line, strokeWidth = 0.5): Shape => ({
-  d: path(pts.map(([x, y, z]) => P(x, y, z)), false),
-  stroke,
-  strokeWidth,
-});
-
-/** A solid block: its three faces the viewer can see. */
-export function box(
-  x: number,
-  y: number,
-  z: number,
-  w: number,
-  d: number,
-  h: number,
-  [top, lit, shade]: Tones
-): Shape[] {
-  const X = x + w;
-  const Y = y + d;
-  const Z = z + h;
-  return [
-    poly([[X, y, z], [X, Y, z], [X, Y, Z], [X, y, Z]], shade),
-    poly([[x, Y, z], [X, Y, z], [X, Y, Z], [x, Y, Z]], lit),
-    poly([[x, y, Z], [X, y, Z], [X, Y, Z], [x, Y, Z]], top),
-  ];
-}
-
-/** A flat patch on the floor or on top of something. */
-export const flat = (x1: number, x2: number, y1: number, y2: number, z: number, fill: string, stroke?: string) =>
-  poly([[x1, y1, z], [x2, y1, z], [x2, y2, z], [x1, y2, z]], fill, stroke);
-
-/** A patch on a plane of constant y (the right-hand wall is y = 0). */
-export const onY = (y: number, x1: number, x2: number, z1: number, z2: number, fill: string, stroke?: string) =>
-  poly([[x1, y, z1], [x2, y, z1], [x2, y, z2], [x1, y, z2]], fill, stroke);
-
-/** A patch on a plane of constant x (the left-hand wall is x = 0). */
-export const onX = (x: number, y1: number, y2: number, z1: number, z2: number, fill: string, stroke?: string) =>
-  poly([[x, y1, z1], [x, y2, z1], [x, y2, z2], [x, y1, z2]], fill, stroke);
-
-/** An arched opening on a wall: `axis` is the wall's constant coordinate. */
-export function arch(
-  axis: "x" | "y",
-  from: number,
-  to: number,
-  z0: number,
-  spring: number,
-  fill: string,
-  pointed = false
-): Shape {
-  const mid = (from + to) / 2;
-  const r = (to - from) / 2;
-  const at = (a: number, z: number): V3 => (axis === "x" ? [0, a, z] : [a, 0, z]);
-  const pts: V3[] = [at(from, z0), at(to, z0)];
-  const steps = 8;
-  for (let i = 0; i <= steps; i++) {
-    const t = (i / steps) * Math.PI;
-    const rise = pointed ? Math.sin(t) * r * 1.5 : Math.sin(t) * r;
-    pts.push(at(mid + Math.cos(t) * r, spring + rise));
-  }
-  return poly(pts, fill);
-}
-
-/** An upright cylinder (barrel, pot, well, trunk). */
-export function cylinder(x: number, y: number, z: number, r: number, h: number, [top, lit]: Tones): Shape[] {
-  const rx = r * view.scale * 1.2247;
-  const ry = r * view.scale * 0.7071;
-  const [bx, by] = P(x, y, z);
-  const [, ty] = P(x, y, z + h);
-  return [
-    {
-      d: `M${n(bx - rx)} ${n(ty)} L${n(bx - rx)} ${n(by)} A${n(rx)} ${n(ry)} 0 0 0 ${n(bx + rx)} ${n(by)} L${n(bx + rx)} ${n(ty)} Z`,
-      fill: lit,
-      stroke: INK.line,
-      strokeWidth: 0.5,
-    },
-    {
-      d: `M${n(bx - rx)} ${n(ty)} A${n(rx)} ${n(ry)} 0 1 0 ${n(bx + rx)} ${n(ty)} A${n(rx)} ${n(ry)} 0 1 0 ${n(bx - rx)} ${n(ty)} Z`,
-      fill: top,
-      stroke: INK.line,
-      strokeWidth: 0.5,
-    },
-  ];
-}
-
-/** A hoop round a cylinder at height z (the near half). */
-export function hoop(x: number, y: number, z: number, r: number, stroke: string): Shape {
-  const rx = r * view.scale * 1.2247;
-  const ry = r * view.scale * 0.7071;
-  const [bx, by] = P(x, y, z);
-  return {
-    d: `M${n(bx - rx)} ${n(by)} A${n(rx)} ${n(ry)} 0 0 0 ${n(bx + rx)} ${n(by)}`,
-    stroke,
-    strokeWidth: 0.8,
-  };
-}
-
-/** A round blob facing the viewer, centred on a world point. */
-export function ball(at: V3, radius: number, fill: string, stroke?: string, opacity?: number): Shape {
-  const [cx, cy] = P(...at);
-  const r = n(radius * k());
-  return {
-    d: `M${n(cx - r)} ${n(cy)} a${r} ${r} 0 1 0 ${2 * r} 0 a${r} ${r} 0 1 0 ${-2 * r} 0 Z`,
-    fill,
-    stroke,
-    strokeWidth: stroke ? 0.5 : undefined,
-    opacity,
-  };
-}
-
-/** A lit flame with its glow, standing on a world point. */
-export function flame(at: V3, units: number, accent: string): Shape[] {
-  const [cx, by] = P(...at);
-  const size = units * k();
-  const cy = by - size;
-  const halo = ball([at[0], at[1], at[2] + size / view.scale], units * 2.6, accent, undefined, 0.22);
-  return [
-    cell.solo ? { ...halo, layer: "glow" } : halo,
-    {
-      d: `M${n(cx)} ${n(cy - size)} Q${n(cx + size * 0.8)} ${n(cy + size * 0.1)} ${n(cx)} ${n(by)} Q${n(cx - size * 0.8)} ${n(cy + size * 0.1)} ${n(cx)} ${n(cy - size)} Z`,
-      fill: accent,
-    },
-    {
-      d: `M${n(cx)} ${n(cy - size * 0.3)} Q${n(cx + size * 0.35)} ${n(cy + size * 0.4)} ${n(cx)} ${n(by)} Q${n(cx - size * 0.35)} ${n(cy + size * 0.4)} ${n(cx)} ${n(cy - size * 0.3)} Z`,
-      fill: "#FFE3A8",
-    },
-  ];
-}
-
-/** A candle: a short wax stick with a flame. */
-export const candle = (x: number, y: number, z: number, h: number, accent: string): Shape[] => [
-  ...box(x - 0.012, y - 0.012, z, 0.024, 0.024, h, [INK.paper, "#CFC7B0", "#B3AB95"]),
-  ...flame([x, y, z + h], 2.2, accent),
-];
-
-export const WALLS: Tones = ["#4A5580", "#2F3757", "#252C46"];
-export const LOCK: Tones = ["#B4484D", INK.red, INK.redDark];
 
 /** A low wall (or hedge) along one of the room's two far edges, with
  *  its doorway: open, locked, or walled up. */
@@ -314,12 +132,12 @@ const tallY = () => cell.row === 0;
 /** Floor and walls: tall along the manor's far sides, low elsewhere. */
 function shell(planks = true): Shape[] {
   const shapes: Shape[] = [];
-  if (tallX()) shapes.push(onX(0, 0, 1, 0, WALL, ink.shade));
-  if (tallY()) shapes.push(onY(0, 0, 1, 0, WALL, ink.lit));
-  shapes.push(flat(0, 1, 0, 1, 0, ink.floor));
+  if (tallX()) shapes.push(onX(0, 0, 1, 0, WALL, paint().shade));
+  if (tallY()) shapes.push(onY(0, 0, 1, 0, WALL, paint().lit));
+  shapes.push(flat(0, 1, 0, 1, 0, paint().floor));
   if (planks) {
     for (const y of [0.25, 0.5, 0.75]) {
-      shapes.push(line([[0, y, 0], [1, y, 0]], ink.line));
+      shapes.push(line([[0, y, 0], [1, y, 0]], paint().line));
     }
   }
   shapes.push(...floorTint());
@@ -332,19 +150,10 @@ function shell(planks = true): Shape[] {
 function courses(): Shape[] {
   const shapes: Shape[] = [];
   for (const z of [0.2, 0.4, 0.6]) {
-    if (tallX()) shapes.push(line([[0, 1, z], [0, 0, z]], ink.line));
-    if (tallY()) shapes.push(line([[0, 0, z], [1, 0, z]], ink.line));
+    if (tallX()) shapes.push(line([[0, 1, z], [0, 0, z]], paint().line));
+    if (tallY()) shapes.push(line([[0, 0, z], [1, 0, z]], paint().line));
   }
   return shapes;
-}
-
-/** A crescent moon at a point of the drawing. */
-export function moon(cx: number, cy: number, radius: number): Shape {
-  const r = n(radius * k());
-  return {
-    d: `M${n(cx)} ${n(cy - r)} A${r} ${r} 0 1 1 ${n(cx)} ${n(cy + r)} A${n(r * 0.72)} ${r} 0 1 0 ${n(cx)} ${n(cy - r)} Z`,
-    fill: INK.glass,
-  };
 }
 
 function belltower(accent: string): Shape[] {
@@ -369,7 +178,7 @@ function belltower(accent: string): Shape[] {
       d: `M${n(bx - s * 0.95)} ${n(by + s)} A${n(s * 0.95)} ${n(s * 0.3)} 0 0 0 ${n(bx + s * 0.95)} ${n(by + s)} A${n(s * 0.95)} ${n(s * 0.3)} 0 0 0 ${n(bx - s * 0.95)} ${n(by + s)} Z`,
       fill: GOLD[2],
     },
-    ball([0.5, 0.34, 0.36 - (s + 1.6 * k()) / view.scale], 1.5, GOLD[0]),
+    ball([0.5, 0.34, 0.36 - (s + 1.6 * k()) / unit()], 1.5, GOLD[0]),
     ...box(0.16, 0.3, 0.66, 0.68, 0.08, 0.07, WOOD),
     ...box(0.78, 0.3, 0, 0.06, 0.08, 0.66, WOOD),
     // the bell rope, down to the floor
@@ -425,7 +234,7 @@ function gallery(accent: string): Shape[] {
   ];
   return [
     ...shell(),
-    line([[0, 1, 0.24], [0, 0, 0.24]], ink.line),
+    line([[0, 1, 0.24], [0, 0, 0.24]], paint().line),
     ...frame(0.08, 0.3, 0.38, 0.64, LEAF[2]),
     ...frame(0.38, 0.72, 0.32, 0.7, "#2A3152"),
     ...frame(0.8, 0.94, 0.4, 0.6, INK.redDark),
@@ -446,7 +255,7 @@ function hall(accent: string): Shape[] {
     ...[0, 1, 2, 3].flatMap((i) =>
       [0, 1, 2, 3]
         .filter((j) => (i + j) % 2 === 0)
-        .map((j) => flat(i * 0.25, i * 0.25 + 0.25, j * 0.25, j * 0.25 + 0.25, 0, ink.tile, ink.line))
+        .map((j) => flat(i * 0.25, i * 0.25 + 0.25, j * 0.25, j * 0.25 + 0.25, 0, paint().tile, paint().line))
     ),
     // carpet runner from door to door
     flat(0.4, 0.6, 0.04, 0.96, 0, CARPET.fill, CARPET.edge),
@@ -492,13 +301,13 @@ function cellar(accent: string): Shape[] {
   // brick joints, staggered course by course
   for (const [row, z] of [0, 0.2, 0.4, 0.6].entries()) {
     for (let a = row % 2 ? 0.125 : 0.25; a < 1; a += 0.25) {
-      shapes.push(line([[0, a, z], [0, a, z + 0.2]], ink.line));
+      shapes.push(line([[0, a, z], [0, a, z + 0.2]], paint().line));
     }
   }
   shapes.push(
     // flagstones
-    line([[0, 0.5, 0], [1, 0.5, 0]], ink.line),
-    line([[0.5, 0, 0], [0.5, 1, 0]], ink.line),
+    line([[0, 0.5, 0], [1, 0.5, 0]], paint().line),
+    line([[0.5, 0, 0], [0.5, 1, 0]], paint().line),
     // barrels along the left wall, one with a lantern on it
     ...barrel(0.16, 0.18),
     ...barrel(0.16, 0.48),
@@ -582,15 +391,9 @@ const COLS = 3;
 const colOf = (room: number) => room % COLS;
 const rowOf = (room: number) => Math.floor(room / COLS);
 const at = (room: number) => {
-  cell = {
-    col: colOf(room),
-    row: rowOf(room),
-    doorX: "open",
-    doorY: "open",
-    tint: null,
-    solo: false,
-  };
-  ink = ROOM_INK[ROOMS[room]];
+  cell = { col: colOf(room), row: rowOf(room), doorX: "open", doorY: "open", tint: null };
+  setOrigin(cell.col, cell.row);
+  paintAs(ROOMS[room]);
 };
 
 /** The door between two neighbouring rooms tonight. */
@@ -620,7 +423,7 @@ export interface ManorOptions {
 export function manorShapes({ accent, collapsed, lockedDoor, secretDoors, tints }: ManorOptions): Shape[] {
   const door = (a: number, b: number) => doorBetween(a, b, collapsed, lockedDoor);
 
-  view = MANOR_VIEW;
+  setView(MANOR_VIEW);
   at(0);
   const shapes: Shape[] = box(0, 0, -0.1, COLS, COLS, 0.1, STONE);
 
@@ -650,14 +453,14 @@ export function manorShapes({ accent, collapsed, lockedDoor, secretDoors, tints 
 
 /** Outline of a room's floor, for touch targets. */
 export function floorPath(room: number): string {
-  view = MANOR_VIEW;
+  setView(MANOR_VIEW);
   at(room);
   return path([P(0, 0), P(1, 0), P(1, 1), P(0, 1)]);
 }
 
 /** Where a point of a room's floor lands in the drawing. */
 export function floorPoint(room: number, x: number, y: number, z = 0): Pt {
-  view = MANOR_VIEW;
+  setView(MANOR_VIEW);
   at(room);
   return P(x, y, z);
 }
@@ -665,15 +468,6 @@ export function floorPoint(room: number, x: number, y: number, z = 0): Pt {
 /** Draws with the single-room view: one room alone, filling the page
  *  (see roomScenes.ts). */
 export function inScene<T>(draw: () => T): T {
-  view = SCENE_VIEW;
-  cell = { col: 0, row: 0, doorX: "open", doorY: "open", tint: null, solo: true };
-  try {
-    return draw();
-  } finally {
-    view = MANOR_VIEW;
-    at(0);
-  }
+  return withView(SCENE_VIEW, draw);
 }
 
-/** Drawing units per room in the view being drawn. */
-export const unit = () => view.scale;
