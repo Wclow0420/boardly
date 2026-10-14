@@ -70,6 +70,7 @@ def login():
     if (
         user is None
         or user.deleted_at is not None
+        or user.is_bot
         or not check_password_hash(user.password_hash, password)
     ):
         return api_error("invalid_credentials", "Wrong username or password", 401)

@@ -84,4 +84,5 @@ class RoomPlayer(db.Model):
             "avatarUrl": self.user.avatar_url if self.user else None,
             "seat": self.seat,
             "ready": self.ready,
+            "isBot": bool(self.user.is_bot) if self.user else False,
         }

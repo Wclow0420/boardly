@@ -8,12 +8,38 @@ import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
 import { fontFamily, useTheme } from "@/theme";
 import { tapHaptic } from "@/utils/haptics";
 
-export function PlayerCard({ player }: { player: LobbyPlayer }) {
+export function PlayerCard({
+  player,
+  onRemove,
+}: {
+  player: LobbyPlayer;
+  /** Shown on a bot's card for the host: take the bot off the table. */
+  onRemove?: () => void;
+}) {
   const { t } = useTranslation();
   const { colors, radius } = useTheme();
 
   return (
     <Card radius={radius.xl} style={styles.card}>
+      {onRemove ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t("lobby.bots.remove", { name: player.name })}
+          hitSlop={8}
+          onPress={() => {
+            tapHaptic();
+            onRemove();
+          }}
+          style={({ pressed }) => [
+            styles.remove,
+            { backgroundColor: pressed ? colors.border : colors.well },
+          ]}
+        >
+          <AppText variant="caption" color="textMuted" style={styles.removeMark}>
+            ✕
+          </AppText>
+        </Pressable>
+      ) : null}
       <AvatarBorder
         name={player.name}
         borderId={player.borderId}
@@ -32,11 +58,21 @@ export function PlayerCard({ player }: { player: LobbyPlayer }) {
           label={
             player.isHost
               ? t("lobby.host")
-              : player.ready
-                ? t("lobby.ready")
-                : t("lobby.waiting")
+              : player.isBot
+                ? t("lobby.bots.bot")
+                : player.ready
+                  ? t("lobby.ready")
+                  : t("lobby.waiting")
           }
-          variant={player.isHost ? "host" : player.ready ? "ready" : "waiting"}
+          variant={
+            player.isHost
+              ? "host"
+              : player.isBot
+                ? "info"
+                : player.ready
+                  ? "ready"
+                  : "waiting"
+          }
         />
       </View>
     </Card>
@@ -73,6 +109,18 @@ export function InviteSlotCard({ onPress }: { onPress?: () => void }) {
 }
 
 const styles = StyleSheet.create({
+  remove: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1,
+  },
+  removeMark: { fontFamily: fontFamily.semiBold },
   card: {
     alignItems: "center",
     paddingVertical: 18,

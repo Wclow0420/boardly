@@ -19,7 +19,6 @@ Boardly/
 │   │       ├── liarsdice/    #   "Liar's Dice" (大话骰): bluffing dice drinking game, 2-6 players
 │   │       └── nightwatch/   #   "Seal the Manor" (守夜): hidden roles, missions on a secret map, 5-10 players
 │   ├── migrations/           # Alembic (via Flask-Migrate)
-│   ├── scripts/bots.py       # bot players for trying a game on your own
 │   ├── docker-compose.yml    # backend :5005 + postgres :5439
 │   └── Dockerfile
 └── boardly/          Expo app (SDK 57, expo-router, TypeScript)
@@ -172,31 +171,28 @@ registries know about individual games. Socket broadcasts carry no game
 state; they tell clients to refetch their own view. Moves are applied
 under a row lock, so simultaneous actions (votes) are safe.
 
-## Trying a game on your own
+## Bot players
 
-`backend/scripts/bots.py` fills a table with bot players for solo
-testing (development only; bots currently play Seal the Manor).
+Short of a player or two? The host of a waiting table can fill empty
+seats with bots: the **Bot players** button in the lobby header (games
+whose engine sets `has_bots`; today Seal the Manor and Shelter). Bots
+sit down ready; the host can take one off again before starting.
 
-The easy way: create a table in the app and, as its host, use the **Bot
-players** card in the lobby — pick how many and tap Add. The backend
-starts the bots for you (`POST /rooms/<id>/bots {count}`; their output
-goes to the backend log). It is on wherever `APP_ENV` isn't
-`production` and can be turned off with `BOTS_ENABLED=0`; production
-never offers it.
+- Bots are accounts with `is_bot` set (named `🤖 Ada`, `🤖 Ben`, …).
+  They have no password and can never sign in, can't be found or
+  befriended, and sit at one table at a time; free ones are reused.
+- The server plays them (`backend/app/bots.py`): whenever the game is
+  waiting on a bot, a background task makes its move from the bot's own
+  view (the game's `bot_move`), a moment apart so players can follow.
+  Loading the table nudges it again, so bots carry on after a restart.
+- A game with any bot at the table is practice: people earn only the
+  "played" coins (never the win bonus), bots earn nothing, and it counts
+  towards no stats or badges.
+- "Play again" brings the same bots to the new table.
+- On everywhere, production included; `BOTS_ENABLED=0` turns it off.
 
-Or run the script by hand:
-
-```bash
-cd backend
-docker compose exec backend python scripts/bots.py ABC123        # fill to the minimum
-docker compose exec backend python scripts/bots.py ABC123 -n 5   # or add 5 bots
-```
-
-Bots sign in as `bot1`, `bot2`, … (registered on first use, password
-`botbot123`), join, ready up, and move whenever the game asks them to.
-Start the game in the app as the host. Add `-v` to print every bot move
-(and their roles). To see the table through a bot's eyes, sign in as it
-in a private browser window.
+`POST /rooms/<id>/bots {count}` seats bots;
+`DELETE /rooms/<id>/bots/<userId>` takes one off.
 
 ## Game flow (API, base `/api/v1`)
 

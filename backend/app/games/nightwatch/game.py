@@ -83,6 +83,7 @@ Moves:
 import random
 
 from app.games.base import BaseGame, GameError, Badge, won_as
+from app.games.nightwatch.bot import nightwatch as bot_policy
 
 ROOMS = [
     "belltower", "study", "chapel",
@@ -210,6 +211,7 @@ class Nightwatch(BaseGame):
     tile_color = "#F7E6D5"
     category = "faction"
     tag = "faction"
+    has_bots = True
 
     badges = [
         Badge("nightwatch.sealed", "bronze", 1, won_as("good")),
@@ -959,6 +961,9 @@ class Nightwatch(BaseGame):
         return self._finish(state, None, "abandoned")
 
     # ------------------------------------------------------------- view
+
+    def bot_move(self, view, seat, rng):
+        return bot_policy(view, seat, rng)
 
     def view_for(self, state: dict, seat: int) -> dict:
         n = state["numPlayers"]

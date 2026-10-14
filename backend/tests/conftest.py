@@ -20,6 +20,9 @@ class TestConfig(Config):
     TESTING = True
     # make_user registers faster than the per-IP auth limits allow
     RATELIMIT_ENABLED = False
+    # Bots move right away, inside the request that hands them the turn
+    BOTS_INLINE = True
+    BOT_DELAY = (0, 0)
     SQLALCHEMY_DATABASE_URI = TEST_DATABASE_URL
 
 

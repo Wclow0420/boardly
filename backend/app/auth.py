@@ -65,7 +65,7 @@ def user_from_token(token: str, expected_type: str) -> User:
         user = db.session.get(User, uuid.UUID(payload["sub"]))
     except (KeyError, ValueError):
         user = None
-    if user is None or user.deleted_at is not None:
+    if user is None or user.deleted_at is not None or user.is_bot:
         raise jwt.InvalidTokenError("Account no longer exists")
     if payload.get("ver", 0) != user.token_version:
         raise jwt.InvalidTokenError("Session was signed out")

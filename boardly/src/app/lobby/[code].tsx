@@ -37,6 +37,7 @@ import { GameSettings } from "@/features/lobby/GameSettings";
 import { InviteSlotCard, PlayerCard } from "@/features/lobby/PlayerCard";
 import {
   useLeaveRoom,
+  useRemoveBot,
   useRoom,
   useSetReady,
   useStartGame,
@@ -68,6 +69,7 @@ export default function LobbyScreen() {
   const startGame = useStartGame(room?.id);
   const setReady = useSetReady(room?.id, roomCode);
   const leaveRoom = useLeaveRoom(room?.id);
+  const removeBot = useRemoveBot(room?.id);
 
   const hasRules = useHasRules(room?.gameType);
   // Games with their own look bring their art into the lobby header
@@ -305,7 +307,13 @@ export default function LobbyScreen() {
                     avatarUrl: player.avatarUrl,
                     isHost: player.userId === room.hostId,
                     ready: player.ready,
+                    isBot: player.isBot,
                   }}
+                  onRemove={
+                    isHost && player.isBot && room.status === "waiting"
+                      ? () => removeBot.mutate(player.userId)
+                      : undefined
+                  }
                 />
               </View>
             ))}

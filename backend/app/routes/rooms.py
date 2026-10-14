@@ -4,11 +4,12 @@ from flask import Blueprint, current_app, g, request
 
 from app import presence
 from app.auth import require_auth
-from app.bots import BOT_GAMES, bots_available, spawn_bots
+from app.bots import bots_available, nudge, seat_bots
 from app.extensions import db, socketio
 from app.games import GameError, get_game
 from app.models import GameSession, Room, RoomPlayer
 from app.outcomes import record_outcomes
+from app.play import announce_move, apply_move
 from app.rewards import grant_game_rewards
 from app.utils import api_error
 
@@ -66,13 +67,6 @@ def _broadcast_room(room: Room):
     """Tell the table the room changed. Carries no game state — every
     client refetches its own view."""
     socketio.emit("room_updated", _room_payload(room), to=f"room:{room.id}")
-
-
-def _winner_ids(room: Room, result: dict) -> list:
-    seats = result.get("winnerSeats")
-    if seats is None:
-        seats = [result["winnerSeat"]] if result.get("winnerSeat") is not None else []
-    return [p.user_id for p in room.players if p.seat in seats]
 
 
 @rooms_bp.post("")
@@ -162,7 +156,10 @@ def get_room_by_code(code):
     room = Room.query.filter_by(code=code.strip().upper()).first()
     if room is None:
         return api_error("room_not_found", "Room not found", 404)
-    return {"room": _room_payload(room, g.current_user.id)}
+    payload = _room_payload(room, g.current_user.id)
+    # Bots pick up where they were if the server restarted mid-game
+    nudge(room)
+    return {"room": payload}
 
 
 @rooms_bp.get("/<uuid:room_id>")
@@ -171,7 +168,9 @@ def get_room(room_id):
     room = db.session.get(Room, room_id)
     if room is None:
         return api_error("room_not_found", "Room not found", 404)
-    return {"room": _room_payload(room, g.current_user.id)}
+    payload = _room_payload(room, g.current_user.id)
+    nudge(room)
+    return {"room": payload}
 
 
 @rooms_bp.patch("/<uuid:room_id>/options")
@@ -196,26 +195,52 @@ def set_options(room_id):
 @rooms_bp.post("/<uuid:room_id>/bots")
 @require_auth
 def add_bots(room_id):
-    """Body: {"count": 3} — the host fills seats with bot players
-    (development only). They join over the next few seconds, like
-    anyone else, so the lobby updates as they arrive."""
+    """Body: {"count": 3} — the host fills empty seats with bot players
+    (see app/bots.py). They sit down ready, and the server plays them."""
     if not current_app.config.get("BOTS_ENABLED"):
         return api_error("not_found", "Not found", 404)
-    room = db.session.get(Room, room_id)
+    # Locked: players joining at the same moment take seats one by one
+    room = db.session.get(Room, room_id, with_for_update=True)
     if room is None:
         return api_error("room_not_found", "Room not found", 404)
     if room.host_id != g.current_user.id:
         return api_error("not_host", "Only the host can add bots", 403)
     if room.status != "waiting":
         return api_error("game_started", "Game already started", 409)
-    if room.game_type not in BOT_GAMES:
+    if not bots_available(room):
         return api_error("no_bots", "There are no bots for this game yet", 409)
     count = (request.get_json(silent=True) or {}).get("count")
     free = get_game(room.game_type).max_players - len(room.players)
     if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= free:
         return api_error("invalid_request", f"Ask for between 1 and {free} bots", 400)
-    spawn_bots(room.code, count)
-    return {"added": count}, 202
+    seat_bots(room, count)
+    db.session.commit()
+    _broadcast_room(room)
+    return {"added": count, "room": _room_payload(room, g.current_user.id)}, 201
+
+
+@rooms_bp.delete("/<uuid:room_id>/bots/<uuid:user_id>")
+@require_auth
+def remove_bot(room_id, user_id):
+    """The host takes a bot off a waiting table."""
+    room = db.session.get(Room, room_id, with_for_update=True)
+    if room is None:
+        return api_error("room_not_found", "Room not found", 404)
+    if room.host_id != g.current_user.id:
+        return api_error("not_host", "Only the host can remove bots", 403)
+    if room.status != "waiting":
+        return api_error("game_started", "Game already started", 409)
+    player = next(
+        (p for p in room.players if p.user_id == user_id and p.user.is_bot), None
+    )
+    if player is None:
+        return api_error("not_found", "No such bot at this table", 404)
+    room.players.remove(player)  # deleted as an orphan
+    db.session.flush()
+    _reseat(room)
+    db.session.commit()
+    _broadcast_room(room)
+    return {"room": _room_payload(room, g.current_user.id)}
 
 
 @rooms_bp.post("/<uuid:room_id>/start")
@@ -252,7 +277,9 @@ def start_game(room_id):
     socketio.emit("game_started", {"roomId": str(room.id)}, to=f"room:{room.id}")
     # Friends see these players switch to "in game"
     presence.notify_friends_of([p.user_id for p in room.players])
-    return {"session": session.to_dict(_seat_of(room, g.current_user.id))}, 201
+    payload = session.to_dict(_seat_of(room, g.current_user.id))
+    nudge(room)
+    return {"session": payload}, 201
 
 
 @rooms_bp.post("/<uuid:room_id>/move")
@@ -284,25 +311,14 @@ def make_move(room_id):
     if player is None:
         return api_error("not_in_room", "You are not in this room", 403)
 
-    game = get_game(session.game_type)
-    session.state = game.apply_move(session.state, player.seat, move)
-
-    result = game.get_result(session.state)
-    if result is not None:
-        session.status = "finished"
-        session.finished_at = datetime.now(timezone.utc)
-        room.status = "finished"
-        winners = _winner_ids(room, result)
-        session.winner_user_ids = [str(user_id) for user_id in winners]
-        session.winner_user_id = winners[0] if len(winners) == 1 else None
-        grant_game_rewards(room, session)
-        record_outcomes(room, session)
+    result = apply_move(room, session, player.seat, move)
     db.session.commit()
 
-    socketio.emit("game_updated", {"roomId": str(room.id)}, to=f"room:{room.id}")
-    if result is not None:
-        presence.notify_friends_of([p.user_id for p in room.players])
-    return {"session": session.to_dict(player.seat), "result": result}
+    announce_move(room, result)
+    payload = {"session": session.to_dict(player.seat), "result": result}
+    # The game may be waiting on a bot now
+    nudge(room)
+    return payload
 
 
 
@@ -432,10 +448,14 @@ def rematch(room_id):
         )
         db.session.add(target)
         db.session.flush()
-        db.session.add(
+        target.players.append(
             RoomPlayer(room_id=target.id, user_id=me.id, seat=0, ready=True)
         )
         room.rematch_room_id = target.id
+        # The bots come along: the same ones, if they are free
+        bots = [p.user_id for p in room.players if p.user is not None and p.user.is_bot]
+        if bots and bots_available(target):
+            seat_bots(target, len(bots), prefer=bots)
     else:
         if len(target.players) >= game.max_players:
             return api_error("room_full", "Room is full", 409)

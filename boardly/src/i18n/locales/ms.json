@@ -160,14 +160,16 @@
     "settingsHostOnly": "Hanya hos boleh menukarnya.",
     "bots": {
       "title": "Pemain bot",
-      "hint": "Isi kerusi kosong dengan bot untuk mencuba permainan seorang diri. Mereka menyertai dalam beberapa saat dan bermain sendiri.",
+      "hint": "Kurang seorang dua pemain? Isi kerusi kosong dengan bot. Mereka terus sedia dan pelayan bermain untuk mereka. Permainan dengan bot ialah latihan: anda dapat syiling bermain, tetapi tiada bonus menang, statistik atau lencana.",
       "fewer": "Kurangkan bot",
       "more": "Tambah bot",
       "add_one": "Tambah {{count}} bot",
       "add_other": "Tambah {{count}} bot",
       "failed": "Tidak dapat menambah bot.",
       "seats": "{{free}} kerusi kosong",
-      "full": "Semua kerusi sudah diisi."
+      "full": "Semua kerusi sudah diisi.",
+      "bot": "Bot",
+      "remove": "Buang {{name}}"
     }
   },
   "table": {

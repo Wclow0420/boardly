@@ -132,9 +132,10 @@ otherwise.
 - **Artwork** is listed per game in `assets/games/<game>/README.md`
   (file, size, what it replaces), with generator prompts beside it.
   Draw small icons in code rather than asking for images.
-- **Bots** for testing: add a policy to `backend/scripts/bots.py`
-  (`POLICIES`, `MIN_PLAYERS`) and the game key to `BOT_GAMES` in
-  `backend/app/bots.py`; the lobby's bot button then works for it.
+- **Bots**: give the engine `has_bots = True` and a `bot_move(view,
+  seat, rng)` (the policy lives in `backend/app/games/<key>/bot.py`)
+  and the lobby's bot button works for it; the server plays them (see
+  `backend/app/bots.py`).
 - **Design first.** New games are written up as a rules draft (Chinese,
   e.g. `../避难所_规则草案.md`, `../守夜_规则v2.txt`) and agreed with the
   owner before any code.

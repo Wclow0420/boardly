@@ -30,6 +30,9 @@ class User(db.Model):
     # Bumped to sign out every device (password change, account deletion):
     # tokens carry the version they were issued for.
     token_version = db.Column(db.Integer, nullable=False, default=0, server_default="0")
+    # Bot players the server seats at tables (see app/bots.py). They have
+    # no password and can never sign in.
+    is_bot = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
     # Deleted accounts are scrubbed and kept as a tombstone so other
     # players' game history stays intact.
     deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
@@ -50,6 +53,7 @@ class User(db.Model):
             "username": self.username,
             "avatarUrl": self.avatar_url,
             "borderId": self.border_id or DEFAULT_BORDER,
+            "isBot": bool(self.is_bot),
         }
 
     def to_self_dict(self):

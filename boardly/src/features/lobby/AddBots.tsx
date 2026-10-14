@@ -1,8 +1,9 @@
-// Bot players for trying a game on your own (development only). In the
+// Bot players, for when the table is a player or two short. In the
 // lobby header the host has a bot button next to the rules; it opens
-// this sheet to pick how many and add them. The backend starts them and
-// they join one by one, so the seats fill as they arrive. Offered only
-// where the backend has bots for this game (room.botsAvailable).
+// this sheet to pick how many and add them. They sit down ready and the
+// server plays them; the host can take one off from its seat card.
+// Offered only where the backend has bots for this game
+// (room.botsAvailable).
 
 import { forwardRef, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -103,7 +104,6 @@ export const AddBotsSheet = forwardRef<GorhomBottomSheetModal, AddBotsSheetProps
                 loading={addBots.isPending}
                 onPress={() =>
                   addBots.mutate(wanted, {
-                    // the seats fill in the lobby as the bots arrive
                     onSuccess: () => {
                       setPicked(null);
                       close();

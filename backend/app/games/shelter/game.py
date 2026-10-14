@@ -72,6 +72,7 @@ Moves:
 import random
 
 from app.games.base import BaseGame, GameError, Badge, won_as
+from app.games.shelter.bot import shelter as bot_policy
 
 DAYS = 6
 PLACES = ("farm", "market", "hospital")
@@ -132,6 +133,7 @@ class Shelter(BaseGame):
     tile_color = "#E3ECF5"
     category = "faction"
     tag = "faction"
+    has_bots = True
 
     badges = [
         Badge("shelter.rescued", "bronze", 1, won_as("good")),
@@ -608,6 +610,9 @@ class Shelter(BaseGame):
         return self._finish(state, None, "abandoned")
 
     # --------------------------------------------------------------- view
+
+    def bot_move(self, view, seat, rng):
+        return bot_policy(view, seat, rng)
 
     def view_for(self, state: dict, seat: int) -> dict:
         n = state["numPlayers"]

@@ -233,14 +233,7 @@ def test_view_hides_others_choices_and_roles():
 
 
 def test_bots_finish_games_at_every_size():
-    """The lobby bots' policy plays legal moves until the game ends."""
-    import importlib.util
-    import pathlib
-
-    path = pathlib.Path(__file__).resolve().parent.parent / "scripts" / "bots.py"
-    spec = importlib.util.spec_from_file_location("bots_script", path)
-    bots = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(bots)
+    """The bots' policy plays legal moves until the game ends."""
     for n in range(4, 9):
         for seed in range(15):
             game = Shelter(random.Random(seed))
@@ -250,7 +243,7 @@ def test_bots_finish_games_at_every_size():
                 if state["phase"] == "finished":
                     break
                 for seat in range(n):
-                    move = bots.shelter(game.view_for(state, seat), seat, rng)
+                    move = game.bot_move(game.view_for(state, seat), seat, rng)
                     if move is not None:
                         state = game.apply_move(state, seat, move)
                         break
