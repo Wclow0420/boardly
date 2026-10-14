@@ -30,7 +30,7 @@ import {
   RulesSheet,
   useHasRules,
 } from "@/features/game/RulesSheet";
-import { AddBots } from "@/features/lobby/AddBots";
+import { AddBotsSheet, BotsButton } from "@/features/lobby/AddBots";
 import { ConfettiBackdrop } from "@/features/lobby/ConfettiBackdrop";
 import { InviteFriendsSheet } from "@/features/lobby/InviteFriendsSheet";
 import { GameSettings } from "@/features/lobby/GameSettings";
@@ -60,6 +60,7 @@ export default function LobbyScreen() {
   const gameName = useGameName();
   const leaveSheetRef = useRef<GorhomBottomSheetModal>(null);
   const inviteSheetRef = useRef<GorhomBottomSheetModal>(null);
+  const botsSheetRef = useRef<GorhomBottomSheetModal>(null);
 
   const roomCode = (code ?? "").toUpperCase();
   const roomQuery = useRoom(roomCode);
@@ -75,6 +76,8 @@ export default function LobbyScreen() {
   const me = room?.players.find((p) => p.userId === user?.id);
   const isHost = user?.id === room?.hostId;
   const isMember = me !== undefined;
+  // the host can fill seats with bots where the backend offers them
+  const canAddBots = isHost && room?.botsAvailable === true && room.status === "waiting";
 
   // The moment the game starts (host's tap or the socket broadcast),
   // everyone in the lobby moves to the game screen.
@@ -181,11 +184,14 @@ export default function LobbyScreen() {
           <IconButton accessibilityLabel="Back" onPress={handleBack}>
             <BackIcon size={20} color={heroInk} />
           </IconButton>
-          {hasRules ? (
-            <RulesButton color={heroInk} onPress={() => setRulesOpen(true)} />
-          ) : (
-            <View />
-          )}
+          <View style={styles.heroActions}>
+            {canAddBots ? (
+              <BotsButton color={heroInk} onPress={() => botsSheetRef.current?.present()} />
+            ) : null}
+            {hasRules ? (
+              <RulesButton color={heroInk} onPress={() => setRulesOpen(true)} />
+            ) : null}
+          </View>
         </View>
 
         <View style={styles.heroBody}>
@@ -288,9 +294,6 @@ export default function LobbyScreen() {
           {room ? (
             <GameSettings room={room} code={roomCode} isHost={isHost} />
           ) : null}
-          {room && isHost && room.botsAvailable && room.status === "waiting" ? (
-            <AddBots room={room} minPlayers={minPlayers} maxPlayers={maxPlayers} />
-          ) : null}
           <View style={styles.playersGrid}>
             {room?.players.map((player) => (
               <View key={player.userId} style={styles.playerCell}>
@@ -373,6 +376,14 @@ export default function LobbyScreen() {
         />
       ) : null}
       <InviteFriendsSheet ref={inviteSheetRef} onShareLink={shareInvite} />
+      {room && canAddBots ? (
+        <AddBotsSheet
+          ref={botsSheetRef}
+          room={room}
+          minPlayers={minPlayers}
+          maxPlayers={maxPlayers}
+        />
+      ) : null}
       <ConfirmSheet
         ref={leaveSheetRef}
         title={isHost ? t("lobby.closeTitle") : t("lobby.leaveTitle")}
@@ -398,6 +409,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingTop: 6,
   },
+  heroActions: { flexDirection: "row", alignItems: "center", gap: 4 },
   heroBody: { alignItems: "center", paddingTop: 6 },
   heroEmoji: { fontSize: 44, lineHeight: 52 },
   heroLogo: { width: 250, height: 118 },

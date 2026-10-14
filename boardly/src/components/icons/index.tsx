@@ -250,6 +250,33 @@ export function InfoIcon({
   );
 }
 
+/** A robot's head — bot players. */
+export function BotIcon({
+  size = defaults.size,
+  color = "#000",
+  strokeWidth = defaults.strokeWidth,
+}: IconProps) {
+  return (
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <Rect x={4.5} y={7.5} width={15} height={11.5} rx={3.5} />
+      <Path d="M12 7.5V4.5" />
+      <Circle cx={12} cy={3.6} r={0.9} fill={color} />
+      <Circle cx={9.2} cy={12.4} r={1.1} fill={color} stroke="none" />
+      <Circle cx={14.8} cy={12.4} r={1.1} fill={color} stroke="none" />
+      <Path d="M9.8 15.8h4.4M2.5 12v2.5M21.5 12v2.5" />
+    </Svg>
+  );
+}
+
 export function CopyIcon({
   size = defaults.size,
   color = "#000",

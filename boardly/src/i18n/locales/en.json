@@ -159,8 +159,9 @@
       "more": "More bots",
       "add_one": "Add {{count}} bot",
       "add_other": "Add {{count}} bots",
-      "joining": "Bots are joining…",
-      "failed": "Couldn't add bots."
+      "failed": "Couldn't add bots.",
+      "seats": "{{free}} seats free",
+      "full": "Every seat is taken."
     }
   },
   "table": {

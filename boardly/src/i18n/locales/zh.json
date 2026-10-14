@@ -159,8 +159,9 @@
       "more": "增加机器人",
       "add_one": "加入 {{count}} 个机器人",
       "add_other": "加入 {{count}} 个机器人",
-      "joining": "机器人正在加入……",
-      "failed": "加入机器人失败。"
+      "failed": "加入机器人失败。",
+      "seats": "还有 {{free}} 个空位",
+      "full": "座位已经坐满了。"
     }
   },
   "table": {

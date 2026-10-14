@@ -159,8 +159,9 @@
       "more": "Tambah bot",
       "add_one": "Tambah {{count}} bot",
       "add_other": "Tambah {{count}} bot",
-      "joining": "Bot sedang menyertai…",
-      "failed": "Tidak dapat menambah bot."
+      "failed": "Tidak dapat menambah bot.",
+      "seats": "{{free}} kerusi kosong",
+      "full": "Semua kerusi sudah diisi."
     }
   },
   "table": {
