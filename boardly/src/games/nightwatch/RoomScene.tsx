@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AccessibilityInfo, Animated, AppState, Easing, Pressable, StyleSheet } from "react-native";
 import Svg, { Circle, G, Path, Text as SvgText } from "react-native-svg";
 import {
@@ -32,11 +32,14 @@ import {
 } from "@/components/iso";
 import { fontFamily, useTheme } from "@/theme";
 import { heavyHaptic, successHaptic, tapHaptic, tickHaptic } from "@/utils/haptics";
+import type { Arrival } from "./arrival";
 import { ROOMS, ROOM_COLOR, type NightEvent } from "./logic";
 import { SCENE_HEIGHT, SCENE_WIDTH, type Shape } from "./manorShapes";
 import {
   SPOTS,
   buildScene,
+  entryPoint,
+  walkPrints,
   pawnShapes,
   pawnTop,
   sceneOutline,
@@ -111,6 +114,10 @@ export interface RoomSceneProps {
   paused?: boolean;
   /** Secret doors joining two diagonal rooms, for good. */
   secretDoors?: number[][];
+  /** The player has just come in this way: they are shown walking in. */
+  arrival?: Arrival;
+  /** They have reached their spot. */
+  onArrived?: () => void;
 }
 
 const VIEW_BOX = `0 0 ${SCENE_WIDTH} ${SCENE_HEIGHT}`;
@@ -233,6 +240,8 @@ export function RoomScene({
   event = null,
   paused = false,
   secretDoors = NO_DOORS,
+  arrival,
+  onArrived,
 }: RoomSceneProps) {
   const { colors } = useTheme();
   const scene = useMemo(
@@ -256,6 +265,14 @@ export function RoomScene({
   const flash = useSharedValue(0);
   // a touch's payoff, and the echo of an echoing night: both play 0 → 1
   const burst = useSharedValue(1);
+  // walking in: 0 at the doorway, 1 at your spot; the prints fade after
+  const [walk] = useState(() => new Animated.Value(1));
+  const [trace] = useState(() => new Animated.Value(0));
+  const [scale, setScale] = useState(0);
+  const arrived = useRef(onArrived);
+  useEffect(() => {
+    arrived.current = onArrived;
+  });
   const echo = useSharedValue(1);
   const [pulse] = useState(() => new Animated.Value(0));
   const [drift] = useState(() => new Animated.Value(1));
@@ -304,6 +321,35 @@ export function RoomScene({
     strike();
     return () => clearTimeout(timer);
   }, [event, resting, still, flash]);
+
+  // the player walks in from where they came, a tick for every step
+  const walkKey = arrival?.key;
+  useEffect(() => {
+    if (!walkKey) return;
+    if (still) {
+      arrived.current?.();
+      return;
+    }
+    walk.setValue(0);
+    trace.setValue(1);
+    const steps = [180, 420, 660, 900].map((ms) => setTimeout(tickHaptic, ms));
+    const going = Animated.timing(walk, {
+      toValue: 1,
+      duration: 1150,
+      easing: Easing.inOut(Easing.quad),
+      useNativeDriver: true,
+    });
+    going.start(({ finished }) => {
+      if (!finished) return;
+      arrived.current?.();
+      Animated.timing(trace, { toValue: 0, duration: 2600, useNativeDriver: true }).start();
+    });
+    return () => {
+      steps.forEach(clearTimeout);
+      going.stop();
+      walk.setValue(1);
+    };
+  }, [walkKey, still, walk, trace]);
 
   // an echoing night: the room rings faintly now and then
   useEffect(() => {
@@ -396,7 +442,24 @@ export function RoomScene({
     spot: SPOTS[index],
   }));
   // far before near, so a watcher in front hides the one behind
-  const byDepth = [...standing].sort((a, b) => a.spot[0] + a.spot[1] - (b.spot[0] + b.spot[1]));
+  const byDepth = [...standing]
+    .filter(({ person }) => person.kind !== "me")
+    .sort((a, b) => a.spot[0] + a.spot[1] - (b.spot[0] + b.spot[1]));
+  const me = standing.find(({ person }) => person.kind === "me");
+  // the way in, from the doorway to your spot, and how far that is on the page
+  const mySpot = scenePoint(SPOTS[0][0], SPOTS[0][1], 0);
+  const entry = arrival ? entryPoint(room, arrival.from, arrival.how) : null;
+  const prints = useMemo(
+    () => (entry ? walkPrints(entry.at, mySpot, PAPER) : []),
+    // the prints belong to one walk
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [walkKey],
+  );
+  const [dx, dy] = entry
+    ? [(entry.at[0] - mySpot[0]) * scale, (entry.at[1] - mySpot[1]) * scale]
+    : [0, 0];
+  const bob = 1.6 * scale;
+  const stepsAt = [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1];
   const sealed = missionRoom === room;
   // in a blackout, all the light there is: the lantern at your own spot
   const lantern = scenePoint(SPOTS[0][0], SPOTS[0][1], 0.12);
@@ -427,7 +490,10 @@ export function RoomScene({
   const back = (exit: SceneExit) => exit.side === "left" || exit.side === "right";
 
   return (
-    <Animated.View style={[styles.frame, { opacity: enter }]}>
+    <Animated.View
+      style={[styles.frame, { opacity: enter }]}
+      onLayout={(event) => setScale(event.nativeEvent.layout.width / SCENE_WIDTH)}
+    >
       {/* the room itself, its moving part and its live light, on Skia */}
       <IsoCanvas width={SCENE_WIDTH} height={SCENE_HEIGHT}>
         <IsoLayer shapes={scene.back} />
@@ -450,7 +516,15 @@ export function RoomScene({
         ) : null}
         {passage.map(([x, y], index) => (
           <IsoGroup key={index}>
-            <LightPool x={x} y={y} radius={26} color="#9CB8FF" flatten={0.58} strength={0.6} clock={clock} />
+            <LightPool
+              x={x}
+              y={y}
+              radius={26}
+              color="#9CB8FF"
+              flatten={0.58}
+              strength={0.6}
+              clock={clock}
+            />
             <Firefly x={x} y={y - 6} clock={clock} />
           </IsoGroup>
         ))}
@@ -520,15 +594,13 @@ export function RoomScene({
             <Shapes
               key={person.key}
               shapes={
-                person.kind === "me"
-                  ? pawnShapes(spot, colors.primary, PAPER)
-                  : person.kind === "other"
-                    ? pawnShapes(spot, colors.info, PAPER)
-                    : pawnShapes(spot, SHADE, "#6C769C")
+                person.kind === "other"
+                  ? pawnShapes(spot, colors.info, PAPER)
+                  : pawnShapes(spot, SHADE, "#6C769C")
               }
             />
           ))}
-          {standing.map(({ person, spot }) => {
+          {byDepth.map(({ person, spot }) => {
             const [x, y] = pawnTop(spot);
             return (
               <Label
@@ -545,6 +617,52 @@ export function RoomScene({
           ))}
         </Svg>
       </Animated.View>
+
+      {/* the prints of the walk in, fading once you have arrived */}
+      {prints.length > 0 ? (
+        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: trace }]}>
+          <Svg viewBox={VIEW_BOX} style={StyleSheet.absoluteFill}>
+            <Shapes shapes={prints} />
+          </Svg>
+        </Animated.View>
+      ) : null}
+
+      {/* you: walking in from the doorway, then standing at your spot */}
+      {me ? (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              opacity: entry?.fade
+                ? walk.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0, 1, 1] })
+                : 1,
+              transform: [
+                { translateX: walk.interpolate({ inputRange: [0, 1], outputRange: [dx, 0] }) },
+                {
+                  translateY: walk.interpolate({
+                    inputRange: stepsAt,
+                    outputRange: stepsAt.map((t, i) => dy * (1 - t) - (i % 2 ? bob : 0)),
+                  }),
+                },
+                {
+                  translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [-6, 0] }),
+                },
+              ],
+            },
+          ]}
+        >
+          <Svg viewBox={VIEW_BOX} style={StyleSheet.absoluteFill}>
+            <Shapes shapes={pawnShapes(me.spot, colors.primary, PAPER)} />
+            <Label
+              x={pawnTop(me.spot)[0]}
+              y={pawnTop(me.spot)[1] - 2}
+              text={short(me.person.label)}
+              fill={colors.primary}
+            />
+          </Svg>
+        </Animated.View>
+      ) : null}
 
       {active ? (
         <Animated.View

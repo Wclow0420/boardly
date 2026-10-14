@@ -8,6 +8,7 @@ import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppText } from "@/components/ui";
+import type { Arrival, Entry } from "@/games/nightwatch/arrival";
 import { ManorMap } from "@/games/nightwatch/ManorMap";
 import { RoomScene } from "@/games/nightwatch/RoomScene";
 import { ROOMS, type NightEvent, type NightwatchState } from "@/games/nightwatch/logic";
@@ -52,6 +53,25 @@ export default function IsoPreview() {
   const [event, setEvent] = useState<NightEvent | null>(null);
   const [mission, setMission] = useState(false);
   const [door, setDoor] = useState(false);
+  const [arrival, setArrival] = useState<Arrival | undefined>(undefined);
+  const [walks, setWalks] = useState(0);
+  // a room next door, across the corner, or far away, to walk in from
+  const walkIn = (how: Entry) => {
+    const from =
+      how === "step"
+        ? room % 3 > 0
+          ? room - 1
+          : room + 1
+        : how === "secret"
+          ? room === 4
+            ? 0
+            : 4
+          : how === "far"
+            ? 8 - room
+            : room;
+    setWalks(walks + 1);
+    setArrival({ key: `walk-${walks}`, from, how });
+  };
   if (!__DEV__) return <Redirect href="/" />;
 
   return (
@@ -104,12 +124,31 @@ export default function IsoPreview() {
           ]}
           missionRoom={mission ? room : null}
           secretDoors={door ? [[room, room === 4 ? 0 : 4]] : NONE_DOORS}
+          arrival={arrival}
+          onArrived={() => setArrival(undefined)}
           nextMissionRoom={null}
           collapsed={NONE}
           lockedDoor={null}
           roomName={(other) => ROOMS[other]}
           onExit={setRoom}
         />
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+          {(["step", "secret", "far", "stay"] as Entry[]).map((how) => (
+            <Pressable
+              key={how}
+              onPress={() => walkIn(how)}
+              style={{
+                paddingVertical: 6,
+                paddingHorizontal: 10,
+                borderRadius: 10,
+                borderWidth: 1.5,
+                borderColor: colors.border,
+              }}
+            >
+              <AppText variant="caption">{`walk in: ${how}`}</AppText>
+            </Pressable>
+          ))}
+        </View>
         <AppText variant="h2">Map</AppText>
         <ManorMap
           state={SAMPLE}

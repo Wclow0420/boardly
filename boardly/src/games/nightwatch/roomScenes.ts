@@ -971,3 +971,54 @@ export function pawnShapes([x, y]: [number, number], fill: string, edge: string)
 export function pawnTop([x, y]: [number, number]): Pt {
   return inScene(() => P(x, y, 0.19));
 }
+
+/** Where the player comes into the room for a move made `how` from room
+ *  `from`: the door or step facing it, the corner of a secret door, or
+ *  the dark at the back. In the scene's drawing; `fade` when they come
+ *  out of nowhere a door explains. */
+export function entryPoint(
+  room: number,
+  from: number,
+  how: "step" | "secret" | "far" | "stay" | "collapse"
+): { at: Pt; fade: boolean } {
+  const dc = (from % COLS) - (room % COLS);
+  const dr = Math.floor(from / COLS) - Math.floor(room / COLS);
+  const straight = (dc === 0) !== (dr === 0);
+  const [x, y]: [number, number] =
+    how === "stay"
+      ? [SPOTS[0][0] - 0.07, SPOTS[0][1] - 0.07]
+      : how === "secret"
+        ? [dc > 0 ? 0.9 : 0.1, dr > 0 ? 0.9 : 0.1]
+        : (how === "step" || how === "collapse") && straight
+          ? dc < 0
+            ? [0.06, 0.5]
+            : dc > 0
+              ? [1.02, 0.5]
+              : dr < 0
+                ? [0.5, 0.06]
+                : [0.5, 1.02]
+          : [0.32, 0.32];
+  const fade = how === "far" || ((how === "step" || how === "collapse") && !straight);
+  return { at: scenePoint(x, y, 0), fade };
+}
+
+/** Footprints from one point of the scene to another, left and right. */
+export function walkPrints(from: Pt, to: Pt, color: string): Shape[] {
+  const [x1, y1] = from;
+  const [x2, y2] = to;
+  const length = Math.hypot(x2 - x1, y2 - y1);
+  if (length < 8) return [];
+  const [nx, ny] = [-(y2 - y1) / length, (x2 - x1) / length];
+  const steps = Math.floor(length / 9);
+  return Array.from({ length: Math.max(0, steps - 1) }, (_, index) => {
+    const i = index + 1;
+    const side = i % 2 ? 2.2 : -2.2;
+    const x = x1 + ((x2 - x1) * i) / steps + nx * side;
+    const y = y1 + ((y2 - y1) * i) / steps + ny * side;
+    return {
+      d: `M${n(x - 2)} ${n(y)}a2 1.2 0 1 0 4 0a2 1.2 0 1 0 -4 0Z`,
+      fill: color,
+      opacity: 0.35 + (0.45 * i) / steps,
+    };
+  });
+}
