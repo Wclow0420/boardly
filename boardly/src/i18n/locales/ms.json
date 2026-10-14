@@ -549,6 +549,25 @@
         "echo": "Galeri boleh menghantar dua surat tanpa nama pusingan ini.",
         "fog": "Pasukan hanya boleh berjalan satu bilik ke misi pusingan ini, bukan dua.",
         "calm": "Tiada apa-apa berlaku."
+      },
+      "counts": {
+        "title": "Bilangan pemain",
+        "intro": "5 hingga 10 pemain. Bilangan menentukan berapa baik dan jahat, peranan yang diberi, dan saiz pasukan setiap malam:",
+        "players": "Pemain",
+        "good": "Baik",
+        "evil": "Jahat",
+        "night": "M{{n}}",
+        "votes": "Undi",
+        "star": "* Misi malam ini perlukan 2 kad Gagal untuk gagal.",
+        "table": "{{n}} pemain"
+      },
+      "countNotes": {
+        "items": [
+          "M1–M5: berapa orang pergi misi malam itu; ketua memilih tepat sebanyak itu.",
+          "Undi: persetujuan yang diperlukan supaya pasukan bertolak (lebih separuh).",
+          "Lima pasukan ditolak berturut-turut dalam satu malam, pihak jahat menang, pada sebarang bilangan.",
+          "Pemain jahat di tempat duduk terendah juga pembunuh upahan, yang meneka Peramal jika tiga misi berjaya."
+        ]
       }
     },
     "shelter": {
@@ -1479,6 +1498,12 @@
       "one": "Perlu tepat 1 orang (anda mesti bersendirian — lebih seorang, tidak berfungsi)",
       "two": "Perlu tepat 2 orang (tidak lebih, tidak kurang)",
       "any": "Bilangan orang tidak terhad"
+    },
+    "journal": {
+      "news": "Berita",
+      "teams": "Pasukan & undian",
+      "mission": "Misi",
+      "private": "Hanya anda tahu"
     }
   },
   "profile": {
@@ -1684,7 +1709,8 @@
       "stoleSneaked": "Anda menyelinap dan mencuri {{count}} makanan tanpa dilihat",
       "opened": "Anda membuka pintu",
       "openedSneaked": "Anda menyelinap dan membuka pintu tanpa dilihat",
-      "bumped": "Sudah ada yang mengawal {{post}}, jadi anda kembali tidur (tidak letih esok)"
+      "bumped": "Sudah ada yang mengawal {{post}}, jadi anda kembali tidur (tidak letih esok)",
+      "played": "Di {{place}} anda main: {{card}}"
     },
     "cough": {
       "title": "Seseorang batuk dalam gelap…",
@@ -1726,6 +1752,14 @@
       "outnumbered": "Terjangkit yang berdiri tidak kurang daripada Mangsa Selamat.",
       "lateRescue": "Konvoi tiba, tetapi terlalu sedikit Mangsa Selamat masih berdiri.",
       "abandoned": "Seseorang keluar; permainan tamat."
+    },
+    "journal": {
+      "day": "Hari {{n}}",
+      "vote": "Undian pagi",
+      "search": "Mencari",
+      "night": "Malam",
+      "private": "Hanya anda tahu",
+      "who": "Pergi: "
     }
   }
 }

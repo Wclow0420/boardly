@@ -10,6 +10,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { IsoPicture } from "@/components/iso";
 import { EdgeGlow } from "@/features/game/EdgeGlow";
+import {
+  Journal,
+  type JournalEntry,
+  type JournalPage,
+  type JournalSection,
+  type JournalTone,
+} from "@/features/game/Journal";
 import { Popup } from "@/features/game/Popup";
 import { useTheme } from "@/theme";
 import { heavyHaptic, moveHaptic, tapHaptic } from "@/utils/haptics";
@@ -99,7 +106,6 @@ export function ShelterBoard({
     seat === mySeat
       ? t("game.you")
       : (players.find((p) => p.seat === seat)?.username ?? `#${seat + 1}`);
-  const namesOf = (seats: number[]) => (seats.length ? seats.map(nameOf).join("、") : "—");
 
   const [seen, setSeen] = useState<Seen>(() => ({
     searches: state.searches.length,
@@ -116,11 +122,16 @@ export function ShelterBoard({
   };
 
   // --- what happened since the player last looked
-  const news = [
-    ...state.searches.slice(seen.searches).flatMap((entry) => searchLines(entry, state, nameOf, t)),
-    ...state.nights.slice(seen.nights).flatMap((entry) => nightLines(entry, state, nameOf, namesOf, t)),
-    ...state.exiles.slice(seen.exiles).flatMap((entry) => exileLines(entry, nameOf, t)),
-  ];
+  const news = shelterPages(
+    state,
+    {
+      searches: state.searches.slice(seen.searches),
+      nights: state.nights.slice(seen.nights),
+      exiles: state.exiles.slice(seen.exiles),
+    },
+    nameOf,
+    t
+  );
   const readNews = () =>
     setSeen({
       searches: state.searches.length,
@@ -246,23 +257,12 @@ export function ShelterBoard({
         onClose={() => (showingNews ? readNews() : setRecord(false))}
       >
         <View style={{ gap: spacing.sm }}>
-          {(showingNews
-            ? news
-            : [
-                ...state.searches.flatMap((e) => searchLines(e, state, nameOf, t)),
-                ...state.nights.flatMap((e) => nightLines(e, state, nameOf, namesOf, t)),
-                ...state.exiles.flatMap((e) => exileLines(e, nameOf, t)),
-              ]
-          ).map((line, i) => (
-            <AppText key={i} variant={line.startsWith("—") ? "label" : "bodyMedium"}>
-              {line}
-            </AppText>
-          ))}
-          {!showingNews && state.searches.length === 0 ? (
-            <AppText variant="body" color="textMuted">
-              {t("common.emptyTitle")}
-            </AppText>
-          ) : null}
+          <Journal
+            pages={showingNews ? news : shelterPages(state, state, nameOf, t)}
+            Text={AppText}
+            order={showingNews ? "oldest" : "newest"}
+            emptyText={t("common.emptyTitle")}
+          />
           <Button
             label={t("common.ok")}
             style={{ marginTop: spacing.md }}
@@ -524,86 +524,120 @@ function Result({ state, nameOf }: { state: ShelterState; nameOf: (seat: number)
   );
 }
 
-// ---------------------------------------------------------- news lines
+// ------------------------------------------------------------- journal
 
-function searchLines(
-  entry: ShelterState["searches"][number],
+/** What happened, as Journal pages: one per day, holding that morning's
+ *  vote, the day's scavenging, the night, and what only you know. Pass
+ *  only some of the records (the news) to get only those days. */
+function shelterPages(
   state: ShelterState,
+  parts: Pick<ShelterState, "searches" | "nights" | "exiles">,
   nameOf: (seat: number) => string,
   t: T
-): string[] {
-  const lines = [`— ☀ ${t("shelter.news.dayHeading", { n: entry.day + 1 })}`];
-  for (const place of state.places) {
-    const report = entry.places[place];
-    if (!report) continue;
-    lines.push(
-      `${PLACE_EMOJI[place]} ${t(`shelter.places.${place}`)}：${report.players.map(nameOf).join("、")}`,
-      `   ${report.cards.map((c) => cardText(c, t)).join("  ·  ")}  →  ${report.food >= 0 ? "+" : ""}${report.food} 🍞`
-    );
-  }
-  if (entry.injured.length) {
-    lines.push(`🧟 ${t("shelter.news.zombieHurt", { names: entry.injured.map(nameOf).join("、") })}`);
-  }
-  return lines;
+): JournalPage[] {
+  const names = (seats: number[]) => (seats.length ? seats.map(nameOf).join("、") : "—");
+  // good and bad as the reader's own side sees it
+  const forMe = (goodForSurvivors: boolean): JournalTone =>
+    (state.myRole === "infected") !== goodForSurvivors ? "good" : "bad";
+  const days = [
+    ...new Set([...parts.searches, ...parts.nights, ...parts.exiles].map((e) => e.day)),
+  ].sort((a, b) => a - b);
+
+  return days.map((day) => {
+    const sections: JournalSection[] = [];
+
+    const exile = parts.exiles.find((e) => e.day === day);
+    if (exile) {
+      const votes = exile.votes
+        .map((target, seat) =>
+          target === null ? null : `${nameOf(seat)} → ${target === -1 ? t("shelter.news.nobody") : nameOf(target)}`
+        )
+        .filter((line): line is string => line !== null);
+      sections.push({
+        key: "vote",
+        title: `🗳  ${t("shelter.journal.vote")}`,
+        entries: [
+          exile.exiled === null
+            ? { text: `🚷 ${t("shelter.news.noExile")}`, detail: votes }
+            : {
+                text: `🚷 ${t(exile.role === "infected" ? "shelter.news.exiledInfected" : "shelter.news.exiledSurvivor", { name: nameOf(exile.exiled) })}`,
+                detail: votes,
+                tone: forMe(exile.role === "infected"),
+              },
+        ],
+      });
+    }
+
+    const search = parts.searches.find((e) => e.day === day);
+    if (search) {
+      const entries: JournalEntry[] = [];
+      for (const place of state.places) {
+        const report = search.places[place];
+        if (!report) continue;
+        entries.push({
+          text: `${PLACE_EMOJI[place]} ${t(`shelter.places.${place}`)}  ${report.food >= 0 ? "+" : ""}${report.food} 🍞`,
+          detail: [
+            `${t("shelter.journal.who")}${report.players.map(nameOf).join("、")}`,
+            report.cards.map((c) => cardText(c, t)).join("  ·  "),
+          ],
+          tone: report.food < 0 ? forMe(false) : undefined,
+        });
+      }
+      if (search.injured.length) {
+        entries.push({ text: `🧟 ${t("shelter.news.zombieHurt", { names: names(search.injured) })}`, tone: forMe(false) });
+      }
+      sections.push({ key: "search", title: `☀  ${t("shelter.journal.search")}`, entries });
+    }
+
+    const night = parts.nights.find((e) => e.day === day);
+    if (night) {
+      const entries: JournalEntry[] = [];
+      if (night.cough) entries.push({ text: `🤧 ${t("shelter.news.cough")}`, tone: forMe(false) });
+      entries.push({ text: `📦 ${t("shelter.news.store", { before: night.before, after: night.after })}` });
+      if (night.stolen) entries.push({ text: `✋ ${t("shelter.news.stolen", { count: night.stolen })}`, tone: forMe(false) });
+      if (night.opened) entries.push({ text: `🔓 ${t("shelter.news.opened")}`, tone: forMe(false) });
+      if (night.injured.length) entries.push({ text: `🩹 ${t("shelter.news.injured", { names: names(night.injured) })}` });
+      if (night.hungry.length) entries.push({ text: `😵 ${t("shelter.news.hungry", { names: names(night.hungry) })}`, tone: forMe(false) });
+      if (night.fallen.length) entries.push({ text: `⚰ ${t("shelter.news.fallen", { names: names(night.fallen) })}`, tone: forMe(false) });
+      sections.push({ key: "night", title: `🌙  ${t("shelter.journal.night")}`, entries });
+    }
+
+    // what only this player knows: for a day being shown, its whole day
+    const mine = state.log
+      .filter((note) => note.day === day)
+      .filter((note) => note.kind === "played" ? Boolean(search) : note.kind === "turned" ? false : Boolean(night))
+      .map((note) => privateEntry(note, nameOf, t))
+      .filter((entry): entry is JournalEntry => entry !== null);
+    sections.push({ key: "mine", title: `🔒  ${t("shelter.journal.private")}`, private: true, entries: mine });
+
+    return { key: `day-${day}`, title: t("shelter.journal.day", { n: day + 1 }), sections };
+  });
 }
 
-function nightLines(
-  entry: ShelterState["nights"][number],
-  state: ShelterState,
-  nameOf: (seat: number) => string,
-  namesOf: (seats: number[]) => string,
-  t: T
-): string[] {
-  const lines = [`— 🌙 ${t("shelter.news.nightHeading", { n: entry.day + 1 })}`];
-  if (entry.cough) lines.push(`🤧 ${t("shelter.news.cough")}`);
-  lines.push(`📦 ${t("shelter.news.store", { before: entry.before, after: entry.after })}`);
-  if (entry.stolen) lines.push(`✋ ${t("shelter.news.stolen", { count: entry.stolen })}`);
-  if (entry.opened) lines.push(`🔓 ${t("shelter.news.opened")}`);
-  if (entry.injured.length) lines.push(`🩹 ${t("shelter.news.injured", { names: namesOf(entry.injured) })}`);
-  if (entry.hungry.length) lines.push(`😵 ${t("shelter.news.hungry", { names: namesOf(entry.hungry) })}`);
-  if (entry.fallen.length) lines.push(`⚰ ${t("shelter.news.fallen", { names: namesOf(entry.fallen) })}`);
-  // what only this player knows about that night
-  for (const note of state.log.filter((n) => n.day === entry.day)) {
-    const line = privateLine(note, nameOf, t);
-    if (line) lines.push(line);
-  }
-  return lines;
-}
-
-function privateLine(note: Note, nameOf: (seat: number) => string, t: T): string | null {
+function privateEntry(note: Note, nameOf: (seat: number) => string, t: T): JournalEntry | null {
   switch (note.kind) {
+    case "played":
+      return { text: `${PLACE_EMOJI[note.place]} ${t("shelter.notes.played", { place: t(`shelter.places.${note.place}`), card: cardText(note.card, t) })}` };
     case "guarded":
       return note.saw.length
-        ? `👀 ${t("shelter.notes.saw", { post: t(`shelter.posts.${note.post}`), names: note.saw.map(nameOf).join("、") })}`
-        : `${POST_EMOJI[note.post]} ${t("shelter.notes.quiet", {
-            post: t(`shelter.posts.${note.post}`),
-            with: note.with.length ? note.with.map(nameOf).join("、") : t("shelter.notes.alone"),
-          })}`;
+        ? { text: `👀 ${t("shelter.notes.saw", { post: t(`shelter.posts.${note.post}`), names: note.saw.map(nameOf).join("、") })}`, tone: "secret" }
+        : {
+            text: `${POST_EMOJI[note.post]} ${t("shelter.notes.quiet", {
+              post: t(`shelter.posts.${note.post}`),
+              with: note.with.length ? note.with.map(nameOf).join("、") : t("shelter.notes.alone"),
+            })}`,
+          };
     case "bumped":
-      return `🛏 ${t("shelter.notes.bumped", { post: t(`shelter.posts.${note.post}`) })}`;
+      return { text: `🛏 ${t("shelter.notes.bumped", { post: t(`shelter.posts.${note.post}`) })}` };
     case "caught":
-      return `👀 ${t("shelter.notes.caught", { names: note.by.map(nameOf).join("、") })}`;
+      return { text: `👀 ${t("shelter.notes.caught", { names: note.by.map(nameOf).join("、") })}`, tone: "secret" };
     case "stole":
-      return `✋ ${t(note.sneaked ? "shelter.notes.stoleSneaked" : "shelter.notes.stole", { count: note.food })}`;
+      return { text: `✋ ${t(note.sneaked ? "shelter.notes.stoleSneaked" : "shelter.notes.stole", { count: note.food })}`, tone: "secret" };
     case "opened":
-      return `🔓 ${t(note.sneaked ? "shelter.notes.openedSneaked" : "shelter.notes.opened")}`;
+      return { text: `🔓 ${t(note.sneaked ? "shelter.notes.openedSneaked" : "shelter.notes.opened")}`, tone: "secret" };
     default:
       return null;
   }
-}
-
-function exileLines(entry: ShelterState["exiles"][number], nameOf: (seat: number) => string, t: T): string[] {
-  const lines = [`— 🗳 ${t("shelter.news.voteHeading", { n: entry.day + 1 })}`];
-  entry.votes.forEach((target, seat) => {
-    if (target === null) return;
-    lines.push(`   ${nameOf(seat)} → ${target === -1 ? t("shelter.news.nobody") : nameOf(target)}`);
-  });
-  lines.push(
-    entry.exiled === null
-      ? `🚷 ${t("shelter.news.noExile")}`
-      : `🚷 ${t(entry.role === "infected" ? "shelter.news.exiledInfected" : "shelter.news.exiledSurvivor", { name: nameOf(entry.exiled) })}`
-  );
-  return lines;
 }
 
 const styles = StyleSheet.create({

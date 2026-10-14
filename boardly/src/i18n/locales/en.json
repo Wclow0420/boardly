@@ -549,6 +549,25 @@
         "echo": "The Gallery may post two anonymous letters this round.",
         "fog": "The team can only walk one room to the mission this round, not two.",
         "calm": "Nothing happens."
+      },
+      "counts": {
+        "title": "Player counts",
+        "intro": "5 to 10 players. The count sets how many are good and evil, which roles are dealt, and how big each night's team is:",
+        "players": "Players",
+        "good": "Good",
+        "evil": "Evil",
+        "night": "N{{n}}",
+        "votes": "Votes",
+        "star": "* This night's mission needs 2 Fail cards to fail.",
+        "table": "{{n}} players"
+      },
+      "countNotes": {
+        "items": [
+          "N1–N5: how many go on that night's mission; the leader names exactly that many.",
+          "Votes: approvals a team needs to set out (more than half the table).",
+          "Five teams rejected in a row on one night and evil wins, at any count.",
+          "The evil player in the lowest seat is also the assassin, who names the Prophet if three missions succeed."
+        ]
       }
     },
     "shelter": {
@@ -1482,6 +1501,12 @@
       "one": "Needs exactly 1 person (you must be alone here — one more and it won't work)",
       "two": "Needs exactly 2 people (no more, no fewer)",
       "any": "Any number of people"
+    },
+    "journal": {
+      "news": "News",
+      "teams": "Teams & votes",
+      "mission": "Mission",
+      "private": "Only you know"
     }
   },
   "profile": {
@@ -1687,7 +1712,8 @@
       "stoleSneaked": "You sneaked in and stole {{count}} food unseen",
       "opened": "You opened the door",
       "openedSneaked": "You sneaked to the door and opened it unseen",
-      "bumped": "Someone was already guarding the {{post}}, so you went back to bed (not tired tomorrow)"
+      "bumped": "Someone was already guarding the {{post}}, so you went back to bed (not tired tomorrow)",
+      "played": "At the {{place}} you played: {{card}}"
     },
     "cough": {
       "title": "Someone is coughing in the dark…",
@@ -1729,6 +1755,14 @@
       "outnumbered": "The Infected standing were no fewer than the Survivors.",
       "lateRescue": "The convoy came, but too few Survivors were still standing.",
       "abandoned": "Someone left; the game ended."
+    },
+    "journal": {
+      "day": "Day {{n}}",
+      "vote": "Morning vote",
+      "search": "Scavenging",
+      "night": "The night",
+      "private": "Only you know",
+      "who": "Went: "
     }
   }
 }

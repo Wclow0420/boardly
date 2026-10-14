@@ -76,6 +76,22 @@ otherwise.
   `successHaptic`); respect reduce motion.
 - **Explain moves the game makes for you** (a mission moving you, a
   collapse) in the news and under the scene, so nothing looks like a bug.
+- **Notes, records and news use `src/features/game/Journal.tsx`.**
+  Never list a game's history as one flat run of lines. Write a
+  `<game>Pages(state, parts, …)` builder that returns `JournalPage[]`:
+  one page per day/night/round, split into sections (the vote, the
+  mission, the night…). Each entry is one short line with `detail`
+  lines under it (who voted what, which cards), and a `tone` for the
+  reader's side (`good`/`bad`). What only this player knows goes in a
+  `private` section ("🔒 Only you know"). Feed the same builder the
+  whole state for the record/notebook panels (newest first) and only
+  the unseen slices for the "what happened" popup (`order="oldest"`).
+  Pass the game's `GameText` as `Text`. See `shelterPages`
+  (`shelter/ShelterBoard.tsx`) and `manorPages`
+  (`nightwatch/NightwatchBoard.tsx`).
+- **Player counts** get their own rules page: a table built from the
+  game's count tables in `logic.ts` (sides, roles, team sizes, win
+  thresholds) plus notes — see `CountsPage` in both games' `rules.tsx`.
 - **Game text** goes through the game's own `GameText`/`GameButton`
   (see `nightwatch/GameText.tsx`): emoji become the game's vector icons
   (`icons.tsx`) and place names take their colour. Give every room or
