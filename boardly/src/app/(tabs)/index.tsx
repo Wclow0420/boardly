@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -15,6 +15,7 @@ import {
   TableBackdrop,
   Texture,
 } from "@/components/ui";
+import { Die, type DieHandle } from "@/components/tabletop/Die";
 import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
 import { useSession } from "@/context/SessionContext";
 import { ClaimRewards } from "@/features/coins/ClaimRewards";
@@ -41,6 +42,7 @@ import {
   useOnlineFriends,
 } from "@/features/home/hooks";
 import { useGamesQuery } from "@/features/games/hooks";
+import { useGameName } from "@/games/names";
 import { fontFamily, useTheme } from "@/theme";
 import { tapHaptic } from "@/utils/haptics";
 
@@ -58,14 +60,42 @@ export default function HomeScreen() {
   const coinPillRef = useRef<View>(null);
   const coinFlyRef = useRef<CoinFlyHandle>(null);
 
+  const gameName = useGameName();
+  const dieRef = useRef<DieHandle>(null);
+  // the roll under way, and the game it came up with
+  const [rolling, setRolling] = useState(false);
+  const [rolled, setRolled] = useState<string | null>(null);
+
+  // Quick play throws the die: the table is opened while it tumbles,
+  // and we sit down once it has landed on the game.
   const quickPlay = () => {
     const catalogue = games.data ?? [];
-    if (catalogue.length === 0 || createRoom.isPending) return;
+    if (catalogue.length === 0 || createRoom.isPending || rolling) return;
     tapHaptic();
     const game = catalogue[Math.floor(Math.random() * catalogue.length)];
+    setRolling(true);
+    setRolled(null);
+    const landed = (dieRef.current?.roll() ?? Promise.resolve()).then(() => {
+      setRolled(gameName(game.id, game.name));
+    });
+    const settle = () => {
+      setRolling(false);
+      setRolled(null);
+    };
     createRoom.mutate(game.id, {
-      onSuccess: ({ room }) => router.push(`/lobby/${room.code}`),
-      onError: (err) => redirectIfInRoom(err),
+      onSuccess: ({ room }) => {
+        // a beat on the result before the lobby opens
+        landed
+          .then(() => new Promise((done) => setTimeout(done, 450)))
+          .then(() => {
+            settle();
+            router.push(`/lobby/${room.code}`);
+          });
+      },
+      onError: (err) => {
+        landed.then(settle);
+        redirectIfInRoom(err);
+      },
     });
   };
 
@@ -74,7 +104,7 @@ export default function HomeScreen() {
       {DICE ? (
         <Image source={DICE} style={styles.dice} contentFit="contain" />
       ) : (
-        <AppText style={styles.diceEmoji}>🎲</AppText>
+        <Die ref={dieRef} size={46} style={styles.die} />
       )}
       <View style={styles.grow}>
         <AppText style={styles.quickTitle}>{t("home.quickPlay")}</AppText>
@@ -84,7 +114,11 @@ export default function HomeScreen() {
           adjustsFontSizeToFit
           minimumFontScale={0.8}
         >
-          {t("home.quickPlaySubtitle")}
+          {rolled
+            ? `🎲 ${rolled}!`
+            : rolling
+              ? t("home.rolling")
+              : t("home.quickPlaySubtitle")}
         </AppText>
       </View>
       <LinearGradient colors={HOME.button} style={styles.startButton}>
@@ -200,17 +234,33 @@ export default function HomeScreen() {
           ) : tables.length === 0 ? (
             <View style={styles.empty}>
               {CROWN_COIN ? (
-                <Image source={CROWN_COIN} style={styles.coin} contentFit="contain" />
+                <Image
+                  source={CROWN_COIN}
+                  style={styles.coin}
+                  contentFit="contain"
+                />
               ) : null}
               {MEEPLE ? (
-                <Image source={MEEPLE} style={styles.meeple} contentFit="contain" />
+                <Image
+                  source={MEEPLE}
+                  style={styles.meeple}
+                  contentFit="contain"
+                />
               ) : null}
               {CHAIR ? (
-                <Image source={CHAIR} style={styles.chair} contentFit="contain" />
+                <Image
+                  source={CHAIR}
+                  style={styles.chair}
+                  contentFit="contain"
+                />
               ) : (
                 <AppText style={styles.chairEmoji}>🪑</AppText>
               )}
-              <AppText variant="title" align="center" style={{ marginTop: spacing.xs }}>
+              <AppText
+                variant="title"
+                align="center"
+                style={{ marginTop: spacing.xs }}
+              >
                 {t("home.noTablesTitle")}
               </AppText>
               <AppText variant="caption" color="textMuted" align="center">
@@ -226,6 +276,30 @@ export default function HomeScreen() {
                   onPress={() => router.push(`/lobby/${table.code}`)}
                 />
               ))}
+              {/* room on the felt for another: fetch a box from the shelf */}
+              {tables.length === 1 ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t("home.newTable")}
+                  onPress={() => {
+                    tapHaptic();
+                    router.push("/games");
+                  }}
+                  style={({ pressed }) => [
+                    styles.newTable,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <PlusIcon size={20} color={HOME.creamMuted} />
+                  <AppText
+                    variant="tiny"
+                    align="center"
+                    style={{ color: HOME.creamMuted }}
+                  >
+                    {t("home.newTable")}
+                  </AppText>
+                </Pressable>
+              ) : null}
             </View>
           )}
         </Frame>
@@ -281,7 +355,11 @@ export default function HomeScreen() {
                     friend.presence === "inGame" ? "#E9A92B" : "#5FBF55"
                   }
                 />
-                <AppText variant="tiny" numberOfLines={1} style={styles.friendName}>
+                <AppText
+                  variant="tiny"
+                  numberOfLines={1}
+                  style={styles.friendName}
+                >
                   {friend.name}
                 </AppText>
                 <AppText
@@ -355,7 +433,12 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
 
-  quick: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 16 },
+  quick: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 16,
+  },
   quickArt: {
     flexDirection: "row",
     alignItems: "center",
@@ -363,7 +446,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
   },
   dice: { width: 56, height: 56, marginLeft: -4 },
-  diceEmoji: { fontSize: 38, lineHeight: 48 },
+  die: { marginHorizontal: 4 },
   quickTitle: { fontFamily: fontFamily.bold, fontSize: 17, color: HOME.ink },
   quickSubtitle: {
     fontFamily: fontFamily.medium,
@@ -406,7 +489,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
     overflow: "hidden",
   },
-  joinText: { fontFamily: fontFamily.semiBold, fontSize: 13, color: HOME.cream },
+  joinText: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 13,
+    color: HOME.cream,
+  },
 
   // Sized by its tables; gives way first when the screen is short
   tablesSection: { flexShrink: 1, marginTop: 14, minHeight: 0 },
@@ -426,7 +513,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#2E4A70",
   },
-  seeAllText: { fontFamily: fontFamily.semiBold, fontSize: 11, color: HOME.cream },
+  seeAllText: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 11,
+    color: HOME.cream,
+  },
   // Sized by its content, but allowed to shrink on a short screen
   tablesFrame: {
     flexShrink: 1,
@@ -435,11 +526,29 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   tables: { flexDirection: "row", gap: 10 },
+  newTable: {
+    flex: 1,
+    maxWidth: "50%",
+    aspectRatio: 1.6,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    borderColor: HOME.creamMuted,
+  },
   empty: { alignItems: "center", paddingVertical: 10 },
   chair: { width: 58, height: 58 },
   chairEmoji: { fontSize: 36, lineHeight: 46 },
   coin: { position: "absolute", left: -6, bottom: -10, width: 40, height: 40 },
-  meeple: { position: "absolute", right: -8, bottom: -10, width: 48, height: 48 },
+  meeple: {
+    position: "absolute",
+    right: -8,
+    bottom: -10,
+    width: 48,
+    height: 48,
+  },
 
   friendsFrame: { paddingTop: 18, paddingBottom: 10, paddingHorizontal: 0 },
   friends: { alignItems: "flex-start", gap: 12, paddingHorizontal: 14 },

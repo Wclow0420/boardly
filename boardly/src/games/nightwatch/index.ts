@@ -1,3 +1,4 @@
+import { ManorBoxArt } from "./BoxArt";
 import type { GameDefinition } from "../types";
 import { NightwatchBoard } from "./NightwatchBoard";
 import { NIGHTWATCH_RULES } from "./rules";
@@ -50,4 +51,5 @@ export const nightwatch: GameDefinition<NightwatchState> = {
     taglineKey: "nightwatch.tagline",
   },
   needsMe: (state, mySeat) => taskFor(state, mySeat) !== null,
+  boxArt: ManorBoxArt,
 };

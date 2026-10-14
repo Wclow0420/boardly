@@ -39,7 +39,9 @@
     "noTablesSubtitle": "快去开一桌游戏吧！",
     "inviteTitle": "邀请好友一起玩",
     "inviteSubtitle": "游戏更有趣！",
-    "inviteMore": "邀请更多"
+    "inviteMore": "邀请更多",
+    "rolling": "掷骰子中…",
+    "newTable": "开新一桌"
   },
   "join": {
     "title": "加入牌桌",
@@ -69,7 +71,8 @@
       "strategy": "策略",
       "party": "聚会",
       "faction": "阵营"
-    }
+    },
+    "openTable": "开一桌"
   },
   "gameNames": {
     "tictactoe": "井字棋",

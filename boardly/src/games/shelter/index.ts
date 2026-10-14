@@ -1,4 +1,5 @@
 import type { GameDefinition } from "../types";
+import { ShelterBoxArt } from "./BoxArt";
 import { ShelterBoard } from "./ShelterBoard";
 import { SHELTER_RULES } from "./rules";
 import { currentSeat, type ShelterState } from "./logic";
@@ -50,4 +51,5 @@ export const shelter: GameDefinition<ShelterState> = {
     taglineKey: "shelter.tagline",
   },
   needsMe: (state) => state.canAct,
+  boxArt: ShelterBoxArt,
 };

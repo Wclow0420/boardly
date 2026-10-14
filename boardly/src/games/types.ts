@@ -77,6 +77,10 @@ export interface GameDefinition<TState = Record<string, unknown>> {
   rulePages?: RulesPage[];
   /** Games with their own visual identity (custom layout only). */
   skin?: GameSkin;
+  /** The picture on the game's box lid (the Games shelf, Your Tables),
+   *  drawn `width` wide. Without it the lid shows the skin's logo, or
+   *  the game's emoji. */
+  boxArt?: ComponentType<{ width: number }>;
   /** Whether the game is waiting on this player — drives the
    *  "Your move" badge in the header of skinned games. */
   needsMe?: (state: TState, mySeat: number) => boolean;

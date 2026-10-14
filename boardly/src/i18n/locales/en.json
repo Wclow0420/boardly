@@ -39,7 +39,9 @@
     "noTablesSubtitle": "Open a table and get a game going!",
     "inviteTitle": "Invite friends to play",
     "inviteSubtitle": "Games are more fun together!",
-    "inviteMore": "Invite more"
+    "inviteMore": "Invite more",
+    "rolling": "Rolling…",
+    "newTable": "New table"
   },
   "join": {
     "title": "Join a Table",
@@ -69,7 +71,8 @@
       "strategy": "Strategy",
       "party": "Party",
       "faction": "Factions"
-    }
+    },
+    "openTable": "Open a table"
   },
   "gameNames": {
     "tictactoe": "Tic-Tac-Toe",
