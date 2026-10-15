@@ -7,6 +7,7 @@ import { EARNED_ART } from "./earned";
 import { EPIC_ART } from "./epic";
 import { FALLEN_ART } from "./fallen";
 import { FRAME_ART } from "./frames";
+import { HERALDRY_ART } from "./heraldry";
 import type { ArtBorderDrawing } from "./kit";
 import { LEGENDARY_ART } from "./legendary";
 import { RARE_ART } from "./rare";
@@ -19,6 +20,7 @@ export const ART: Record<string, ArtBorderDrawing> = {
   ...LEGENDARY_ART,
   ...EARNED_ART,
   ...FRAME_ART,
+  ...HERALDRY_ART,
   ...CROWN_ART,
   ...RIM_ART,
   ...SERAPH_ART,
