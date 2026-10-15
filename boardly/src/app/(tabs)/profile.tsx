@@ -19,7 +19,7 @@ import { useReducedMotion, useSharedValue } from "react-native-reanimated";
 
 import { api } from "@/api/client";
 import { TIER_METAL } from "@/components/badges/Badge";
-import { GearIcon } from "@/components/icons";
+import { GearEmblem } from "@/components/engraved";
 import { useIsoClock } from "@/components/iso";
 import {
   AppText,
@@ -146,7 +146,7 @@ export default function ProfileScreen() {
               settingsRef.current?.present();
             }}
           >
-            <GearIcon size={22} color={TABLE.cream} />
+            <GearEmblem size={32} />
           </IconButton>
         </View>
 

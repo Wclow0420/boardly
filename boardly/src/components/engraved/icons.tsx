@@ -6,7 +6,7 @@
 import { Circle, G, Path } from "react-native-svg";
 
 import { EmblemSvg, Engraved, JewelDot } from "./Engraved";
-import { FEATHER } from "./shapes";
+import { FEATHER, LEAF, type Material } from "./shapes";
 
 export interface EmblemProps {
   size?: number;
@@ -179,6 +179,170 @@ export function FrameEmblem({ size = 28 }: EmblemProps) {
       />
       <Circle cx={24} cy={38} r={1.4} fill="#F6D27A" />
       <JewelDot x={24} y={14} r={3.2} jewel="sapphire" />
+    </EmblemSvg>
+  );
+}
+
+// ── The tab bar and the profile's gear ───────────────────────────────
+
+/** A meeple, centred on (24, 24) in the 48 box, 32 wide and 36 tall. */
+const MEEPLE =
+  "M24 6C28 6 30.5 9 30.5 12.5C30.5 14.8 29.4 16.4 28.2 17.4C33 18.4 39 19.6 40 22.2C41 24.8 37.4 26 33 26.8C32.4 27 32.2 27.6 32.5 28.2L37.5 38.5C38.4 40.4 37.2 42 35 42H28C26.8 42 26 41.2 25.6 40.2L24 36L22.4 40.2C22 41.2 21.2 42 20 42H13C10.8 42 9.6 40.4 10.5 38.5L15.5 28.2C15.8 27.6 15.6 27 15 26.8C10.6 26 7 24.8 8 22.2C9 19.6 15 18.4 19.8 17.4C18.6 16.4 17.5 14.8 17.5 12.5C17.5 9 20 6 24 6Z";
+
+/** A meeple standing at (x, y), `scale` of its full 48-box size. */
+function Meeple({
+  x,
+  y,
+  scale,
+  material = "gold",
+}: {
+  x: number;
+  y: number;
+  scale: number;
+  material?: Material;
+}) {
+  return (
+    <G transform={`translate(${x} ${y}) scale(${scale}) translate(-24 -24)`}>
+      <Engraved
+        d={MEEPLE}
+        material={material}
+        ink={1.5 / scale}
+        shine="M20.5 10.5A4 4 0 0 1 23 8.4M11 22.6Q14 20.6 18 20"
+      />
+    </G>
+  );
+}
+
+/** Home: a cottage under a gold roof, its windows lit. */
+export function HomeEmblem({ size = 28 }: EmblemProps) {
+  return (
+    <EmblemSvg size={size}>
+      <Engraved d="M31 9H35.5V18.5L31 14.5Z" material="silver" ink={1.2} />
+      <Engraved d="M11 22H37V43.5H11Z" material="ivory" shine="M13 25V41" />
+      <Engraved
+        d="M13.5 27.5H18.5V33H13.5ZM29.5 27.5H34.5V33H29.5Z"
+        vein="M16 27.5V33M13.5 30.2H18.5M32 27.5V33M29.5 30.2H34.5"
+        ink={1.2}
+      />
+      <Engraved
+        d="M19.5 43.5V34A4.5 4.5 0 0 1 28.5 34V43.5Z"
+        material="wood"
+        vein="M24 29.6V43.5"
+        ink={1.2}
+      />
+      <Engraved
+        d="M24 4.5L43 21.4Q43.8 24 41 24H7Q4.2 24 5 21.4Z"
+        vein="M17.6 11.6H30.4M12.6 16.6H35.4M8.4 21H39.6"
+        shine="M10 20.4L22.6 8.6"
+      />
+    </EmblemSvg>
+  );
+}
+
+/** Games: an ivory die, a ruby pip on top, and a gold meeple. */
+export function GamesEmblem({ size = 28 }: EmblemProps) {
+  const pip = (x: number, y: number) => (
+    <Circle key={`${x}-${y}`} cx={x} cy={y} r={1.6} fill="#2A1808" />
+  );
+  return (
+    <EmblemSvg size={size}>
+      <Engraved d="M6 20L19 27V42L6 35Z" material="ivory" />
+      <Engraved d="M19 27L32 20V35L19 42Z" material="ivory" />
+      <Engraved
+        d="M19 13L32 20L19 27L6 20Z"
+        material="ivory"
+        shine="M10 20L19 15.2"
+      />
+      <G transform="translate(19 20) scale(1 0.58)">
+        <JewelDot x={0} y={0} r={2.6} jewel="ruby" />
+      </G>
+      {pip(15.75, 29)}
+      {pip(9.25, 33)}
+      {pip(29.4, 24.4)}
+      {pip(25.5, 31)}
+      {pip(21.6, 37.6)}
+      <Meeple x={37} y={31} scale={0.42} />
+    </EmblemSvg>
+  );
+}
+
+/** Friends: two meeples side by side, silver and gold. */
+export function FriendsEmblem({ size = 28 }: EmblemProps) {
+  return (
+    <EmblemSvg size={size}>
+      <Meeple x={17} y={22} scale={0.62} material="silver" />
+      <Meeple x={30} y={27} scale={0.66} />
+    </EmblemSvg>
+  );
+}
+
+/** Profile: a gold medallion in laurel, a meeple on its ivory face. */
+export function ProfileEmblem({ size = 28 }: EmblemProps) {
+  const leaves = (
+    <G>
+      {[112, 136, 160].map((a) => {
+        const rad = (a * Math.PI) / 180;
+        const x = 24 + Math.cos(rad) * 17.5;
+        const y = 22 + Math.sin(rad) * 17.5;
+        return (
+          <G key={a} transform={`translate(${x} ${y}) rotate(${a})`}>
+            <Engraved d={LEAF(8, 2.8)} ink={1} vein="M0 -1L0 -6" />
+          </G>
+        );
+      })}
+    </G>
+  );
+  return (
+    <EmblemSvg size={size}>
+      {leaves}
+      <G transform="translate(48 0) scale(-1 1)">{leaves}</G>
+      <Engraved d={disc(24, 22, 12)} material="ivory" ink={0} />
+      <Meeple x={24} y={23.5} scale={0.5} material="wood" />
+      <Engraved
+        d={ring(24, 22, 15, 11.6)}
+        evenOdd
+        vein="M37.3 22A13.3 13.3 0 1 1 10.7 22A13.3 13.3 0 1 1 37.3 22"
+        shine="M12.4 16A12.8 12.8 0 0 1 18 10"
+      />
+      <JewelDot x={24} y={38.5} r={3} jewel="ruby" />
+    </EmblemSvg>
+  );
+}
+
+/** A cog of `teeth` teeth round (24, 24). */
+function cog(teeth: number, outer: number, root: number, hole: number) {
+  const pts: string[] = [];
+  const step = (Math.PI * 2) / teeth;
+  for (let i = 0; i < teeth; i++) {
+    const a = i * step;
+    for (const [da, r] of [
+      [-0.32, root],
+      [-0.2, outer],
+      [0.2, outer],
+      [0.32, root],
+    ] as const) {
+      const t = a + da * step * 1.4;
+      pts.push(
+        `${(24 + Math.cos(t) * r).toFixed(2)} ${(24 + Math.sin(t) * r).toFixed(2)}`,
+      );
+    }
+  }
+  return `M${pts.join("L")}Z${disc(24, 24, hole)}`;
+}
+
+/** Settings: a silver cog on a gold hub, a sapphire at its heart. */
+export function GearEmblem({ size = 28 }: EmblemProps) {
+  return (
+    <EmblemSvg size={size}>
+      <Engraved
+        d={cog(8, 20, 15.5, 8)}
+        material="silver"
+        evenOdd
+        vein="M36.5 24A12.5 12.5 0 1 1 11.5 24A12.5 12.5 0 1 1 36.5 24"
+        shine="M12.6 18A12 12 0 0 1 18 12.6"
+      />
+      <Engraved d={ring(24, 24, 8, 4.4)} evenOdd ink={1.2} />
+      <JewelDot x={24} y={24} r={4.2} jewel="sapphire" />
     </EmblemSvg>
   );
 }

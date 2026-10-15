@@ -11,9 +11,14 @@ import {
   BinEmblem,
   DoorEmblem,
   FrameEmblem,
+  FriendsEmblem,
+  GamesEmblem,
+  GearEmblem,
   GlobeEmblem,
+  HomeEmblem,
   KeyEmblem,
   LockEmblem,
+  ProfileEmblem,
   ScrollEmblem,
   type EmblemProps,
 } from "@/components/engraved";
@@ -21,6 +26,11 @@ import { AppText } from "@/components/ui";
 import { TABLE, useTheme } from "@/theme";
 
 const EMBLEMS: [string, ComponentType<EmblemProps>][] = [
+  ["Home", HomeEmblem],
+  ["Games", GamesEmblem],
+  ["Friends", FriendsEmblem],
+  ["Profile", ProfileEmblem],
+  ["Gear", GearEmblem],
   ["Frame", FrameEmblem],
   ["Globe", GlobeEmblem],
   ["Key", KeyEmblem],
