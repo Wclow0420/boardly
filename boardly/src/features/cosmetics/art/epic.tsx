@@ -18,6 +18,7 @@ import { useMemo } from "react";
 import { useDerivedValue } from "react-native-reanimated";
 
 import { NOISE } from "@/components/iso/noise";
+import { StormRim } from "./rims";
 
 import {
   Band,
@@ -242,21 +243,64 @@ function ThunderBack({ t }: { t: Clock }) {
   );
 }
 
-const Thunderstorm: ArtBorderDrawing = {
-  back: ThunderBack,
-  front: ({ t }) => (
-    <Group>
-      <Band
-        r={52.5}
-        width={5}
-        colors={["#8FB4FF", "#2B4A9E", "#0E1630"]}
-        rim="#05070F"
+/** Little arcs jumping across the rim, over the picture's edge. */
+const ARCS = Array.from({ length: 5 }, (_, i) => {
+  const a = rnd(i + 40) * TAU;
+  let d = "";
+  for (let k = 0; k <= 4; k++) {
+    const p = polar(a + (rnd(i * 7 + k) - 0.5) * 0.12, 44 + k * 5);
+    d += `${k ? "L" : "M"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
+  }
+  return d;
+});
+
+function Arc({ t, k }: { t: Clock; k: number }) {
+  const opacity = useDerivedValue(() => {
+    const p = ((t.value + k * 0.53) % 1.3) / 0.12;
+    return p < 1 ? 1 - p : 0;
+  });
+  return (
+    <Group opacity={opacity} blendMode="screen">
+      <Path
+        path={ARCS[k]}
+        style="stroke"
+        strokeWidth={4}
+        color="#7FB8FF"
+        strokeJoin="round"
+      >
+        <BlurMask blur={3} style="normal" />
+      </Path>
+      <Path
+        path={ARCS[k]}
+        style="stroke"
+        strokeWidth={1.3}
+        color="#F2F8FF"
+        strokeJoin="round"
       />
+    </Group>
+  );
+}
+
+/** The storm is the ring: dark cloud over the picture's rim, lit by the
+ *  strikes, sparks of lightning jumping across it. */
+function ThunderFront({ t }: { t: Clock }) {
+  const flash = useFlash(t);
+  return (
+    <Group>
+      <StormRim t={t} flash={flash} />
+      {ARCS.map((_, k) => (
+        <Arc key={`a${k}`} t={t} k={k} />
+      ))}
       {BOLTS.map((_, k) => (
         <Bolt key={k} t={t} k={k} />
       ))}
     </Group>
-  ),
+  );
+}
+
+const Thunderstorm: ArtBorderDrawing = {
+  back: ThunderBack,
+  front: ThunderFront,
 };
 
 // ── Ghost Lantern: paper lanterns, little ghosts drifting by ────────

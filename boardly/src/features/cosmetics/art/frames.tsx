@@ -17,6 +17,7 @@ import { useMemo } from "react";
 import { useDerivedValue } from "react-native-reanimated";
 
 import { NOISE } from "@/components/iso/noise";
+import { FireRim } from "./rims";
 import {
   Band,
   Glint,
@@ -71,17 +72,27 @@ function SunBlazeBack({ t }: { t: Clock }) {
   );
 }
 
-const SunBlaze: ArtBorderDrawing = {
-  back: SunBlazeBack,
-  front: () => (
-    <Band
-      r={52.5}
-      width={5}
-      colors={["#FFE08A", "#F28A1F", "#9E2A0A"]}
-      rim="#5A1404"
-    />
-  ),
-};
+/** The fire is the ring: it licks in over the picture's rim, embers
+ *  leaving it. */
+function SunBlazeFront({ t }: { t: Clock }) {
+  return (
+    <Group>
+      <FireRim t={t} />
+      <Sparks
+        t={t}
+        count={8}
+        from={-Math.PI}
+        to={0}
+        r={54}
+        rise={30}
+        size={1.6}
+        seed={21}
+      />
+    </Group>
+  );
+}
+
+const SunBlaze: ArtBorderDrawing = { back: SunBlazeBack, front: SunBlazeFront };
 
 // ── Angel Wings: great feathered wings, a halo above ─────────────────
 
