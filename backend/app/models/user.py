@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from app.cosmetics import DEFAULT_BORDER
+from app.mascot import DEFAULT_LOOK
 from app.extensions import db
 
 
@@ -27,6 +28,10 @@ class User(db.Model):
     coins = db.Column(db.Integer, nullable=False, default=0, server_default="0")
     # Ids of the paid borders this player has unlocked
     owned_borders = db.Column(JSONB, nullable=False, default=list, server_default="[]")
+    # Their mascot as dressed (see app/mascot.py), or None for the starter
+    mascot = db.Column(JSONB, nullable=True)
+    # Keys of the paid mascot items they have bought ("hat:crown")
+    owned_mascot = db.Column(JSONB, nullable=False, default=list, server_default="[]")
     # Bumped to sign out every device (password change, account deletion):
     # tokens carry the version they were issued for.
     token_version = db.Column(db.Integer, nullable=False, default=0, server_default="0")
@@ -53,6 +58,7 @@ class User(db.Model):
             "username": self.username,
             "avatarUrl": self.avatar_url,
             "borderId": self.border_id or DEFAULT_BORDER,
+            "mascot": self.mascot or DEFAULT_LOOK,
             "isBot": bool(self.is_bot),
         }
 
@@ -62,4 +68,5 @@ class User(db.Model):
             **self.to_dict(),
             "coins": self.coins,
             "ownedBorders": list(self.owned_borders or []),
+            "ownedMascot": list(self.owned_mascot or []),
         }

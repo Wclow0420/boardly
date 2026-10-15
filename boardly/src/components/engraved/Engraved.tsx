@@ -156,15 +156,18 @@ export function JewelDot({
 export function EmblemSvg({
   size,
   box = [48, 48],
+  view,
   children,
 }: {
   size: number;
   box?: [number, number];
+  /** Show only this part of the box: [x, y, width, height]. */
+  view?: [number, number, number, number];
   children: ReactNode;
 }) {
-  const [w, h] = box;
+  const [x, y, w, h] = view ?? [0, 0, box[0], box[1]];
   return (
-    <Svg width={size} height={(size * h) / w} viewBox={`0 0 ${w} ${h}`}>
+    <Svg width={size} height={(size * h) / w} viewBox={`${x} ${y} ${w} ${h}`}>
       {children}
     </Svg>
   );
@@ -223,14 +226,16 @@ export function EmblemGlyph({
   size,
   color,
   box,
+  view,
 }: {
   data: EmblemData;
   size: number;
   color?: string;
   box?: [number, number];
+  view?: [number, number, number, number];
 }) {
   return (
-    <EmblemSvg size={size} box={box}>
+    <EmblemSvg size={size} box={box} view={view}>
       <EmblemParts data={data} color={color} />
     </EmblemSvg>
   );

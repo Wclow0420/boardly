@@ -40,6 +40,22 @@ export const STARTER: Look = {
   wear: { eyes: "dots", mouth: "smile", nose: "none" },
 };
 
+/** A look from the server (or none yet) as one to draw: unknown items
+ *  (from a newer app, say) are left off rather than drawn wrong. */
+export function asLook(raw?: { skin: string; colour: string; wear: Record<string, string> } | null): Look {
+  if (!raw) return STARTER;
+  const wear: Look["wear"] = {};
+  for (const [slot, id] of Object.entries(raw.wear ?? {})) {
+    const parts = (CATALOG as Record<string, Record<string, PartDef>>)[slot];
+    if (parts?.[id]) wear[slot as Slot] = id;
+  }
+  return { skin: SKINS[raw.skin] ? raw.skin : "glossy", colour: raw.colour, wear };
+}
+
+/** The part of the box a portrait shows: head and shoulders, with room
+ *  for a hat. [x, y, width, height]. */
+export const PORTRAIT: [number, number, number, number] = [12, 6, 76, 76];
+
 export interface Layers {
   back: EmblemData;
   body: EmblemData;

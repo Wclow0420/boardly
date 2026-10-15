@@ -94,6 +94,7 @@ const EMOJI_EMBLEM: Record<string, UiEmblemName | keyof typeof JSX_EMBLEMS> = {
   "👥": "people",
   "☀": "sun",
   "🎟": "ticket",
+  "👗": "wardrobe",
   "⭕": "noughts",
 };
 

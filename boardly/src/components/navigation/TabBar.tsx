@@ -20,7 +20,9 @@ import {
   type EmblemProps,
 } from "@/components/engraved";
 import { AppText, Texture } from "@/components/ui";
+import { useSession } from "@/context/SessionContext";
 import { useFriendsQuery } from "@/features/friends/hooks";
+import { MascotPortrait } from "@/features/mascot/MascotPortrait";
 import { fontFamily } from "@/theme";
 import { TABLE } from "@/theme/table";
 import { tapHaptic } from "@/utils/haptics";
@@ -31,9 +33,16 @@ const TAB_CONFIG: Record<
 > = {
   index: { labelKey: "tabs.home", Icon: HomeEmblem },
   games: { labelKey: "tabs.games", Icon: GamesEmblem },
+  mascot: { labelKey: "tabs.mascot", Icon: MascotIcon },
   friends: { labelKey: "tabs.friends", Icon: FriendsEmblem },
   profile: { labelKey: "tabs.profile", Icon: ProfileEmblem },
 };
+
+/** The middle tab is you: your own mascot's face. */
+function MascotIcon({ size = 34 }: EmblemProps) {
+  const { user } = useSession();
+  return <MascotPortrait look={user?.mascot} size={size} />;
+}
 
 // A wooden rail along the edge of the table, its tabs engraved emblems:
 // the current one lifts and shines, the rest sit back, dimmed.

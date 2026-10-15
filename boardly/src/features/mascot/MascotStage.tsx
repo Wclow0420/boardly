@@ -1,7 +1,8 @@
 // The mascot, alive: its layers recorded once as Skia pictures, moved on
 // the UI thread. It breathes, blinks, sways what it holds and flutters
-// what it wears on its back; tap it and it hops. Still when the reader
-// asks for reduced motion.
+// what it wears on its back. MascotFigure is the figure on its own (for
+// a game scene, a card); MascotStage adds the hop when you tap it. Both
+// stand still with reduced motion, or when `paused`.
 
 import { Canvas, Group, Picture } from "@shopify/react-native-skia";
 import { useMemo } from "react";
@@ -14,6 +15,7 @@ import {
   useSharedValue,
   withSequence,
   withTiming,
+  type SharedValue,
 } from "react-native-reanimated";
 
 import { recordEmblem } from "@/components/engraved/picture";
@@ -23,12 +25,34 @@ import { BOX, GRIP, LIFT } from "./rig";
 
 /** Where the feet stand, the eyes are, and the held item is gripped, in
  *  the box. */
-const FEET = { x: 50, y: LIFT + 98.4 };
+export const FEET = { x: 50, y: LIFT + 98.4 };
 const EYE_LINE = LIFT + 28;
 const HOLD = { x: GRIP[0], y: GRIP[1] + LIFT };
 
-export function MascotStage({ look, width }: { look: Look; width: number }) {
-  const still = useReducedMotion();
+/** A number from a string, so each mascot keeps its own rhythm. */
+const seedOf = (text: string) => {
+  let h = 0;
+  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) % 997;
+  return h / 997;
+};
+
+export function MascotFigure({
+  look,
+  width,
+  seed = "",
+  paused = false,
+  hop,
+}: {
+  look: Look;
+  width: number;
+  /** Anything that tells mascots apart (a user id): they breathe and
+   *  blink out of step with each other. */
+  seed?: string;
+  paused?: boolean;
+  /** 0 → 1 runs a hop. */
+  hop?: SharedValue<number>;
+}) {
+  const still = useReducedMotion() || paused;
   const pictures = useMemo(() => {
     const layers = dressLayers(look);
     return {
@@ -40,16 +64,16 @@ export function MascotStage({ look, width }: { look: Look; width: number }) {
     };
   }, [look]);
 
-  const t = useSharedValue(0);
-  const hop = useSharedValue(0);
+  const offset = seedOf(seed) * 10;
+  const t = useSharedValue(offset);
   useFrameCallback((frame) => {
-    if (!still) t.set(frame.timeSinceFirstFrame / 1000);
-  });
+    t.set(offset + frame.timeSinceFirstFrame / 1000);
+  }, !still);
 
   const scale = width / BOX[0];
   const whole = useDerivedValue(() => {
     const breath = Math.sin(t.get() * 2.4);
-    const h = hop.get();
+    const h = hop?.get() ?? 0;
     // up and back down in an arc, squashed as it lands
     const lift = Math.sin(h * Math.PI) * 16;
     const squash = h > 0.85 ? (1 - h) * 6 * 0.06 : 0;
@@ -66,11 +90,7 @@ export function MascotStage({ look, width }: { look: Look; width: number }) {
   const blink = useDerivedValue(() => {
     const phase = t.get() % 3.6;
     const shut = phase < 0.14 ? Math.sin((phase / 0.14) * Math.PI) * 0.9 : 0;
-    return [
-      { translateY: EYE_LINE },
-      { scaleY: 1 - shut },
-      { translateY: -EYE_LINE },
-    ];
+    return [{ translateY: EYE_LINE }, { scaleY: 1 - shut }, { translateY: -EYE_LINE }];
   });
   const sway = useDerivedValue(() => [
     { translateX: HOLD.x },
@@ -85,6 +105,29 @@ export function MascotStage({ look, width }: { look: Look; width: number }) {
     { translateX: -50 },
   ]);
 
+  return (
+    <Canvas style={{ width, height: (width * BOX[1]) / BOX[0] }} pointerEvents="none">
+      <Group transform={whole}>
+        <Group transform={flutter}>
+          <Picture picture={pictures.back} />
+        </Group>
+        <Picture picture={pictures.body} />
+        <Group transform={blink}>
+          <Picture picture={pictures.eyes} />
+        </Group>
+        <Picture picture={pictures.hat} />
+        <Group transform={sway}>
+          <Picture picture={pictures.hand} />
+        </Group>
+      </Group>
+    </Canvas>
+  );
+}
+
+/** The mascot on show: tap it and it hops. */
+export function MascotStage({ look, width }: { look: Look; width: number }) {
+  const still = useReducedMotion();
+  const hop = useSharedValue(0);
   return (
     <Pressable
       accessibilityRole="button"
@@ -101,21 +144,7 @@ export function MascotStage({ look, width }: { look: Look; width: number }) {
         );
       }}
     >
-      <Canvas style={{ width, height: (width * BOX[1]) / BOX[0] }}>
-        <Group transform={whole}>
-          <Group transform={flutter}>
-            <Picture picture={pictures.back} />
-          </Group>
-          <Picture picture={pictures.body} />
-          <Group transform={blink}>
-            <Picture picture={pictures.eyes} />
-          </Group>
-          <Picture picture={pictures.hat} />
-          <Group transform={sway}>
-            <Picture picture={pictures.hand} />
-          </Group>
-        </Group>
-      </Canvas>
+      <MascotFigure look={look} width={width} hop={hop} />
     </Pressable>
   );
 }

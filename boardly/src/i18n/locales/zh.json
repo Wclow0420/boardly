@@ -28,7 +28,8 @@
     "home": "首页",
     "games": "游戏",
     "friends": "好友",
-    "profile": "我的"
+    "profile": "我的",
+    "mascot": "角色"
   },
   "home": {
     "greeting": "嗨，{{name}}！",
@@ -1970,6 +1971,37 @@
       "tapNext": "点一下看下一个",
       "nextLevel": "下一级",
       "topLevel": "已达最高等级"
+    }
+  },
+  "mascot": {
+    "tab": "角色",
+    "wardrobe": "衣柜",
+    "close": "关闭",
+    "tapToHop": "点一下让它跳",
+    "failed": "没成功，再试一次",
+    "reset": "还原",
+    "starter": "初始",
+    "buy_one": "购买 {{count}} 件 · {{price}}",
+    "buy_other": "购买 {{count}} 件 · {{price}}",
+    "save": "保存造型",
+    "lookingGood": "真好看",
+    "free": "免费",
+    "owned": "已拥有",
+    "open": "衣柜",
+    "soon": "小游戏即将推出：和你的角色一起玩，赚金币。",
+    "hello": "嗨，{{name}}！",
+    "tabs": {
+      "skin": "套装",
+      "colour": "颜色",
+      "eyes": "眼睛",
+      "mouth": "嘴巴",
+      "nose": "鼻子",
+      "hat": "帽子",
+      "top": "上衣",
+      "bottom": "下装",
+      "shoes": "鞋子",
+      "hand": "手持",
+      "back": "背饰"
     }
   }
 }

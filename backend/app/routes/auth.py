@@ -17,6 +17,7 @@ from app.cosmetics import (
 )
 from app.auth import issue_tokens, require_auth, user_from_token
 from app.extensions import db, limiter, socketio
+from app.mascot import MASCOT_PRICES, clean_look, look_items, owns_item
 from app.models import Avatar, Friendship, Room, RoomPlayer, User
 from app.outcomes import player_card
 from app.utils import api_error
@@ -192,6 +193,45 @@ def buy_border(border_id):
     return {"user": me.to_self_dict()}
 
 
+@auth_bp.put("/me/mascot")
+@require_auth
+def wear_mascot():
+    """Body: {"look": {...}} — dress the mascot in things already owned."""
+    look = clean_look((request.get_json(silent=True) or {}).get("look"))
+    if look is None:
+        return api_error("invalid_look", "Unknown mascot item", 400)
+    me = g.current_user
+    if not all(owns_item(me, key) for key in look_items(look)):
+        return api_error("mascot_locked", "Buy these items first", 403)
+    me.mascot = look
+    db.session.commit()
+    return {"user": me.to_self_dict()}
+
+
+@auth_bp.post("/me/mascot/buy")
+@require_auth
+def buy_mascot():
+    """Body: {"look": {...}} — buy every item the look wears that isn't
+    owned yet, all or nothing, and put it on."""
+    look = clean_look((request.get_json(silent=True) or {}).get("look"))
+    if look is None:
+        return api_error("invalid_look", "Unknown mascot item", 400)
+    # Lock the account row so the balance cannot be spent twice
+    me = db.session.get(
+        User, g.current_user.id, with_for_update=True, populate_existing=True
+    )
+    new = [key for key in dict.fromkeys(look_items(look)) if not owns_item(me, key)]
+    price = sum(MASCOT_PRICES[key] for key in new)
+    if me.coins < price:
+        db.session.rollback()  # let go of the row lock
+        return api_error("not_enough_coins", "Not enough coins", 402)
+    me.coins -= price
+    me.owned_mascot = [*(me.owned_mascot or []), *new]
+    me.mascot = look
+    db.session.commit()
+    return {"user": me.to_self_dict()}
+
+
 @auth_bp.post("/password")
 @limiter.limit("10 per minute")
 @require_auth
@@ -253,6 +293,8 @@ def delete_account():
     me.border_id = DEFAULT_BORDER
     me.coins = 0
     me.owned_borders = []
+    me.mascot = None
+    me.owned_mascot = []
     me.token_version += 1
     me.deleted_at = datetime.now(timezone.utc)
     db.session.commit()

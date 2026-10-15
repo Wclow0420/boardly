@@ -28,7 +28,8 @@
     "home": "Home",
     "games": "Games",
     "friends": "Friends",
-    "profile": "Profile"
+    "profile": "Profile",
+    "mascot": "Mascot"
   },
   "home": {
     "greeting": "Hey, {{name}}!",
@@ -1978,6 +1979,37 @@
       "tapNext": "Tap for the next one",
       "nextLevel": "Next level",
       "topLevel": "Top level reached"
+    }
+  },
+  "mascot": {
+    "tab": "Mascot",
+    "wardrobe": "Wardrobe",
+    "close": "Close",
+    "tapToHop": "Tap to hop",
+    "failed": "That didn't work — try again",
+    "reset": "Reset",
+    "starter": "Starter",
+    "buy_one": "Buy {{count}} · {{price}}",
+    "buy_other": "Buy {{count}} · {{price}}",
+    "save": "Save look",
+    "lookingGood": "Looking good",
+    "free": "Free",
+    "owned": "Owned",
+    "open": "Wardrobe",
+    "soon": "Mini-games coming soon: play with your mascot to earn coins.",
+    "hello": "Hi, {{name}}!",
+    "tabs": {
+      "skin": "Sets",
+      "colour": "Colour",
+      "eyes": "Eyes",
+      "mouth": "Mouth",
+      "nose": "Nose",
+      "hat": "Hat",
+      "top": "Top",
+      "bottom": "Bottom",
+      "shoes": "Shoes",
+      "hand": "Hand",
+      "back": "Back"
     }
   }
 }

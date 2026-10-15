@@ -127,6 +127,10 @@ function RootNavigator() {
               <Stack.Screen name="game/[code]" />
               <Stack.Screen name="join/[code]" />
               <Stack.Screen name="borders" />
+              <Stack.Screen
+                name="wardrobe"
+                options={{ animation: "slide_from_bottom", gestureDirection: "vertical" }}
+              />
             </Stack.Protected>
             <Stack.Protected guard={!signedIn}>
               <Stack.Screen name="(auth)" />

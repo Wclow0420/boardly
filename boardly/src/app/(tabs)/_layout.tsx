@@ -10,6 +10,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index" />
       <Tabs.Screen name="games" />
+      <Tabs.Screen name="mascot" />
       <Tabs.Screen name="friends" />
       <Tabs.Screen name="profile" />
     </Tabs>

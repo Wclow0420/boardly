@@ -1,41 +1,42 @@
-// Development only: the changing room, as a design to look at. Your
-// mascot on a lit stage, breathing; tabs for every slot; every item shown
-// on you, with its price; tap to try it on, then buy what you're wearing
-// and keep the look. Coins and what you own are pretend here. Open with
-// boardly-dev://dev/wardrobe.
+// The changing room: your mascot on a lit stage, breathing; tabs for
+// every slot; every item shown on you, with its price. Tap to try things
+// on, then buy what you're wearing (all at once) and keep the look. It
+// slides up over the tabs from the Mascot tab.
 
-import { Redirect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Svg, { Defs, Ellipse, RadialGradient, Stop } from "react-native-svg";
 
 import { EmblemGlyph } from "@/components/engraved";
 import { BackIcon, Emblem } from "@/components/icons";
 import { AppText, Button, IconButton, Ribbon, Texture } from "@/components/ui";
 import { CoinIcon } from "@/features/coins/CoinIcon";
 import { CoinPill } from "@/features/coins/CoinPill";
-import { CATALOG, STARTER, dress, type Look, type Slot } from "@/features/mascot/dress";
+import { useSession } from "@/context/SessionContext";
+import { CATALOG, STARTER, asLook, dress, type Look, type Slot } from "@/features/mascot/dress";
 import { MascotStage } from "@/features/mascot/MascotStage";
+import { Stage } from "@/features/mascot/Stage";
 import { BOX, type PartDef } from "@/features/mascot/rig";
 import { COLOURS, SKINS } from "@/features/mascot/skins";
 import { TABLE, fontFamily } from "@/theme";
-import { successHaptic, tapHaptic } from "@/utils/haptics";
+import { errorHaptic, successHaptic, tapHaptic } from "@/utils/haptics";
 
 type Tab = "skin" | "colour" | Slot;
-const TABS: { key: Tab; label: string }[] = [
-  { key: "skin", label: "Sets" },
-  { key: "colour", label: "Colour" },
-  { key: "eyes", label: "Eyes" },
-  { key: "mouth", label: "Mouth" },
-  { key: "nose", label: "Nose" },
-  { key: "hat", label: "Hat" },
-  { key: "top", label: "Top" },
-  { key: "bottom", label: "Bottom" },
-  { key: "shoes", label: "Shoes" },
-  { key: "hand", label: "Hand" },
-  { key: "back", label: "Back" },
+const TABS: { key: Tab }[] = [
+  { key: "skin" },
+  { key: "colour" },
+  { key: "eyes" },
+  { key: "mouth" },
+  { key: "nose" },
+  { key: "hat" },
+  { key: "top" },
+  { key: "bottom" },
+  { key: "shoes" },
+  { key: "hand" },
+  { key: "back" },
 ];
 
 /** An item's key in what you own: "hat:crown", "skin:gingerbread". */
@@ -67,31 +68,6 @@ function unpaid(look: Look, owned: Set<string>) {
   return items;
 }
 
-/** The stage: a warm spotlight from above and a round wooden plinth. */
-function Stage({ width, children }: { width: number; children: React.ReactNode }) {
-  const height = width * 0.86;
-  return (
-    <View style={{ width, height, alignItems: "center", justifyContent: "flex-end" }}>
-      <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
-        <Defs>
-          <RadialGradient id="light" cx="50%" cy="40%" r="55%">
-            <Stop offset="0" stopColor="#FFE6A8" stopOpacity="0.55" />
-            <Stop offset="0.6" stopColor="#F7C948" stopOpacity="0.12" />
-            <Stop offset="1" stopColor="#F7C948" stopOpacity="0" />
-          </RadialGradient>
-          <RadialGradient id="plinth" cx="50%" cy="35%" r="70%">
-            <Stop offset="0" stopColor="#B07A48" />
-            <Stop offset="1" stopColor="#5A3A22" />
-          </RadialGradient>
-        </Defs>
-        <Ellipse cx={width / 2} cy={height * 0.52} rx={width * 0.48} ry={height * 0.46} fill="url(#light)" />
-        <Ellipse cx={width / 2} cy={height * 0.9} rx={width * 0.36} ry={height * 0.075} fill="#2A180D" />
-        <Ellipse cx={width / 2} cy={height * 0.88} rx={width * 0.36} ry={height * 0.075} fill="url(#plinth)" />
-      </Svg>
-      <View style={{ marginBottom: height * 0.035 }}>{children}</View>
-    </View>
-  );
-}
 
 function ItemCard({
   look,
@@ -112,6 +88,7 @@ function ItemCard({
   wearing: boolean;
   onPress: () => void;
 }) {
+  const { t } = useTranslation();
   // shown on you, so you see the thing itself, not a picture of it
   const preview = useMemo(() => dress(withItem(look, tab, id)), [look, tab, id]);
   return (
@@ -126,7 +103,7 @@ function ItemCard({
           {wearing ? (
             <Emblem emoji="✓" size={14} />
           ) : owned || price === 0 ? (
-            <AppText style={styles.owned}>{price === 0 ? "Free" : "Owned"}</AppText>
+            <AppText style={styles.owned}>{price === 0 ? t("mascot.free") : t("mascot.owned")}</AppText>
           ) : (
             <>
               <CoinIcon size={13} />
@@ -141,16 +118,30 @@ function ItemCard({
 
 export default function Wardrobe() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
-  const [saved, setSaved] = useState<Look>({
-    ...STARTER,
-    wear: { ...STARTER.wear, top: "tee", bottom: "pants", shoes: "sneakers" },
-  });
+  const { user, dressMascot } = useSession();
+  const saved = useMemo(() => asLook(user?.mascot), [user?.mascot]);
   const [look, setLook] = useState<Look>(saved);
   const [tab, setTab] = useState<Tab>("hat");
-  const [coins, setCoins] = useState(12500);
-  const [owned, setOwned] = useState(() => new Set<string>());
-  if (!__DEV__) return <Redirect href="/" />;
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const coins = user?.coins ?? 0;
+  const owned = useMemo(() => new Set(user?.ownedMascot ?? []), [user?.ownedMascot]);
+
+  const keep = async (buy: boolean) => {
+    setBusy(true);
+    setNote(null);
+    try {
+      await dressMascot(look, buy);
+      successHaptic();
+    } catch {
+      errorHaptic();
+      setNote(t("mascot.failed"));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const toPay = unpaid(look, owned);
   const total = toPay.reduce((sum, item) => sum + item.price, 0);
@@ -175,10 +166,10 @@ export default function Wardrobe() {
       <LinearGradient colors={TABLE.table} style={StyleSheet.absoluteFill} />
       {/* header */}
       <View style={styles.header}>
-        <IconButton accessibilityLabel="Back" onPress={() => router.back()}>
+        <IconButton accessibilityLabel={t("mascot.close")} onPress={() => router.back()}>
           <BackIcon size={20} />
         </IconButton>
-        <Ribbon label="Wardrobe" colors={TABLE.ribbonGold} standalone />
+        <Ribbon label={t("mascot.wardrobe")} colors={TABLE.ribbonGold} standalone />
         <View style={{ flex: 1 }} />
         <CoinPill amount={coins} />
       </View>
@@ -188,21 +179,23 @@ export default function Wardrobe() {
         <Stage width={width - 32}>
           <MascotStage look={look} width={Math.min(200, width * 0.48)} />
         </Stage>
-        <AppText style={styles.hint}>Tap to hop</AppText>
+        <AppText style={styles.hint}>{note ?? t("mascot.tapToHop")}</AppText>
       </View>
 
       {/* the slots */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} style={{ flexGrow: 0, flexShrink: 0 }}>
-        {TABS.map((t) => (
+        {TABS.map((item) => (
           <Pressable
-            key={t.key}
+            key={item.key}
             onPress={() => {
               tapHaptic();
-              setTab(t.key);
+              setTab(item.key);
             }}
-            style={[styles.tab, tab === t.key && styles.tabOn]}
+            style={[styles.tab, tab === item.key && styles.tabOn]}
           >
-            <AppText style={[styles.tabText, tab === t.key && { color: TABLE.ink }]}>{t.label}</AppText>
+            <AppText style={[styles.tabText, tab === item.key && { color: TABLE.ink }]}>
+              {t(`mascot.tabs.${item.key}`)}
+            </AppText>
           </Pressable>
         ))}
       </ScrollView>
@@ -241,32 +234,26 @@ export default function Wardrobe() {
       {/* keep the look: buy what you're trying on first */}
       <View style={styles.footer}>
         <Button
-          label={changed ? "Reset" : "Starter"}
+          label={changed ? t("mascot.reset") : t("mascot.starter")}
           variant="secondary"
           onPress={() => setLook(changed ? saved : { ...STARTER })}
           style={{ flex: 1 }}
         />
         {toPay.length > 0 ? (
           <Button
-            label={`Buy ${toPay.length} · ${total.toLocaleString()}`}
+            label={t("mascot.buy", { count: toPay.length, price: total.toLocaleString() })}
             leftIcon={<CoinIcon size={16} />}
-            disabled={total > coins}
-            onPress={() => {
-              successHaptic();
-              setCoins(coins - total);
-              setOwned(new Set([...owned, ...toPay.map((item) => item.key)]));
-              setSaved(look);
-            }}
+            disabled={total > coins || busy}
+            loading={busy}
+            onPress={() => keep(true)}
             style={{ flex: 2 }}
           />
         ) : (
           <Button
-            label={changed ? "Save look" : "Looking good"}
-            disabled={!changed}
-            onPress={() => {
-              successHaptic();
-              setSaved(look);
-            }}
+            label={changed ? t("mascot.save") : t("mascot.lookingGood")}
+            disabled={!changed || busy}
+            loading={busy}
+            onPress={() => keep(false)}
             style={{ flex: 2 }}
           />
         )}

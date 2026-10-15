@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from app.extensions import db
+from app.mascot import DEFAULT_LOOK
 
 
 def generate_room_code():
@@ -81,6 +82,7 @@ class RoomPlayer(db.Model):
             "userId": str(self.user_id),
             "username": self.user.username if self.user else None,
             "borderId": self.user.border_id if self.user else None,
+            "mascot": (self.user.mascot or DEFAULT_LOOK) if self.user else DEFAULT_LOOK,
             "avatarUrl": self.user.avatar_url if self.user else None,
             "seat": self.seat,
             "ready": self.ready,

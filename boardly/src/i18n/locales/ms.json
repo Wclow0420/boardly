@@ -28,7 +28,8 @@
     "home": "Utama",
     "games": "Permainan",
     "friends": "Rakan",
-    "profile": "Profil"
+    "profile": "Profil",
+    "mascot": "Maskot"
   },
   "home": {
     "greeting": "Hai, {{name}}!",
@@ -1975,6 +1976,37 @@
       "tapNext": "Ketik untuk yang seterusnya",
       "nextLevel": "Tahap seterusnya",
       "topLevel": "Tahap tertinggi dicapai"
+    }
+  },
+  "mascot": {
+    "tab": "Maskot",
+    "wardrobe": "Almari",
+    "close": "Tutup",
+    "tapToHop": "Ketik untuk melompat",
+    "failed": "Tidak berjaya — cuba lagi",
+    "reset": "Set semula",
+    "starter": "Asal",
+    "buy_one": "Beli {{count}} · {{price}}",
+    "buy_other": "Beli {{count}} · {{price}}",
+    "save": "Simpan gaya",
+    "lookingGood": "Nampak hebat",
+    "free": "Percuma",
+    "owned": "Dimiliki",
+    "open": "Almari",
+    "soon": "Permainan mini akan datang: main dengan maskot anda untuk dapat syiling.",
+    "hello": "Hai, {{name}}!",
+    "tabs": {
+      "skin": "Set",
+      "colour": "Warna",
+      "eyes": "Mata",
+      "mouth": "Mulut",
+      "nose": "Hidung",
+      "hat": "Topi",
+      "top": "Baju",
+      "bottom": "Seluar",
+      "shoes": "Kasut",
+      "hand": "Pegang",
+      "back": "Belakang"
     }
   }
 }

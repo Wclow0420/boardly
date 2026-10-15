@@ -122,6 +122,10 @@ export interface AuthUser {
   coins?: number;
   /** Paid borders you have unlocked. Only sent for your own account. */
   ownedBorders?: string[];
+  /** Their mascot as dressed (features/mascot). */
+  mascot?: MascotLook;
+  /** Mascot items you have bought ("hat:crown"). Your own account only. */
+  ownedMascot?: string[];
   /** A bot the server plays. */
   isBot?: boolean;
 }
@@ -153,10 +157,18 @@ export interface GameInfo {
   options?: Record<string, string[]>;
 }
 
+/** A mascot's look: its skin, colour and what it wears in each slot. */
+export interface MascotLook {
+  skin: string;
+  colour: string;
+  wear: Record<string, string>;
+}
+
 export interface RoomPlayerInfo {
   userId: string;
   username: string;
   borderId: string | null;
+  mascot?: MascotLook;
   avatarUrl?: string | null;
   seat: number;
   ready: boolean;
@@ -310,6 +322,20 @@ export const api = {
         `/auth/me/borders/${encodeURIComponent(borderId)}/buy`,
         { method: "POST" }
       ),
+
+    /** Dress the mascot in things already owned. */
+    wearMascot: (look: MascotLook) =>
+      request<{ user: AuthUser }>("/auth/me/mascot", {
+        method: "PUT",
+        body: JSON.stringify({ look }),
+      }),
+
+    /** Buy what the look wears that isn't owned yet, and put it on. */
+    buyMascot: (look: MascotLook) =>
+      request<{ user: AuthUser }>("/auth/me/mascot/buy", {
+        method: "POST",
+        body: JSON.stringify({ look }),
+      }),
 
     setBorder: (borderId: string) =>
       request<{ user: AuthUser }>("/auth/me", {
