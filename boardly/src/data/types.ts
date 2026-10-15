@@ -1,3 +1,4 @@
+import type { Together } from "@/api/client";
 import type { PresenceStatus } from "@/components/ui";
 
 export type TableStatus = "inProgress" | "waiting" | "finished" | "closed";
@@ -46,6 +47,10 @@ export interface Friend {
   presence?: PresenceStatus;
   /** Pending request id (incoming / outgoing). */
   requestId?: string;
+  /** The game they're playing now (friends only). */
+  playing?: string | null;
+  /** What we've played together. */
+  together?: Together | null;
 }
 
 export interface LobbyPlayer {

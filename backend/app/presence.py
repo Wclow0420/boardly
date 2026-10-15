@@ -78,6 +78,21 @@ def presence_of(user_ids) -> dict:
     }
 
 
+def playing(user_ids) -> dict:
+    """user id -> the game type they're playing right now, for those
+    online at a table that has started."""
+    online = [uid for uid in user_ids if is_online(uid)]
+    if not online:
+        return {}
+    rows = (
+        db.session.query(RoomPlayer.user_id, Room.game_type)
+        .join(Room)
+        .filter(RoomPlayer.user_id.in_(online), Room.status == "playing")
+        .all()
+    )
+    return {user_id: game_type for user_id, game_type in rows}
+
+
 def friend_ids(user_id) -> list:
     rows = Friendship.query.filter(
         Friendship.status == "accepted",

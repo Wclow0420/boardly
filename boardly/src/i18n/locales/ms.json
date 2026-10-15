@@ -10,7 +10,13 @@
     "errorTitle": "Ada masalah berlaku",
     "errorSubtitle": "Sila semak sambungan anda dan cuba lagi.",
     "emptyTitle": "Tiada apa-apa di sini lagi",
-    "back": "Kembali"
+    "back": "Kembali",
+    "ago": {
+      "now": "baru tadi",
+      "minutes": "{{n}} min lalu",
+      "hours": "{{n}} jam lalu",
+      "days": "{{n}} hari lalu"
+    }
   },
   "updates": {
     "title": "Kemas Kini Sedia",
@@ -124,6 +130,23 @@
       "requestsTitle": "Tiada permintaan tertunda",
       "recentTitle": "Tiada pemain terkini",
       "recentSubtitle": "Orang yang bermain dengan anda akan muncul di sini."
+    },
+    "table": {
+      "atTable": "Di meja",
+      "away": "Tiada",
+      "nobody": "Tiada sesiapa di meja sekarang.",
+      "openFirst": "Buka meja dahulu, kemudian jemput rakan dari sini.",
+      "playing": "Bermain {{game}}"
+    },
+    "together": {
+      "count_one": "{{count}} permainan bersama",
+      "count_other": "{{count}} permainan bersama",
+      "none": "Belum pernah main bersama",
+      "last": "Terakhir: {{game}} · {{when}}"
+    },
+    "card": {
+      "badges": "Lencana",
+      "noBadges": "Belum ada lencana"
     }
   },
   "invite": {

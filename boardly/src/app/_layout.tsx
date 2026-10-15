@@ -27,6 +27,7 @@ import { WebFrame } from "@/components/ui";
 import { BorderClockProvider } from "@/features/cosmetics/art";
 import { SessionProvider, useSession } from "@/context/SessionContext";
 import { FriendsRealtime } from "@/features/friends/FriendsRealtime";
+import { PlayerCardProvider } from "@/features/players/PlayerCardProvider";
 import { useOtaUpdates } from "@/hooks/useOtaUpdates";
 import { LocaleProvider } from "@/i18n/LocaleContext";
 import "@/i18n";
@@ -171,7 +172,9 @@ export default function RootLayout() {
                 <WebFrame>
                   <BorderClockProvider>
                   <BottomSheetModalProvider>
-                    <RootNavigator />
+                    <PlayerCardProvider>
+                      <RootNavigator />
+                    </PlayerCardProvider>
                   </BottomSheetModalProvider>
                   </BorderClockProvider>
                 </WebFrame>

@@ -10,7 +10,13 @@
     "errorTitle": "Something went wrong",
     "errorSubtitle": "Please check your connection and try again.",
     "emptyTitle": "Nothing here yet",
-    "back": "Back"
+    "back": "Back",
+    "ago": {
+      "now": "just now",
+      "minutes": "{{n}}m ago",
+      "hours": "{{n}}h ago",
+      "days": "{{n}}d ago"
+    }
   },
   "updates": {
     "title": "Update Ready",
@@ -124,6 +130,23 @@
       "requestsTitle": "No pending requests",
       "recentTitle": "No recent players",
       "recentSubtitle": "People you play with will show up here."
+    },
+    "table": {
+      "atTable": "At the table",
+      "away": "Away",
+      "nobody": "Nobody's at the table right now.",
+      "openFirst": "Open a table, then invite friends from here.",
+      "playing": "Playing {{game}}"
+    },
+    "together": {
+      "count_one": "{{count}} game together",
+      "count_other": "{{count}} games together",
+      "none": "Haven't played together yet",
+      "last": "Last: {{game}} · {{when}}"
+    },
+    "card": {
+      "badges": "Badges",
+      "noBadges": "No badges yet"
     }
   },
   "invite": {

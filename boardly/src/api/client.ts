@@ -122,6 +122,8 @@ export interface AuthUser {
   coins?: number;
   /** Paid borders you have unlocked. Only sent for your own account. */
   ownedBorders?: string[];
+  /** A bot the server plays. */
+  isBot?: boolean;
 }
 
 export interface CoinRewardInfo {
@@ -199,6 +201,34 @@ export interface FriendUser extends AuthUser {
   relation: FriendRelation;
   requestId: string | null;
   presence: "online" | "inGame" | "offline" | null;
+  /** The game a friend is playing right now (friends only). */
+  playing: string | null;
+  together: Together | null;
+}
+
+/** The finished games two people both sat at. */
+export interface Together {
+  games: number;
+  lastGameType: string | null;
+  /** ISO time the latest one ended. */
+  lastPlayedAt: string | null;
+}
+
+/** Someone's player card: their numbers, the badges they've earned, and
+ *  how we know each other. Presence is only shared between friends. */
+export interface FriendCard {
+  user: AuthUser;
+  relation: FriendRelation;
+  /** The pending request between us, to accept or cancel. */
+  requestId: string | null;
+  gamesPlayed: number;
+  wins: number;
+  bestStreak: number;
+  favourite: string | null;
+  badges: BadgeRecord[];
+  together: Together | null;
+  presence: "online" | "inGame" | "offline" | null;
+  playing: string | null;
 }
 
 export interface FriendsListing {
@@ -349,6 +379,9 @@ export const api = {
 
     remove: (userId: string) =>
       request<{ ok: true }>(`/friends/${userId}`, { method: "DELETE" }),
+
+    /** The player card of a friend, or of someone I've shared a table with. */
+    card: (userId: string) => request<{ card: FriendCard }>(`/friends/${userId}/card`),
 
     /** Invite an online friend to the table I'm waiting at. */
     invite: (userId: string) =>
