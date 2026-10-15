@@ -11,16 +11,30 @@ import { tapHaptic } from "@/utils/haptics";
 export function PlayerCard({
   player,
   onRemove,
+  onPress,
 }: {
   player: LobbyPlayer;
   /** Shown on a bot's card for the host: take the bot off the table. */
   onRemove?: () => void;
+  /** Tapping the card: show who they are. */
+  onPress?: () => void;
 }) {
   const { t } = useTranslation();
   const { colors, radius } = useTheme();
 
   return (
-    <Card radius={radius.xl} style={styles.card}>
+    <Card
+      radius={radius.xl}
+      style={styles.card}
+      onPress={
+        onPress
+          ? () => {
+              tapHaptic();
+              onPress();
+            }
+          : undefined
+      }
+    >
       {onRemove ? (
         <Pressable
           accessibilityRole="button"
@@ -35,7 +49,11 @@ export function PlayerCard({
             { backgroundColor: pressed ? colors.border : colors.well },
           ]}
         >
-          <AppText variant="caption" color="textMuted" style={styles.removeMark}>
+          <AppText
+            variant="caption"
+            color="textMuted"
+            style={styles.removeMark}
+          >
             ✕
           </AppText>
         </Pressable>

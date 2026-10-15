@@ -9,9 +9,23 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Die, type DieHandle } from "@/components/tabletop/Die";
 import { MEEPLE_COLORS, Meeple } from "@/components/tabletop/Meeple";
 import { AppText } from "@/components/ui";
+import type { Friend } from "@/data/types";
+import { FriendTile } from "@/features/friends/FriendTile";
 import { GameBox } from "@/features/games/GameBox";
 import { GAMES } from "@/games/registry";
 import { useTheme } from "@/theme";
+
+/** Friends at the table: one free, one in a game. */
+const AT_TABLE: Friend[] = [
+  { id: "u-ming", name: "Ming", relation: "friend", presence: "online" },
+  {
+    id: "u-hua",
+    name: "Hua",
+    relation: "friend",
+    presence: "inGame",
+    playing: "shelter",
+  },
+];
 
 export default function TabletopPreview() {
   const { colors, spacing } = useTheme();
@@ -39,6 +53,18 @@ export default function TabletopPreview() {
         <View style={{ flexDirection: "row", gap: 4 }}>
           {MEEPLE_COLORS.map((color, i) => (
             <Meeple key={color} size={24} color={color} empty={i > 6} />
+          ))}
+        </View>
+        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+          {AT_TABLE.map((friend) => (
+            <FriendTile
+              key={friend.id}
+              friend={friend}
+              note={null}
+              busy={false}
+              onOpen={() => {}}
+              onInvite={() => {}}
+            />
           ))}
         </View>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>

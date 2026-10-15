@@ -10,7 +10,13 @@
     "errorTitle": "出错了",
     "errorSubtitle": "请检查网络连接后重试。",
     "emptyTitle": "这里还没有内容",
-    "back": "返回"
+    "back": "返回",
+    "ago": {
+      "now": "刚刚",
+      "minutes": "{{n}} 分钟前",
+      "hours": "{{n}} 小时前",
+      "days": "{{n}} 天前"
+    }
   },
   "updates": {
     "title": "更新已就绪",
@@ -124,6 +130,22 @@
       "requestsTitle": "没有待处理的请求",
       "recentTitle": "没有最近一起玩的玩家",
       "recentSubtitle": "和你一起玩过的人会显示在这里。"
+    },
+    "table": {
+      "atTable": "在桌边",
+      "away": "离开中",
+      "nobody": "现在桌边没有人。",
+      "openFirst": "先开一桌，再从这里邀请朋友。",
+      "playing": "正在玩{{game}}"
+    },
+    "together": {
+      "count_other": "一起玩了 {{count}} 局",
+      "none": "还没一起玩过",
+      "last": "上次：{{game}} · {{when}}"
+    },
+    "card": {
+      "badges": "徽章",
+      "noBadges": "还没有徽章"
     }
   },
   "invite": {

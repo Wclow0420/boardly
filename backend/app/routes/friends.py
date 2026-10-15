@@ -8,7 +8,8 @@ from app import presence
 from app.auth import require_auth
 from app.extensions import db, socketio
 from app.games import GAMES
-from app.models import Friendship, Room, RoomPlayer, User
+from app.models import Friendship, Room, RoomPlayer, SessionPlayer, User
+from app.outcomes import player_card
 from app.utils import api_error
 
 friends_bp = Blueprint("friends", __name__)
@@ -50,16 +51,48 @@ def _relation(row, user_id):
     return "outgoing" if row.requester_id == user_id else "incoming"
 
 
-def _entry(user, row, me_id, presences=None):
-    """One person as the app lists them. Presence is only shared
-    between friends."""
+def _entry(user, row, me_id, presences=None, games=None, together=None):
+    """One person as the app lists them. Presence (and which game they
+    are playing) is only shared between friends; `together` is what the
+    two of us have played (see _together)."""
     relation = _relation(row, me_id)
+    friend = relation == "friend"
     return {
         **user.to_dict(),
         "relation": relation,
-        "requestId": str(row.id) if row is not None and relation != "friend" else None,
-        "presence": (presences or {}).get(user.id) if relation == "friend" else None,
+        "requestId": str(row.id) if row is not None and not friend else None,
+        "presence": (presences or {}).get(user.id) if friend else None,
+        "playing": (games or {}).get(user.id) if friend else None,
+        "together": (together or {}).get(user.id),
     }
+
+
+def _together(me_id, other_ids) -> dict:
+    """other user id -> the finished games we both sat at: how many,
+    and the latest one's game and time."""
+    if not other_ids:
+        return {}
+    mine = db.session.query(SessionPlayer.session_id).filter_by(user_id=me_id)
+    rows = (
+        SessionPlayer.query.filter(
+            SessionPlayer.session_id.in_(mine),
+            SessionPlayer.user_id.in_(list(other_ids)),
+        )
+        .order_by(SessionPlayer.finished_at.desc())
+        .all()
+    )
+    out = {}
+    for row in rows:
+        entry = out.setdefault(
+            row.user_id,
+            {
+                "games": 0,
+                "lastGameType": row.game_type,
+                "lastPlayedAt": row.finished_at.isoformat(),
+            },
+        )
+        entry["games"] += 1
+    return out
 
 
 @friends_bp.get("")
@@ -92,6 +125,9 @@ def list_friends():
             recent_ids.append(user_id)
     recent_ids = recent_ids[:RECENT_LIMIT]
 
+    games = presence.playing([r.other_id(me.id) for r in friend_rows])
+    together = _together(me.id, set(by_other) | set(recent_ids))
+
     needed = set(by_other) | set(recent_ids)
     users = (
         {u.id: u for u in User.query.filter(User.id.in_(needed)).all()}
@@ -101,7 +137,8 @@ def list_friends():
 
     def entries(selected):
         return [
-            _entry(users[r.other_id(me.id)], r, me.id, presences) for r in selected
+            _entry(users[r.other_id(me.id)], r, me.id, presences, games, together)
+            for r in selected
         ]
 
     friends = entries(friend_rows)
@@ -118,7 +155,7 @@ def list_friends():
         "incoming": entries([r for r in pending if r.addressee_id == me.id]),
         "outgoing": entries([r for r in pending if r.requester_id == me.id]),
         "recent": [
-            _entry(users[uid], by_other.get(uid), me.id, presences)
+            _entry(users[uid], by_other.get(uid), me.id, presences, games, together)
             for uid in recent_ids
         ],
     }
@@ -243,6 +280,51 @@ def remove_friend(user_id):
     db.session.commit()
     presence.notify_users([me.id, user_id])
     return {"ok": True}
+
+
+def _shared_a_table(me_id, other_id) -> bool:
+    """Whether we have ever sat at the same table (one we're at now
+    counts)."""
+    mine = db.session.query(RoomPlayer.room_id).filter_by(user_id=me_id)
+    return (
+        db.session.query(RoomPlayer.id)
+        .filter(RoomPlayer.room_id.in_(mine), RoomPlayer.user_id == other_id)
+        .first()
+        is not None
+    )
+
+
+@friends_bp.get("/<uuid:user_id>/card")
+@require_auth
+def player_card_of(user_id):
+    """Someone's player card: their numbers, the badges they have earned
+    (never their progress), what we have played together, and how we
+    know each other. Open to friends and to anyone I've shared a table
+    with; presence stays between friends."""
+    me = g.current_user
+    row = _between(me.id, user_id)
+    is_friend = row is not None and row.status == "accepted"
+    if not is_friend and not _shared_a_table(me.id, user_id):
+        return api_error("not_found", "User not found", 404)
+    user = db.session.get(User, user_id)
+    if user is None or user.deleted_at is not None:
+        return api_error("not_found", "User not found", 404)
+    card = player_card(user.id)
+    return {
+        "card": {
+            "user": user.to_dict(),
+            "relation": _relation(row, me.id),
+            "requestId": str(row.id) if row is not None and not is_friend else None,
+            "gamesPlayed": card["gamesPlayed"],
+            "wins": card["wins"],
+            "bestStreak": card["bestStreak"],
+            "favourite": card["favourite"],
+            "badges": [b for b in card["badges"] if b["unlockedAt"]],
+            "together": _together(me.id, {user.id}).get(user.id),
+            "presence": presence.presence_of([user.id])[user.id] if is_friend else None,
+            "playing": presence.playing([user.id]).get(user.id) if is_friend else None,
+        }
+    }
 
 
 @friends_bp.post("/<uuid:user_id>/invite")

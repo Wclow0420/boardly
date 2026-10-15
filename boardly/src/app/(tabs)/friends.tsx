@@ -1,12 +1,17 @@
-import { useMemo, useRef, useState } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
+// Friends, around the table. Those online stand at the table as tiles —
+// their meeple, what they're doing, one tap to invite them to my table —
+// and those away wait below. Tap anyone for their player card. Requests
+// and the people I played with recently have tabs of their own.
+
+import { useRouter } from "expo-router";
+import { useRef } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { PlusIcon } from "@/components/icons";
 import {
   AppText,
   Chip,
-  ConfirmSheet,
   EmptyState,
   ErrorState,
   Frame,
@@ -19,59 +24,45 @@ import {
 } from "@/components/ui";
 import type { Friend } from "@/data/types";
 import { AddFriendSheet } from "@/features/friends/AddFriendSheet";
+import { FriendLine, RecentAction } from "@/features/friends/FriendLine";
 import { FriendRow } from "@/features/friends/FriendRow";
+import { FriendTile } from "@/features/friends/FriendTile";
 import {
   FRIEND_TABS,
+  useFriendActions,
   useFriends,
-  useRemoveFriend,
 } from "@/features/friends/hooks";
+import { useMyTables } from "@/features/home/hooks";
+import { usePlayerCard } from "@/features/players/PlayerCardProvider";
 import { TABLE, useTheme } from "@/theme";
-
-type Row =
-  | { kind: "header"; key: string; label: string }
-  | { kind: "friend"; key: string; friend: Friend };
 
 export default function FriendsScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
   const { colors, spacing } = useTheme();
   const { data, tab, setTab, isLoading, isError, refetch } = useFriends();
-  const removeFriend = useRemoveFriend();
+  const { tables } = useMyTables();
+  const playerCard = usePlayerCard();
   const addSheetRef = useRef<GorhomBottomSheetModal>(null);
-  const removeSheetRef = useRef<GorhomBottomSheetModal>(null);
-  const [removing, setRemoving] = useState<Friend | null>(null);
 
-  const rows: Row[] = useMemo(() => {
-    if (!data) return [];
-    const people = (prefix: string, list: Friend[]): Row[] =>
-      list.map((friend) => ({
-        kind: "friend",
-        key: `${prefix}:${friend.id}`,
-        friend,
-      }));
+  // invites go to the table I'm waiting at; without one, pick a game first
+  const waiting = tables.some((table) => table.status === "waiting");
+  const open = (friend: Friend) =>
+    playerCard.show({
+      id: friend.id,
+      name: friend.name,
+      borderId: friend.borderId,
+      avatarUrl: friend.avatarUrl,
+    });
 
-    if (tab === "friends") return people("friend", data.friends);
-    if (tab === "recent") return people("recent", data.recent);
-
-    const result: Row[] = [];
-    if (data.incoming.length > 0) {
-      result.push({
-        kind: "header",
-        key: "h:incoming",
-        label: t("friends.sections.incoming"),
-      });
-      result.push(...people("incoming", data.incoming));
-    }
-    if (data.outgoing.length > 0) {
-      result.push({
-        kind: "header",
-        key: "h:outgoing",
-        label: t("friends.sections.outgoing"),
-      });
-      result.push(...people("outgoing", data.outgoing));
-    }
-    return result;
-  }, [data, tab, t]);
-
+  const atTable =
+    data?.friends.filter(
+      (f) => f.presence === "online" || f.presence === "inGame",
+    ) ?? [];
+  const away =
+    data?.friends.filter(
+      (f) => f.presence !== "online" && f.presence !== "inGame",
+    ) ?? [];
   const incomingCount = data?.incoming.length ?? 0;
 
   const header = (
@@ -108,86 +99,177 @@ export default function FriendsScreen() {
     </View>
   );
 
-  const empty = isLoading ? (
-    <View>
-      <SkeletonListItem />
-      <SkeletonListItem />
-      <SkeletonListItem />
-    </View>
-  ) : isError ? (
-    <ErrorState
-      title={t("common.errorTitle")}
-      subtitle={t("common.errorSubtitle")}
-      retryLabel={t("common.retry")}
-      onRetry={() => refetch()}
-    />
-  ) : tab === "friends" ? (
-    <EmptyState
-      emoji="👋"
-      title={t("friends.empty.friendsTitle")}
-      subtitle={t("friends.empty.friendsSubtitle")}
-      actionLabel={t("friends.add.title")}
-      onAction={() => addSheetRef.current?.present()}
-    />
-  ) : tab === "requests" ? (
-    <EmptyState emoji="📭" title={t("friends.empty.requestsTitle")} />
-  ) : (
-    <EmptyState
-      emoji="🎲"
-      title={t("friends.empty.recentTitle")}
-      subtitle={t("friends.empty.recentSubtitle")}
-    />
-  );
+  let body;
+  if (isLoading) {
+    body = (
+      <Frame tone="dark" style={styles.frame}>
+        <SkeletonListItem />
+        <SkeletonListItem />
+        <SkeletonListItem />
+      </Frame>
+    );
+  } else if (isError || !data) {
+    body = (
+      <ErrorState
+        title={t("common.errorTitle")}
+        subtitle={t("common.errorSubtitle")}
+        retryLabel={t("common.retry")}
+        onRetry={() => refetch()}
+      />
+    );
+  } else if (tab === "friends") {
+    body =
+      data.friends.length === 0 ? (
+        <EmptyState
+          emoji="👋"
+          title={t("friends.empty.friendsTitle")}
+          subtitle={t("friends.empty.friendsSubtitle")}
+          actionLabel={t("friends.add.title")}
+          onAction={() => addSheetRef.current?.present()}
+        />
+      ) : (
+        <>
+          <Ribbon
+            label={t("friends.table.atTable")}
+            colors={TABLE.ribbonBlue}
+            style={styles.firstRibbon}
+          />
+          <Frame tone="blue" stitched style={styles.table}>
+            {atTable.length ? (
+              <View style={styles.tiles}>
+                {atTable.map((friend) => (
+                  <InviteTile
+                    key={friend.id}
+                    friend={friend}
+                    waiting={waiting}
+                    onOpen={() => open(friend)}
+                    onNoTable={() => router.push("/games")}
+                  />
+                ))}
+              </View>
+            ) : (
+              <AppText variant="caption" align="center" style={styles.nobody}>
+                {t("friends.table.nobody")}
+              </AppText>
+            )}
+            {atTable.length && !waiting ? (
+              <AppText variant="tiny" align="center" style={styles.hint}>
+                {t("friends.table.openFirst")}
+              </AppText>
+            ) : null}
+          </Frame>
 
-  return (
-    <Screen scroll={false} backdrop={<TableBackdrop dim={0.45} />}>
-      {header}
-      <Frame tone="dark" style={styles.list}>
-      <FlatList
-        data={rows}
-        keyExtractor={(row) => row.key}
-        renderItem={({ item }) =>
-          item.kind === "header" ? (
+          {away.length ? (
+            <>
+              <Ribbon
+                label={t("friends.table.away")}
+                colors={TABLE.ribbonRed}
+                style={{ marginTop: spacing.xl }}
+              />
+              <Frame tone="wood" style={styles.frame}>
+                {away.map((friend, i) => (
+                  <FriendLine
+                    key={friend.id}
+                    friend={friend}
+                    dim
+                    divided={i > 0}
+                    onOpen={() => open(friend)}
+                  />
+                ))}
+              </Frame>
+            </>
+          ) : null}
+        </>
+      );
+  } else if (tab === "requests") {
+    const pending = [
+      ...(data.incoming.length
+        ? [{ label: t("friends.sections.incoming"), list: data.incoming }]
+        : []),
+      ...(data.outgoing.length
+        ? [{ label: t("friends.sections.outgoing"), list: data.outgoing }]
+        : []),
+    ];
+    body = pending.length ? (
+      <Frame tone="dark" style={styles.frame}>
+        {pending.map((section) => (
+          <View key={section.label}>
             <AppText
               variant="caption"
               color="textMuted"
               style={{ marginTop: spacing.md, marginBottom: spacing.xs }}
             >
-              {item.label}
+              {section.label}
             </AppText>
-          ) : (
-            <FriendRow
-              friend={item.friend}
-              onMore={(friend) => {
-                setRemoving(friend);
-                removeSheetRef.current?.present();
-              }}
-            />
-          )
-        }
-        ListEmptyComponent={empty}
+            {section.list.map((friend) => (
+              <FriendRow key={friend.id} friend={friend} />
+            ))}
+          </View>
+        ))}
+      </Frame>
+    ) : (
+      <EmptyState emoji="📭" title={t("friends.empty.requestsTitle")} />
+    );
+  } else {
+    body = data.recent.length ? (
+      <Frame tone="wood" style={styles.frame}>
+        {data.recent.map((person, i) => (
+          <FriendLine
+            key={person.id}
+            friend={person}
+            divided={i > 0}
+            onOpen={() => open(person)}
+            trailing={<RecentAction friend={person} />}
+          />
+        ))}
+      </Frame>
+    ) : (
+      <EmptyState
+        emoji="🎲"
+        title={t("friends.empty.recentTitle")}
+        subtitle={t("friends.empty.recentSubtitle")}
+      />
+    );
+  }
+
+  return (
+    <Screen scroll={false} backdrop={<TableBackdrop dim={0.45} />}>
+      {header}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-      />
-      </Frame>
+      >
+        {body}
+      </ScrollView>
 
       <AddFriendSheet ref={addSheetRef} />
-      <ConfirmSheet
-        ref={removeSheetRef}
-        title={t("friends.removeTitle", { name: removing?.name ?? "" })}
-        message={t("friends.removeMessage")}
-        confirmLabel={t("friends.actions.remove")}
-        cancelLabel={t("common.cancel")}
-        destructive
-        loading={removeFriend.isPending}
-        onConfirm={() => {
-          if (!removing) return;
-          removeFriend.mutate(removing.id, {
-            onSettled: () => removeSheetRef.current?.dismiss(),
-          });
-        }}
-      />
     </Screen>
+  );
+}
+
+/** A tile with its own invite (and its own "Invite sent!"). */
+function InviteTile({
+  friend,
+  waiting,
+  onOpen,
+  onNoTable,
+}: {
+  friend: Friend;
+  waiting: boolean;
+  onOpen: () => void;
+  onNoTable: () => void;
+}) {
+  const actions = useFriendActions(friend);
+  return (
+    <FriendTile
+      friend={friend}
+      note={actions.note}
+      busy={actions.busy}
+      onOpen={onOpen}
+      onInvite={waiting ? actions.invite : onNoTable}
+    />
   );
 }
 
@@ -206,6 +288,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   tabs: { flexDirection: "row", gap: 8 },
-  // Grows with the list, and scrolls inside itself once it fills the page
-  list: { flexShrink: 1, marginTop: 16, paddingVertical: 8 },
+  scroll: { flex: 1, marginTop: 8 },
+  content: { paddingBottom: 32, paddingTop: 8 },
+  firstRibbon: { marginTop: 4 },
+  table: { paddingTop: 20, paddingHorizontal: 12, paddingBottom: 14 },
+  tiles: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    rowGap: 12,
+  },
+  nobody: { color: TABLE.creamMuted, paddingVertical: 18 },
+  hint: { color: TABLE.creamMuted, marginTop: 12 },
+  frame: { paddingTop: 14, paddingBottom: 6 },
 });
