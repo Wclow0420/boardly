@@ -489,6 +489,14 @@ export const BORDERS: ProfileBorder[] = [
     price: 5000,
   },
   {
+    id: "baroque-silver",
+    name: "Baroque Silver",
+    kind: "art",
+    art: "baroque-silver",
+    rarity: "epic",
+    price: 3800,
+  },
+  {
     id: "winged-crest",
     name: "Winged Crest",
     kind: "art",

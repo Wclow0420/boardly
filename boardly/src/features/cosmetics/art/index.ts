@@ -1,5 +1,6 @@
 // Every art border's drawing, by id (the ids in borders.ts).
 
+import { BAROQUE_ART } from "./baroque";
 import { CREST_ART } from "./crest";
 import { CROWN_ART } from "./crowns";
 import { EARNED_ART } from "./earned";
@@ -23,6 +24,7 @@ export const ART: Record<string, ArtBorderDrawing> = {
   ...SERAPH_ART,
   ...FALLEN_ART,
   ...CREST_ART,
+  ...BAROQUE_ART,
 };
 
 export { BorderClockProvider, useBorderClock } from "./kit";
