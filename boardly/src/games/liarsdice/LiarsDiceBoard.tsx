@@ -569,6 +569,7 @@ function Players({
                 name={player.username}
                 borderId={player.borderId}
                 avatarUrl={player.avatarUrl}
+                mascot={player.mascot}
                 size={40}
                 ringColor={up ? colors.primary : colors.border}
               />

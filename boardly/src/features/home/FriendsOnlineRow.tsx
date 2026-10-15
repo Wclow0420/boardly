@@ -27,6 +27,7 @@ export function FriendsOnlineRow({ friends, onInvite }: FriendsOnlineRowProps) {
             size={46}
             presence={friend.presence}
             imageUri={assetUrl(friend.avatarUrl)}
+            mascot={friend.mascot}
           />
           <AppText variant="tiny" color="textMuted" numberOfLines={1}>
             {friend.name}

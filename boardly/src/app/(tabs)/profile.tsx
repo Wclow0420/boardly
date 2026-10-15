@@ -167,6 +167,7 @@ export default function ProfileScreen() {
                 size={64}
                 borderId={borderId}
                 avatarUrl={user?.avatarUrl}
+                mascot={user?.mascot}
               />
               <View style={styles.editBadge}>
                 <Emblem emoji="📷" size={16} />

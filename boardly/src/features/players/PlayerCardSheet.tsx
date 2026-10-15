@@ -10,7 +10,7 @@ import { forwardRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { ApiError, api } from "@/api/client";
+import { ApiError, api, type MascotLook } from "@/api/client";
 import { Badge, TIER_METAL } from "@/components/badges/Badge";
 import { useIsoClock } from "@/components/iso";
 import { Meeple } from "@/components/tabletop/Meeple";
@@ -39,6 +39,7 @@ export interface CardPerson {
   name: string;
   borderId?: string | null;
   avatarUrl?: string | null;
+  mascot?: MascotLook | null;
   isBot?: boolean;
 }
 
@@ -164,6 +165,7 @@ function Body({
             name={person.name}
             borderId={card?.user.borderId ?? person.borderId ?? undefined}
             avatarUrl={card?.user.avatarUrl ?? person.avatarUrl}
+            mascot={card?.user.mascot ?? person.mascot}
             size={64}
             presence={
               card?.presence === "online" || card?.presence === "inGame"

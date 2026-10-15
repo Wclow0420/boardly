@@ -119,6 +119,33 @@ and Baroque Silver (`art/baroque.tsx`).
   beats, and a gentle sway. No creature heads drawn in code. People
   with faces are only the avatar figures (`src/features/avatar`).
 
+# The mascot (`src/features/mascot/`)
+
+Every player is the Boardly meeple, dressed. Use it wherever a game
+needs a person.
+
+- **What a look is.** A look is a skin plus a part in each slot (eyes,
+  mouth, nose, hat, top, bottom, shoes, hand, back). It's built on the
+  rig's fixed points (`rig.ts`).
+  - `dress.ts` layers a look.
+  - `asLook()` reads one from the server.
+- **Drawing it.**
+  - `MascotFigure` is the mascot alive on Skia: it breathes, blinks and
+    sways. Give it a `seed` so a room of mascots isn't in step, and
+    `paused` with the scene.
+  - `MascotPortrait` is a still head and shoulders, for circles. Every
+    `Avatar` and `AvatarBorder` shows it when there is no photo.
+- **In a game.** Players carry `mascot` (`GamePlayer`). See Seal the
+  Manor's `RoomScene` (`mascotAt`) and Shelter's `ShelterScene`.
+- **Adding or repricing an item.** Draw it in `parts/` or `skins.ts`,
+  look it over (`node scripts/emblem-sheet.mjs
+  src/features/mascot/preview.ts out.png HAT 100x130`), then run
+  `node scripts/export-mascot-catalog.mjs`. The server only accepts
+  items in `backend/app/mascot_catalog.json`.
+- **The screens.** The Mascot tab is in the middle of the bar. The
+  wardrobe (`app/wardrobe.tsx`) slides up over it. Jest stubs
+  `MascotStage` in `jest.setup.js`.
+
 # Standards for a new game
 
 What made Seal the Manor feel good; follow it unless the design says

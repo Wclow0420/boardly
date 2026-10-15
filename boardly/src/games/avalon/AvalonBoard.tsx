@@ -134,6 +134,7 @@ export function AvalonBoard({
               name={player?.username ?? "?"}
               borderId={player?.borderId}
               avatarUrl={player?.avatarUrl}
+              mascot={player?.mascot}
               size={28}
             />
             <AppText variant="label" numberOfLines={1} style={styles.grow}>
@@ -366,6 +367,7 @@ export function AvalonBoard({
                     name={player.username}
                     borderId={player.borderId}
                     avatarUrl={player.avatarUrl}
+                    mascot={player.mascot}
                     size={40}
                     crown={leading}
                     ringColor={leading ? colors.primary : colors.border}

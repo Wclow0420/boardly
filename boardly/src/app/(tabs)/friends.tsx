@@ -53,6 +53,7 @@ export default function FriendsScreen() {
       name: friend.name,
       borderId: friend.borderId,
       avatarUrl: friend.avatarUrl,
+      mascot: friend.mascot,
     });
 
   const atTable =

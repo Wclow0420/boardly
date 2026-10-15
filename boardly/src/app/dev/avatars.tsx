@@ -19,7 +19,7 @@ import { scheduleOnRN } from "react-native-worklets";
 import { EmblemGlyph } from "@/components/engraved";
 import { recordEmblem } from "@/components/engraved/picture";
 import { AppText } from "@/components/ui";
-import { EMBLEMS, FIGURE_BOX } from "@/features/avatar/figure";
+import { BOX as FIGURE_BOX, EMBLEMS } from "@/features/mascot/dress";
 import { useTheme } from "@/theme";
 
 const LOOKS = Object.values(EMBLEMS);

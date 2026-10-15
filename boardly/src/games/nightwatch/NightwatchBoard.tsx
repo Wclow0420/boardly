@@ -15,6 +15,7 @@ import { LetterScene, RoleIntro } from "./Immersion";
 import { NightMap } from "./NightMap";
 import { RoomPicture } from "./RoomPicture";
 import { RoomScene, type ScenePerson } from "./RoomScene";
+import { asLook } from "@/features/mascot/dress";
 // every text on the board draws the game's icons and colours room names
 import { GameButton as Button, GameText as AppText } from "./GameText";
 import { useMapNotes } from "./useMapNotes";
@@ -288,6 +289,18 @@ export function NightwatchBoard({
     }
   }
 
+  // Everyone I can see stands as their own mascot; a stranger in the
+  // dark ("someone") stays a shadow
+  const lookOf = (seat: number) => asLook(players.find((p) => p.seat === seat)?.mascot);
+  const mascots = Object.fromEntries(
+    here
+      .filter((person) => person.kind !== "shadow")
+      .map((person) => [
+        person.key,
+        lookOf(person.key === "me" ? mySeat : Number(person.key.replace("seat-", ""))),
+      ]),
+  );
+
   const map = (
     <ManorMap
       state={state}
@@ -329,6 +342,7 @@ export function NightwatchBoard({
               }}
               touchLabel={t("nightwatch.prompt.roomTitle", { room: names.roomName(room) })}
               people={here}
+              mascots={mascots}
               missionRoom={over ? null : state.missionRoom}
               nextMissionRoom={over ? null : state.nextMissionRoom}
               collapsed={state.collapsed}

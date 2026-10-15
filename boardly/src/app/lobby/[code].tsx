@@ -307,6 +307,7 @@ export default function LobbyScreen() {
                     name: player.username,
                     borderId: player.borderId,
                     avatarUrl: player.avatarUrl,
+                    mascot: player.mascot,
                     isHost: player.userId === room.hostId,
                     ready: player.ready,
                     isBot: player.isBot,
@@ -325,6 +326,7 @@ export default function LobbyScreen() {
                             name: player.username,
                             borderId: player.borderId,
                             avatarUrl: player.avatarUrl,
+                            mascot: player.mascot,
                           })
                   }
                 />

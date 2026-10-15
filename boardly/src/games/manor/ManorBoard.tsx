@@ -660,6 +660,7 @@ function SeatPrompt({
                 name={player?.username ?? "?"}
                 borderId={player?.borderId}
                 avatarUrl={player?.avatarUrl}
+                mascot={player?.mascot}
                 size={28}
               />
               <AppText variant="label" numberOfLines={1} style={styles.grow}>
@@ -880,6 +881,7 @@ function Players({
                   name={player.username}
                   borderId={player.borderId}
                   avatarUrl={player.avatarUrl}
+                  mascot={player.mascot}
                   size={32}
                 />
                 <View style={styles.grow}>

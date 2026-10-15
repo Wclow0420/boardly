@@ -10,7 +10,7 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 
-import { assetUrl } from "@/api/client";
+import { assetUrl, type MascotLook } from "@/api/client";
 import { Avatar, AvatarBadges, type PresenceStatus } from "@/components/ui";
 
 import { ART, useBorderClock, type ArtBorderDrawing } from "./art";
@@ -38,6 +38,8 @@ export interface AvatarBorderProps {
   ringColor?: string;
   /** Profile picture path from the API (avatarUrl). */
   avatarUrl?: string | null;
+  /** Their mascot, shown in the circle when there is no picture. */
+  mascot?: MascotLook | null;
 }
 
 // Borders are drawn in a square this many times the avatar's size, in a
@@ -56,6 +58,7 @@ export function AvatarBorder({
   crown,
   ringColor,
   avatarUrl,
+  mascot,
 }: AvatarBorderProps) {
   const border = getBorder(borderId ?? undefined);
   const imageUri = assetUrl(avatarUrl);
@@ -63,7 +66,7 @@ export function AvatarBorder({
 
   if (border.kind === "art" && ART[border.art]) {
     return (
-      <ArtAvatar border={border} name={name} size={size} imageUri={imageUri}>
+      <ArtAvatar border={border} name={name} size={size} imageUri={imageUri} mascot={mascot}>
         {badges}
       </ArtAvatar>
     );
@@ -71,7 +74,7 @@ export function AvatarBorder({
 
   if (border.kind === "glow") {
     return (
-      <GlowAvatar border={border} name={name} size={size} imageUri={imageUri}>
+      <GlowAvatar border={border} name={name} size={size} imageUri={imageUri} mascot={mascot}>
         {badges}
       </GlowAvatar>
     );
@@ -85,6 +88,7 @@ export function AvatarBorder({
         name={name}
         size={size}
         imageUri={imageUri}
+        mascot={mascot}
         ringColor={border.kind === "none" ? ringColor : undefined}
       />
       {badges}
@@ -201,12 +205,14 @@ function GlowAvatar({
   name,
   size,
   imageUri,
+  mascot,
   children,
 }: {
   border: GlowBorder;
   name: string;
   size: number;
   imageUri: string | null;
+  mascot?: MascotLook | null;
   children?: ReactNode;
 }) {
   const glow = scaleGlow(border.glow, size / 72);
@@ -229,6 +235,7 @@ function GlowAvatar({
               size={size}
               radius={border.roundness * size}
               imageUri={imageUri}
+              mascot={mascot}
             />
           </View>
         </AnimatedGlow>
@@ -249,12 +256,14 @@ function ArtAvatar({
   name,
   size,
   imageUri,
+  mascot,
   children,
 }: {
   border: ArtBorder;
   name: string;
   size: number;
   imageUri: string | null;
+  mascot?: MascotLook | null;
   children?: ReactNode;
 }) {
   const drawing: ArtBorderDrawing = ART[border.art];
@@ -277,7 +286,7 @@ function ArtAvatar({
           </Group>
         </Canvas>
       ) : null}
-      <Avatar name={name} size={size} imageUri={imageUri} />
+      <Avatar name={name} size={size} imageUri={imageUri} mascot={mascot} />
       {Front ? (
         <Canvas style={canvasStyle(size)} pointerEvents="none">
           <Group transform={place}>

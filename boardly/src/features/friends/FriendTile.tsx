@@ -54,6 +54,7 @@ export function FriendTile({
             name={friend.name}
             borderId={friend.borderId}
             avatarUrl={friend.avatarUrl}
+            mascot={friend.mascot}
             size={52}
             presence={playing ? "inGame" : "online"}
             ringColor={playing ? PLAYING : ONLINE}

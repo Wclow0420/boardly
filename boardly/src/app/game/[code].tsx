@@ -284,6 +284,7 @@ function GameScreenBody({
         username: p.username,
         borderId: p.borderId,
         avatarUrl: p.avatarUrl,
+        mascot: p.mascot,
       }))}
       busy={makeMove.isPending}
       sessionId={String(session.id)}
@@ -376,6 +377,7 @@ function GameScreenBody({
                 name={player.username}
                 borderId={player.borderId}
                 avatarUrl={player.avatarUrl}
+                mascot={player.mascot}
                 size={34}
               />
               <View style={styles.playerText}>

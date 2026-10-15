@@ -12,7 +12,8 @@ import type { Arrival, Entry } from "@/games/nightwatch/arrival";
 import { ManorMap } from "@/games/nightwatch/ManorMap";
 import { RoomScene } from "@/games/nightwatch/RoomScene";
 import { ROOMS, type NightEvent, type NightwatchState } from "@/games/nightwatch/logic";
-import { EMBLEMS as FIGURES } from "@/features/avatar/figure";
+import { STARTER, type Look } from "@/features/mascot/dress";
+import { COLOURS } from "@/features/mascot/skins";
 import { useTheme } from "@/theme";
 
 const NONE: number[] = [];
@@ -45,6 +46,13 @@ const SAMPLE = {
   log: [patrol(0, 1), patrol(1, 5), patrol(2, 8)],
   positions: null,
 } as unknown as NightwatchState;
+/** Four mascots dressed differently, to stand in the room. */
+const MASCOTS: Record<string, Look> = {
+  me: { skin: "glossy", colour: COLOURS.orange, wear: { ...STARTER.wear, hat: "crown", hand: "lantern" } },
+  a: { skin: "glossy", colour: COLOURS.blue, wear: { eyes: "googly", mouth: "grin", hat: "beanie", top: "hoodie" } },
+  b: { skin: "gingerbread", colour: COLOURS.orange, wear: { eyes: "icing", mouth: "icing", hat: "bow" } },
+  c: { skin: "panda", colour: COLOURS.white, wear: { eyes: "sleepy", mouth: "cat" } },
+};
 const EVENTS: (NightEvent | null)[] = [null, "blackout", "fog", "storm", "collapse", "insomnia", "echo"];
 
 export default function IsoPreview() {
@@ -126,11 +134,7 @@ export default function IsoPreview() {
             { key: "b", label: "Mei", kind: "other" },
             { key: "c", label: "Bao", kind: "other" },
           ]}
-          figures={
-            avatars
-              ? { me: FIGURES.girl, a: FIGURES.boy, b: FIGURES["girl (golden)"], c: FIGURES.panda }
-              : undefined
-          }
+          mascots={avatars ? MASCOTS : undefined}
           missionRoom={mission ? room : null}
           secretDoors={door ? [[room, room === 4 ? 0 : 4]] : NONE_DOORS}
           arrival={arrival}

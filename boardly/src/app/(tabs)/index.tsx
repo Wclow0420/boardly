@@ -154,6 +154,7 @@ export default function HomeScreen() {
             name={user?.username ?? "?"}
             borderId={user?.borderId}
             avatarUrl={user?.avatarUrl}
+            mascot={user?.mascot}
             size={42}
           />
         </Pressable>
@@ -349,6 +350,7 @@ export default function HomeScreen() {
                   name={friend.name}
                   borderId={friend.borderId}
                   avatarUrl={friend.avatarUrl}
+                  mascot={friend.mascot}
                   size={44}
                   presence={friend.presence}
                   ringColor={

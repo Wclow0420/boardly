@@ -4,7 +4,7 @@
 // taps a post (storeroom, door or bed) to choose it.
 
 import { useEffect, useMemo, useState } from "react";
-import { AccessibilityInfo, Animated, AppState, Easing, Pressable, StyleSheet } from "react-native";
+import { AccessibilityInfo, Animated, AppState, Easing, Pressable, StyleSheet, View } from "react-native";
 import Svg, { Circle, G, Path, Text as SvgText } from "react-native-svg";
 
 import {
@@ -17,6 +17,9 @@ import {
   useIsoClock,
 } from "@/components/iso";
 import { SPOTS } from "@/components/iso/room";
+import type { Look } from "@/features/mascot/dress";
+import { FEET, MascotFigure } from "@/features/mascot/MascotStage";
+import { BOX as MASCOT_BOX } from "@/features/mascot/rig";
 import { fontFamily, useTheme } from "@/theme";
 import type { Shape } from "@/components/iso/kit";
 import { POSTS, POST_COLOR, type Post } from "./logic";
@@ -41,6 +44,8 @@ export interface ShelterPerson {
   me: boolean;
   /** At a night post; otherwise by the fire. */
   post?: Post;
+  /** Their mascot, standing in for a pawn. */
+  look?: Look;
 }
 
 export interface ShelterSceneProps {
@@ -88,6 +93,22 @@ function Label({ x, y, text, fill }: { x: number; y: number; text: string; fill:
 
 const short = (name: string) => (name.length > 7 ? `${name.slice(0, 6)}…` : name);
 
+/** Where a mascot stands on a spot: its box in the shelter's drawing,
+ *  feet on the spot, a little taller than a pawn; and above its head,
+ *  for its name. */
+function mascotAt(spot: [number, number]) {
+  const [bx, by] = shelterPoint(spot[0], spot[1], 0);
+  const [, ty] = shelterPawnTop(spot);
+  const s = ((by - ty) * 1.6) / 90;
+  return {
+    x: bx - FEET.x * s,
+    y: by - FEET.y * s,
+    w: MASCOT_BOX[0] * s,
+    h: MASCOT_BOX[1] * s,
+    head: by - (FEET.y - 12) * s,
+  };
+}
+
 export function ShelterScene({ food, night, people, choosing, paused = false }: ShelterSceneProps) {
   const { colors } = useTheme();
   const scene = useMemo(() => shelterScene(food, colors.primary), [food, colors.primary]);
@@ -129,6 +150,7 @@ export function ShelterScene({ food, night, people, choosing, paused = false }: 
     spot: person.post ? scene.stands[person.post] : SPOTS[index % SPOTS.length],
   }));
   const byDepth = [...placed].sort((a, b) => a.spot[0] + a.spot[1] - (b.spot[0] + b.spot[1]));
+  const [scale, setScale] = useState(0);
 
   const place = (x: number, y: number, w: number, h: number) =>
     ({
@@ -140,7 +162,10 @@ export function ShelterScene({ food, night, people, choosing, paused = false }: 
     }) as const;
 
   return (
-    <Animated.View style={styles.frame}>
+    <Animated.View
+      style={styles.frame}
+      onLayout={(event) => setScale(event.nativeEvent.layout.width / SCENE_WIDTH)}
+    >
       <IsoCanvas width={SCENE_WIDTH} height={SCENE_HEIGHT}>
         {/* it snows all round the house */}
         <Snow x={0} y={0} width={SCENE_WIDTH} height={SCENE_HEIGHT} clock={clock} />
@@ -162,14 +187,37 @@ export function ShelterScene({ food, night, people, choosing, paused = false }: 
       </IsoCanvas>
 
       <Svg viewBox={VIEW_BOX} style={StyleSheet.absoluteFill} pointerEvents="none">
-        {byDepth.map(({ person, spot }) => (
-          <Shapes
-            key={person.seat}
-            shapes={shelterPawn(spot, person.me ? colors.primary : colors.info, PAPER)}
-          />
-        ))}
+        {byDepth
+          .filter(({ person }) => !person.look)
+          .map(({ person, spot }) => (
+            <Shapes
+              key={person.seat}
+              shapes={shelterPawn(spot, person.me ? colors.primary : colors.info, PAPER)}
+            />
+          ))}
+      </Svg>
+
+      {/* everyone in the house as their mascot, alive, far before near */}
+      {scale > 0
+        ? byDepth.map(({ person, spot }) => {
+            if (!person.look) return null;
+            const m = mascotAt(spot);
+            return (
+              <View key={person.seat} pointerEvents="none" style={place(m.x, m.y, m.w, m.h)}>
+                <MascotFigure
+                  look={person.look}
+                  width={m.w * scale}
+                  seed={`seat-${person.seat}`}
+                  paused={paused || away || still}
+                />
+              </View>
+            );
+          })
+        : null}
+
+      <Svg viewBox={VIEW_BOX} style={StyleSheet.absoluteFill} pointerEvents="none">
         {placed.map(({ person, spot }) => {
-          const [x, y] = shelterPawnTop(spot);
+          const [x, y] = person.look ? [shelterPawnTop(spot)[0], mascotAt(spot).head] : shelterPawnTop(spot);
           return (
             <Label
               key={person.seat}

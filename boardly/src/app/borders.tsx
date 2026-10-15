@@ -110,6 +110,7 @@ export default function BordersScreen() {
             size={84}
             borderId={selected.id}
             avatarUrl={user?.avatarUrl}
+            mascot={user?.mascot}
           />
         </View>
         <AppText variant="title" align="center">
@@ -205,6 +206,7 @@ export default function BordersScreen() {
                     size={40}
                     borderId={border.id}
                     avatarUrl={user?.avatarUrl}
+                    mascot={user?.mascot}
                   />
                 </View>
                 <AppText variant="tiny" numberOfLines={1} align="center">

@@ -1,3 +1,4 @@
+import type { MascotLook } from "@/api/client";
 import type { BadgeArt } from "@/components/badges/types";
 import type { ComponentType } from "react";
 import type { ImageSourcePropType } from "react-native";
@@ -12,6 +13,8 @@ export interface GamePlayer {
   borderId?: string | null;
   /** Profile picture path (see assetUrl). */
   avatarUrl?: string | null;
+  /** Their mascot, to stand in for them where a game draws people. */
+  mascot?: MascotLook | null;
 }
 
 /** Props every game board component receives from the game screen. */

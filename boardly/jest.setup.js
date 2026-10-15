@@ -33,3 +33,9 @@ jest.mock("@/components/iso", () => ({
   Passage: () => null,
   useIsoClock: () => ({ value: 0 }),
 }));
+// The living mascot draws on Skia too (features/mascot)
+jest.mock("@/features/mascot/MascotStage", () => ({
+  FEET: { x: 50, y: 118.4 },
+  MascotFigure: () => null,
+  MascotStage: () => null,
+}));
