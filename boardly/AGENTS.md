@@ -86,13 +86,19 @@ and Baroque Silver (`art/baroque.tsx`).
   `#3A2408` on gold and ivory, cool `#1E242C` on silver.
 - Engrave it: a thin vein down every leaf, scroll and feather, grooves
   along bands, and one white shine line.
-- Build organic forms with the shared builders rather than by hand:
+- Build organic forms with the shared builders in
+  `src/components/engraved/shapes.ts` rather than by hand:
   - `curl` and `acanthus` (`lush` for leaf-shaped lobes)
   - `ribbon`, a band of varying width through points
   - `frond`, a serrated leaf
-  - round-tipped feathers, layered and fanned
+  - `LEAF` and `FEATHER`
 
-  Draw the right half and mirror it.
+  The palettes (`MATERIALS`, `INKS`, `JEWELS`) are there too. Draw the
+  right half and mirror it.
+- Icons are engraved emblems (`src/components/engraved/icons.tsx`),
+  still SVG built from `Engraved` (material fill, veins, shine, ink),
+  `JewelDot` and `EmblemSvg` (48 × 48 units). Use them in place of
+  emoji. Check them at `boardly-dev://dev/emblems`.
 - Life comes from a light `Sweep`, `Glint`s, one jewel that glows or
   beats, and a gentle sway. Never draw faces or heads in code.
 

@@ -14,95 +14,22 @@ import {
 } from "@shopify/react-native-skia";
 import { useDerivedValue } from "react-native-reanimated";
 
+import {
+  LEAF,
+  acanthus,
+  curl,
+  frond,
+  ribbon,
+  type Pt,
+} from "@/components/engraved/shapes";
+
 import { Gem, Sweep } from "./crowns";
-import { LEAF, acanthus, curl } from "./crest";
 import { Glint, Halo, type ArtBorderDrawing, type Clock } from "./kit";
 
 const INK = "#1E242C";
 const GROOVE = "#4A5462";
 const SILVER = ["#FFFFFF", "#C9D0DA", "#7A8494", "#E4E9F0"];
 const DEG = Math.PI / 180;
-
-type Pt = [number, number];
-const fmt = (p: Pt) => `${p[0].toFixed(2)} ${p[1].toFixed(2)}`;
-
-const catmull = (a: Pt, b: Pt, c: Pt, d: Pt, u: number): Pt => {
-  const f = (i: 0 | 1) =>
-    0.5 *
-    (2 * b[i] +
-      (c[i] - a[i]) * u +
-      (2 * a[i] - 5 * b[i] + 4 * c[i] - d[i]) * u * u +
-      (3 * b[i] - a[i] - 3 * c[i] + d[i]) * u * u * u);
-  return [f(0), f(1)];
-};
-
-/** A band of varying width along a smooth curve through `points`, with
- *  grooves cut along its length and a line of shine. */
-function ribbon(points: Pt[], widths: number[]) {
-  const S = 10;
-  const mid: Pt[] = [];
-  const wid: number[] = [];
-  const n = points.length;
-  for (let i = 0; i < n - 1; i++) {
-    const a = points[Math.max(i - 1, 0)];
-    const d = points[Math.min(i + 2, n - 1)];
-    for (let j = 0; j < S; j++) {
-      mid.push(catmull(a, points[i], points[i + 1], d, j / S));
-      wid.push(widths[i] + ((widths[i + 1] - widths[i]) * j) / S);
-    }
-  }
-  mid.push(points[n - 1]);
-  wid.push(widths[n - 1]);
-  const along = (offset: number) =>
-    mid.map((p, k): Pt => {
-      const a = mid[Math.max(k - 1, 0)];
-      const b = mid[Math.min(k + 1, mid.length - 1)];
-      const l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
-      const h = (wid[k] / 2) * offset;
-      return [p[0] - ((b[1] - a[1]) / l) * h, p[1] + ((b[0] - a[0]) / l) * h];
-    });
-  const line = (pts: Pt[], from: number, to: number) =>
-    `M${pts
-      .slice(Math.round(from * pts.length), Math.round(to * pts.length))
-      .map(fmt)
-      .join("L")}`;
-  return {
-    outline: `M${along(1).map(fmt).join("L")}L${along(-1).reverse().map(fmt).join("L")}Z`,
-    grooves:
-      line(along(0.55), 0.04, 0.9) +
-      line(along(0.15), 0.08, 0.8) +
-      line(along(-0.5), 0.12, 0.95),
-    shine: line(along(-0.15), 0.1, 0.7),
-  };
-}
-
-/** A serrated acanthus leaf, pointing up from its stalk: lobes leaning
- *  toward the tip, notched between. */
-function frond(len: number, w: number, lobes: number) {
-  const width = (s: number) =>
-    w * Math.pow(Math.sin(Math.PI * (0.12 + 0.88 * s)), 0.7);
-  const lobe = Array.from({ length: lobes }, (_, j) => {
-    const s0 = j / lobes;
-    const s1 = (j + 0.85) / lobes;
-    return {
-      notch: [width(s0) * 0.5, -len * s0] as Pt,
-      ctrl: [width(s0) * 1.1, -len * (s0 + 0.25 / lobes)] as Pt,
-      tip: [width(s1), -len * s1] as Pt,
-    };
-  });
-  const flip = (p: Pt): Pt => [-p[0], p[1]];
-  // up the right side, notch to lobe tip; then down the left, in reverse
-  const right = lobe
-    .map((l) => `L${fmt(l.notch)}Q${fmt(l.ctrl)} ${fmt(l.tip)}`)
-    .join("");
-  const left = [...lobe]
-    .reverse()
-    .map(
-      (l) => `L${fmt(flip(l.tip))}Q${fmt(flip(l.ctrl))} ${fmt(flip(l.notch))}`,
-    )
-    .join("");
-  return `M0 0${right}L0 ${-len}${left}Z`;
-}
 
 // The right half; the left is its mirror image.
 

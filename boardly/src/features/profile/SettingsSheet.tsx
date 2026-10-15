@@ -8,6 +8,18 @@ import { forwardRef, useRef } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
+import type { ComponentType } from "react";
+
+import {
+  BinEmblem,
+  DoorEmblem,
+  FrameEmblem,
+  GlobeEmblem,
+  KeyEmblem,
+  LockEmblem,
+  ScrollEmblem,
+  type EmblemProps,
+} from "@/components/engraved";
 import { ChevronRightIcon } from "@/components/icons";
 import {
   AppText,
@@ -46,25 +58,25 @@ export const SettingsSheet = forwardRef<
 
   const rows: {
     key: SettingKey;
-    icon: string;
+    Emblem: ComponentType<EmblemProps>;
     label: string;
     value?: string;
     danger?: boolean;
   }[] = [
-    { key: "borders", icon: "🖼️", label: t("profile.borders") },
+    { key: "borders", Emblem: FrameEmblem, label: t("profile.borders") },
     {
       key: "language",
-      icon: "🌐",
+      Emblem: GlobeEmblem,
       label: t("profile.language"),
       value: SUPPORTED_LANGUAGES.find((lang) => lang.code === language)?.label,
     },
-    { key: "password", icon: "🔑", label: t("profile.changePassword") },
-    { key: "privacy", icon: "🔒", label: t("legal.privacy") },
-    { key: "terms", icon: "📜", label: t("legal.terms") },
-    { key: "logout", icon: "🚪", label: t("auth.logout") },
+    { key: "password", Emblem: KeyEmblem, label: t("profile.changePassword") },
+    { key: "privacy", Emblem: LockEmblem, label: t("legal.privacy") },
+    { key: "terms", Emblem: ScrollEmblem, label: t("legal.terms") },
+    { key: "logout", Emblem: DoorEmblem, label: t("auth.logout") },
     {
       key: "delete",
-      icon: "🗑️",
+      Emblem: BinEmblem,
       label: t("profile.deleteAccount"),
       danger: true,
     },
@@ -103,7 +115,7 @@ export const SettingsSheet = forwardRef<
               ]}
             >
               <Texture radius={ROW_RADIUS - 2} />
-              <AppText style={styles.icon}>{row.icon}</AppText>
+              <row.Emblem size={30} />
               <AppText numberOfLines={1} style={[styles.grow, styles.label]}>
                 {row.label}
               </AppText>
@@ -141,5 +153,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "rgba(255,255,255,0.85)",
   },
-  icon: { fontSize: 18, lineHeight: 24, width: 26, textAlign: "center" },
 });

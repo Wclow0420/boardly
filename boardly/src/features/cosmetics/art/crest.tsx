@@ -13,6 +13,8 @@ import {
 } from "@shopify/react-native-skia";
 import { useDerivedValue } from "react-native-reanimated";
 
+import { FEATHER, LEAF, acanthus } from "@/components/engraved/shapes";
+
 import { Sweep } from "./crowns";
 import {
   Glint,
@@ -28,103 +30,6 @@ const GOLD = ["#FFF2B8", "#E2B04A", "#9A6B1E", "#F0CC72"];
 const IVORY = ["#FFFFFF", "#F4EEDF", "#D8CCB0"];
 const DEG = Math.PI / 180;
 
-type Pt = [number, number];
-const fmt = (p: Pt) => `${p[0].toFixed(2)} ${p[1].toFixed(2)}`;
-
-/** A scroll: a tapering stroke that sets off along `heading` and turns
- *  ever tighter (by `turn` in all) into a curl. Returns its outline and
- *  its centre line (the engraved vein). */
-export function curl(
-  x: number,
-  y: number,
-  heading: number,
-  len: number,
-  turn: number,
-  w: number,
-  /** How fast it thins toward the eye (lower keeps it fuller), or
-   *  "leaf": thin at both ends, swelling between. */
-  taper: number | "leaf" = 0.9,
-) {
-  const N = 48;
-  const mid: Pt[] = [];
-  const left: Pt[] = [];
-  const right: Pt[] = [];
-  let px = x;
-  let py = y;
-  for (let i = 0; i <= N; i++) {
-    const s = i / N;
-    const th = heading + turn * s * s;
-    const body =
-      taper === "leaf"
-        ? Math.pow(Math.sin(Math.PI * (0.1 + 0.9 * s)), 0.8)
-        : Math.pow(1 - s, taper);
-    const half = (w * body + 0.6) / 2;
-    mid.push([px, py]);
-    left.push([px + Math.sin(th) * half, py - Math.cos(th) * half]);
-    right.push([px - Math.sin(th) * half, py + Math.cos(th) * half]);
-    const ds = (len / N) * (1.35 - 0.9 * s);
-    px += Math.cos(th) * ds;
-    py += Math.sin(th) * ds;
-  }
-  const outline = `M${left.map(fmt).join("L")}L${right.reverse().map(fmt).join("L")}Z`;
-  const vein = `M${mid
-    .slice(2, N - 6)
-    .map(fmt)
-    .join("L")}`;
-  // where along it a leaf may branch, and which way is outside the curl
-  const at = (s: number) => {
-    const i = Math.round(s * N);
-    const th = heading + turn * s * s;
-    return { p: mid[i], th };
-  };
-  return { outline, vein, at };
-}
-
-/** An acanthus leaf: a main scroll with smaller ones branching off the
- *  outside of its curve, curling the other way. `lush` keeps the main
- *  scroll full to its eye and its leaves small and close. */
-export function acanthus(
-  x: number,
-  y: number,
-  heading: number,
-  len: number,
-  turn: number,
-  w: number,
-  lush = false,
-) {
-  const main = curl(x, y, heading, len, turn, w, lush ? 0.5 : 0.9);
-  const sign = Math.sign(turn);
-  const parts = [main];
-  const leaves = lush
-    ? [
-        [0.22, 0.34],
-        [0.42, 0.27],
-        [0.6, 0.2],
-      ]
-    : [
-        [0.2, 0.5],
-        [0.42, 0.38],
-        [0.62, 0.26],
-      ];
-  for (const [s, size] of leaves) {
-    const { p, th } = main.at(s);
-    parts.push(
-      lush
-        ? curl(
-            p[0],
-            p[1],
-            th - sign * 0.6,
-            len * size,
-            -sign * 2.4,
-            w * 0.7,
-            "leaf",
-          )
-        : curl(p[0], p[1], th - sign * 0.9, len * size, -sign * 4, w * 0.6),
-    );
-  }
-  return parts;
-}
-
 // The right half; the left is its mirror image.
 const SCROLLS = [
   // the big wave out to the side, curling down and back in
@@ -137,14 +42,6 @@ const SCROLLS = [
   ...acanthus(4, 66, 0.45, 52, -5.4, 11),
 ];
 const SCROLL_D = SCROLLS.map((s) => s.outline).join("");
-
-/** A long wing feather with a rounded tip, pointing up from its root. */
-const FEATHER = (len: number, w: number) =>
-  `M${-w * 0.75} 0C${-w} ${-len * 0.45} ${-w * 1.05} ${-len + w * 1.1} ${-w * 0.2} ${-len}C${w * 0.6} ${-len - w * 0.2} ${w} ${-len + w * 0.6} ${w} ${-len * 0.45}C${w} ${-len * 0.2} ${w * 0.85} ${-len * 0.05} ${w * 0.75} 0Z`;
-
-/** A teardrop leaf, pointing up from its stalk. */
-export const LEAF = (len: number, w: number) =>
-  `M0 0C${w} ${-len * 0.25} ${w} ${-len * 0.7} 0 ${-len}C${-w} ${-len * 0.7} ${-w} ${-len * 0.25} 0 0Z`;
 
 /** The long feathers, top (longest) first: rooted along the ring's
  *  lower right, fanning up and out. */
