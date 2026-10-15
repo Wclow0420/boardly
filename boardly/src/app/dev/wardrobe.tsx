@@ -192,7 +192,7 @@ export default function Wardrobe() {
       </View>
 
       {/* the slots */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} style={{ flexGrow: 0 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} style={{ flexGrow: 0, flexShrink: 0 }}>
         {TABS.map((t) => (
           <Pressable
             key={t.key}
@@ -208,7 +208,7 @@ export default function Wardrobe() {
       </ScrollView>
 
       {/* what's in the slot, on you */}
-      <ScrollView contentContainerStyle={styles.grid}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.grid}>
         {tab === "colour"
           ? Object.entries(COLOURS).map(([name, colour]) => (
               <Pressable
