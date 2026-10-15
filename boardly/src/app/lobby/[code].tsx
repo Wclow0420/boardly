@@ -32,6 +32,7 @@ import {
 } from "@/features/game/RulesSheet";
 import { AddBotsSheet, BotsButton } from "@/features/lobby/AddBots";
 import { ConfettiBackdrop } from "@/features/lobby/ConfettiBackdrop";
+import { usePlayerCard } from "@/features/players/PlayerCardProvider";
 import { InviteFriendsSheet } from "@/features/lobby/InviteFriendsSheet";
 import { GameSettings } from "@/features/lobby/GameSettings";
 import { InviteSlotCard, PlayerCard } from "@/features/lobby/PlayerCard";
@@ -60,6 +61,7 @@ export default function LobbyScreen() {
   const [rulesOpen, setRulesOpen] = useState(false);
   const gameName = useGameName();
   const leaveSheetRef = useRef<GorhomBottomSheetModal>(null);
+  const playerCard = usePlayerCard();
   const inviteSheetRef = useRef<GorhomBottomSheetModal>(null);
   const botsSheetRef = useRef<GorhomBottomSheetModal>(null);
 
@@ -313,6 +315,17 @@ export default function LobbyScreen() {
                     isHost && player.isBot && room.status === "waiting"
                       ? () => removeBot.mutate(player.userId)
                       : undefined
+                  }
+                  onPress={
+                    player.isBot
+                      ? undefined
+                      : () =>
+                          playerCard.show({
+                            id: player.userId,
+                            name: player.username,
+                            borderId: player.borderId,
+                            avatarUrl: player.avatarUrl,
+                          })
                   }
                 />
               </View>

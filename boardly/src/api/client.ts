@@ -122,6 +122,8 @@ export interface AuthUser {
   coins?: number;
   /** Paid borders you have unlocked. Only sent for your own account. */
   ownedBorders?: string[];
+  /** A bot the server plays. */
+  isBot?: boolean;
 }
 
 export interface CoinRewardInfo {
@@ -212,16 +214,20 @@ export interface Together {
   lastPlayedAt: string | null;
 }
 
-/** A friend's player card: their numbers and the badges they've earned. */
+/** Someone's player card: their numbers, the badges they've earned, and
+ *  how we know each other. Presence is only shared between friends. */
 export interface FriendCard {
   user: AuthUser;
+  relation: FriendRelation;
+  /** The pending request between us, to accept or cancel. */
+  requestId: string | null;
   gamesPlayed: number;
   wins: number;
   bestStreak: number;
   favourite: string | null;
   badges: BadgeRecord[];
   together: Together | null;
-  presence: "online" | "inGame" | "offline";
+  presence: "online" | "inGame" | "offline" | null;
   playing: string | null;
 }
 
@@ -374,7 +380,7 @@ export const api = {
     remove: (userId: string) =>
       request<{ ok: true }>(`/friends/${userId}`, { method: "DELETE" }),
 
-    /** A friend's player card. */
+    /** The player card of a friend, or of someone I've shared a table with. */
     card: (userId: string) => request<{ card: FriendCard }>(`/friends/${userId}/card`),
 
     /** Invite an online friend to the table I'm waiting at. */

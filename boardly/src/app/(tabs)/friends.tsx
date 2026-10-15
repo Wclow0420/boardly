@@ -3,18 +3,15 @@
 // and those away wait below. Tap anyone for their player card. Requests
 // and the people I played with recently have tabs of their own.
 
-import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { ApiError, api } from "@/api/client";
 import { PlusIcon } from "@/components/icons";
 import {
   AppText,
   Chip,
-  ConfirmSheet,
   EmptyState,
   ErrorState,
   Frame,
@@ -27,7 +24,6 @@ import {
 } from "@/components/ui";
 import type { Friend } from "@/data/types";
 import { AddFriendSheet } from "@/features/friends/AddFriendSheet";
-import { FriendCardSheet } from "@/features/friends/FriendCardSheet";
 import { FriendLine, RecentAction } from "@/features/friends/FriendLine";
 import { FriendRow } from "@/features/friends/FriendRow";
 import { FriendTile } from "@/features/friends/FriendTile";
@@ -35,9 +31,9 @@ import {
   FRIEND_TABS,
   useFriendActions,
   useFriends,
-  useRemoveFriend,
 } from "@/features/friends/hooks";
 import { useMyTables } from "@/features/home/hooks";
+import { usePlayerCard } from "@/features/players/PlayerCardProvider";
 import { TABLE, useTheme } from "@/theme";
 
 export default function FriendsScreen() {
@@ -45,45 +41,19 @@ export default function FriendsScreen() {
   const router = useRouter();
   const { colors, spacing } = useTheme();
   const { data, tab, setTab, isLoading, isError, refetch } = useFriends();
-  const removeFriend = useRemoveFriend();
   const { tables } = useMyTables();
+  const playerCard = usePlayerCard();
   const addSheetRef = useRef<GorhomBottomSheetModal>(null);
-  const removeSheetRef = useRef<GorhomBottomSheetModal>(null);
-  const cardSheetRef = useRef<GorhomBottomSheetModal>(null);
-  const [removing, setRemoving] = useState<Friend | null>(null);
-  const [opened, setOpened] = useState<Friend | null>(null);
-  const [banner, setBanner] = useState<{ ok: boolean; text: string } | null>(
-    null,
-  );
 
   // invites go to the table I'm waiting at; without one, pick a game first
   const waiting = tables.some((table) => table.status === "waiting");
-  const flash = (next: { ok: boolean; text: string }) => {
-    setBanner(next);
-    setTimeout(() => setBanner(null), 2600);
-  };
-  const inviteFromCard = useMutation({
-    mutationFn: (friend: Friend) => api.friends.invite(friend.id),
-    onSuccess: () => flash({ ok: true, text: t("friends.inviteSent") }),
-    onError: (err) =>
-      flash({
-        ok: false,
-        text:
-          err instanceof ApiError
-            ? t([`errors.${err.code}`, err.message])
-            : t("common.errorTitle"),
-      }),
-  });
-
-  const open = (friend: Friend) => {
-    setOpened(friend);
-    cardSheetRef.current?.present();
-  };
-  const askRemove = (friend: Friend) => {
-    cardSheetRef.current?.dismiss();
-    setRemoving(friend);
-    removeSheetRef.current?.present();
-  };
+  const open = (friend: Friend) =>
+    playerCard.show({
+      id: friend.id,
+      name: friend.name,
+      borderId: friend.borderId,
+      avatarUrl: friend.avatarUrl,
+    });
 
   const atTable =
     data?.friends.filter(
@@ -248,9 +218,7 @@ export default function FriendsScreen() {
             key={person.id}
             friend={person}
             divided={i > 0}
-            onOpen={
-              person.relation === "friend" ? () => open(person) : undefined
-            }
+            onOpen={() => open(person)}
             trailing={<RecentAction friend={person} />}
           />
         ))}
@@ -267,22 +235,6 @@ export default function FriendsScreen() {
   return (
     <Screen scroll={false} backdrop={<TableBackdrop dim={0.45} />}>
       {header}
-      {banner ? (
-        <View
-          style={[
-            styles.banner,
-            { backgroundColor: banner.ok ? "#2E5A2A" : "#6A2418" },
-          ]}
-        >
-          <AppText
-            variant="caption"
-            align="center"
-            style={{ color: "#FFF6E6" }}
-          >
-            {banner.text}
-          </AppText>
-        </View>
-      ) : null}
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
@@ -293,31 +245,6 @@ export default function FriendsScreen() {
       </ScrollView>
 
       <AddFriendSheet ref={addSheetRef} />
-      <FriendCardSheet
-        ref={cardSheetRef}
-        friend={opened}
-        onRemove={askRemove}
-        onInvite={(friend) => {
-          cardSheetRef.current?.dismiss();
-          if (waiting) inviteFromCard.mutate(friend);
-          else router.push("/games");
-        }}
-      />
-      <ConfirmSheet
-        ref={removeSheetRef}
-        title={t("friends.removeTitle", { name: removing?.name ?? "" })}
-        message={t("friends.removeMessage")}
-        confirmLabel={t("friends.actions.remove")}
-        cancelLabel={t("common.cancel")}
-        destructive
-        loading={removeFriend.isPending}
-        onConfirm={() => {
-          if (!removing) return;
-          removeFriend.mutate(removing.id, {
-            onSettled: () => removeSheetRef.current?.dismiss(),
-          });
-        }}
-      />
     </Screen>
   );
 }
@@ -361,12 +288,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   tabs: { flexDirection: "row", gap: 8 },
-  banner: {
-    marginTop: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-  },
   scroll: { flex: 1, marginTop: 8 },
   content: { paddingBottom: 32, paddingTop: 8 },
   firstRibbon: { marginTop: 4 },

@@ -282,15 +282,30 @@ def remove_friend(user_id):
     return {"ok": True}
 
 
+def _shared_a_table(me_id, other_id) -> bool:
+    """Whether we have ever sat at the same table (one we're at now
+    counts)."""
+    mine = db.session.query(RoomPlayer.room_id).filter_by(user_id=me_id)
+    return (
+        db.session.query(RoomPlayer.id)
+        .filter(RoomPlayer.room_id.in_(mine), RoomPlayer.user_id == other_id)
+        .first()
+        is not None
+    )
+
+
 @friends_bp.get("/<uuid:user_id>/card")
 @require_auth
-def friend_card(user_id):
-    """A friend's player card: their numbers and the badges they have
-    earned (not their progress), and what we have played together."""
+def player_card_of(user_id):
+    """Someone's player card: their numbers, the badges they have earned
+    (never their progress), what we have played together, and how we
+    know each other. Open to friends and to anyone I've shared a table
+    with; presence stays between friends."""
     me = g.current_user
     row = _between(me.id, user_id)
-    if row is None or row.status != "accepted":
-        return api_error("not_friends", "You are not friends", 404)
+    is_friend = row is not None and row.status == "accepted"
+    if not is_friend and not _shared_a_table(me.id, user_id):
+        return api_error("not_found", "User not found", 404)
     user = db.session.get(User, user_id)
     if user is None or user.deleted_at is not None:
         return api_error("not_found", "User not found", 404)
@@ -298,14 +313,16 @@ def friend_card(user_id):
     return {
         "card": {
             "user": user.to_dict(),
+            "relation": _relation(row, me.id),
+            "requestId": str(row.id) if row is not None and not is_friend else None,
             "gamesPlayed": card["gamesPlayed"],
             "wins": card["wins"],
             "bestStreak": card["bestStreak"],
             "favourite": card["favourite"],
             "badges": [b for b in card["badges"] if b["unlockedAt"]],
             "together": _together(me.id, {user.id}).get(user.id),
-            "presence": presence.presence_of([user.id])[user.id],
-            "playing": presence.playing([user.id]).get(user.id),
+            "presence": presence.presence_of([user.id])[user.id] if is_friend else None,
+            "playing": presence.playing([user.id]).get(user.id) if is_friend else None,
         }
     }
 

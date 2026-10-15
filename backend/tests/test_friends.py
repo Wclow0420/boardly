@@ -205,7 +205,7 @@ def test_in_game_presence_recent_players_and_stats(app, client, make_user):
 def test_friend_card(client, make_user):
     alice, bob, carol = make_user("alice"), make_user("bob"), make_user("carol")
     _befriend(client, alice, bob)
-    # only friends can look
+    # a stranger's card stays closed
     assert client.get(f"{BASE}/{carol['id']}/card", headers=alice["headers"]).status_code == 404
 
     card = client.get(f"{BASE}/{bob['id']}/card", headers=alice["headers"]).get_json()["card"]
@@ -214,6 +214,25 @@ def test_friend_card(client, make_user):
     # earned badges only, never progress towards the rest
     assert card["badges"] == []
     assert card["presence"] == "offline"
+    assert card["relation"] == "friend"
+
+
+def test_card_of_someone_at_my_table(client, make_user):
+    alice, dave = make_user("alice"), make_user("dave")
+    room = client.post(
+        "/api/v1/rooms", json={"gameType": "tictactoe"}, headers=alice["headers"]
+    ).get_json()["room"]
+    client.post("/api/v1/rooms/join", json={"code": room["code"]}, headers=dave["headers"])
+
+    card = client.get(f"{BASE}/{dave['id']}/card", headers=alice["headers"]).get_json()["card"]
+    assert (card["relation"], card["requestId"]) == ("none", None)
+    # not friends: no presence
+    assert (card["presence"], card["playing"]) == (None, None)
+
+    # once asked, the card says so (and gives the request to answer)
+    _request(client, alice, dave)
+    seen_by_dave = client.get(f"{BASE}/{alice['id']}/card", headers=dave["headers"]).get_json()["card"]
+    assert seen_by_dave["relation"] == "incoming" and seen_by_dave["requestId"]
 
 
 def test_table_invite(app, client, make_user):

@@ -26,6 +26,7 @@ import { AppIntro, useIntroAppStyle } from "@/components/AppIntro";
 import { WebFrame } from "@/components/ui";
 import { SessionProvider, useSession } from "@/context/SessionContext";
 import { FriendsRealtime } from "@/features/friends/FriendsRealtime";
+import { PlayerCardProvider } from "@/features/players/PlayerCardProvider";
 import { useOtaUpdates } from "@/hooks/useOtaUpdates";
 import { LocaleProvider } from "@/i18n/LocaleContext";
 import "@/i18n";
@@ -169,7 +170,9 @@ export default function RootLayout() {
               <SessionProvider>
                 <WebFrame>
                   <BottomSheetModalProvider>
-                    <RootNavigator />
+                    <PlayerCardProvider>
+                      <RootNavigator />
+                    </PlayerCardProvider>
                   </BottomSheetModalProvider>
                 </WebFrame>
               </SessionProvider>
