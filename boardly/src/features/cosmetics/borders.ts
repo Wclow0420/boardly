@@ -388,14 +388,16 @@ export const BORDERS: ProfileBorder[] = [
   { id: "card-fan", name: "Card Fan", kind: "art", art: "card-fan", rarity: "rare", price: 1500 },
   { id: "sakura", name: "Sakura Branch", kind: "art", art: "sakura", rarity: "rare", price: 1600 },
   { id: "meeple-parade", name: "Meeple Parade", kind: "art", art: "meeple-parade", rarity: "rare", price: 1800 },
-  { id: "campfire", name: "Campfire", kind: "art", art: "campfire", rarity: "rare", price: 2000 },
+  { id: "campfire", name: "Sun Blaze", kind: "art", art: "campfire", rarity: "epic", price: 3000 },
   { id: "glacier", name: "Glacier", kind: "art", art: "glacier", rarity: "epic", price: 2500 },
   { id: "thunderstorm", name: "Thunderstorm", kind: "art", art: "thunderstorm", rarity: "epic", price: 2800 },
   { id: "ghost-lantern", name: "Ghost Lantern", kind: "art", art: "ghost-lantern", rarity: "epic", price: 3000 },
   { id: "galaxy", name: "Galaxy", kind: "art", art: "galaxy", rarity: "epic", price: 3500 },
   { id: "lion-dance", name: "Lion Dance", kind: "art", art: "lion-dance", rarity: "legendary", price: 4500 },
   { id: "phoenix", name: "Phoenix", kind: "art", art: "phoenix", rarity: "legendary", price: 5000 },
-  { id: "fire-dragon", name: "Fire Dragon", kind: "art", art: "fire-dragon", rarity: "legendary", price: 6000 },
+  { id: "fire-dragon", name: "Dragon Coil", kind: "art", art: "fire-dragon", rarity: "legendary", price: 4000 },
+  { id: "angel-wings", name: "Angel Wings", kind: "art", art: "angel-wings", rarity: "legendary", price: 5500 },
+  { id: "dragon-head", name: "Dragon Head", kind: "art", art: "dragon-head", rarity: "legendary", price: 6000 },
 
   // ── Earned with a badge, never bought ───────────────────────────
   { id: "seal-halo", name: "Seal Keeper's Halo", kind: "art", art: "seal-halo", rarity: "legendary", price: 0, earnedBy: "nightwatch.ghostbreaker" },

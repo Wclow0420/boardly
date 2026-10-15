@@ -25,14 +25,16 @@ BORDER_PRICES = {
     "card-fan": 1500,
     "sakura": 1600,
     "meeple-parade": 1800,
-    "campfire": 2000,
+    "campfire": 3000,
     "glacier": 2500,
     "thunderstorm": 2800,
     "ghost-lantern": 3000,
     "galaxy": 3500,
     "lion-dance": 4500,
     "phoenix": 5000,
-    "fire-dragon": 6000,
+    "fire-dragon": 4000,
+    "angel-wings": 5500,
+    "dragon-head": 6000,
 }
 
 # Borders that can't be bought: each comes with a badge.

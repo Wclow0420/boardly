@@ -2,6 +2,7 @@
 
 import { EARNED_ART } from "./earned";
 import { EPIC_ART } from "./epic";
+import { FRAME_ART } from "./frames";
 import type { ArtBorderDrawing } from "./kit";
 import { LEGENDARY_ART } from "./legendary";
 import { RARE_ART } from "./rare";
@@ -11,6 +12,7 @@ export const ART: Record<string, ArtBorderDrawing> = {
   ...EPIC_ART,
   ...LEGENDARY_ART,
   ...EARNED_ART,
+  ...FRAME_ART,
 };
 
 export { BorderClockProvider, useBorderClock } from "./kit";

@@ -15,18 +15,54 @@ const ART_BORDERS = BORDERS.filter((border) => border.kind === "art");
 
 export default function BordersPreview() {
   const { colors, spacing } = useTheme();
-  const [big, setBig] = useState("fire-dragon");
+  const [big, setBig] = useState("lion-dance");
   if (!__DEV__) return <Redirect href="/" />;
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg, alignItems: "center" }}>
+      <ScrollView
+        contentContainerStyle={{
+          padding: spacing.lg,
+          gap: spacing.lg,
+          alignItems: "center",
+        }}
+      >
+        {/* the frame borders, large */}
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            gap: 60,
+            marginTop: 50,
+          }}
+        >
+          {["lion-dance", "dragon-head", "angel-wings", "phoenix"].map((id) => (
+            <View key={id} style={{ padding: 34 }}>
+              <AvatarBorder name="Wei" size={96} borderId={id} />
+            </View>
+          ))}
+        </View>
         <View style={{ height: 250, justifyContent: "center", marginTop: 40 }}>
           <AvatarBorder name="Wei" size={130} borderId={big} />
         </View>
-        <AppText variant="title">{ART_BORDERS.find((b) => b.id === big)?.name}</AppText>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", rowGap: 34, columnGap: 40 }}>
+        <AppText variant="title">
+          {ART_BORDERS.find((b) => b.id === big)?.name}
+        </AppText>
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            rowGap: 34,
+            columnGap: 40,
+          }}
+        >
           {ART_BORDERS.map((border) => (
-            <Pressable key={border.id} onPress={() => setBig(border.id)} style={{ alignItems: "center", width: 90, gap: 26 }}>
+            <Pressable
+              key={border.id}
+              onPress={() => setBig(border.id)}
+              style={{ alignItems: "center", width: 90, gap: 26 }}
+            >
               <View style={{ marginTop: 22 }}>
                 <AvatarBorder name="Wei" size={58} borderId={border.id} />
               </View>

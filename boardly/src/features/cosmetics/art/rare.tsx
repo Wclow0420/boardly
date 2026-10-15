@@ -1,7 +1,6 @@
-// Rare art borders: dice, cards, blossom, meeples, a campfire.
+// Rare art borders: dice, cards, blossom, meeples.
 
 import {
-  BlurMask,
   Circle,
   Group,
   LinearGradient,
@@ -11,12 +10,9 @@ import {
 } from "@shopify/react-native-skia";
 import { useDerivedValue } from "react-native-reanimated";
 
-import { Fire } from "@/components/iso";
 import { MEEPLE_COLORS, MEEPLE_PATH } from "@/components/tabletop/Meeple";
 import {
   Band,
-  Halo,
-  Sparks,
   TAU,
   polar,
   rnd,
@@ -195,18 +191,39 @@ const CardFan: ArtBorderDrawing = {
 
 // ── Sakura Branch: a blossom branch, petals drifting down ────────────
 
-const BRANCH = "M-62 46C-82 18 -80 -24 -58 -52C-48 -64 -32 -72 -14 -76";
-const TWIG_A = "M-74 4C-86 -2 -92 -10 -92 -18";
-const TWIG_B = "M-50 -60C-46 -74 -36 -82 -24 -86";
+// The branch hugs the ring from the bottom right, round the bottom and
+// up the left side, and bursts into a cluster on the picture's top-left
+// edge (covering a little of it, on purpose).
+const BRANCH =
+  "M44 56C20 72 -20 74 -46 54C-70 34 -76 0 -66 -26C-60 -40 -52 -48 -40 -54";
+const TWIG_A = "M-62 -12C-76 -16 -86 -26 -88 -40";
+const TWIG_B = "M18 66C26 76 38 80 50 78";
+const TWIG_C = "M-58 34C-72 40 -80 52 -82 64";
 const BLOSSOMS: [number, number, number][] = [
-  [-70, 28, 7],
-  [-80, -6, 8],
-  [-90, -16, 5.5],
-  [-70, -36, 7],
-  [-48, -62, 6.5],
-  [-26, -84, 6],
-  [-14, -74, 7.5],
-  [-60, 40, 5.5],
+  // the big cluster, top left
+  [-40, -50, 13],
+  [-58, -36, 11],
+  [-24, -62, 10],
+  [-52, -60, 8.5],
+  [-34, -32, 7.5],
+  [-70, -48, 7],
+  // along the branch
+  [-86, -40, 7],
+  [-70, 2, 7.5],
+  [-80, 62, 6.5],
+  [-30, 70, 6],
+  // a little cluster, bottom right
+  [48, 60, 9],
+  [36, 72, 7],
+  [56, 74, 6],
+];
+const LEAVES: [number, number, number][] = [
+  [-66, -18, -0.6],
+  [-76, 20, 0.4],
+  [-50, 54, 1.1],
+  [8, 72, 1.6],
+  [-14, -70, -1.2],
+  [62, 52, 2.4],
 ];
 
 function Blossom({ x, y, r }: { x: number; y: number; r: number }) {
@@ -264,41 +281,54 @@ function Petal({ t, i }: { t: Clock; i: number }) {
   );
 }
 
+function SakuraFront({ t }: { t: Clock }) {
+  const sway = useDerivedValue(() => [
+    { rotate: Math.sin(t.value * 0.9) * 0.012 },
+  ]);
+  return (
+    <Group>
+      <Group transform={sway}>
+        <Path
+          path={BRANCH}
+          style="stroke"
+          strokeWidth={7}
+          strokeCap="round"
+          color="#4A2E22"
+        />
+        {[TWIG_A, TWIG_B, TWIG_C].map((d) => (
+          <Path
+            key={d}
+            path={d}
+            style="stroke"
+            strokeWidth={3.5}
+            strokeCap="round"
+            color="#4A2E22"
+          />
+        ))}
+        {LEAVES.map(([x, y, a], i) => (
+          <Path
+            key={i}
+            path="M0 0C3 -4 10 -4 14 0C10 4 3 4 0 0z"
+            color="#7DBE6A"
+            transform={[{ translateX: x }, { translateY: y }, { rotate: a }]}
+          />
+        ))}
+        {BLOSSOMS.map(([x, y, r], i) => (
+          <Blossom key={i} x={x} y={y} r={r} />
+        ))}
+      </Group>
+      {Array.from({ length: 8 }, (_, i) => (
+        <Petal key={i} t={t} i={i} />
+      ))}
+    </Group>
+  );
+}
+
 const Sakura: ArtBorderDrawing = {
   back: () => (
     <Band r={53} width={5} colors={["#FFD6E3", "#E78FAE"]} rim="#8C3B5833" />
   ),
-  front: ({ t }) => (
-    <Group>
-      <Path
-        path={BRANCH}
-        style="stroke"
-        strokeWidth={6}
-        strokeCap="round"
-        color="#4A2E22"
-      />
-      <Path
-        path={TWIG_A}
-        style="stroke"
-        strokeWidth={3}
-        strokeCap="round"
-        color="#4A2E22"
-      />
-      <Path
-        path={TWIG_B}
-        style="stroke"
-        strokeWidth={3}
-        strokeCap="round"
-        color="#4A2E22"
-      />
-      {BLOSSOMS.map(([x, y, r], i) => (
-        <Blossom key={i} x={x} y={y} r={r} />
-      ))}
-      {Array.from({ length: 7 }, (_, i) => (
-        <Petal key={i} t={t} i={i} />
-      ))}
-    </Group>
-  ),
+  front: SakuraFront,
 };
 
 // ── Meeple Parade: meeples in every colour march round the ring ──────
@@ -349,85 +379,9 @@ const MeepleParade: ArtBorderDrawing = {
   ),
 };
 
-// ── Campfire: flames lick up round the ring, embers rise ─────────────
-
-/** Flames round the ring, tallest at the foot. */
-const FLAMES = Array.from({ length: 14 }, (_, i) => {
-  const a = (i / 14) * TAU;
-  // a = π/2 is the bottom of the ring
-  const low = (1 + Math.sin(a)) / 2;
-  return { a, h: 16 + low * 26, w: 13 + low * 8 };
-});
-
-function FirePlume({
-  t,
-  a,
-  h,
-  w,
-}: {
-  t: Clock;
-  a: number;
-  h: number;
-  w: number;
-}) {
-  return (
-    <Group transform={[{ rotate: a + Math.PI / 2 }]}>
-      <Fire x={0} y={-50} width={w} height={h} clock={t} />
-    </Group>
-  );
-}
-
-function CampfireBack({ t }: { t: Clock }) {
-  const glow = useDerivedValue(
-    () => 0.55 + 0.15 * Math.sin(t.value * 7.3) * Math.sin(t.value * 3.1),
-  );
-  return (
-    <Group>
-      <Halo r={92} color="#FF7A1A" opacity={glow} />
-      {FLAMES.map((f, i) => (
-        <FirePlume key={i} t={t} {...f} />
-      ))}
-      <Sparks
-        t={t}
-        count={9}
-        from={-Math.PI * 0.95}
-        to={-Math.PI * 0.05}
-        r={64}
-        rise={30}
-      />
-    </Group>
-  );
-}
-
-function CampfireFront({ t }: { t: Clock }) {
-  const embers = useDerivedValue(() => 0.65 + 0.35 * Math.sin(t.value * 5.2));
-  return (
-    <Group>
-      <Band r={53} width={6} colors={["#3A2216", "#1C0F08"]} rim="#00000099" />
-      <Circle
-        cx={0}
-        cy={0}
-        r={53}
-        style="stroke"
-        strokeWidth={1.6}
-        color="#FF8A2A"
-        opacity={embers}
-      >
-        <BlurMask blur={2} style="solid" />
-      </Circle>
-    </Group>
-  );
-}
-
-const Campfire: ArtBorderDrawing = {
-  back: CampfireBack,
-  front: CampfireFront,
-};
-
 export const RARE_ART = {
   "dice-orbit": DiceOrbit,
   "card-fan": CardFan,
   sakura: Sakura,
   "meeple-parade": MeepleParade,
-  campfire: Campfire,
 };
