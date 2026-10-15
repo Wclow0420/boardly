@@ -14,13 +14,7 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-  useWindowDimensions,
-} from "react-native";
+import { BackHandler, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { BackIcon, Emblem } from "@/components/icons";
@@ -36,7 +30,7 @@ import {
   type Slot,
 } from "@/features/mascot/dress";
 import { MascotThumb } from "@/features/mascot/MascotThumb";
-import { MeepleReveal, useMeepleReveal } from "@/features/mascot/MeepleReveal";
+import { useMeepleTransition } from "@/features/mascot/MeepleTransition";
 import { MascotStage } from "@/features/mascot/MascotStage";
 import { Stage } from "@/features/mascot/Stage";
 import type { PartDef } from "@/features/mascot/rig";
@@ -180,8 +174,17 @@ export default function Wardrobe() {
     tapHaptic();
     setLook((current) => withItem(current, slot, id));
   }, []);
-  // in and out through the meeple, like the app's opening
-  const reveal = useMeepleReveal(() => router.back());
+  // out through the meeple, like the app's opening (and Android's back
+  // button the same way)
+  const go = useMeepleTransition();
+  const close = useCallback(() => go(() => router.back()), [go, router]);
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      close();
+      return true;
+    });
+    return () => sub.remove();
+  }, [close]);
 
   const keep = async (buy: boolean) => {
     setBusy(true);
@@ -232,7 +235,7 @@ export default function Wardrobe() {
       <View style={styles.header}>
         <IconButton
           accessibilityLabel={t("mascot.close")}
-          onPress={reveal.close}
+          onPress={close}
         >
           <BackIcon size={20} />
         </IconButton>
@@ -339,7 +342,6 @@ export default function Wardrobe() {
           />
         )}
       </View>
-      <MeepleReveal {...reveal} />
     </SafeAreaView>
   );
 }

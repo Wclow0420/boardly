@@ -15,6 +15,7 @@ import { useSession } from "@/context/SessionContext";
 import { CoinPill } from "@/features/coins/CoinPill";
 import { asLook } from "@/features/mascot/dress";
 import { MascotStage } from "@/features/mascot/MascotStage";
+import { useMeepleTransition } from "@/features/mascot/MeepleTransition";
 import { Stage } from "@/features/mascot/Stage";
 import { TABLE, fontFamily } from "@/theme";
 import { tapHaptic } from "@/utils/haptics";
@@ -25,6 +26,7 @@ export default function MascotTab() {
   const { width } = useWindowDimensions();
   const { user } = useSession();
   const look = useMemo(() => asLook(user?.mascot), [user?.mascot]);
+  const go = useMeepleTransition();
 
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: TABLE.table[1] }}>
@@ -46,7 +48,7 @@ export default function MascotTab() {
           accessibilityRole="button"
           onPress={() => {
             tapHaptic();
-            router.push("/wardrobe");
+            go(() => router.push("/wardrobe"));
           }}
           style={({ pressed }) => [styles.wardrobe, pressed && { opacity: 0.8 }]}
         >

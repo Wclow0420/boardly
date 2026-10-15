@@ -33,6 +33,11 @@ jest.mock("@/components/iso", () => ({
   Passage: () => null,
   useIsoClock: () => ({ value: 0 }),
 }));
+// The meeple transition draws on Skia: in tests a move just happens
+jest.mock("@/features/mascot/MeepleTransition", () => ({
+  MeepleTransitionProvider: ({ children }) => children,
+  useMeepleTransition: () => (move) => move(),
+}));
 // The living mascot draws on Skia too (features/mascot)
 jest.mock("@/features/mascot/MascotStage", () => ({
   FEET: { x: 50, y: 118.4 },

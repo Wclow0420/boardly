@@ -31,6 +31,7 @@ import { WebFrame } from "@/components/ui";
 import { BorderClockProvider } from "@/features/cosmetics/art";
 import { SessionProvider, useSession } from "@/context/SessionContext";
 import { FriendsRealtime } from "@/features/friends/FriendsRealtime";
+import { MeepleTransitionProvider } from "@/features/mascot/MeepleTransition";
 import { PlayerCardProvider } from "@/features/players/PlayerCardProvider";
 import { useOtaUpdates } from "@/hooks/useOtaUpdates";
 import { LocaleProvider } from "@/i18n/LocaleContext";
@@ -181,7 +182,11 @@ export default function RootLayout() {
                     <BorderClockProvider>
                       <BottomSheetModalProvider>
                         <PlayerCardProvider>
-                          <RootNavigator />
+                          {/* moving between some screens goes through the meeple,
+                              over everything (MeepleTransition) */}
+                          <MeepleTransitionProvider>
+                            <RootNavigator />
+                          </MeepleTransitionProvider>
                         </PlayerCardProvider>
                       </BottomSheetModalProvider>
                     </BorderClockProvider>
