@@ -6,10 +6,12 @@ import { CROWN_ART } from "./crowns";
 import { EARNED_ART } from "./earned";
 import { EPIC_ART } from "./epic";
 import { FALLEN_ART } from "./fallen";
+import { ELEMENTS_ART } from "./elements";
 import { FRAME_ART } from "./frames";
 import { HERALDRY_ART } from "./heraldry";
 import type { ArtBorderDrawing } from "./kit";
 import { LEGENDARY_ART } from "./legendary";
+import { RADIANT_ART } from "./radiant";
 import { RARE_ART } from "./rare";
 import { RIM_ART } from "./rimBorders";
 import { SERAPH_ART } from "./seraph";
@@ -21,6 +23,8 @@ export const ART: Record<string, ArtBorderDrawing> = {
   ...EARNED_ART,
   ...FRAME_ART,
   ...HERALDRY_ART,
+  ...RADIANT_ART,
+  ...ELEMENTS_ART,
   ...CROWN_ART,
   ...RIM_ART,
   ...SERAPH_ART,
