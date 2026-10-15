@@ -13,6 +13,7 @@ import {
 import { useMemo } from "react";
 
 import { Fire } from "@/components/iso";
+import { FireRim } from "./rims";
 import { useDerivedValue } from "react-native-reanimated";
 
 import {
@@ -134,12 +135,7 @@ const Phoenix: ArtBorderDrawing = {
   ),
   front: ({ t }) => (
     <Group>
-      <Band
-        r={53.5}
-        width={6}
-        colors={["#FFE08A", "#F2A11F", "#B3460C"]}
-        rim="#7A2A0A"
-      />
+      <FireRim t={t} />
       <PhoenixFlame t={t} />
     </Group>
   ),

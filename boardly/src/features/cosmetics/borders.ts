@@ -399,6 +399,18 @@ export const BORDERS: ProfileBorder[] = [
   { id: "queen-crown", name: "Queen's Tiara", kind: "art", art: "queen-crown", rarity: "legendary", price: 5000 },
   { id: "angel-wings", name: "Angel Wings", kind: "art", art: "angel-wings", rarity: "legendary", price: 5500 },
 
+  // ── Rim borders: the effect is the ring ────────────────────────
+  { id: "black-hole", name: "Black Hole", kind: "art", art: "black-hole", rarity: "legendary", price: 6000 },
+  { id: "molten-lava", name: "Molten Lava", kind: "art", art: "molten-lava", rarity: "legendary", price: 4500 },
+  { id: "shadow-flame", name: "Shadow Flame", kind: "art", art: "shadow-flame", rarity: "legendary", price: 4500 },
+  { id: "aurora", name: "Aurora", kind: "art", art: "aurora", rarity: "epic", price: 4000 },
+  { id: "tidal-wave", name: "Tidal Wave", kind: "art", art: "tidal-wave", rarity: "epic", price: 4000 },
+  { id: "plasma-core", name: "Plasma Core", kind: "art", art: "plasma-core", rarity: "legendary", price: 5000 },
+  { id: "toxic", name: "Toxic", kind: "art", art: "toxic", rarity: "epic", price: 3500 },
+  { id: "divine-light", name: "Divine Light", kind: "art", art: "divine-light", rarity: "legendary", price: 5000 },
+  { id: "prism", name: "Prism", kind: "art", art: "prism", rarity: "epic", price: 4000 },
+  { id: "blood-moon", name: "Blood Moon", kind: "art", art: "blood-moon", rarity: "legendary", price: 4500 },
+
   // ── Earned with a badge, never bought ───────────────────────────
   { id: "seal-halo", name: "Seal Keeper's Halo", kind: "art", art: "seal-halo", rarity: "legendary", price: 0, earnedBy: "nightwatch.ghostbreaker" },
   { id: "winter-hearth", name: "Last Winter Hearth", kind: "art", art: "winter-hearth", rarity: "legendary", price: 0, earnedBy: "shelter.lastWinter" },

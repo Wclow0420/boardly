@@ -19,6 +19,7 @@ import { useDerivedValue } from "react-native-reanimated";
 
 import { NOISE } from "@/components/iso/noise";
 import { StormRim } from "./rims";
+import { FROST_RIM, Fx, NEBULA_RIM } from "./rimfx";
 
 import {
   Band,
@@ -131,12 +132,7 @@ const Glacier: ArtBorderDrawing = {
   back: GlacierBack,
   front: ({ t }) => (
     <Group>
-      <Band
-        r={53}
-        width={6}
-        colors={["#E8FBFF", "#6FC8FF", "#2E5FB8"]}
-        rim="#1B3A7A88"
-      />
+      <Fx sksl={FROST_RIM} t={t} extent={68} />
       {Array.from({ length: 12 }, (_, i) => (
         <Flake key={i} t={t} i={i} />
       ))}
@@ -528,7 +524,7 @@ const Galaxy: ArtBorderDrawing = {
   back: GalaxyBack,
   front: ({ t }) => (
     <Group>
-      <Band r={52.5} width={4} colors={["#C7B8FF", "#5B3FA8"]} />
+      <Fx sksl={NEBULA_RIM} t={t} extent={68} />
       <Planet
         t={t}
         r={80}

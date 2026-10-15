@@ -7,6 +7,7 @@ import { FRAME_ART } from "./frames";
 import type { ArtBorderDrawing } from "./kit";
 import { LEGENDARY_ART } from "./legendary";
 import { RARE_ART } from "./rare";
+import { RIM_ART } from "./rimBorders";
 
 export const ART: Record<string, ArtBorderDrawing> = {
   ...RARE_ART,
@@ -15,6 +16,7 @@ export const ART: Record<string, ArtBorderDrawing> = {
   ...EARNED_ART,
   ...FRAME_ART,
   ...CROWN_ART,
+  ...RIM_ART,
 };
 
 export { BorderClockProvider, useBorderClock } from "./kit";

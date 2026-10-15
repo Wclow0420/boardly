@@ -35,6 +35,17 @@ BORDER_PRICES = {
     "angel-wings": 5500,
     "king-crown": 5000,
     "queen-crown": 5000,
+    # rim borders: the effect is the ring
+    "black-hole": 6000,
+    "molten-lava": 4500,
+    "shadow-flame": 4500,
+    "aurora": 4000,
+    "tidal-wave": 4000,
+    "plasma-core": 5000,
+    "toxic": 3500,
+    "divine-light": 5000,
+    "prism": 4000,
+    "blood-moon": 4500,
 }
 
 # Borders that can't be bought: each comes with a badge.
