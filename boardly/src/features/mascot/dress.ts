@@ -7,7 +7,7 @@ import type { EmblemData } from "@/components/engraved/emblem";
 import { EYES, MOUTHS, NOSES } from "./parts/face";
 import { BACKS, HANDS, HATS } from "./parts/gear";
 import { BOTTOMS, SHOES, TOPS } from "./parts/wear";
-import { BOX, lifted, type PartDef } from "./rig";
+import { lifted, type PartDef } from "./rig";
 import { COLOURS, SKINS } from "./skins";
 
 export { BOX } from "./rig";
