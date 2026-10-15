@@ -17,6 +17,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useReducedMotion, useSharedValue } from "react-native-reanimated";
 
+import { Emblem } from "@/components/icons";
 import { api } from "@/api/client";
 import { TIER_METAL } from "@/components/badges/Badge";
 import { GearEmblem } from "@/components/engraved";
@@ -168,7 +169,7 @@ export default function ProfileScreen() {
                 avatarUrl={user?.avatarUrl}
               />
               <View style={styles.editBadge}>
-                <AppText style={styles.editIcon}>📷</AppText>
+                <Emblem emoji="📷" size={16} />
               </View>
             </Pressable>
             <View style={styles.who}>

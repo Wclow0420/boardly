@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { PlusIcon } from "@/components/icons";
+import { Emblem, PlusIcon } from "@/components/icons";
 import { AppText, Card, StatusPill } from "@/components/ui";
 import type { LobbyPlayer } from "@/data/types";
 import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
@@ -49,13 +49,7 @@ export function PlayerCard({
             { backgroundColor: pressed ? colors.border : colors.well },
           ]}
         >
-          <AppText
-            variant="caption"
-            color="textMuted"
-            style={styles.removeMark}
-          >
-            ✕
-          </AppText>
+          <Emblem emoji="✕" size={12} />
         </Pressable>
       ) : null}
       <AvatarBorder

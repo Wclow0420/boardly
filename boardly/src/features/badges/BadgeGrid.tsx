@@ -19,7 +19,7 @@ import Animated, {
 
 import type { BadgeRecord } from "@/api/client";
 import { Badge, TIER_METAL } from "@/components/badges/Badge";
-import { AppText } from "@/components/ui";
+import { AppText, EmblemText } from "@/components/ui";
 import { Popup } from "@/features/game/Popup";
 import { useGameName } from "@/games/names";
 import { TABLE, fontFamily } from "@/theme";
@@ -269,9 +269,9 @@ function BadgeDetail({
                 />
               </View>
             ) : top ? (
-              <AppText style={[styles.tier, { color: metal.glow }]}>
+              <EmblemText style={[styles.tier, { color: metal.glow }]}>
                 {`★  ${t("badges.celebrate.topLevel")}`}
-              </AppText>
+              </EmblemText>
             ) : null}
           </>
         ) : (

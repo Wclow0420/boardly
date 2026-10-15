@@ -5,18 +5,13 @@
 
 import { Circle, G, Path } from "react-native-svg";
 
+import { disc, ring } from "./emblem";
 import { EmblemSvg, Engraved, JewelDot } from "./Engraved";
 import { FEATHER, LEAF, type Material } from "./shapes";
 
 export interface EmblemProps {
   size?: number;
 }
-
-const ring = (cx: number, cy: number, r: number, hole: number) =>
-  `M${cx + r} ${cy}A${r} ${r} 0 1 1 ${cx - r} ${cy}A${r} ${r} 0 1 1 ${cx + r} ${cy}Z` +
-  `M${cx + hole} ${cy}A${hole} ${hole} 0 1 0 ${cx - hole} ${cy}A${hole} ${hole} 0 1 0 ${cx + hole} ${cy}Z`;
-const disc = (cx: number, cy: number, r: number) =>
-  `M${cx + r} ${cy}A${r} ${r} 0 1 1 ${cx - r} ${cy}A${r} ${r} 0 1 1 ${cx + r} ${cy}Z`;
 
 /** Language: a silver globe in a gold meridian, on its stand. */
 export function GlobeEmblem({ size = 28 }: EmblemProps) {

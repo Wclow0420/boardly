@@ -7,13 +7,19 @@
 export type Pt = [number, number];
 export const fmt = (p: Pt) => `${p[0].toFixed(2)} ${p[1].toFixed(2)}`;
 
-/** Fills, light to dark and back: gold, silver, ivory, and a dark wood
- *  for doors and handles. */
+/** Fills, light to dark and back. Metals first (gold, silver, dark
+ *  iron), then ivory (bone, parchment, cloth), wood, and the enamels:
+ *  flame, crimson (wine, blood, a seal), leaf green, night blue. */
 export const MATERIALS = {
   gold: ["#FFF2B8", "#E2B04A", "#9A6B1E", "#F0CC72"],
   silver: ["#FFFFFF", "#C9D0DA", "#7A8494", "#E4E9F0"],
+  iron: ["#A8AEB8", "#5A606A", "#2A2E36", "#7A808A"],
   ivory: ["#FFFFFF", "#F4EEDF", "#D8CCB0"],
   wood: ["#D09A5E", "#8A5A2E", "#5A3618", "#A8743E"],
+  flame: ["#FFF6C8", "#FFB23A", "#E2541A", "#FFD27A"],
+  crimson: ["#FF9AA6", "#C2203A", "#6A0A18", "#E05A6A"],
+  leaf: ["#D8F0A0", "#6AAA3A", "#2E6A1E", "#9ACC5A"],
+  night: ["#9AB8E8", "#3A5A9A", "#1A2A5A", "#6A8AC8"],
 } as const;
 export type Material = keyof typeof MATERIALS;
 
@@ -21,9 +27,38 @@ export type Material = keyof typeof MATERIALS;
 export const INKS: Record<Material, { ink: string; vein: string }> = {
   gold: { ink: "#3A2408", vein: "#7A5212" },
   silver: { ink: "#1E242C", vein: "#4A5462" },
+  iron: { ink: "#0E1014", vein: "#2A2E36" },
   ivory: { ink: "#3A2408", vein: "#A08A60" },
   wood: { ink: "#2A1808", vein: "#4A2C12" },
+  flame: { ink: "#5A1A04", vein: "#A0360C" },
+  crimson: { ink: "#3A0408", vein: "#7A1020" },
+  leaf: { ink: "#14300A", vein: "#2E5A16" },
+  night: { ink: "#0A1430", vein: "#1A2A5A" },
 };
+
+const channel = (hex: string, i: number) =>
+  parseInt(hex.replace("#", "").slice(i * 2, i * 2 + 2), 16);
+/** Mix `hex` toward white (amount > 0) or black (amount < 0). */
+export function shade(hex: string, amount: number) {
+  const to = amount > 0 ? 255 : 0;
+  const k = Math.abs(amount);
+  return `#${[0, 1, 2]
+    .map((i) =>
+      Math.round(channel(hex, i) + (to - channel(hex, i)) * k)
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("")}`;
+}
+
+/** Any colour as an enamel: its fill, outline and engraving. */
+export function enamel(hex: string) {
+  return {
+    colors: [shade(hex, 0.55), hex, shade(hex, -0.4), shade(hex, 0.25)],
+    ink: shade(hex, -0.78),
+    vein: shade(hex, -0.5),
+  };
+}
 
 /** Jewels: highlight, body, depth. */
 export const JEWELS = {

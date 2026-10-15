@@ -13,6 +13,7 @@ export {
   SheetTextInput,
   type BottomSheetModalProps,
 } from "./BottomSheetModal";
+export { EmblemText } from "./EmblemText";
 export { EmptyState, type EmptyStateProps } from "./EmptyState";
 export { ErrorState, type ErrorStateProps } from "./ErrorState";
 export {

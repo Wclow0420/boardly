@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useTranslation } from "react-i18next";
 
+import { Emblem } from "@/components/icons";
 import { AppText, IconButton } from "@/components/ui";
 import { useTheme } from "@/theme";
 
@@ -59,9 +60,7 @@ export function Popup({ visible, title, onClose, children }: PopupProps) {
                 {title}
               </AppText>
               <IconButton accessibilityLabel={t("rules.close")} onPress={onClose} filled>
-                <AppText variant="title" color="textMuted">
-                  ✕
-                </AppText>
+                <Emblem emoji="✕" size={18} />
               </IconButton>
             </View>
             <ScrollView

@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { InfoIcon } from "@/components/icons";
+import { Emblem, InfoIcon } from "@/components/icons";
 import { AppText, Button, Chip, IconButton } from "@/components/ui";
 import { getGame } from "@/games/registry";
 import type { RulesPage } from "@/games/types";
@@ -195,9 +195,7 @@ export function RulesSheet({
               </AppText>
             </View>
             <IconButton accessibilityLabel={t("rules.close")} onPress={close} filled>
-              <AppText variant="title" color="textMuted">
-                ✕
-              </AppText>
+              <Emblem emoji="✕" size={18} />
             </IconButton>
           </View>
 

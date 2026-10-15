@@ -6,7 +6,7 @@ import { StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { ApiError } from "@/api/client";
-import { BackIcon } from "@/components/icons";
+import { BackIcon, Emblem } from "@/components/icons";
 import {
   AppText,
   Button,
@@ -407,7 +407,7 @@ function GameScreenBody({
               : t("game.turn", { name: currentPlayer?.username ?? "…" })}
           </AppText>
         ) : (
-          <AppText style={styles.resultEmoji}>{winner ? "🏆" : "🤝"}</AppText>
+          <Emblem emoji={winner ? "🏆" : "🤝"} size={56} />
         )}
         {!inProgress ? (
           <AppText variant="title" style={{ marginTop: spacing.xs }}>

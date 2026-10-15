@@ -95,10 +95,21 @@ and Baroque Silver (`art/baroque.tsx`).
 
   The palettes (`MATERIALS`, `INKS`, `JEWELS`) are there too. Draw the
   right half and mirror it.
-- Icons are engraved emblems (`src/components/engraved/icons.tsx`),
-  still SVG built from `Engraved` (material fill, veins, shine, ink),
-  `JewelDot` and `EmblemSvg` (48 × 48 units). Use them in place of
-  emoji. Check them at `boardly-dev://dev/emblems`.
+- Every icon is an engraved emblem in a 48 × 48 box, written as data
+  (`EmblemData` in `src/components/engraved/emblem.ts`: shapes with a
+  material, veins, shine; jewels; dark holes; `m: "tint"` takes the
+  colour it's shown in) and drawn by `EmblemGlyph`.
+  - App icons: `components/icons` (same names as ever) from
+    `engraved/ui.ts`.
+  - The tab bar, settings rows and gear: `engraved/icons.tsx`.
+  - Emoji used as pictures: `<Emblem emoji="🏆" size>`; in a label,
+    `EmblemText`.
+  - A game's icons: `src/games/<game>/emblems`, which its `GameIcon`
+    draws. The line `GLYPHS` stay for badges and as the fallback.
+  - Look a set over with
+    `node scripts/emblem-sheet.mjs <file.ts> <out.png>`: each icon large
+    and at text size. Every icon must read at about 17pt.
+  - Never ship a bare emoji or a line icon as UI.
 - Life comes from a light `Sweep`, `Glint`s, one jewel that glows or
   beats, and a gentle sway. Never draw faces or heads in code.
 

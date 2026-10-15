@@ -12,8 +12,8 @@ import { useTranslation } from "react-i18next";
 
 import { SearchIcon, SortIcon } from "@/components/icons";
 import {
-  AppText,
   Chip,
+  EmblemText,
   EmptyState,
   ErrorState,
   IconButton,
@@ -167,14 +167,14 @@ export default function GamesScreen() {
             <View style={styles.plankFront} />
             <View style={styles.labels}>
               {shelf.map((game) => (
-                <AppText
+                <EmblemText
                   key={game.id}
                   variant="tiny"
                   align="center"
                   style={[styles.label, { width: boxWidth + BOX_DEPTH }]}
                 >
                   {`👥 ${t("games.playersRange", { min: game.minPlayers, max: game.maxPlayers })}`}
-                </AppText>
+                </EmblemText>
               ))}
             </View>
           </View>

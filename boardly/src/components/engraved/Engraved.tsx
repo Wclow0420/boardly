@@ -13,7 +13,8 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 
-import { INKS, JEWELS, MATERIALS, type Jewel, type Material } from "./shapes";
+import { shadeOf, type EmblemData, type Shade } from "./emblem";
+import { JEWELS, type Jewel } from "./shapes";
 
 /** A gradient id that's safe in url(#…). */
 function useGradientId() {
@@ -25,13 +26,16 @@ function useGradientId() {
 export function Engraved({
   d,
   material = "gold",
+  tint,
   vein,
   shine,
   evenOdd,
   ink = 1.5,
 }: {
   d: string;
-  material?: Material;
+  material?: Shade;
+  /** The colour "tint" stands for. */
+  tint?: string;
   /** Engraved lines: grooves, ribs, a leaf's midrib. */
   vein?: string;
   /** Where the light catches: one white line. */
@@ -41,7 +45,7 @@ export function Engraved({
   ink?: number;
 }) {
   const id = useGradientId();
-  const colors = MATERIALS[material];
+  const { colors, ink: inkColor, vein: veinColor } = shadeOf(material, tint);
   const rule = evenOdd ? "evenodd" : "nonzero";
   return (
     <G>
@@ -57,7 +61,7 @@ export function Engraved({
         <Path
           d={vein}
           fill="none"
-          stroke={INKS[material].vein}
+          stroke={veinColor}
           strokeWidth={0.9}
           strokeLinecap="round"
         />
@@ -72,14 +76,16 @@ export function Engraved({
           strokeLinecap="round"
         />
       ) : null}
-      <Path
-        d={d}
-        fill="none"
-        fillRule={rule}
-        stroke={INKS[material].ink}
-        strokeWidth={ink}
-        strokeLinejoin="round"
-      />
+      {ink > 0 ? (
+        <Path
+          d={d}
+          fill="none"
+          fillRule={rule}
+          stroke={inkColor}
+          strokeWidth={ink}
+          strokeLinejoin="round"
+        />
+      ) : null}
     </G>
   );
 }
@@ -139,5 +145,45 @@ export function EmblemSvg({
     <Svg width={size} height={size} viewBox="0 0 48 48">
       {children}
     </Svg>
+  );
+}
+
+/** An emblem written as data (see ./emblem), at `size` points; "tint"
+ *  parts take `color`. */
+export function EmblemGlyph({
+  data,
+  size,
+  color,
+}: {
+  data: EmblemData;
+  size: number;
+  color?: string;
+}) {
+  return (
+    <EmblemSvg size={size}>
+      {data.map((part, i) => {
+        const body =
+          "dark" in part ? (
+            <Path d={part.dark} fill="#1A1008" />
+          ) : "jewel" in part ? (
+            <JewelDot x={part.x} y={part.y} r={part.r} jewel={part.jewel} />
+          ) : (
+            <Engraved
+              d={part.d}
+              material={part.m}
+              tint={color}
+              vein={part.vein}
+              shine={part.shine}
+              evenOdd={part.evenOdd}
+              ink={part.ink}
+            />
+          );
+        return (
+          <G key={i} transform={part.t}>
+            {body}
+          </G>
+        );
+      })}
+    </EmblemSvg>
   );
 }

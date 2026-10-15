@@ -4,10 +4,11 @@ import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { BackIcon } from "@/components/icons";
+import { BackIcon, Emblem } from "@/components/icons";
 import {
   AppText,
   Button,
+  EmblemText,
   Frame,
   IconButton,
   Ribbon,
@@ -123,13 +124,13 @@ export default function BordersScreen() {
           </View>
           <View style={styles.price}>
             {selected.price > 0 ? <CoinIcon size={16} /> : null}
-            <AppText variant="label" style={{ color: TABLE.yellow.fill[0] }}>
+            <EmblemText variant="label" style={{ color: TABLE.yellow.fill[0] }}>
               {earnedBy
                 ? `🏅 ${badgeText(t, earnedBy).name}`
                 : selected.price > 0
                   ? selected.price
                   : t("borders.free")}
-            </AppText>
+            </EmblemText>
           </View>
         </View>
         <Button
@@ -217,10 +218,14 @@ export default function BordersScreen() {
                   ]}
                 />
                 {border.id === equippedId ? (
-                  <AppText style={styles.check}>✓</AppText>
+                  <View style={styles.check}>
+                    <Emblem emoji="✓" size={14} />
+                  </View>
                 ) : null}
                 {!owns(border) ? (
-                  <AppText style={styles.lock}>🔒</AppText>
+                  <View style={styles.lock}>
+                    <Emblem emoji="🔒" size={16} />
+                  </View>
                 ) : null}
               </Pressable>
             );

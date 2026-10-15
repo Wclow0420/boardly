@@ -1,6 +1,7 @@
 import { Image } from "expo-image";
 import { View, type ViewStyle } from "react-native";
 
+import { Emblem } from "@/components/icons";
 import { fontFamily, useTheme } from "@/theme";
 import { AppText } from "./AppText";
 
@@ -127,16 +128,15 @@ export function AvatarBadges({
         />
       ) : null}
       {crown ? (
-        <AppText
+        <View
           style={{
             position: "absolute",
-            top: -size * 0.12,
-            right: -size * 0.06,
-            fontSize: size * 0.3,
+            top: -size * 0.14,
+            right: -size * 0.08,
           }}
         >
-          👑
-        </AppText>
+          <Emblem emoji="👑" size={Math.round(size * 0.38)} />
+        </View>
       ) : null}
     </>
   );
