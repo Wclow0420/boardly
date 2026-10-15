@@ -199,6 +199,30 @@ export interface FriendUser extends AuthUser {
   relation: FriendRelation;
   requestId: string | null;
   presence: "online" | "inGame" | "offline" | null;
+  /** The game a friend is playing right now (friends only). */
+  playing: string | null;
+  together: Together | null;
+}
+
+/** The finished games two people both sat at. */
+export interface Together {
+  games: number;
+  lastGameType: string | null;
+  /** ISO time the latest one ended. */
+  lastPlayedAt: string | null;
+}
+
+/** A friend's player card: their numbers and the badges they've earned. */
+export interface FriendCard {
+  user: AuthUser;
+  gamesPlayed: number;
+  wins: number;
+  bestStreak: number;
+  favourite: string | null;
+  badges: BadgeRecord[];
+  together: Together | null;
+  presence: "online" | "inGame" | "offline";
+  playing: string | null;
 }
 
 export interface FriendsListing {
@@ -349,6 +373,9 @@ export const api = {
 
     remove: (userId: string) =>
       request<{ ok: true }>(`/friends/${userId}`, { method: "DELETE" }),
+
+    /** A friend's player card. */
+    card: (userId: string) => request<{ card: FriendCard }>(`/friends/${userId}/card`),
 
     /** Invite an online friend to the table I'm waiting at. */
     invite: (userId: string) =>

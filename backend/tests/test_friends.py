@@ -180,6 +180,8 @@ def test_in_game_presence_recent_players_and_stats(app, client, make_user):
     ).status_code == 201
 
     assert _listing(client, carol)["friends"][0]["presence"] == "inGame"
+    # friends see which game, others don't
+    assert _listing(client, carol)["friends"][0]["playing"] == "tictactoe"
     recent = _listing(client, alice)["recent"]
     assert [(u["username"], u["relation"]) for u in recent] == [("bob", "none")]
 
@@ -193,6 +195,25 @@ def test_in_game_presence_recent_players_and_stats(app, client, make_user):
 
     assert counters(alice) == {"gamesPlayed": 1, "wins": 1, "friends": 1}
     assert counters(bob) == {"gamesPlayed": 1, "wins": 0, "friends": 0}
+
+    # what alice and bob played together, on the recent list
+    together = _listing(client, alice)["recent"][0]["together"]
+    assert (together["games"], together["lastGameType"]) == (1, "tictactoe")
+    assert _listing(client, alice)["recent"][0]["playing"] is None
+
+
+def test_friend_card(client, make_user):
+    alice, bob, carol = make_user("alice"), make_user("bob"), make_user("carol")
+    _befriend(client, alice, bob)
+    # only friends can look
+    assert client.get(f"{BASE}/{carol['id']}/card", headers=alice["headers"]).status_code == 404
+
+    card = client.get(f"{BASE}/{bob['id']}/card", headers=alice["headers"]).get_json()["card"]
+    assert card["user"]["username"] == "bob"
+    assert (card["gamesPlayed"], card["wins"], card["together"]) == (0, 0, None)
+    # earned badges only, never progress towards the rest
+    assert card["badges"] == []
+    assert card["presence"] == "offline"
 
 
 def test_table_invite(app, client, make_user):

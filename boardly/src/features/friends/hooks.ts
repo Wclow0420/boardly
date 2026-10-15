@@ -22,6 +22,8 @@ function toFriend(user: FriendUser): Friend {
     relation: user.relation,
     presence: user.presence ?? undefined,
     requestId: user.requestId ?? undefined,
+    playing: user.playing,
+    together: user.together,
   };
 }
 
