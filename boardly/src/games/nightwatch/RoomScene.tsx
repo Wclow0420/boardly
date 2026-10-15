@@ -30,6 +30,8 @@ import {
   Vignette,
   useIsoClock,
 } from "@/components/iso";
+import { EmblemParts } from "@/components/engraved";
+import type { EmblemData } from "@/components/engraved/emblem";
 import { fontFamily, useTheme } from "@/theme";
 import { heavyHaptic, successHaptic, tapHaptic, tickHaptic } from "@/utils/haptics";
 import type { Arrival } from "./arrival";
@@ -118,6 +120,9 @@ export interface RoomSceneProps {
   arrival?: Arrival;
   /** They have reached their spot. */
   onArrived?: () => void;
+  /** Players drawn as their own avatar figure instead of a pawn, by
+   *  person key. */
+  figures?: Record<string, EmblemData>;
 }
 
 const VIEW_BOX = `0 0 ${SCENE_WIDTH} ${SCENE_HEIGHT}`;
@@ -143,6 +148,35 @@ function Shapes({ shapes }: { shapes: Shape[] }) {
         />
       ))}
     </>
+  );
+}
+
+/** Where an avatar figure stands on a spot: its box (feet on the spot,
+ *  a little taller than a pawn) in the scene's drawing. */
+function figureAt(spot: [number, number]) {
+  const [bx, by] = scenePoint(spot[0], spot[1], 0);
+  const [, ty] = pawnTop(spot);
+  const s = ((by - ty) * 1.75) / 111;
+  return { x: bx - 50 * s, y: by - 111 * s, w: 100 * s, h: 120 * s, s, head: by - 106 * s };
+}
+
+/** An avatar figure standing on a spot, with its shadow. */
+function Figure({ spot, data, shadow = true }: { spot: [number, number]; data: EmblemData; shadow?: boolean }) {
+  const f = figureAt(spot);
+  const [bx, by] = scenePoint(spot[0], spot[1], 0);
+  return (
+    <G>
+      {shadow ? (
+        <Path
+          d={`M${bx - 20 * f.s} ${by}a${20 * f.s} ${6 * f.s} 0 1 0 ${40 * f.s} 0a${20 * f.s} ${6 * f.s} 0 1 0 ${-40 * f.s} 0z`}
+          fill="#000000"
+          opacity={0.35}
+        />
+      ) : null}
+      <G transform={`translate(${f.x} ${f.y}) scale(${f.s})`}>
+        <EmblemParts data={data} />
+      </G>
+    </G>
   );
 }
 
@@ -242,6 +276,7 @@ export function RoomScene({
   secretDoors = NO_DOORS,
   arrival,
   onArrived,
+  figures,
 }: RoomSceneProps) {
   const { colors } = useTheme();
   const scene = useMemo(
@@ -446,6 +481,7 @@ export function RoomScene({
     .filter(({ person }) => person.kind !== "me")
     .sort((a, b) => a.spot[0] + a.spot[1] - (b.spot[0] + b.spot[1]));
   const me = standing.find(({ person }) => person.kind === "me");
+  const myFigure = me ? figures?.[me.person.key] : undefined;
   // the way in, from the doorway to your spot, and how far that is on the page
   const mySpot = scenePoint(SPOTS[0][0], SPOTS[0][1], 0);
   const entry = arrival ? entryPoint(room, arrival.from, arrival.how) : null;
@@ -460,6 +496,20 @@ export function RoomScene({
     : [0, 0];
   const bob = 1.6 * scale;
   const stepsAt = [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1];
+  // the walk in, for your pawn or figure and its name
+  const walkOpacity = entry?.fade
+    ? walk.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0, 1, 1] })
+    : 1;
+  const walking = [
+    { translateX: walk.interpolate({ inputRange: [0, 1], outputRange: [dx, 0] }) },
+    {
+      translateY: walk.interpolate({
+        inputRange: stepsAt,
+        outputRange: stepsAt.map((t, i) => dy * (1 - t) - (i % 2 ? bob : 0)),
+      }),
+    },
+    { translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [-6, 0] }) },
+  ];
   const sealed = missionRoom === room;
   // in a blackout, all the light there is: the lantern at your own spot
   const lantern = scenePoint(SPOTS[0][0], SPOTS[0][1], 0.12);
@@ -590,18 +640,24 @@ export function RoomScene({
         ]}
       >
         <Svg viewBox={VIEW_BOX} style={StyleSheet.absoluteFill}>
-          {byDepth.map(({ person, spot }) => (
-            <Shapes
-              key={person.key}
-              shapes={
-                person.kind === "other"
-                  ? pawnShapes(spot, colors.info, PAPER)
-                  : pawnShapes(spot, SHADE, "#6C769C")
-              }
-            />
-          ))}
+          {byDepth.map(({ person, spot }) =>
+            figures?.[person.key] ? (
+              <Figure key={person.key} spot={spot} data={figures[person.key]} />
+            ) : (
+              <Shapes
+                key={person.key}
+                shapes={
+                  person.kind === "other"
+                    ? pawnShapes(spot, colors.info, PAPER)
+                    : pawnShapes(spot, SHADE, "#6C769C")
+                }
+              />
+            ),
+          )}
           {byDepth.map(({ person, spot }) => {
-            const [x, y] = pawnTop(spot);
+            const [x, y] = figures?.[person.key]
+              ? [pawnTop(spot)[0], figureAt(spot).head]
+              : pawnTop(spot);
             return (
               <Label
                 key={person.key}
@@ -631,35 +687,48 @@ export function RoomScene({
       {me ? (
         <Animated.View
           pointerEvents="none"
+          style={[StyleSheet.absoluteFill, { opacity: walkOpacity, transform: walking }]}
+        >
+          <Svg viewBox={VIEW_BOX} style={StyleSheet.absoluteFill}>
+            {myFigure ? (
+              <Figure spot={me.spot} data={[]} shadow />
+            ) : (
+              <Shapes shapes={pawnShapes(me.spot, colors.primary, PAPER)} />
+            )}
+            <Label
+              x={pawnTop(me.spot)[0]}
+              y={(myFigure ? figureAt(me.spot).head : pawnTop(me.spot)[1]) - 2}
+              text={short(me.person.label)}
+              fill={colors.primary}
+            />
+          </Svg>
+        </Animated.View>
+      ) : null}
+      {/* your own figure on its spot, waddling a little at every step */}
+      {me && myFigure ? (
+        <Animated.View
+          pointerEvents="none"
           style={[
-            StyleSheet.absoluteFill,
+            place(figureAt(me.spot).x, figureAt(me.spot).y, figureAt(me.spot).w, figureAt(me.spot).h),
             {
-              opacity: entry?.fade
-                ? walk.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0, 1, 1] })
-                : 1,
+              opacity: walkOpacity,
+              transformOrigin: "50% 92%",
               transform: [
-                { translateX: walk.interpolate({ inputRange: [0, 1], outputRange: [dx, 0] }) },
+                ...walking,
                 {
-                  translateY: walk.interpolate({
+                  rotate: walk.interpolate({
                     inputRange: stepsAt,
-                    outputRange: stepsAt.map((t, i) => dy * (1 - t) - (i % 2 ? bob : 0)),
+                    outputRange: stepsAt.map((_, i) =>
+                      i === 0 || i === stepsAt.length - 1 ? "0deg" : i % 2 ? "7deg" : "-7deg",
+                    ),
                   }),
-                },
-                {
-                  translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [-6, 0] }),
                 },
               ],
             },
           ]}
         >
-          <Svg viewBox={VIEW_BOX} style={StyleSheet.absoluteFill}>
-            <Shapes shapes={pawnShapes(me.spot, colors.primary, PAPER)} />
-            <Label
-              x={pawnTop(me.spot)[0]}
-              y={pawnTop(me.spot)[1] - 2}
-              text={short(me.person.label)}
-              fill={colors.primary}
-            />
+          <Svg viewBox="0 0 100 120" style={StyleSheet.absoluteFill}>
+            <EmblemParts data={myFigure} />
           </Svg>
         </Animated.View>
       ) : null}

@@ -12,6 +12,7 @@ import type { Arrival, Entry } from "@/games/nightwatch/arrival";
 import { ManorMap } from "@/games/nightwatch/ManorMap";
 import { RoomScene } from "@/games/nightwatch/RoomScene";
 import { ROOMS, type NightEvent, type NightwatchState } from "@/games/nightwatch/logic";
+import { EMBLEMS as FIGURES } from "@/features/avatar/figure";
 import { useTheme } from "@/theme";
 
 const NONE: number[] = [];
@@ -55,6 +56,7 @@ export default function IsoPreview() {
   const [door, setDoor] = useState(false);
   const [arrival, setArrival] = useState<Arrival | undefined>(undefined);
   const [walks, setWalks] = useState(0);
+  const [avatars, setAvatars] = useState(true);
   // a room next door, across the corner, or far away, to walk in from
   const walkIn = (how: Entry) => {
     const from =
@@ -121,7 +123,14 @@ export default function IsoPreview() {
           people={[
             { key: "me", label: "You", kind: "me" },
             { key: "a", label: "Ming", kind: "other" },
+            { key: "b", label: "Mei", kind: "other" },
+            { key: "c", label: "Bao", kind: "other" },
           ]}
+          figures={
+            avatars
+              ? { me: FIGURES.girl, a: FIGURES.boy, b: FIGURES["girl (golden)"], c: FIGURES.panda }
+              : undefined
+          }
           missionRoom={mission ? room : null}
           secretDoors={door ? [[room, room === 4 ? 0 : 4]] : NONE_DOORS}
           arrival={arrival}
@@ -158,6 +167,11 @@ export default function IsoPreview() {
           nameOf={(seat) => (seat === 0 ? "You" : `#${seat}`)}
           roomName={(other) => ROOMS[other]}
         />
+        <Pressable onPress={() => setAvatars(!avatars)}>
+          <AppText variant="caption" color="primary">
+            {avatars ? "Avatars: on" : "Avatars: off (pawns)"}
+          </AppText>
+        </Pressable>
         <Pressable onPress={() => setMission(!mission)}>
           <AppText variant="caption" color="primary">
             {mission ? "Mission room: on" : "Mission room: off"}

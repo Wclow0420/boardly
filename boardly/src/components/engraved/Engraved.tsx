@@ -157,21 +157,11 @@ export function EmblemSvg({
   );
 }
 
-/** An emblem written as data (see ./emblem), at `size` points; "tint"
- *  parts take `color`. */
-export function EmblemGlyph({
-  data,
-  size,
-  color,
-  box,
-}: {
-  data: EmblemData;
-  size: number;
-  color?: string;
-  box?: [number, number];
-}) {
+/** An emblem's parts, to place inside an Svg of your own (in the
+ *  emblem's own units); "tint" parts take `color`. */
+export function EmblemParts({ data, color }: { data: EmblemData; color?: string }) {
   return (
-    <EmblemSvg size={size} box={box}>
+    <>
       {data.map((part, i) => {
         const body =
           "dark" in part ? (
@@ -197,6 +187,26 @@ export function EmblemGlyph({
           </G>
         );
       })}
+    </>
+  );
+}
+
+/** An emblem written as data (see ./emblem), at `size` points; "tint"
+ *  parts take `color`. */
+export function EmblemGlyph({
+  data,
+  size,
+  color,
+  box,
+}: {
+  data: EmblemData;
+  size: number;
+  color?: string;
+  box?: [number, number];
+}) {
+  return (
+    <EmblemSvg size={size} box={box}>
+      <EmblemParts data={data} color={color} />
     </EmblemSvg>
   );
 }
