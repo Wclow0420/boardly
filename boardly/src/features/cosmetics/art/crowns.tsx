@@ -40,14 +40,16 @@ export function Sweep({
   const clip = useMemo(() => Skia.Path.MakeFromSVGString(d), [d]);
   const transform = useDerivedValue(() => {
     const p = ((t.value + phase) % every) / 1.1;
-    const x = p < 1 ? -80 + p * 160 : 200;
+    // from well clear of one side to well clear of the other
+    const x = p < 1 ? -110 + p * 220 : 260;
     return [{ translateX: x }, { rotate: 0.45 }];
   });
   if (!clip) return null;
   return (
     <Group clip={clip}>
       <Group transform={transform}>
-        <Rect x={-12} y={-140} width={24} height={200}>
+        {/* tall enough to cross the tallest frame, corner to corner */}
+        <Rect x={-12} y={-160} width={24} height={320}>
           <LinearGradient
             start={vec(-12, 0)}
             end={vec(12, 0)}
