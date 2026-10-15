@@ -303,6 +303,16 @@ const PINK: [string, string, string] = ["#FFC6E2", "#F0559E", "#8A1650"];
 const drop = (x: number, y: number, w: number, h: number) =>
   `M${x} ${y - h / 2}C${x + w / 2} ${y - h * 0.1} ${x + w / 2} ${y + h / 2} ${x} ${y + h / 2}C${x - w / 2} ${y + h / 2} ${x - w / 2} ${y - h * 0.1} ${x} ${y - h / 2}z`;
 
+/** The tiara's foot (0, -40) moved to the ring's top right, tilted
+ *  outward and made smaller: a side tiara. */
+const TIARA_PLACE = [
+  { translateX: 34 },
+  { translateY: -36 },
+  { rotate: 0.72 },
+  { scale: 0.62 },
+  { translateY: 40 },
+];
+
 function QueenBack({ t }: { t: Clock }) {
   const glow = useDerivedValue(() => 0.42 + 0.12 * Math.sin(t.value * 1.4));
   return <Halo r={90} color="#FFB3DA" opacity={glow} />;
@@ -328,84 +338,91 @@ function QueenFront({ t }: { t: Clock }) {
         <Pearl key={k} x={p.x} y={p.y} r={k % 2 ? 3.3 : 3.8} />
       ))}
 
-      {/* the tiara: silver lace */}
-      <Path path={TIARA}>
-        <LinearGradient start={vec(0, -92)} end={vec(0, -40)} colors={SILVER} />
-      </Path>
-      <Path
-        path={TIARA}
-        style="stroke"
-        strokeWidth={1.5}
-        strokeJoin="round"
-        color="#5A6078"
-      />
-      {/* filigree curls inside the arches */}
-      <Path
-        path="M-8 -60C-14 -66 -10 -76 0 -78C10 -76 14 -66 8 -60M-36 -48C-36 -56 -28 -58 -24 -52M36 -48C36 -56 28 -58 24 -52M-20 -50C-22 -60 -14 -64 -9 -58M20 -50C22 -60 14 -64 9 -58"
-        style="stroke"
-        strokeWidth={1.4}
-        strokeCap="round"
-        color="#7C84A0"
-      />
-      <Sweep t={t} d={TIARA} every={4} />
-      {/* the gems: a great pink diamond and its sisters */}
-      <Path path={drop(0, -64, 12, 18)} color="#5A2040" />
-      <Path path={drop(0, -64, 10.5, 16.5)}>
-        <RadialGradient c={vec(-2, -69)} r={14} colors={PINK} />
-      </Path>
-      <Oval x={-3.4} y={-69} width={3.6} height={5} color="#FFFFFFCC" />
-      {[-20, 20].map((x) => (
-        <Group key={x}>
-          <Path path={drop(x, -55, 7.5, 11)}>
-            <RadialGradient c={vec(x - 1.5, -58)} r={9} colors={PINK} />
-          </Path>
-          <Oval
-            x={x - 2.2}
-            y={-58.5}
-            width={2.4}
-            height={3.2}
-            color="#FFFFFFCC"
+      {/* worn to the side: smaller, tilted, resting on the top right */}
+      <Group transform={TIARA_PLACE}>
+        {/* the tiara: silver lace */}
+        <Path path={TIARA}>
+          <LinearGradient
+            start={vec(0, -92)}
+            end={vec(0, -40)}
+            colors={SILVER}
           />
-        </Group>
-      ))}
-      {[-34, 34].map((x) => (
+        </Path>
         <Path
-          key={x}
-          path={`M${x} -54l2.6 3.4l-2.6 3.4l-2.6-3.4z`}
-          color="#E8F4FF"
+          path={TIARA}
+          style="stroke"
+          strokeWidth={1.5}
+          strokeJoin="round"
+          color="#5A6078"
         />
-      ))}
-      {TIARA_PEARLS.map(([x, y, r], k) => (
-        <Pearl key={`tp${k}`} x={x} y={y} r={r} />
-      ))}
-      {/* the band along its foot, set with small diamonds */}
-      <Path path={TIARA_BAND}>
-        <LinearGradient
-          start={vec(0, -54)}
-          end={vec(0, -36)}
-          colors={["#FFFFFF", "#C9CFE2", "#8A93AE"]}
+        {/* filigree curls inside the arches */}
+        <Path
+          path="M-8 -60C-14 -66 -10 -76 0 -78C10 -76 14 -66 8 -60M-36 -48C-36 -56 -28 -58 -24 -52M36 -48C36 -56 28 -58 24 -52M-20 -50C-22 -60 -14 -64 -9 -58M20 -50C22 -60 14 -64 9 -58"
+          style="stroke"
+          strokeWidth={1.4}
+          strokeCap="round"
+          color="#7C84A0"
         />
-      </Path>
-      <Path
-        path={TIARA_BAND}
-        style="stroke"
-        strokeWidth={1.2}
-        color="#5A6078"
-      />
-      {[-36, -27, -18, -9, 0, 9, 18, 27, 36].map((x) => (
-        <Circle
-          key={x}
-          cx={x}
-          cy={-41 - (1 - (x / 46) ** 2) * 5}
-          r={1.8}
-          color={x === 0 ? "#F0559E" : "#F2F8FF"}
+        <Sweep t={t} d={TIARA} every={4} />
+        {/* the gems: a great pink diamond and its sisters */}
+        <Path path={drop(0, -64, 12, 18)} color="#5A2040" />
+        <Path path={drop(0, -64, 10.5, 16.5)}>
+          <RadialGradient c={vec(-2, -69)} r={14} colors={PINK} />
+        </Path>
+        <Oval x={-3.4} y={-69} width={3.6} height={5} color="#FFFFFFCC" />
+        {[-20, 20].map((x) => (
+          <Group key={x}>
+            <Path path={drop(x, -55, 7.5, 11)}>
+              <RadialGradient c={vec(x - 1.5, -58)} r={9} colors={PINK} />
+            </Path>
+            <Oval
+              x={x - 2.2}
+              y={-58.5}
+              width={2.4}
+              height={3.2}
+              color="#FFFFFFCC"
+            />
+          </Group>
+        ))}
+        {[-34, 34].map((x) => (
+          <Path
+            key={x}
+            path={`M${x} -54l2.6 3.4l-2.6 3.4l-2.6-3.4z`}
+            color="#E8F4FF"
+          />
+        ))}
+        {TIARA_PEARLS.map(([x, y, r], k) => (
+          <Pearl key={`tp${k}`} x={x} y={y} r={r} />
+        ))}
+        {/* the band along its foot, set with small diamonds */}
+        <Path path={TIARA_BAND}>
+          <LinearGradient
+            start={vec(0, -54)}
+            end={vec(0, -36)}
+            colors={["#FFFFFF", "#C9CFE2", "#8A93AE"]}
+          />
+        </Path>
+        <Path
+          path={TIARA_BAND}
+          style="stroke"
+          strokeWidth={1.2}
+          color="#5A6078"
         />
-      ))}
-      <Sweep t={t} d={TIARA_BAND} every={4} phase={0.15} />
-      {/* sparkles */}
-      <Glint t={t} x={0} y={-64} size={7} phase={0.5} speed={1} />
-      <Glint t={t} x={-31} y={-62} size={4} phase={2} speed={1.3} />
-      <Glint t={t} x={46} y={-53} size={3.5} phase={3.3} speed={1.2} />
+        {[-36, -27, -18, -9, 0, 9, 18, 27, 36].map((x) => (
+          <Circle
+            key={x}
+            cx={x}
+            cy={-41 - (1 - (x / 46) ** 2) * 5}
+            r={1.8}
+            color={x === 0 ? "#F0559E" : "#F2F8FF"}
+          />
+        ))}
+        <Sweep t={t} d={TIARA_BAND} every={4} phase={0.15} />
+        {/* sparkles */}
+        <Glint t={t} x={0} y={-64} size={7} phase={0.5} speed={1} />
+        <Glint t={t} x={-31} y={-62} size={4} phase={2} speed={1.3} />
+        <Glint t={t} x={46} y={-53} size={3.5} phase={3.3} speed={1.2} />
+      </Group>
       <Glint t={t} x={38} y={38} size={4} phase={1.2} speed={0.9} />
       <Glint t={t} x={-44} y={30} size={3} phase={4} speed={1.1} />
     </Group>
