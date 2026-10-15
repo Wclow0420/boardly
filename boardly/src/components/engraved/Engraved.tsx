@@ -13,7 +13,7 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 
-import { shadeOf, type EmblemData, type Shade } from "./emblem";
+import { LIGHT, shadeOf, type EmblemData, type Shade } from "./emblem";
 import { JEWELS, type Jewel } from "./shapes";
 
 /** A gradient id that's safe in url(#…). */
@@ -33,6 +33,8 @@ export function Engraved({
   ink = 1.5,
   vw = 0.9,
   sw = 1.1,
+  round,
+  op,
 }: {
   d: string;
   material?: Shade;
@@ -48,18 +50,29 @@ export function Engraved({
   /** Widths of the vein and shine lines. */
   vw?: number;
   sw?: number;
+  /** Lit like something round, from the upper left. */
+  round?: boolean;
+  /** See-through, for soft shadows and highlights. */
+  op?: number;
 }) {
   const id = useGradientId();
   const { colors, ink: inkColor, vein: veinColor } = shadeOf(material, tint);
   const rule = evenOdd ? "evenodd" : "nonzero";
+  const stops = colors.map((color, i) => (
+    <Stop key={i} offset={i / (colors.length - 1)} stopColor={color} />
+  ));
   return (
-    <G>
+    <G opacity={op}>
       <Defs>
-        <LinearGradient id={id} x1="0" y1="0" x2="1" y2="1">
-          {colors.map((color, i) => (
-            <Stop key={i} offset={i / (colors.length - 1)} stopColor={color} />
-          ))}
-        </LinearGradient>
+        {round ? (
+          <RadialGradient id={id} cx={LIGHT.cx} cy={LIGHT.cy} r={LIGHT.r}>
+            {stops}
+          </RadialGradient>
+        ) : (
+          <LinearGradient id={id} x1="0" y1="0" x2="1" y2="1">
+            {stops}
+          </LinearGradient>
+        )}
       </Defs>
       <Path d={d} fill={`url(#${id})`} fillRule={rule} />
       {vein ? (
@@ -179,6 +192,8 @@ export function EmblemParts({ data, color }: { data: EmblemData; color?: string 
               ink={part.ink}
               vw={part.vw}
               sw={part.sw}
+              round={part.round}
+              op={part.op}
             />
           );
         return (

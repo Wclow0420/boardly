@@ -31,6 +31,11 @@ export type EmblemPart =
       /** Widths of the vein and shine lines (default 0.9 and 1.1). */
       vw?: number;
       sw?: number;
+      /** Lit like something round (light from the upper left) rather
+       *  than a flat sheen. */
+      round?: boolean;
+      /** See-through: for soft shadows and highlights laid over. */
+      op?: number;
       /** An SVG transform, e.g. "rotate(-45 24 24)". */
       t?: string;
     }
@@ -40,6 +45,48 @@ export type EmblemPart =
   | { dark: string; t?: string };
 
 export type EmblemData = EmblemPart[];
+
+/** Where the light falls on a round part, as fractions of its bounds:
+ *  the brightest point and how far the light spreads. */
+export const LIGHT = { cx: 0.36, cy: 0.3, r: 0.85 };
+
+/** Path data reflected left to right across a box `width` wide, by
+ *  rewriting its coordinates (a mirrored transform would break round
+ *  gradients on some renderers). */
+export function mirrorPath(d: string, width: number) {
+  const out: string[] = [];
+  for (const [, cmd, args] of d.matchAll(/([MLHVCSQTAZmlhvcsqtaz])([^MLHVCSQTAZmlhvcsqtaz]*)/g)) {
+    const n = (args.match(/-?\d*\.?\d+(?:e-?\d+)?/g) ?? []).map(Number);
+    const rel = cmd === cmd.toLowerCase();
+    const x = (v: number) => (rel ? -v : width - v);
+    const up = cmd.toUpperCase();
+    const flipped = n.map((v, i) => {
+      if (up === "H") return x(v);
+      if (up === "V" || up === "Z") return v;
+      if (up === "A") {
+        const k = i % 7;
+        if (k === 2) return -v; // the ellipse's tilt
+        if (k === 4) return 1 - v; // the sweep turns the other way
+        if (k === 5) return x(v);
+        return v;
+      }
+      return i % 2 === 0 ? x(v) : v;
+    });
+    out.push(cmd + flipped.map((v) => +v.toFixed(3)).join(" "));
+  }
+  return out.join("");
+}
+
+/** A transform list reflected the same way: rotations turn back, and
+ *  their centres move across. */
+export function mirrorTransform(t: string, width: number) {
+  return t.replace(/(\w+)\(([^)]*)\)/g, (all, op: string, args: string) => {
+    const n = args.split(/[\s,]+/).filter(Boolean).map(Number);
+    if (op === "rotate") return n.length === 3 ? `rotate(${-n[0]} ${width - n[1]} ${n[2]})` : `rotate(${-n[0]})`;
+    if (op === "translate") return `translate(${-n[0]} ${n[1] ?? 0})`;
+    return all;
+  });
+}
 
 /** A circle as path data. */
 export const disc = (cx: number, cy: number, r: number) =>
@@ -93,8 +140,12 @@ export function toSvgBody(
             `<stop offset="${k / (colors.length - 1)}" stop-color="${c}"/>`,
         )
         .join("");
+      const op = part.op !== undefined ? ` opacity="${part.op}"` : "";
+      const gradient = part.round
+        ? `<radialGradient id="${g}" cx="${LIGHT.cx}" cy="${LIGHT.cy}" r="${LIGHT.r}">${stops}</radialGradient>`
+        : `<linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1">${stops}</linearGradient>`;
       return [
-        `<g${t}><defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1">${stops}</linearGradient></defs>`,
+        `<g${t}${op}><defs>${gradient}</defs>`,
         `<path d="${part.d}" fill="url(#${g})" fill-rule="${rule}"/>`,
         part.vein
           ? `<path d="${part.vein}" fill="none" stroke="${vein}" stroke-width="${part.vw ?? 0.9}" stroke-linecap="round"/>`

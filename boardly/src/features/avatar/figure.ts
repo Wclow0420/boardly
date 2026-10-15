@@ -8,7 +8,12 @@
 // Draft: a boy and a girl, and two animal heads (panda, fox) on the same
 // body, one choice of each part.
 
-import type { EmblemData, EmblemPart } from "@/components/engraved/emblem";
+import {
+  mirrorPath,
+  mirrorTransform,
+  type EmblemData,
+  type EmblemPart,
+} from "@/components/engraved/emblem";
 import { shade } from "@/components/engraved/shapes";
 
 export const FIGURE_BOX: [number, number] = [100, 120];
@@ -29,10 +34,21 @@ const ell = (cx: number, cy: number, rx: number, ry: number) =>
   `M${cx + rx} ${cy}A${rx} ${ry} 0 1 1 ${cx - rx} ${cy}A${rx} ${ry} 0 1 1 ${cx + rx} ${cy}Z`;
 
 /** A left-side part and its mirror image on the right. */
-const MIRROR = "translate(100 0) scale(-1 1)";
+const W = FIGURE_BOX[0];
+const flipT = (part: EmblemPart) => (part.t ? { t: mirrorTransform(part.t, W) } : {});
 const both = (part: EmblemPart): EmblemPart[] => [
   part,
-  { ...part, t: part.t ? `${MIRROR} ${part.t}` : MIRROR },
+  "dark" in part
+    ? { ...part, dark: mirrorPath(part.dark, W), ...flipT(part) }
+    : "jewel" in part
+      ? { ...part, x: W - part.x, ...flipT(part) }
+      : {
+          ...part,
+          d: mirrorPath(part.d, W),
+          ...(part.vein ? { vein: mirrorPath(part.vein, W) } : {}),
+          ...(part.shine ? { shine: mirrorPath(part.shine, W) } : {}),
+          ...flipT(part),
+        },
 ];
 
 const HEAD =
@@ -198,9 +214,50 @@ function fox(): EmblemPart[] {
   ];
 }
 
+// ── light and shade: what makes it look round ─────────────────────────
+
+/** A soft shadow of `base`'s darker self, or a soft light, laid over. */
+const shadow = (d: string, base: string, op = 0.3): EmblemPart => ({
+  d,
+  m: shade(base, -0.45) as Hex,
+  ink: 0,
+  op,
+});
+const light = (d: string, op = 0.45): EmblemPart => ({ d, m: "ivory", ink: 0, op });
+
+/** The ground under the feet. */
+const GROUND: EmblemPart = { d: ell(50, 110.6, 19, 3.6), m: "#000000" as Hex, ink: 0, op: 0.22 };
+
+/** Shade on a face lit from the upper left: under the fringe, down the
+ *  far cheek and jaw; and a glint on the nose. */
+const faceShade = (skin: string, fringe?: string): EmblemPart[] => [
+  // the fringe's own shape, cast a little down and away from the light
+  ...(fringe ? [{ ...shadow(fringe, skin, 0.3), t: "translate(0.8 2.8)" }] : []),
+  shadow("M83 44C83 62 69 74.5 50 74.5C40 74.5 31 71 25 65C34 70 44 72 52 71.4C68 70 79 60 83 44Z", skin, 0.2),
+  light(ell(48.8, 56.4, 1, 0.7), 0.7),
+];
+
+/** Shade on the body: the head's shadow on the chest, the far side. */
+const bodyShade = (top: string): EmblemPart[] => [
+  shadow(ell(50, 73.6, 13, 4.2), top, 0.4),
+  shadow("M56.4 74L62.4 72C63 80 63.4 88 62.4 96.4L58 96.4C59.4 88 59.2 80 56.4 74Z", top, 0.26),
+];
+
+/** The glossy band across the hair. */
+const HAIR_RING = light("M26.4 25C34 17.4 46 14.2 59 15.2C69 16 75.6 19 79.4 23.4C74 20.2 67.6 18.4 59 17.8C47 17.2 35.4 19.6 26.4 25Z", 0.34);
+
 // ── the whole figure ─────────────────────────────────────────────────
 
-export function drawFigure(look: Look): EmblemData {
+/** Every filled part lit as something round. */
+const rounded = (parts: EmblemPart[]): EmblemPart[] =>
+  parts.map((part) => ("d" in part && part.op === undefined ? { ...part, round: true } : part));
+
+export function drawFigure(look: Look, flat = false): EmblemData {
+  const lit = drawLit(look, flat);
+  return flat ? lit : rounded(lit);
+}
+
+function drawLit(look: Look, flat: boolean): EmblemData {
   const hair = look.hair as Hex;
   const girl = look.kind === "girl";
   const head =
@@ -222,10 +279,29 @@ export function drawFigure(look: Look): EmblemData {
                   sw: 1,
                 },
           ];
+  if (flat)
+    return [
+      ...(girl ? [{ d: HAIR.girl.back, m: hair, ink: 1.1 }] : []),
+      ...body(look),
+      ...head,
+    ];
+  // the face's shade goes over the skin, under the eyes and hair
+  const human = look.kind === "boy" || look.kind === "girl";
+  const at = head.findIndex((part) => "d" in part && part.d === HEAD) + 1;
+  const shaded = human
+    ? [
+        ...head.slice(0, at),
+        ...faceShade(look.skin, look.kind === "boy" ? HAIR.boy.d : HAIR.girl.front),
+        ...head.slice(at),
+      ]
+    : [...head, ...faceShade(look.skin).slice(0, 1)];
   return [
+    GROUND,
     ...(girl ? [{ d: HAIR.girl.back, m: hair, ink: 1.1 }] : []),
     ...body(look),
-    ...head,
+    ...bodyShade(look.top),
+    ...shaded,
+    ...(human ? [HAIR_RING] : []),
   ];
 }
 
@@ -247,6 +323,17 @@ export const EMBLEMS: Record<string, EmblemData> = {
     bottom: "#3A3A48",
     shoes: "#7A2A3A",
   }),
+  "girl (flat)": drawFigure(
+    {
+      kind: "girl",
+      skin: "#F8D6BC",
+      hair: "#6A3A20",
+      top: "#E05A78",
+      bottom: "#3A3A48",
+      shoes: "#7A2A3A",
+    },
+    true,
+  ),
   "girl (golden)": drawFigure({
     kind: "girl",
     skin: "#FBE2D0",

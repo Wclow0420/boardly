@@ -15,7 +15,7 @@ import {
   type SkPicture,
 } from "@shopify/react-native-skia";
 
-import { shadeOf, type EmblemData } from "./emblem";
+import { LIGHT, shadeOf, type EmblemData } from "./emblem";
 import { JEWELS } from "./shapes";
 
 /** Applies an SVG transform list ("translate(…) scale(…) rotate(…)"). */
@@ -95,26 +95,38 @@ export function recordEmblem(
         if (part.evenOdd) path.setFillType(FillType.EvenOdd);
         const { colors, ink, vein } = shadeOf(part.m, tint);
         const b = path.getBounds();
+        const op = part.op ?? 1;
+        const tones = colors.map((c) => Skia.Color(c));
+        const at = colors.map((_, i) => i / (colors.length - 1));
         const fill = Skia.Paint();
         fill.setAntiAlias(true);
         fill.setShader(
-          Skia.Shader.MakeLinearGradient(
-            vec(b.x, b.y),
-            vec(b.x + b.width, b.y + b.height),
-            colors.map((c) => Skia.Color(c)),
-            colors.map((_, i) => i / (colors.length - 1)),
-            TileMode.Clamp,
-          ),
+          part.round
+            ? Skia.Shader.MakeRadialGradient(
+                vec(b.x + b.width * LIGHT.cx, b.y + b.height * LIGHT.cy),
+                Math.max(b.width, b.height) * LIGHT.r,
+                tones,
+                at,
+                TileMode.Clamp,
+              )
+            : Skia.Shader.MakeLinearGradient(
+                vec(b.x, b.y),
+                vec(b.x + b.width, b.y + b.height),
+                tones,
+                at,
+                TileMode.Clamp,
+              ),
         );
+        fill.setAlphaf(op);
         canvas.drawPath(path, fill);
         const draw = (d: string | undefined, paint: ReturnType<typeof stroke>) => {
           const line = d ? Skia.Path.MakeFromSVGString(d) : null;
           if (line) canvas.drawPath(line, paint);
         };
-        draw(part.vein, stroke(part.vw ?? 0.9, vein));
-        draw(part.shine, stroke(part.sw ?? 1.1, "#FFFFFF", 0.85));
+        draw(part.vein, stroke(part.vw ?? 0.9, vein, op));
+        draw(part.shine, stroke(part.sw ?? 1.1, "#FFFFFF", 0.85 * op));
         const width = part.ink ?? 1.5;
-        if (width > 0) canvas.drawPath(path, stroke(width, ink));
+        if (width > 0) canvas.drawPath(path, stroke(width, ink, op));
       }
     }
     canvas.restore();
