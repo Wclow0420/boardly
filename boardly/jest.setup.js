@@ -38,6 +38,12 @@ jest.mock("@/features/mascot/MeepleTransition", () => ({
   MeepleTransitionProvider: ({ children }) => children,
   useMeepleTransition: () => (move) => move(),
 }));
+// Still mascots are Skia pictures too
+jest.mock("@/features/mascot/MascotPortrait", () => ({ MascotPortrait: () => null }));
+jest.mock("@/features/mascot/MascotThumb", () => ({
+  MascotThumb: () => null,
+  pictureOf: () => null,
+}));
 // The living mascot draws on Skia too (features/mascot)
 jest.mock("@/features/mascot/MascotStage", () => ({
   FEET: { x: 50, y: 118.4 },
