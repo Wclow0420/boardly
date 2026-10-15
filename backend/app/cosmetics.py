@@ -33,6 +33,8 @@ BORDER_PRICES = {
     "phoenix": 5000,
     "fire-dragon": 4000,
     "angel-wings": 5500,
+    "king-crown": 5000,
+    "queen-crown": 5000,
 }
 
 # Borders that can't be bought: each comes with a badge.

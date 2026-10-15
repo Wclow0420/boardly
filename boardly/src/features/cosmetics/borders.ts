@@ -395,6 +395,8 @@ export const BORDERS: ProfileBorder[] = [
   { id: "galaxy", name: "Galaxy", kind: "art", art: "galaxy", rarity: "epic", price: 3500 },
   { id: "phoenix", name: "Phoenix", kind: "art", art: "phoenix", rarity: "legendary", price: 5000 },
   { id: "fire-dragon", name: "Dragon Coil", kind: "art", art: "fire-dragon", rarity: "legendary", price: 4000 },
+  { id: "king-crown", name: "King's Crown", kind: "art", art: "king-crown", rarity: "legendary", price: 5000 },
+  { id: "queen-crown", name: "Queen's Tiara", kind: "art", art: "queen-crown", rarity: "legendary", price: 5000 },
   { id: "angel-wings", name: "Angel Wings", kind: "art", art: "angel-wings", rarity: "legendary", price: 5500 },
 
   // ── Earned with a badge, never bought ───────────────────────────
