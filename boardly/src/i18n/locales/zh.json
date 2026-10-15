@@ -215,8 +215,7 @@
     "leaveMessage": "这局游戏会对所有人结束，无法继续。",
     "leaveConfirm": "离开游戏",
     "keepPlaying": "继续玩",
-    "yourMove": "轮到你了",
-    "players": "玩家"
+    "yourMove": "轮到你了"
   },
   "rules": {
     "title": "游戏玩法",

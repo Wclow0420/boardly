@@ -6,7 +6,7 @@ import { StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { ApiError } from "@/api/client";
-import { BackIcon, FriendsIcon } from "@/components/icons";
+import { BackIcon } from "@/components/icons";
 import {
   AppText,
   Button,
@@ -27,8 +27,6 @@ import {
   RulesSheet,
   useHasRules,
 } from "@/features/game/RulesSheet";
-import { usePlayerCard } from "@/features/players/PlayerCardProvider";
-import { PlayersSheet } from "@/features/players/PlayersSheet";
 import { GameOverBadges } from "@/features/badges/GameOverBadges";
 import { useAlreadyInRoomRedirect } from "@/features/home/hooks";
 import { useLeaveRoom, useRoom } from "@/features/lobby/hooks";
@@ -73,8 +71,6 @@ function GameScreenBody({
   const rematch = useRematch(room);
   const leaveRoom = useLeaveRoom(room?.id);
   const leaveSheetRef = useRef<GorhomBottomSheetModal>(null);
-  const playersSheetRef = useRef<GorhomBottomSheetModal>(null);
-  const playerCard = usePlayerCard();
   const [rulesOpen, setRulesOpen] = useState(false);
   const gameName = useGameName();
   const hasRules = useHasRules(room?.gameType);
@@ -157,22 +153,6 @@ function GameScreenBody({
     />
   );
 
-  // everyone at the table, each with their player card
-  const playersButton = (
-    <IconButton
-      accessibilityLabel={t("game.players")}
-      onPress={() => {
-        tapHaptic();
-        playersSheetRef.current?.present();
-      }}
-    >
-      <FriendsIcon size={20} color={colors.icon} />
-    </IconButton>
-  );
-  const playersSheet = (
-    <PlayersSheet ref={playersSheetRef} players={room.players} />
-  );
-
   const header = (
     <View style={styles.header}>
       <IconButton accessibilityLabel="Back" onPress={handleBack}>
@@ -188,7 +168,6 @@ function GameScreenBody({
         <AppText variant="tiny" color="textSubtle">
           {roomCode}
         </AppText>
-        {playersButton}
         {hasRules ? (
           <RulesButton color={colors.icon} onPress={() => setRulesOpen(true)} />
         ) : null}
@@ -260,7 +239,6 @@ function GameScreenBody({
           ) : null}
         </View>
         <View style={styles.headerRight}>
-          {playersButton}
           {hasRules ? (
             <RulesButton
               color={colors.icon}
@@ -374,8 +352,6 @@ function GameScreenBody({
         ) : null}
         {backHome}
         {leaveSheet}
-        {playersSheet}
-        {playersSheet}
       </Screen>
     );
   }
@@ -395,17 +371,6 @@ function GameScreenBody({
                 styles.playerChip,
                 active && { borderColor: colors.primary, borderWidth: 1.5 },
               ]}
-              onPress={
-                player.isBot
-                  ? undefined
-                  : () =>
-                      playerCard.show({
-                        id: player.userId,
-                        name: player.username,
-                        borderId: player.borderId,
-                        avatarUrl: player.avatarUrl,
-                      })
-              }
             >
               <AvatarBorder
                 name={player.username}

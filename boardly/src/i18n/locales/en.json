@@ -216,8 +216,7 @@
     "leaveMessage": "The game ends for everyone at the table and can't be resumed.",
     "leaveConfirm": "Leave Game",
     "keepPlaying": "Keep Playing",
-    "yourMove": "Your move",
-    "players": "Players"
+    "yourMove": "Your move"
   },
   "rules": {
     "title": "How to play",

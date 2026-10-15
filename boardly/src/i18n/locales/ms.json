@@ -216,8 +216,7 @@
     "leaveMessage": "Permainan akan tamat untuk semua orang di meja dan tidak boleh disambung.",
     "leaveConfirm": "Tinggalkan Permainan",
     "keepPlaying": "Teruskan Bermain",
-    "yourMove": "Giliran anda",
-    "players": "Pemain"
+    "yourMove": "Giliran anda"
   },
   "rules": {
     "title": "Cara bermain",
