@@ -31,6 +31,8 @@ export function Engraved({
   shine,
   evenOdd,
   ink = 1.5,
+  vw = 0.9,
+  sw = 1.1,
 }: {
   d: string;
   material?: Shade;
@@ -43,6 +45,9 @@ export function Engraved({
   /** Cut holes (rings, keyholes) with the even-odd rule. */
   evenOdd?: boolean;
   ink?: number;
+  /** Widths of the vein and shine lines. */
+  vw?: number;
+  sw?: number;
 }) {
   const id = useGradientId();
   const { colors, ink: inkColor, vein: veinColor } = shadeOf(material, tint);
@@ -62,7 +67,7 @@ export function Engraved({
           d={vein}
           fill="none"
           stroke={veinColor}
-          strokeWidth={0.9}
+          strokeWidth={vw}
           strokeLinecap="round"
         />
       ) : null}
@@ -72,7 +77,7 @@ export function Engraved({
           fill="none"
           stroke="#FFFFFF"
           strokeOpacity={0.85}
-          strokeWidth={1.1}
+          strokeWidth={sw}
           strokeLinecap="round"
         />
       ) : null}
@@ -182,6 +187,8 @@ export function EmblemGlyph({
               shine={part.shine}
               evenOdd={part.evenOdd}
               ink={part.ink}
+              vw={part.vw}
+              sw={part.sw}
             />
           );
         return (

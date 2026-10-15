@@ -28,6 +28,9 @@ export type EmblemPart =
       evenOdd?: boolean;
       /** Outline width (default 1.5; 0 for none). */
       ink?: number;
+      /** Widths of the vein and shine lines (default 0.9 and 1.1). */
+      vw?: number;
+      sw?: number;
       /** An SVG transform, e.g. "rotate(-45 24 24)". */
       t?: string;
     }
@@ -94,10 +97,10 @@ export function toSvgBody(
         `<g${t}><defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1">${stops}</linearGradient></defs>`,
         `<path d="${part.d}" fill="url(#${g})" fill-rule="${rule}"/>`,
         part.vein
-          ? `<path d="${part.vein}" fill="none" stroke="${vein}" stroke-width="0.9" stroke-linecap="round"/>`
+          ? `<path d="${part.vein}" fill="none" stroke="${vein}" stroke-width="${part.vw ?? 0.9}" stroke-linecap="round"/>`
           : "",
         part.shine
-          ? `<path d="${part.shine}" fill="none" stroke="#fff" stroke-opacity="0.85" stroke-width="1.1" stroke-linecap="round"/>`
+          ? `<path d="${part.shine}" fill="none" stroke="#fff" stroke-opacity="0.85" stroke-width="${part.sw ?? 1.1}" stroke-linecap="round"/>`
           : "",
         (part.ink ?? 1.5) > 0
           ? `<path d="${part.d}" fill="none" fill-rule="${rule}" stroke="${ink}" stroke-width="${part.ink ?? 1.5}" stroke-linejoin="round"/>`
