@@ -191,40 +191,55 @@ const CardFan: ArtBorderDrawing = {
 
 // ── Sakura Branch: a blossom branch, petals drifting down ────────────
 
-// The branch hugs the ring from the bottom right, round the bottom and
-// up the left side, and bursts into a cluster on the picture's top-left
-// edge (covering a little of it, on purpose).
-const BRANCH =
-  "M44 56C20 72 -20 74 -46 54C-70 34 -76 0 -66 -26C-60 -40 -52 -48 -40 -54";
-const TWIG_A = "M-62 -12C-76 -16 -86 -26 -88 -40";
-const TWIG_B = "M18 66C26 76 38 80 50 78";
-const TWIG_C = "M-58 34C-72 40 -80 52 -82 64";
-const BLOSSOMS: [number, number, number][] = [
-  // the big cluster, top left
-  [-40, -50, 13],
-  [-58, -36, 11],
-  [-24, -62, 10],
-  [-52, -60, 8.5],
-  [-34, -32, 7.5],
-  [-70, -48, 7],
+// The branch hugs the ring tightly, from the bottom right, round the
+// bottom and up the left side, and bursts into a cluster on the
+// picture's top-left edge (covering a little of it, on purpose).
+const deg = (d: number) => (d * Math.PI) / 180;
+const onRing = (d: number, r: number) => polar(deg(d), r);
+const BRANCH = Array.from({ length: 29 }, (_, k) => {
+  const d = 40 + k * 6.6; // 40° (bottom right) to ~225° (top left)
+  const p = onRing(d, 59 + Math.sin(k * 1.3) * 1.6);
+  return `${k ? "L" : "M"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
+}).join("");
+/** A short twig leaving the branch at angle d, outward. */
+const twig = (d: number, len: number, bend: number) => {
+  const a = onRing(d, 59);
+  const b = onRing(d + bend, 59 + len);
+  return `M${a.x} ${a.y}L${b.x} ${b.y}`;
+};
+const TWIGS = [
+  twig(200, 12, -8),
+  twig(150, 10, 6),
+  twig(85, 9, -6),
+  twig(52, 8, 6),
+];
+/** [angle°, radius, size] */
+const BLOSSOM_AT: [number, number, number][] = [
+  // the big cluster, top left, over the picture's edge
+  [225, 56, 12],
+  [240, 60, 10],
+  [210, 61, 10],
+  [232, 47, 7.5],
+  [252, 55, 8],
+  [216, 70, 6.5],
   // along the branch
-  [-86, -40, 7],
-  [-70, 2, 7.5],
-  [-80, 62, 6.5],
-  [-30, 70, 6],
+  [192, 66, 6.5],
+  [165, 62, 7],
+  [128, 64, 6],
+  [98, 63, 6.5],
   // a little cluster, bottom right
-  [48, 60, 9],
-  [36, 72, 7],
-  [56, 74, 6],
+  [50, 60, 8.5],
+  [62, 67, 6.5],
+  [40, 68, 5.5],
 ];
-const LEAVES: [number, number, number][] = [
-  [-66, -18, -0.6],
-  [-76, 20, 0.4],
-  [-50, 54, 1.1],
-  [8, 72, 1.6],
-  [-14, -70, -1.2],
-  [62, 52, 2.4],
-];
+const BLOSSOMS = BLOSSOM_AT.map(([d, r, size]) => {
+  const p = onRing(d, r);
+  return [p.x, p.y, size] as [number, number, number];
+});
+const LEAVES = [178, 140, 112, 75, 258].map((d, k) => {
+  const p = onRing(d, 63);
+  return [p.x, p.y, deg(d) + (k % 2 ? 0.6 : -0.6)] as [number, number, number];
+});
 
 function Blossom({ x, y, r }: { x: number; y: number; r: number }) {
   const petals = Array.from({ length: 5 }, (_, k) =>
@@ -291,11 +306,11 @@ function SakuraFront({ t }: { t: Clock }) {
         <Path
           path={BRANCH}
           style="stroke"
-          strokeWidth={7}
+          strokeWidth={6}
           strokeCap="round"
           color="#4A2E22"
         />
-        {[TWIG_A, TWIG_B, TWIG_C].map((d) => (
+        {TWIGS.map((d) => (
           <Path
             key={d}
             path={d}

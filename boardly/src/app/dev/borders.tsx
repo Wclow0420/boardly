@@ -15,7 +15,7 @@ const ART_BORDERS = BORDERS.filter((border) => border.kind === "art");
 
 export default function BordersPreview() {
   const { colors, spacing } = useTheme();
-  const [big, setBig] = useState("lion-dance");
+  const [big, setBig] = useState("phoenix");
   if (!__DEV__) return <Redirect href="/" />;
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -36,7 +36,7 @@ export default function BordersPreview() {
             marginTop: 50,
           }}
         >
-          {["lion-dance", "dragon-head", "angel-wings", "phoenix"].map((id) => (
+          {["sakura", "angel-wings", "phoenix", "campfire"].map((id) => (
             <View key={id} style={{ padding: 34 }}>
               <AvatarBorder name="Wei" size={96} borderId={id} />
             </View>

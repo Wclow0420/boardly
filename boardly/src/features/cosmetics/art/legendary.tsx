@@ -7,11 +7,12 @@ import {
   Group,
   LinearGradient,
   Path,
-  RadialGradient,
   SweepGradient,
   vec,
 } from "@shopify/react-native-skia";
 import { useMemo } from "react";
+
+import { Fire } from "@/components/iso";
 import { useDerivedValue } from "react-native-reanimated";
 
 import {
@@ -101,41 +102,14 @@ function Tail({ t }: { t: Clock }) {
   );
 }
 
-function PhoenixHead({ t }: { t: Clock }) {
-  const bob = useDerivedValue(() => [
-    { translateY: -60 + Math.sin(t.value * 2.2) * 1.5 },
-  ]);
-  const eye = useDerivedValue(() => 0.6 + 0.4 * Math.sin(t.value * 4));
+/** A flame rising from the top of the ring, between the wings. */
+function PhoenixFlame({ t }: { t: Clock }) {
   return (
-    <Group transform={bob}>
-      {/* crest of three flame feathers */}
-      {[-0.4, 0, 0.4].map((r, k) => (
-        <Group key={k} transform={[{ translateY: -8 }, { rotate: r }]}>
-          <Path path={FEATHER(18 - Math.abs(r) * 8, 4.5)}>
-            <LinearGradient
-              start={vec(0, 0)}
-              end={vec(0, -18)}
-              colors={["#FF5A1F", "#FFE08A"]}
-            />
-          </Path>
-        </Group>
-      ))}
-      <Circle cx={0} cy={0} r={10}>
-        <RadialGradient
-          c={vec(-3, -3)}
-          r={14}
-          colors={["#FFD15A", "#FF6A1F", "#B3160C"]}
-        />
+    <Group>
+      <Circle cx={0} cy={-56} r={9} color="#FFB347" opacity={0.7}>
+        <BlurMask blur={6} style="normal" />
       </Circle>
-      <Path path="M-3 3L0 13L3 3z" color="#F6C64A" />
-      <Circle cx={-4} cy={-1.5} r={3} color="#FFEFA8" opacity={eye}>
-        <BlurMask blur={2.5} style="normal" />
-      </Circle>
-      <Circle cx={-4} cy={-1.5} r={1.3} color="#2A0A04" />
-      <Circle cx={4} cy={-1.5} r={3} color="#FFEFA8" opacity={eye}>
-        <BlurMask blur={2.5} style="normal" />
-      </Circle>
-      <Circle cx={4} cy={-1.5} r={1.3} color="#2A0A04" />
+      <Fire x={0} y={-50} width={22} height={34} clock={t} />
     </Group>
   );
 }
@@ -166,7 +140,7 @@ const Phoenix: ArtBorderDrawing = {
         colors={["#FFE08A", "#F2A11F", "#B3460C"]}
         rim="#7A2A0A"
       />
-      <PhoenixHead t={t} />
+      <PhoenixFlame t={t} />
     </Group>
   ),
 };

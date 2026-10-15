@@ -30,11 +30,9 @@ BORDER_PRICES = {
     "thunderstorm": 2800,
     "ghost-lantern": 3000,
     "galaxy": 3500,
-    "lion-dance": 4500,
     "phoenix": 5000,
     "fire-dragon": 4000,
     "angel-wings": 5500,
-    "dragon-head": 6000,
 }
 
 # Borders that can't be bought: each comes with a badge.
