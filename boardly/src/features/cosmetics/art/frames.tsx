@@ -18,8 +18,8 @@ import { useDerivedValue } from "react-native-reanimated";
 
 import { NOISE } from "@/components/iso/noise";
 import { FireRim } from "./rims";
-import { Fx, GOLD_RIM } from "./rimfx";
 import {
+  Band,
   Glint,
   Halo,
   Sparks,
@@ -195,7 +195,12 @@ function AngelFront({ t }: { t: Clock }) {
   ]);
   return (
     <Group>
-      <Fx sksl={GOLD_RIM} t={t} extent={68} />
+      <Band
+        r={53}
+        width={5}
+        colors={["#FFF6D0", "#E0B94A", "#9A7A2A"]}
+        rim="#6E5418"
+      />
       <Group transform={bob}>
         <Oval
           x={-28}

@@ -28,11 +28,11 @@ BORDER_PRICES = {
     "campfire": 3000,
     "glacier": 2500,
     "thunderstorm": 2800,
-    "ghost-lantern": 3000,
+    "ghost-lantern": 1800,
     "galaxy": 3500,
     "phoenix": 5000,
     "fire-dragon": 4000,
-    "angel-wings": 5500,
+    "angel-wings": 2000,
     "king-crown": 5000,
     "queen-crown": 5000,
     # rim borders: the effect is the ring

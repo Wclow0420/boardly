@@ -108,22 +108,11 @@ function Flake({ t, i }: { t: Clock; i: number }) {
 }
 
 function GlacierBack({ t }: { t: Clock }) {
-  const shine = useDerivedValue(() => [{ rotate: t.value * 0.8 }]);
   return (
     <Group>
-      <Halo r={88} color="#6FC8FF" opacity={0.45} />
       {SHARDS.map((s, i) => (
         <Shard key={i} t={t} i={i} {...s} />
       ))}
-      {/* a cold light turning round the crystals */}
-      <Circle cx={0} cy={0} r={80} blendMode="screen" opacity={0.55}>
-        <SweepGradient
-          c={vec(0, 0)}
-          colors={["#FFFFFF00", "#FFFFFF00", "#FFFFFFCC", "#FFFFFF00"]}
-          transform={shine}
-          origin={vec(0, 0)}
-        />
-      </Circle>
     </Group>
   );
 }

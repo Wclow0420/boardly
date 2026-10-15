@@ -391,13 +391,13 @@ export const BORDERS: ProfileBorder[] = [
   { id: "campfire", name: "Sun Blaze", kind: "art", art: "campfire", rarity: "epic", price: 3000 },
   { id: "glacier", name: "Glacier", kind: "art", art: "glacier", rarity: "epic", price: 2500 },
   { id: "thunderstorm", name: "Thunderstorm", kind: "art", art: "thunderstorm", rarity: "epic", price: 2800 },
-  { id: "ghost-lantern", name: "Ghost Lantern", kind: "art", art: "ghost-lantern", rarity: "epic", price: 3000 },
+  { id: "ghost-lantern", name: "Ghost Lantern", kind: "art", art: "ghost-lantern", rarity: "rare", price: 1800 },
   { id: "galaxy", name: "Galaxy", kind: "art", art: "galaxy", rarity: "epic", price: 3500 },
   { id: "phoenix", name: "Phoenix", kind: "art", art: "phoenix", rarity: "legendary", price: 5000 },
   { id: "fire-dragon", name: "Dragon Coil", kind: "art", art: "fire-dragon", rarity: "legendary", price: 4000 },
   { id: "king-crown", name: "King's Crown", kind: "art", art: "king-crown", rarity: "legendary", price: 5000 },
   { id: "queen-crown", name: "Queen's Tiara", kind: "art", art: "queen-crown", rarity: "legendary", price: 5000 },
-  { id: "angel-wings", name: "Angel Wings", kind: "art", art: "angel-wings", rarity: "legendary", price: 5500 },
+  { id: "angel-wings", name: "Angel Wings", kind: "art", art: "angel-wings", rarity: "epic", price: 2000 },
 
   // ── Rim borders: the effect is the ring ────────────────────────
   { id: "black-hole", name: "Black Hole", kind: "art", art: "black-hole", rarity: "legendary", price: 6000 },
