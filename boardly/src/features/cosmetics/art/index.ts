@@ -13,6 +13,9 @@ import type { ArtBorderDrawing } from "./kit";
 import { LEGENDARY_ART } from "./legendary";
 import { RADIANT_ART } from "./radiant";
 import { GARDEN_ART } from "./garden";
+import { NOCTURNE_ART } from "./nocturne";
+import { SOLAR_ART } from "./solar";
+import { TEMPEST_ART } from "./tempest";
 import { TABLETOP_ART } from "./tabletop";
 import { RIM_ART } from "./rimBorders";
 import { SERAPH_ART } from "./seraph";
@@ -33,6 +36,10 @@ export const ART: Record<string, ArtBorderDrawing> = {
   ...FALLEN_ART,
   ...CREST_ART,
   ...BAROQUE_ART,
+  // enhanced versions, over the originals above
+  ...SOLAR_ART,
+  ...TEMPEST_ART,
+  ...NOCTURNE_ART,
 };
 
 export { BorderClockProvider, useBorderClock } from "./kit";
