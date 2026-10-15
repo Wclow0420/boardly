@@ -2,7 +2,8 @@
 // screen you leave closes down into a meeple-shaped window (zoom in),
 // the move happens in the dark, and the next screen opens back out of it
 // (zoom out). Always both, one after the other. One layer over the whole
-// app, tab bar and all; `go(move)` runs a move through it. On the UI
+// app, tab bar and all; `go(move)` runs a move through it, in 1.5
+// seconds (0.6 in, 0.9 out). On the UI
 // thread; with reduced motion, the move simply happens.
 
 import { Canvas, Group, Image, Rect, useImage } from "@shopify/react-native-skia";
@@ -75,21 +76,21 @@ export function MeepleTransitionProvider({ children }: { children: ReactNode }) 
           progress.set(
             withSequence(
               // out of the dark to the mascot's size, a breath, then the rush
-              withTiming(AT_SMALL, { duration: 260, easing: Easing.out(Easing.quad) }),
-              withTiming(AT_SMALL * 0.88, { duration: 160, easing: Easing.inOut(Easing.quad) }),
-              withTiming(1, { duration: 640, easing: Easing.in(Easing.quad) }, (ok) => {
+              withTiming(AT_SMALL, { duration: 210, easing: Easing.out(Easing.quad) }),
+              withTiming(AT_SMALL * 0.88, { duration: 130, easing: Easing.inOut(Easing.quad) }),
+              withTiming(1, { duration: 510, easing: Easing.in(Easing.quad) }, (ok) => {
                 if (ok) scheduleOnRN(done);
               }),
             ),
           );
-        }, 60);
+        }, 50);
       };
       // zoom in: the screen closes down into the meeple
       progress.set(1);
       progress.set(
         withSequence(
-          withTiming(AT_SMALL, { duration: 520, easing: Easing.out(Easing.quad) }),
-          withTiming(0, { duration: 220, easing: Easing.in(Easing.quad) }, (ok) => {
+          withTiming(AT_SMALL, { duration: 420, easing: Easing.out(Easing.quad) }),
+          withTiming(0, { duration: 180, easing: Easing.in(Easing.quad) }, (ok) => {
             if (ok) scheduleOnRN(thenOpen);
           }),
         ),
