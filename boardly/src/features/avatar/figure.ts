@@ -42,7 +42,9 @@ const both = (part: EmblemPart): EmblemPart[] => [
     ? { ...part, dark: mirrorPath(part.dark, W), ...flipT(part) }
     : "jewel" in part
       ? { ...part, x: W - part.x, ...flipT(part) }
-      : {
+      : "line" in part
+        ? { ...part, line: mirrorPath(part.line, W), ...flipT(part) }
+        : {
           ...part,
           d: mirrorPath(part.d, W),
           ...(part.vein ? { vein: mirrorPath(part.vein, W) } : {}),

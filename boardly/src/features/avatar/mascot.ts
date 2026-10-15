@@ -79,6 +79,107 @@ export function drawMascot({ color, face }: { color: string; face: MascotFace })
   ];
 }
 
+// ── the cookie: a gingerbread meeple ───────────────────────────────────
+
+/** Flecks of spice in the dough, and specks of sugar: [x, y, size].
+ *  Scattered inside the body, clear of the face. */
+const SPICE: [number, number, number][] = [
+  [61.5, 15.4, 0.66], [39.8, 14.2, 0.65], [44.3, 82.6, 0.5], [34, 21.8, 0.5], [35.4, 81.6, 0.52],
+  [56.2, 65.9, 0.6], [53.6, 14.6, 0.47], [27.7, 69.6, 0.62], [35.9, 61.1, 0.63], [65.1, 30.7, 0.68],
+  [51.9, 86.9, 0.74], [33.9, 96.2, 0.5], [43.8, 76.4, 0.51], [49.2, 12.5, 0.72], [70.1, 60, 0.8],
+  [35.8, 70.9, 0.69], [56.1, 49.6, 0.79], [83.8, 51.2, 0.72], [41.3, 68.5, 0.46], [30.8, 43.8, 0.8],
+  [18.1, 49, 0.67], [43.6, 40.9, 0.8], [29.7, 52.2, 0.69], [64.5, 54.9, 0.7], [41.8, 44.5, 0.49],
+  [38.4, 41.4, 0.5], [47.4, 52.1, 0.48], [23.1, 57.3, 0.46], [24.7, 77.7, 0.66], [29, 81.2, 0.84],
+  [76.8, 80.7, 0.78], [51.3, 40.6, 0.46], [31.7, 70.6, 0.83], [48.4, 67.1, 0.77], [69, 51.5, 0.52],
+  [72.9, 95.5, 0.61], [42.5, 93.3, 0.74], [23.5, 89.5, 0.77], [23.1, 82.6, 0.84], [62, 40.2, 0.67],
+  [45, 86.6, 0.78], [34.3, 30.4, 0.68], [38.9, 49.8, 0.68], [52.4, 55.6, 0.46], [25.1, 51.1, 0.74],
+  [33, 77.7, 0.65],
+];
+const SUGAR: [number, number, number][] = [
+  [54.7, 76.6, 0.67], [45.7, 63.5, 0.55], [50.9, 70.7, 0.54], [52.5, 51.5, 0.68], [65.1, 87, 0.68],
+  [31.7, 58.8, 0.68], [21.2, 48.3, 0.42], [62.9, 78.8, 0.67], [28.7, 93.8, 0.52], [44.8, 54.9, 0.5],
+  [54.1, 48.2, 0.41], [37.2, 64.5, 0.55], [71.9, 95.5, 0.43], [44.3, 15.4, 0.68], [60.2, 80.3, 0.43],
+  [77.6, 49.4, 0.5],
+];
+const dots = (at: [number, number, number][]) => at.map(([x, y, r]) => ell(x, y, r, r * 0.8)).join("");
+
+/** Piped icing: zigzags at the wrists and ankles. */
+const ICING_TRIM =
+  "M21.4 45.2L24 47.6L21 50L24 52.4L21 54.8L24 57.2L21.6 59.4" +
+  "M78.6 45.2L76 47.6L79 50L76 52.4L79 54.8L76 57.2L78.4 59.4" +
+  "M21.4 90.6L24.6 88.4L27.8 90.6L31 88.4L34.2 90.6L37.4 88.4L40.6 90.6L43.4 88.8" +
+  "M78.6 90.6L75.4 88.4L72.2 90.6L69 88.4L65.8 90.6L62.6 88.4L59.4 90.6L56.6 88.8";
+/** The classic iced face: two dots and a smile. */
+const ICING_EYES = `${ell(43.6, 27.6, 2.3, 2.6)}${ell(56.4, 27.6, 2.3, 2.6)}`;
+const ICING_SMILE = "M44 33.2C47.4 37.2 52.6 37.2 56 33.2";
+const ICING = "#FFF8EE";
+
+/** Icing, raised: its shadow on the dough, then the icing. */
+const piped = (line: string, dough: string, w: number): EmblemPart[] => [
+  { line, color: shade(dough, -0.5), w, op: 0.35, t: "translate(0.5 0.9)" },
+  { line, color: ICING, w },
+];
+
+export function drawCookie({
+  dough,
+  face = "icing",
+}: {
+  dough: string;
+  face?: MascotFace | "icing";
+}): EmblemData {
+  const d = dough as Hex;
+  return [
+    { d: ell(50, 100, 31, 4.2), m: "#000000" as Hex, ink: 0, op: 0.22 },
+    // the cookie's baked side
+    { d: BODY, m: shade(dough, -0.4) as Hex, ink: 1.3, t: "translate(1.6 2.4)" },
+    // baked darker at the rim...
+    { d: BODY, m: shade(dough, -0.16) as Hex, ink: 1.3 },
+    // ...and paler in the middle, where the dough rose
+    {
+      d: BODY,
+      m: shade(dough, 0.1) as Hex,
+      ink: 0,
+      round: true,
+      op: 0.9,
+      t: "translate(50 54) scale(0.88) translate(-50 -54)",
+    },
+    // spice flecks and sugar specks
+    { d: dots(SPICE), m: shade(dough, -0.55) as Hex, ink: 0, op: 0.55 },
+    { d: dots(SUGAR), m: shade(dough, 0.5) as Hex, ink: 0, op: 0.7 },
+    ...piped(ICING_TRIM, dough, 1.7),
+    // gumdrop buttons
+    { jewel: "ruby", x: 50, y: 50.4, r: 2.6 },
+    { jewel: "emerald", x: 50, y: 60.4, r: 2.6 },
+    ...(face === "icing"
+      ? [
+          { d: ICING_EYES, m: shade(dough, -0.5) as Hex, ink: 0, op: 0.35, t: "translate(0.5 0.8)" },
+          { d: ICING_EYES, m: "#FFF8EE" as Hex, ink: 0 },
+          ...piped(ICING_SMILE, dough, 1.8),
+        ]
+      : FACES[face](dough)),
+  ];
+}
+
+/** Cookie flavours, one for each player at a table. */
+export const FLAVOURS: Record<string, string> = {
+  gingerbread: "#B8743A",
+  chocolate: "#6A3E24",
+  matcha: "#8AAA5A",
+  strawberry: "#E8909E",
+  "red velvet": "#B03A42",
+  "butterfly pea": "#5A7AC8",
+  lemon: "#E2BE52",
+  taro: "#9A7ABA",
+  vanilla: "#E6C694",
+  orange: "#E28A3A",
+  mint: "#72C2A2",
+  "black sesame": "#4E4A4E",
+};
+
+export const COOKIES: Record<string, EmblemData> = Object.fromEntries(
+  Object.entries(FLAVOURS).map(([name, dough]) => [name, drawCookie({ dough })]),
+);
+
 /** Player colours, like a table's pieces. */
 export const COLOURS: Record<string, string> = {
   orange: "#F5922E",
@@ -95,13 +196,15 @@ export const COLOURS: Record<string, string> = {
   lime: "#9ADA3A",
 };
 
-/** The four faces in Boardly orange, for choosing. */
-export const EMBLEMS: Record<string, EmblemData> = Object.fromEntries(
-  (["dots", "googly", "visor", "happy"] as MascotFace[]).map((face) => [
-    face,
-    drawMascot({ color: COLOURS.orange, face }),
-  ]),
-);
+/** The gingerbread mascot with its iced face and the other faces, and
+ *  the glossy piece it started as. */
+export const EMBLEMS: Record<string, EmblemData> = {
+  gingerbread: drawCookie({ dough: FLAVOURS.gingerbread }),
+  "gingerbread (dots)": drawCookie({ dough: FLAVOURS.gingerbread, face: "dots" }),
+  "gingerbread (happy)": drawCookie({ dough: FLAVOURS.gingerbread, face: "happy" }),
+  "gingerbread (googly)": drawCookie({ dough: FLAVOURS.gingerbread, face: "googly" }),
+  glossy: drawMascot({ color: COLOURS.orange, face: "dots" }),
+};
 
 /** Every colour with one face, as a table would look. */
 export const LINEUP: Record<string, EmblemData> = Object.fromEntries(

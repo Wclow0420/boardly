@@ -42,7 +42,9 @@ export type EmblemPart =
   /** A round cabochon. */
   | { jewel: Jewel; x: number; y: number; r: number; t?: string }
   /** A flat dark fill: keyholes, pips, slits. */
-  | { dark: string; t?: string };
+  | { dark: string; t?: string }
+  /** A piped line (icing, stitching): a round-ended stroke of `color`. */
+  | { line: string; color: string; w: number; op?: number; t?: string };
 
 export type EmblemData = EmblemPart[];
 
@@ -125,6 +127,8 @@ export function toSvgBody(
     .map((part, i) => {
       const t = part.t ? ` transform="${part.t}"` : "";
       if ("dark" in part) return `<path d="${part.dark}" fill="#1A1008"${t}/>`;
+      if ("line" in part)
+        return `<path d="${part.line}" fill="none" stroke="${part.color}" stroke-width="${part.w}" stroke-linecap="round" stroke-linejoin="round"${part.op !== undefined ? ` opacity="${part.op}"` : ""}${t}/>`;
       if ("jewel" in part) {
         const [light, body, deep] = JEWELS[part.jewel];
         const g = `${id}j${i}`;

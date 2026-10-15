@@ -66,6 +66,9 @@ export function recordEmblem(
         paint.setColor(Skia.Color("#1A1008"));
         canvas.drawPath(path, paint);
       }
+    } else if ("line" in part) {
+      const path = Skia.Path.MakeFromSVGString(part.line);
+      if (path) canvas.drawPath(path, stroke(part.w, part.color, part.op ?? 1));
     } else if ("jewel" in part) {
       const [light, body, deep] = JEWELS[part.jewel];
       const { x, y, r } = part;

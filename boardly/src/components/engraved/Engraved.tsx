@@ -179,6 +179,16 @@ export function EmblemParts({ data, color }: { data: EmblemData; color?: string 
         const body =
           "dark" in part ? (
             <Path d={part.dark} fill="#1A1008" />
+          ) : "line" in part ? (
+            <Path
+              d={part.line}
+              fill="none"
+              stroke={part.color}
+              strokeWidth={part.w}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity={part.op}
+            />
           ) : "jewel" in part ? (
             <JewelDot x={part.x} y={part.y} r={part.r} jewel={part.jewel} />
           ) : (
