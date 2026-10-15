@@ -1,5 +1,6 @@
 import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 
+import { Emblem } from "@/components/icons";
 import { useTheme } from "@/theme";
 import { AppText } from "./AppText";
 import { Button } from "./Button";
@@ -24,7 +25,7 @@ export function ErrorState({
 
   return (
     <View style={[styles.container, { padding: spacing.xxl }, style]}>
-      <AppText style={styles.emoji}>😵</AppText>
+      <Emblem emoji="😵" size={60} />
       <AppText variant="title" align="center" style={{ marginTop: spacing.md }}>
         {title}
       </AppText>

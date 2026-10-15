@@ -1629,7 +1629,8 @@
     "too_many_requests": "Too many attempts — please wait a minute",
     "game_not_finished": "The game isn't over yet",
     "invalid_image": "That file isn't a picture we can use.",
-    "image_too_large": "That picture is too large."
+    "image_too_large": "That picture is too large.",
+    "earned_only": "Earn this border with its badge"
   },
   "borders": {
     "title": "Profile Borders",
@@ -1644,7 +1645,8 @@
     },
     "unlock": "Unlock for {{price}}",
     "notEnough": "You need {{count}} more coins",
-    "locked": "Locked"
+    "locked": "Locked",
+    "earnWith": "Earn it: {{badge}}"
   },
   "coins": {
     "earned_one": "You earned {{count}} coin!",

@@ -17,9 +17,10 @@ import {
 import { useTranslation } from "react-i18next";
 import { useReducedMotion, useSharedValue } from "react-native-reanimated";
 
+import { Emblem } from "@/components/icons";
 import { api } from "@/api/client";
 import { TIER_METAL } from "@/components/badges/Badge";
-import { GearIcon } from "@/components/icons";
+import { GearEmblem } from "@/components/engraved";
 import { useIsoClock } from "@/components/iso";
 import {
   AppText,
@@ -146,7 +147,7 @@ export default function ProfileScreen() {
               settingsRef.current?.present();
             }}
           >
-            <GearIcon size={22} color={TABLE.cream} />
+            <GearEmblem size={32} />
           </IconButton>
         </View>
 
@@ -168,7 +169,7 @@ export default function ProfileScreen() {
                 avatarUrl={user?.avatarUrl}
               />
               <View style={styles.editBadge}>
-                <AppText style={styles.editIcon}>📷</AppText>
+                <Emblem emoji="📷" size={16} />
               </View>
             </Pressable>
             <View style={styles.who}>

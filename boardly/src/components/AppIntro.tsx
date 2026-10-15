@@ -52,6 +52,14 @@ const DIP = 0.88;
 
 const splash = require("../../assets/images/splash-icon.png");
 
+/** The meeple's size, shared with the app so it can zoom along. It rests
+ *  at THROUGH (the app at 1): React keeps the value it first rendered
+ *  with and may put it back on a later render, so that value must be the
+ *  resting one, or the app sticks a little zoomed in. */
+export function useIntroScale() {
+  return useSharedValue(THROUGH);
+}
+
 /** The app's own zoom while we fly in: a little close, settling to 1. */
 export function useIntroAppStyle(scale: SharedValue<number>) {
   return useAnimatedStyle(() => ({
@@ -116,7 +124,11 @@ export function AppIntro({
     // wait for the app, and for the meeple (or for giving up on it)
     if (started.current || !ready || (!shown && !gaveUp)) return;
     started.current = true;
-    const finish = () => setDone(true);
+    const finish = () => {
+      // whatever happened on the way, the app ends at its own size
+      scale.set(THROUGH);
+      setDone(true);
+    };
     if (still || !shown) {
       // no flight: the night simply lifts
       scale.set(THROUGH);

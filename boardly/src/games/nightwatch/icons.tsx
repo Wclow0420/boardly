@@ -1,9 +1,13 @@
-// The game's own icons, drawn on a 24-unit grid in one line weight so
-// they sit together as a set and take any colour. They stand in for
+// The game's own icons. Each is drawn as an engraved emblem (./emblems);
+// these line glyphs, on a 24-unit grid in one weight, are what badges
+// draw and the fallback for any icon without one. They stand in for
 // the emoji the game's text is written with (see GameText.tsx): an
 // emoji listed in EMOJI_ICON is drawn as its icon wherever it appears.
 
 import Svg, { Path } from "react-native-svg";
+
+import { EmblemGlyph } from "@/components/engraved";
+import { EMBLEMS } from "./emblems";
 
 /** A circle as path data. */
 const o = (cx: number, cy: number, r: number) =>
@@ -179,6 +183,9 @@ export function GameIcon({
   size?: number;
   color: string;
 }) {
+  // drawn as its engraved emblem; the line glyph is the fallback
+  const emblem = EMBLEMS[name];
+  if (emblem) return <EmblemGlyph data={emblem} size={size} color={color} />;
   const glyph: Glyph = GLYPHS[name];
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">

@@ -1,5 +1,6 @@
 import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 
+import { Emblem, hasEmblem } from "@/components/icons";
 import { useTheme } from "@/theme";
 import { AppText } from "./AppText";
 import { Button } from "./Button";
@@ -27,7 +28,11 @@ export function EmptyState({
 
   return (
     <View style={[styles.container, { padding: spacing.xxl }, style]}>
-      <AppText style={styles.emoji}>{emoji}</AppText>
+      {hasEmblem(emoji) ? (
+        <Emblem emoji={emoji} size={60} />
+      ) : (
+        <AppText style={styles.emoji}>{emoji}</AppText>
+      )}
       <AppText variant="title" align="center" style={{ marginTop: spacing.md }}>
         {title}
       </AppText>

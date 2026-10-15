@@ -1,9 +1,10 @@
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { BackIcon } from "@/components/icons";
+import { BackIcon, Emblem } from "@/components/icons";
 import {
   AppText,
   Button,
@@ -13,7 +14,9 @@ import {
   Screen,
   TableBackdrop,
 } from "@/components/ui";
+import { api } from "@/api/client";
 import { useSession } from "@/context/SessionContext";
+import { badgeText } from "@/features/badges/strings";
 import { CoinIcon } from "@/features/coins/CoinIcon";
 import { CoinPill } from "@/features/coins/CoinPill";
 import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
@@ -21,6 +24,7 @@ import {
   BORDERS,
   RARITY_COLORS,
   getBorder,
+  type ProfileBorder,
 } from "@/features/cosmetics/borders";
 import { useEquippedBorder } from "@/features/cosmetics/store";
 import { TABLE, fontFamily, useTheme } from "@/theme";
@@ -38,8 +42,19 @@ export default function BordersScreen() {
   const [failed, setFailed] = useState(false);
 
   const coins = user?.coins ?? 0;
-  const owns = (border: { id: string; price: number }) =>
-    border.price === 0 || (user?.ownedBorders ?? []).includes(border.id);
+  // borders earned with a badge: the player card says which badges I have
+  const stats = useQuery({
+    queryKey: ["stats", user?.id],
+    queryFn: async () => (await api.auth.stats()).stats,
+    enabled: user !== null,
+  });
+  const earned = new Set(
+    stats.data?.badges.filter((b) => b.unlockedAt).map((b) => b.key) ?? [],
+  );
+  const owns = (border: ProfileBorder) =>
+    border.kind === "art" && border.earnedBy
+      ? earned.has(border.earnedBy)
+      : border.price === 0 || (user?.ownedBorders ?? []).includes(border.id);
 
   /** Wear a border; a locked one is bought first, then worn. */
   const equip = async (id: string, locked: boolean) => {
@@ -61,6 +76,8 @@ export default function BordersScreen() {
   const rarityColor = RARITY_COLORS[selected.rarity];
   const selectedOwned = owns(selected);
   const shortBy = Math.max(0, selected.price - coins);
+  // the badge an earned border comes with
+  const earnedBy = selected.kind === "art" ? selected.earnedBy : undefined;
 
   return (
     <Screen
@@ -107,7 +124,11 @@ export default function BordersScreen() {
           <View style={styles.price}>
             {selected.price > 0 ? <CoinIcon size={16} /> : null}
             <AppText variant="label" style={{ color: TABLE.yellow.fill[0] }}>
-              {selected.price > 0 ? selected.price : t("borders.free")}
+              {earnedBy
+                ? `🏅 ${badgeText(t, earnedBy).name}`
+                : selected.price > 0
+                  ? selected.price
+                  : t("borders.free")}
             </AppText>
           </View>
         </View>
@@ -116,23 +137,30 @@ export default function BordersScreen() {
           label={
             selected.id === equippedId
               ? t("borders.equipped")
-              : !selectedOwned
-                ? t("borders.unlock", { price: selected.price })
-                : t("borders.equip")
+              : !selectedOwned && earnedBy
+                ? t("borders.earnWith", { badge: badgeText(t, earnedBy).name })
+                : !selectedOwned
+                  ? t("borders.unlock", { price: selected.price })
+                  : t("borders.equip")
           }
           leftIcon={
-            !selectedOwned && selected.id !== equippedId ? (
+            !selectedOwned && !earnedBy && selected.id !== equippedId ? (
               <CoinIcon size={18} />
             ) : undefined
           }
           disabled={
-            selected.id === equippedId || (!selectedOwned && shortBy > 0)
+            selected.id === equippedId ||
+            (!selectedOwned && (earnedBy !== undefined || shortBy > 0))
           }
           loading={saving}
           onPress={() => equip(selected.id, !selectedOwned)}
           style={styles.equip}
         />
-        {!selectedOwned && shortBy > 0 ? (
+        {!selectedOwned && earnedBy ? (
+          <AppText variant="caption" color="textMuted" align="center">
+            {badgeText(t, earnedBy).desc}
+          </AppText>
+        ) : !selectedOwned && shortBy > 0 ? (
           <AppText variant="caption" color="textMuted" align="center">
             {t("borders.notEnough", { count: shortBy })}
           </AppText>
@@ -189,10 +217,14 @@ export default function BordersScreen() {
                   ]}
                 />
                 {border.id === equippedId ? (
-                  <AppText style={styles.check}>✓</AppText>
+                  <View style={styles.check}>
+                    <Emblem emoji="✓" size={14} />
+                  </View>
                 ) : null}
                 {!owns(border) ? (
-                  <AppText style={styles.lock}>🔒</AppText>
+                  <View style={styles.lock}>
+                    <Emblem emoji="🔒" size={16} />
+                  </View>
                 ) : null}
               </Pressable>
             );
@@ -214,7 +246,7 @@ const styles = StyleSheet.create({
   price: { flexDirection: "row", alignItems: "center", gap: 4 },
   preview: { marginTop: 12, alignItems: "center", gap: 4, paddingVertical: 10 },
   // Room for the border to draw outside the avatar
-  previewAvatar: { paddingTop: 34, paddingBottom: 34 },
+  previewAvatar: { paddingTop: 40, paddingBottom: 40 },
   meta: { flexDirection: "row", alignItems: "center", gap: 10 },
   rarity: {
     borderWidth: 1.5,

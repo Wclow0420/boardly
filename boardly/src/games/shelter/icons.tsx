@@ -1,9 +1,13 @@
-// Shelter's own icons, on a 24-unit grid in one line weight (the same
-// style as Seal the Manor's set) so they take any colour. The game's
+// Shelter's own icons. Each is drawn as an engraved emblem (./emblems);
+// these line glyphs, on a 24-unit grid in one weight, are what badges
+// draw and the fallback for any icon without one. The game's
 // text is written with emoji; GameText.tsx draws each emoji listed in
 // EMOJI_ICON as its icon instead.
 
 import Svg, { Path } from "react-native-svg";
+
+import { EmblemGlyph } from "@/components/engraved";
+import { EMBLEMS } from "./emblems";
 
 /** A circle as path data. */
 const o = (cx: number, cy: number, r: number) =>
@@ -107,6 +111,9 @@ export function GameIcon({
   size?: number;
   color: string;
 }) {
+  // drawn as its engraved emblem; the line glyph is the fallback
+  const emblem = EMBLEMS[name];
+  if (emblem) return <EmblemGlyph data={emblem} size={size} color={color} />;
   const glyph: Glyph = GLYPHS[name];
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">

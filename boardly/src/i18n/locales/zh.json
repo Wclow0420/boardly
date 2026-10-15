@@ -1621,7 +1621,8 @@
     "too_many_requests": "尝试次数过多，请稍等一分钟",
     "game_not_finished": "游戏还没结束",
     "invalid_image": "这个文件不是可用的图片。",
-    "image_too_large": "图片太大了。"
+    "image_too_large": "图片太大了。",
+    "earned_only": "获得对应徽章才能解锁这个头像框"
   },
   "borders": {
     "title": "头像框",
@@ -1636,7 +1637,8 @@
     },
     "unlock": "{{price}} 金币解锁",
     "notEnough": "还差 {{count}} 金币",
-    "locked": "未解锁"
+    "locked": "未解锁",
+    "earnWith": "获得徽章解锁：{{badge}}"
   },
   "coins": {
     "earned_one": "你获得了 {{count}} 金币！",

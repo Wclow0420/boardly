@@ -1,15 +1,24 @@
 import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { LinearGradient } from "expo-linear-gradient";
+import { useEffect, type ComponentType } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import {
-  FriendsIcon,
-  GamesIcon,
-  HomeIcon,
-  ProfileIcon,
-} from "@/components/icons";
+  FriendsEmblem,
+  GamesEmblem,
+  HomeEmblem,
+  ProfileEmblem,
+  type EmblemProps,
+} from "@/components/engraved";
 import { AppText, Texture } from "@/components/ui";
 import { useFriendsQuery } from "@/features/friends/hooks";
 import { fontFamily } from "@/theme";
@@ -18,16 +27,16 @@ import { tapHaptic } from "@/utils/haptics";
 
 const TAB_CONFIG: Record<
   string,
-  { labelKey: string; Icon: typeof HomeIcon }
+  { labelKey: string; Icon: ComponentType<EmblemProps> }
 > = {
-  index: { labelKey: "tabs.home", Icon: HomeIcon },
-  games: { labelKey: "tabs.games", Icon: GamesIcon },
-  friends: { labelKey: "tabs.friends", Icon: FriendsIcon },
-  profile: { labelKey: "tabs.profile", Icon: ProfileIcon },
+  index: { labelKey: "tabs.home", Icon: HomeEmblem },
+  games: { labelKey: "tabs.games", Icon: GamesEmblem },
+  friends: { labelKey: "tabs.friends", Icon: FriendsEmblem },
+  profile: { labelKey: "tabs.profile", Icon: ProfileEmblem },
 };
 
-// A wooden rail along the edge of the table. The current tab is simply
-// highlighted in gold.
+// A wooden rail along the edge of the table, its tabs engraved emblems:
+// the current one lifts and shines, the rest sit back, dimmed.
 const ACTIVE = TABLE.yellow.fill[0];
 
 function TabItem({
@@ -38,12 +47,27 @@ function TabItem({
   onPress,
 }: {
   label: string;
-  Icon: typeof HomeIcon;
+  Icon: ComponentType<EmblemProps>;
   focused: boolean;
   badge: boolean;
   onPress: () => void;
 }) {
   const color = focused ? ACTIVE : TABLE.creamMuted;
+  const still = useReducedMotion();
+  const on = useSharedValue(focused ? 1 : 0);
+  useEffect(() => {
+    const to = focused ? 1 : 0;
+    on.set(
+      still ? to : focused ? withSpring(to, { damping: 11 }) : withTiming(to),
+    );
+  }, [focused, still, on]);
+  const lift = useAnimatedStyle(() => ({
+    opacity: 0.65 + on.value * 0.35,
+    transform: [
+      { translateY: -3 * on.value },
+      { scale: 0.92 + on.value * 0.16 },
+    ],
+  }));
 
   return (
     <Pressable
@@ -54,7 +78,9 @@ function TabItem({
       style={styles.item}
     >
       <View style={styles.iconSlot}>
-        <Icon size={22} color={color} />
+        <Animated.View style={lift}>
+          <Icon size={34} />
+        </Animated.View>
         {badge ? <View style={styles.badge} /> : null}
       </View>
       <AppText
@@ -136,15 +162,15 @@ const styles = StyleSheet.create({
   },
   item: { flex: 1, alignItems: "center", gap: 3 },
   iconSlot: {
-    width: 44,
-    height: 24,
+    width: 48,
+    height: 34,
     alignItems: "center",
     justifyContent: "center",
   },
   badge: {
     position: "absolute",
-    top: -2,
-    right: 6,
+    top: 0,
+    right: 4,
     width: 10,
     height: 10,
     borderRadius: 5,

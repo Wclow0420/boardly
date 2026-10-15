@@ -24,16 +24,10 @@ export const ROLE_ART: Partial<Record<Role, ImageSourcePropType>> = {
   contessa: require("../../../assets/games/hustle/role-auntie.png"),
 };
 
-/** Complete round badges — drawn in place of the tinted icon circle. */
-export const ACTION_ART: Partial<Record<ActionType, ImageSourcePropType>> = {
-  income: require("../../../assets/games/hustle/action-dayjob.png"),
-  foreignAid: require("../../../assets/games/hustle/action-borrow.png"),
-  tax: require("../../../assets/games/hustle/action-rent.png"),
-  steal: require("../../../assets/games/hustle/action-pickpocket.png"),
-  exchange: require("../../../assets/games/hustle/action-swap.png"),
-  assassinate: require("../../../assets/games/hustle/action-roughup.png"),
-  coup: require("../../../assets/games/hustle/action-shutdown.png"),
-};
+/** Picture badges for the actions, drawn in place of the tinted circle.
+ *  None: each action is its engraved emblem (ACTION_EMOJI, drawn by
+ *  <Emblem>) in a circle of its tint, in the app's own style. */
+export const ACTION_ART: Partial<Record<ActionType, ImageSourcePropType>> = {};
 
 /** Placeholder glyphs used until art is registered above. */
 export const ROLE_EMOJI: Record<Role, string> = {

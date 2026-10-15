@@ -59,6 +59,65 @@ real food count, with tappable night posts: `shelterScenes.ts`,
   `src/app/dev/shelter.tsx` (`boardly-dev://dev/shelter`, Shelter's board
   in every phase). Add one for a new game and check it on the simulator.
 
+# Profile borders (`src/features/cosmetics/`)
+
+Borders are `ring`, `shape`, `glow` or `art` (borders.ts). Art borders
+are little Skia illustrations round the avatar, in `art/`: draw in the
+space where the avatar is a circle of radius 50 at the origin (room out
+to ~92), as a `back` layer (behind the avatar) and a `front` layer (over
+its edge; keep off its face, r < 46). Use the kit (`art/kit.tsx`: Band,
+Halo, Sparks, Glint, Flicker, polar/rnd, the iso `Fire`/`Steam`) and the
+shared clock it is handed; helpers called inside `useDerivedValue` must
+be worklets. Below 44pt a border stands still. Every new border's id
+and price go in `backend/app/cosmetics.py` too (`BORDER_PRICES`, or
+`EARNED_BORDERS` for one that comes with a badge). Check them all at
+`boardly-dev://dev/borders`.
+
+# The house drawing style
+
+How the app should look wherever something is drawn (borders, emblems,
+icons): engraved metal and ivory, like Winged Crest (`art/crest.tsx`)
+and Baroque Silver (`art/baroque.tsx`).
+
+- Every shape is a filled path with a gradient: gold
+  (`#FFF2B8 #E2B04A #9A6B1E #F0CC72`), silver
+  (`#FFFFFF #C9D0DA #7A8494 #E4E9F0`) or ivory
+  (`#FFFFFF #F4EEDF #D8CCB0`). Each gets a dark ink outline: warm
+  `#3A2408` on gold and ivory, cool `#1E242C` on silver.
+- Engrave it: a thin vein down every leaf, scroll and feather, grooves
+  along bands, and one white shine line.
+- Build organic forms with the shared builders in
+  `src/components/engraved/shapes.ts` rather than by hand:
+  - `curl` and `acanthus` (`lush` for leaf-shaped lobes)
+  - `ribbon`, a band of varying width through points
+  - `frond`, a serrated leaf
+  - `LEAF` and `FEATHER`
+
+  The palettes (`MATERIALS`, `INKS`, `JEWELS`) are there too. Draw the
+  right half and mirror it.
+- Every icon is an engraved emblem in a 48 × 48 box, written as data
+  (`EmblemData` in `src/components/engraved/emblem.ts`: shapes with a
+  material, veins, shine; jewels; dark holes; `m: "tint"` takes the
+  colour it's shown in) and drawn by `EmblemGlyph`.
+  - App icons: `components/icons` (same names as ever) from
+    `engraved/ui.ts`.
+  - The tab bar, settings rows and gear: `engraved/icons.tsx`.
+  - Emoji: `AppText` draws every emoji that has an emblem as that
+    emblem, inline at letter height (a lone emoji is centred), so
+    labels, buttons and game text need nothing. Use
+    `<Emblem emoji="🏆" size>` for a picture on its own. The emblems
+    come from `engraved/emoji/` (the app's set wins, then the sets
+    drawn there, then the games' icons). A new emoji in any text gets
+    an emblem there.
+  - A game's icons: `src/games/<game>/emblems`, which its `GameIcon`
+    draws. The line `GLYPHS` stay for badges and as the fallback.
+  - Look a set over with
+    `node scripts/emblem-sheet.mjs <file.ts> <out.png>`: each icon large
+    and at text size. Every icon must read at about 17pt.
+  - Never ship a bare emoji or a line icon as UI.
+- Life comes from a light `Sweep`, `Glint`s, one jewel that glows or
+  beats, and a gentle sway. Never draw faces or heads in code.
+
 # Standards for a new game
 
 What made Seal the Manor feel good; follow it unless the design says

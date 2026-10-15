@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { BellIcon, ChevronRightIcon, PlusIcon } from "@/components/icons";
+import { BellIcon, ChevronRightIcon, Emblem, PlusIcon } from "@/components/icons";
 import {
   AppText,
   GorhomBottomSheetModal,
@@ -207,7 +207,7 @@ export default function HomeScreen() {
       >
         <LinearGradient colors={HOME.woodButton} style={styles.join}>
           <Texture radius={11} />
-          <AppText style={styles.joinIcon}>{"</>"}</AppText>
+          <Emblem emoji="🎟" size={28} />
           <AppText style={styles.joinText}>{t("home.joinWithCode")}</AppText>
         </LinearGradient>
       </Pressable>
@@ -254,7 +254,7 @@ export default function HomeScreen() {
                   contentFit="contain"
                 />
               ) : (
-                <AppText style={styles.chairEmoji}>🪑</AppText>
+                <Emblem emoji="🪑" size={46} />
               )}
               <AppText
                 variant="title"
@@ -330,7 +330,7 @@ export default function HomeScreen() {
                     contentFit="contain"
                   />
                 ) : (
-                  <AppText style={styles.inviteEmoji}>🎲</AppText>
+                  <Emblem emoji="🎲" size={30} />
                 )}
               </View>
               <View style={styles.inviteText}>
