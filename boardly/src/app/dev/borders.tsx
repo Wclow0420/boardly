@@ -1,7 +1,8 @@
 // Development only: every art border, moving, on a device. Tap one to
-// see it large. Open with boardly-dev://dev/borders.
+// see it large. Open with boardly-dev://dev/borders; add ?ids=a,b,c to
+// show just those large at the top (e.g. ?ids=phoenix,galaxy).
 
-import { Redirect } from "expo-router";
+import { Redirect, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -16,6 +17,8 @@ const ART_BORDERS = BORDERS.filter((border) => border.kind === "art");
 export default function BordersPreview() {
   const { colors, spacing } = useTheme();
   const [big, setBig] = useState("phoenix");
+  const { ids } = useLocalSearchParams<{ ids?: string }>();
+  const large = ids ? ids.split(",") : ["phoenix", "galaxy"];
   if (!__DEV__) return <Redirect href="/" />;
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -36,7 +39,7 @@ export default function BordersPreview() {
             marginTop: 50,
           }}
         >
-          {["campfire", "phoenix", "glacier", "thunderstorm", "ghost-lantern", "galaxy"].map((id) => (
+          {large.map((id) => (
             <View key={id} style={{ padding: 34 }}>
               <AvatarBorder name="Wei" size={96} borderId={id} />
             </View>

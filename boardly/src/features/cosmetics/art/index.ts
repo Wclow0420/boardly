@@ -12,7 +12,12 @@ import { HERALDRY_ART } from "./heraldry";
 import type { ArtBorderDrawing } from "./kit";
 import { LEGENDARY_ART } from "./legendary";
 import { RADIANT_ART } from "./radiant";
+import { ABYSS_ART } from "./abyss";
+import { CURRENTS_ART } from "./currents";
 import { GARDEN_ART } from "./garden";
+import { HONOURS_ART } from "./honours";
+import { MAJESTY_ART } from "./majesty";
+import { RADIANCE_ART } from "./radiance";
 import { NOCTURNE_ART } from "./nocturne";
 import { SOLAR_ART } from "./solar";
 import { TEMPEST_ART } from "./tempest";
@@ -40,6 +45,11 @@ export const ART: Record<string, ArtBorderDrawing> = {
   ...SOLAR_ART,
   ...TEMPEST_ART,
   ...NOCTURNE_ART,
+  ...MAJESTY_ART,
+  ...ABYSS_ART,
+  ...CURRENTS_ART,
+  ...RADIANCE_ART,
+  ...HONOURS_ART,
 };
 
 export { BorderClockProvider, useBorderClock } from "./kit";
