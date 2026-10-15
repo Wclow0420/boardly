@@ -1,3 +1,4 @@
+import { Canvas, Group } from "@shopify/react-native-skia";
 import { useId, type ReactNode } from "react";
 import { View } from "react-native";
 import AnimatedGlow, { type GlowConfig } from "react-native-animated-glow";
@@ -12,8 +13,10 @@ import Svg, {
 import { assetUrl } from "@/api/client";
 import { Avatar, AvatarBadges, type PresenceStatus } from "@/components/ui";
 
+import { ART, useBorderClock, type ArtBorderDrawing } from "./art";
 import {
   getBorder,
+  type ArtBorder,
   type GlowBorder,
   type RingBorder,
   type ShapeBorder,
@@ -57,6 +60,14 @@ export function AvatarBorder({
   const border = getBorder(borderId ?? undefined);
   const imageUri = assetUrl(avatarUrl);
   const badges = <AvatarBadges size={size} presence={presence} crown={crown} />;
+
+  if (border.kind === "art" && ART[border.art]) {
+    return (
+      <ArtAvatar border={border} name={name} size={size} imageUri={imageUri}>
+        {badges}
+      </ArtAvatar>
+    );
+  }
 
   if (border.kind === "glow") {
     return (
@@ -222,6 +233,58 @@ function GlowAvatar({
           </View>
         </AnimatedGlow>
       </View>
+      {children}
+    </View>
+  );
+}
+
+/** Below this size an art border stands still: in a list of avatars,
+ *  a dozen fires burning at once would cost more than they show. */
+const ART_MOVES_FROM = 44;
+
+/** An avatar inside an art border: the art's back layer, the avatar,
+ *  then the art's front layer over the avatar's edge. */
+function ArtAvatar({
+  border,
+  name,
+  size,
+  imageUri,
+  children,
+}: {
+  border: ArtBorder;
+  name: string;
+  size: number;
+  imageUri: string | null;
+  children?: ReactNode;
+}) {
+  const drawing: ArtBorderDrawing = ART[border.art];
+  const clock = useBorderClock(size < ART_MOVES_FROM);
+  const side = size * CANVAS;
+  // the art is drawn where the avatar's radius is 50, at the centre
+  const place = [
+    { translateX: side / 2 },
+    { translateY: side / 2 },
+    { scale: size / 100 },
+  ];
+  const Back = drawing.back;
+  const Front = drawing.front;
+  return (
+    <View style={{ width: size, height: size }}>
+      {Back ? (
+        <Canvas style={canvasStyle(size)} pointerEvents="none">
+          <Group transform={place}>
+            <Back t={clock} />
+          </Group>
+        </Canvas>
+      ) : null}
+      <Avatar name={name} size={size} imageUri={imageUri} />
+      {Front ? (
+        <Canvas style={canvasStyle(size)} pointerEvents="none">
+          <Group transform={place}>
+            <Front t={clock} />
+          </Group>
+        </Canvas>
+      ) : null}
       {children}
     </View>
   );

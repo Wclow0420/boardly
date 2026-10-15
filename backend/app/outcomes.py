@@ -157,6 +157,13 @@ def player_card(user_id) -> dict:
     }
 
 
+def has_badge(user_id, key) -> bool:
+    """Whether this player has earned the badge `key`."""
+    return any(
+        b["key"] == key and b["unlockedAt"] for b in player_card(user_id)["badges"]
+    )
+
+
 def _badge(badge, game_type, progress, unlocked):
     return {
         "key": badge.key,

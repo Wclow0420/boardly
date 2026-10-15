@@ -1603,7 +1603,8 @@
     "too_many_requests": "Terlalu banyak percubaan — sila tunggu seminit",
     "game_not_finished": "Permainan belum tamat",
     "invalid_image": "Fail itu bukan gambar yang boleh digunakan.",
-    "image_too_large": "Gambar itu terlalu besar."
+    "image_too_large": "Gambar itu terlalu besar.",
+    "earned_only": "Dapatkan bingkai ini dengan lencananya"
   },
   "borders": {
     "title": "Bingkai Profil",
@@ -1618,7 +1619,8 @@
     },
     "unlock": "Buka dengan {{price}}",
     "notEnough": "Perlu {{count}} syiling lagi",
-    "locked": "Berkunci"
+    "locked": "Berkunci",
+    "earnWith": "Dapatkan: {{badge}}"
   },
   "coins": {
     "earned_one": "Anda dapat {{count}} syiling!",

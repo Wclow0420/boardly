@@ -24,6 +24,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AppIntro, useIntroAppStyle } from "@/components/AppIntro";
 import { WebFrame } from "@/components/ui";
+import { BorderClockProvider } from "@/features/cosmetics/art";
 import { SessionProvider, useSession } from "@/context/SessionContext";
 import { FriendsRealtime } from "@/features/friends/FriendsRealtime";
 import { useOtaUpdates } from "@/hooks/useOtaUpdates";
@@ -168,9 +169,11 @@ export default function RootLayout() {
             <LocaleProvider>
               <SessionProvider>
                 <WebFrame>
+                  <BorderClockProvider>
                   <BottomSheetModalProvider>
                     <RootNavigator />
                   </BottomSheetModalProvider>
+                  </BorderClockProvider>
                 </WebFrame>
               </SessionProvider>
             </LocaleProvider>

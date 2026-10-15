@@ -8,7 +8,13 @@ from flask import Blueprint, g, request
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app import presence
-from app.cosmetics import BORDER_IDS, BORDER_PRICES, DEFAULT_BORDER, owns_border
+from app.cosmetics import (
+    BORDER_IDS,
+    BORDER_PRICES,
+    DEFAULT_BORDER,
+    EARNED_BORDERS,
+    owns_border,
+)
 from app.auth import issue_tokens, require_auth, user_from_token
 from app.extensions import db, limiter, socketio
 from app.models import Avatar, Friendship, Room, RoomPlayer, User
@@ -164,6 +170,8 @@ def buy_border(border_id):
     """Spend coins to unlock a profile border."""
     if border_id not in BORDER_IDS:
         return api_error("invalid_border", "Unknown profile border", 404)
+    if border_id in EARNED_BORDERS:
+        return api_error("earned_only", "Earn this border with its badge", 409)
     # Lock the account row so the balance cannot be spent twice
     me = db.session.get(
         User, g.current_user.id, with_for_update=True, populate_existing=True

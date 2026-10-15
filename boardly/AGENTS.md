@@ -59,6 +59,20 @@ real food count, with tappable night posts: `shelterScenes.ts`,
   `src/app/dev/shelter.tsx` (`boardly-dev://dev/shelter`, Shelter's board
   in every phase). Add one for a new game and check it on the simulator.
 
+# Profile borders (`src/features/cosmetics/`)
+
+Borders are `ring`, `shape`, `glow` or `art` (borders.ts). Art borders
+are little Skia illustrations round the avatar, in `art/`: draw in the
+space where the avatar is a circle of radius 50 at the origin (room out
+to ~92), as a `back` layer (behind the avatar) and a `front` layer (over
+its edge; keep off its face, r < 46). Use the kit (`art/kit.tsx`: Band,
+Halo, Sparks, Glint, Flicker, polar/rnd, the iso `Fire`/`Steam`) and the
+shared clock it is handed; helpers called inside `useDerivedValue` must
+be worklets. Below 44pt a border stands still. Every new border's id
+and price go in `backend/app/cosmetics.py` too (`BORDER_PRICES`, or
+`EARNED_BORDERS` for one that comes with a badge). Check them all at
+`boardly-dev://dev/borders`.
+
 # Standards for a new game
 
 What made Seal the Manor feel good; follow it unless the design says

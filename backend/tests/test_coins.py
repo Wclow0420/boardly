@@ -109,3 +109,12 @@ def test_paid_borders_are_locked_until_bought(app, client, make_user):
     assert equip("shield").get_json()["user"]["borderId"] == "shield"
     # and the balance is not enough for a second one
     assert buy("octagon").get_json()["error"]["code"] == "not_enough_coins"
+
+
+def test_earned_borders_come_with_their_badge(client, make_user):
+    alice = make_user("alice")
+    # never for sale, and locked without the badge
+    res = client.post(f"{AUTH}/me/borders/table-legend/buy", headers=alice["headers"])
+    assert res.get_json()["error"]["code"] == "earned_only"
+    res = client.patch(f"{AUTH}/me", json={"borderId": "table-legend"}, headers=alice["headers"])
+    assert res.get_json()["error"]["code"] == "border_locked"
