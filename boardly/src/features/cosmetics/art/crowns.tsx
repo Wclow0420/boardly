@@ -306,8 +306,8 @@ const drop = (x: number, y: number, w: number, h: number) =>
 /** The tiara's foot (0, -40) moved onto the picture's top right, tilted
  *  and made smaller: a side tiara sitting on the head. */
 const TIARA_PLACE = [
-  { translateX: 22 },
-  { translateY: -26 },
+  { translateX: 24 },
+  { translateY: -33 },
   { rotate: 0.62 },
   { scale: 0.66 },
   { translateY: 40 },
