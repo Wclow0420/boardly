@@ -18,14 +18,7 @@ import { useDerivedValue } from "react-native-reanimated";
 
 import { NOISE } from "@/components/iso/noise";
 import { FireRim } from "./rims";
-import {
-  Band,
-  Glint,
-  Halo,
-  Sparks,
-  type ArtBorderDrawing,
-  type Clock,
-} from "./kit";
+import { Glint, Halo, Sparks, type ArtBorderDrawing, type Clock } from "./kit";
 
 // ── Sun Blaze: one ring of fire, burning outward like the sun ───────
 
@@ -189,18 +182,83 @@ function AngelBack({ t }: { t: Clock }) {
   );
 }
 
+/** Two rows of feathers laid all the way round, leaning one way like a
+ *  wreath; their quills tuck in over the picture's edge. */
+const RIM_ROWS = [
+  {
+    count: 30,
+    base: 51,
+    len: 19,
+    w: 6,
+    lean: 0.55,
+    offset: 0,
+    colors: ["#B8C2E6", "#EEF1FD", "#FFFFFF"],
+  },
+  {
+    count: 30,
+    base: 49,
+    len: 13,
+    w: 5,
+    lean: 0.6,
+    offset: 0.5,
+    colors: ["#D3DAF2", "#FFFFFF"],
+  },
+];
+
+function FeatherRim({ t }: { t: Clock }) {
+  // a soft ruffle running round the wreath
+  const ruffle = useDerivedValue(() => [
+    { scale: 1 + Math.sin(t.value * 2.1) * 0.012 },
+  ]);
+  return (
+    <Group transform={ruffle}>
+      {RIM_ROWS.map((row, r) =>
+        Array.from({ length: row.count }, (_, k) => {
+          const a = ((k + row.offset) / row.count) * Math.PI * 2;
+          return (
+            <Group
+              key={`${r}-${k}`}
+              transform={[
+                { rotate: a + Math.PI / 2 },
+                { translateY: -row.base },
+                { rotate: row.lean },
+              ]}
+            >
+              <Path path={FEATHER(row.len, row.w)}>
+                <LinearGradient
+                  start={vec(0, 0)}
+                  end={vec(0, -row.len)}
+                  colors={row.colors}
+                />
+              </Path>
+              <Path
+                path={FEATHER(row.len, row.w)}
+                style="stroke"
+                strokeWidth={0.8}
+                color="#8E97C4"
+                opacity={0.85}
+              />
+              <Path
+                path={`M0 0L0 ${-row.len * 0.8}`}
+                style="stroke"
+                strokeWidth={0.6}
+                color="#C9A84A"
+              />
+            </Group>
+          );
+        }),
+      )}
+    </Group>
+  );
+}
+
 function AngelFront({ t }: { t: Clock }) {
   const bob = useDerivedValue(() => [
     { translateY: -78 + Math.sin(t.value * 1.6) * 2 },
   ]);
   return (
     <Group>
-      <Band
-        r={53}
-        width={5}
-        colors={["#FFF6D0", "#E0B94A", "#9A7A2A"]}
-        rim="#6E5418"
-      />
+      <FeatherRim t={t} />
       <Group transform={bob}>
         <Oval
           x={-28}
