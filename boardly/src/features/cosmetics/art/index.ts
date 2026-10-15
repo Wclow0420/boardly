@@ -3,11 +3,13 @@
 import { CROWN_ART } from "./crowns";
 import { EARNED_ART } from "./earned";
 import { EPIC_ART } from "./epic";
+import { FALLEN_ART } from "./fallen";
 import { FRAME_ART } from "./frames";
 import type { ArtBorderDrawing } from "./kit";
 import { LEGENDARY_ART } from "./legendary";
 import { RARE_ART } from "./rare";
 import { RIM_ART } from "./rimBorders";
+import { SERAPH_ART } from "./seraph";
 
 export const ART: Record<string, ArtBorderDrawing> = {
   ...RARE_ART,
@@ -17,6 +19,8 @@ export const ART: Record<string, ArtBorderDrawing> = {
   ...FRAME_ART,
   ...CROWN_ART,
   ...RIM_ART,
+  ...SERAPH_ART,
+  ...FALLEN_ART,
 };
 
 export { BorderClockProvider, useBorderClock } from "./kit";

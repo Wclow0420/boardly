@@ -26,7 +26,7 @@ import {
 } from "./kit";
 
 /** A band of light crossing `d` every few seconds. */
-function Sweep({
+export function Sweep({
   t,
   d,
   every = 3.6,
@@ -60,7 +60,7 @@ function Sweep({
 }
 
 /** A faceted gem: body, a darker lower half, a highlight. */
-function Gem({
+export function Gem({
   x,
   y,
   w,
