@@ -19,10 +19,14 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef } from "react";
 import { ActivityIndicator, AppState, Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import Animated, { useSharedValue } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { AppIntro, useIntroAppStyle } from "@/components/AppIntro";
+import {
+  AppIntro,
+  useIntroAppStyle,
+  useIntroScale,
+} from "@/components/AppIntro";
 import { WebFrame } from "@/components/ui";
 import { BorderClockProvider } from "@/features/cosmetics/art";
 import { SessionProvider, useSession } from "@/context/SessionContext";
@@ -94,48 +98,46 @@ function RootNavigator() {
   }, [status, router, invitePath]);
 
   // Phones open by flying in through the logo; the app zooms along
-  const introScale = useSharedValue(1);
+  const introScale = useIntroScale();
   const appStyle = useIntroAppStyle(introScale);
-  const intro =
-    Platform.OS === "web" ? null : <AppIntro ready={status !== "loading"} scale={introScale} />;
-
-  if (status === "loading") {
-    return (
-      <>
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <ActivityIndicator />
-        </View>
-        {intro}
-      </>
-    );
-  }
-
   const signedIn = status === "signedIn";
 
+  // The intro keeps one place in this list whatever the status, so it is
+  // never mounted twice
   return (
     <>
-      <Animated.View style={appStyle}>
-      {Platform.OS === "web" ? (
-        <Head>
-          <title>Boardly</title>
-        </Head>
-      ) : null}
-      <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Protected guard={signedIn}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="lobby/[code]" />
-          <Stack.Screen name="game/[code]" />
-          <Stack.Screen name="join/[code]" />
-          <Stack.Screen name="borders" />
-        </Stack.Protected>
-        <Stack.Protected guard={!signedIn}>
-          <Stack.Screen name="(auth)" />
-        </Stack.Protected>
-      </Stack>
-      </Animated.View>
+      {status === "loading" ? (
+        <View
+          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        >
+          <ActivityIndicator />
+        </View>
+      ) : (
+        <Animated.View style={appStyle}>
+          {Platform.OS === "web" ? (
+            <Head>
+              <title>Boardly</title>
+            </Head>
+          ) : null}
+          <StatusBar style="light" />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Protected guard={signedIn}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="lobby/[code]" />
+              <Stack.Screen name="game/[code]" />
+              <Stack.Screen name="join/[code]" />
+              <Stack.Screen name="borders" />
+            </Stack.Protected>
+            <Stack.Protected guard={!signedIn}>
+              <Stack.Screen name="(auth)" />
+            </Stack.Protected>
+          </Stack>
+        </Animated.View>
+      )}
       {signedIn ? <FriendsRealtime /> : null}
-      {intro}
+      {Platform.OS === "web" ? null : (
+        <AppIntro ready={status !== "loading"} scale={introScale} />
+      )}
     </>
   );
 }
@@ -167,19 +169,19 @@ export default function RootLayout() {
             {/* One look for the whole app; games with a skin layer their
                 own colours on top inside their screens. */}
             <ThemeScope colors={TABLE_COLORS}>
-            <LocaleProvider>
-              <SessionProvider>
-                <WebFrame>
-                  <BorderClockProvider>
-                  <BottomSheetModalProvider>
-                    <PlayerCardProvider>
-                      <RootNavigator />
-                    </PlayerCardProvider>
-                  </BottomSheetModalProvider>
-                  </BorderClockProvider>
-                </WebFrame>
-              </SessionProvider>
-            </LocaleProvider>
+              <LocaleProvider>
+                <SessionProvider>
+                  <WebFrame>
+                    <BorderClockProvider>
+                      <BottomSheetModalProvider>
+                        <PlayerCardProvider>
+                          <RootNavigator />
+                        </PlayerCardProvider>
+                      </BottomSheetModalProvider>
+                    </BorderClockProvider>
+                  </WebFrame>
+                </SessionProvider>
+              </LocaleProvider>
             </ThemeScope>
           </ThemeProvider>
         </QueryClientProvider>
