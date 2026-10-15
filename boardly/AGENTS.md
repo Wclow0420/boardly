@@ -73,6 +73,29 @@ and price go in `backend/app/cosmetics.py` too (`BORDER_PRICES`, or
 `EARNED_BORDERS` for one that comes with a badge). Check them all at
 `boardly-dev://dev/borders`.
 
+# The house drawing style
+
+How the app should look wherever something is drawn (borders, emblems,
+icons): engraved metal and ivory, like Winged Crest (`art/crest.tsx`)
+and Baroque Silver (`art/baroque.tsx`).
+
+- Every shape is a filled path with a gradient: gold
+  (`#FFF2B8 #E2B04A #9A6B1E #F0CC72`), silver
+  (`#FFFFFF #C9D0DA #7A8494 #E4E9F0`) or ivory
+  (`#FFFFFF #F4EEDF #D8CCB0`). Each gets a dark ink outline: warm
+  `#3A2408` on gold and ivory, cool `#1E242C` on silver.
+- Engrave it: a thin vein down every leaf, scroll and feather, grooves
+  along bands, and one white shine line.
+- Build organic forms with the shared builders rather than by hand:
+  - `curl` and `acanthus` (`lush` for leaf-shaped lobes)
+  - `ribbon`, a band of varying width through points
+  - `frond`, a serrated leaf
+  - round-tipped feathers, layered and fanned
+
+  Draw the right half and mirror it.
+- Life comes from a light `Sweep`, `Glint`s, one jewel that glows or
+  beats, and a gentle sway. Never draw faces or heads in code.
+
 # Standards for a new game
 
 What made Seal the Manor feel good; follow it unless the design says
