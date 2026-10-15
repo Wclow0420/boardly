@@ -303,13 +303,13 @@ const PINK: [string, string, string] = ["#FFC6E2", "#F0559E", "#8A1650"];
 const drop = (x: number, y: number, w: number, h: number) =>
   `M${x} ${y - h / 2}C${x + w / 2} ${y - h * 0.1} ${x + w / 2} ${y + h / 2} ${x} ${y + h / 2}C${x - w / 2} ${y + h / 2} ${x - w / 2} ${y - h * 0.1} ${x} ${y - h / 2}z`;
 
-/** The tiara's foot (0, -40) moved to the ring's top right, tilted
- *  outward and made smaller: a side tiara. */
+/** The tiara's foot (0, -40) moved onto the picture's top right, tilted
+ *  and made smaller: a side tiara sitting on the head. */
 const TIARA_PLACE = [
-  { translateX: 34 },
-  { translateY: -36 },
-  { rotate: 0.72 },
-  { scale: 0.62 },
+  { translateX: 22 },
+  { translateY: -26 },
+  { rotate: 0.62 },
+  { scale: 0.66 },
   { translateY: 40 },
 ];
 
