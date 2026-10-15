@@ -35,6 +35,7 @@ BORDER_PRICES = {
     "angel-wings": 2000,
     "seraph-wings": 5000,
     "fallen-angel": 5000,
+    "winged-crest": 3800,
     "king-crown": 5000,
     "queen-crown": 5000,
     # rim borders: the effect is the ring
