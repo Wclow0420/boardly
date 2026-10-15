@@ -75,7 +75,7 @@ way.
 - Loved: Phoenix wings, Sun Blaze, Thunderstorm, Galaxy, Sakura, the
   crowns, Angel Wings (a feather rim), Seraph Wings, Winged Crest,
   Baroque Silver.
-- Rejected: faces and heads drawn in code, dark bubbles behind the
+- Rejected: creature heads drawn in code (lion, dragon, phoenix), dark bubbles behind the
   picture, cheap plain rings.
 - The lion and dragon head frames are waiting on painted art; prompts
   are in `boardly/assets/ui/borders/PROMPTS.md`.
@@ -89,7 +89,8 @@ way.
   parts, written as `EmblemData`.
 - Shapes that stand for a place or a mood take `m: "tint"`, so they
   pick up the colour they're shown in.
-- People are meeples, never faces. Tell them apart by what they hold or
+- In icons, people are meeples with no faces (people with faces are the
+  avatar figures, `features/avatar`). Tell them apart by what they hold or
   wear: a flame, a bandage, green spots, "Zz".
 - A big set can be drawn by parallel agents, one file each. Brief them
   with the format, these rules and the sheet script, then review every

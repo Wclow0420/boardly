@@ -7,14 +7,16 @@ import {
   INKS,
   JEWELS,
   MATERIALS,
+  cloth,
   enamel,
   type Jewel,
   type Material,
 } from "./shapes";
 
-/** A part's fill: a material, or "tint" — the colour the emblem is
- *  shown in (a room's colour, the text's), as enamel. */
-export type Shade = Material | "tint";
+/** A part's fill: a material; "tint", the colour the emblem is shown in
+ *  (a room's colour, the text's) as enamel; or any colour ("#E8B88A")
+ *  as cloth, skin or hair. */
+export type Shade = Material | "tint" | `#${string}`;
 
 export type EmblemPart =
   /** An engraved shape: filled, its veins and shine cut in, inked. */
@@ -46,13 +48,21 @@ export const ring = (cx: number, cy: number, r: number, hole: number) =>
 /** A shade's colours, outline and engraving. */
 export function shadeOf(m: Shade | undefined, tint: string | undefined) {
   if (m === "tint") return enamel(tint ?? "#E2B04A");
-  const material = m ?? "gold";
+  if (m?.startsWith("#")) return cloth(m);
+  const material = (m ?? "gold") as Material;
   return { colors: [...MATERIALS[material]], ...INKS[material] };
 }
 
-/** The emblem as an SVG document, `size` points square. */
-export function toSvg(data: EmblemData, size: number, tint?: string) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 48 48">${toSvgBody(data, tint, "e")}</svg>`;
+/** The emblem as an SVG document, `size` points wide; `box` is the
+ *  drawing's own size (48 × 48 for icons). */
+export function toSvg(
+  data: EmblemData,
+  size: number,
+  tint?: string,
+  box: [number, number] = [48, 48],
+) {
+  const [w, h] = box;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${(size * h) / w}" viewBox="0 0 ${w} ${h}">${toSvgBody(data, tint, "e")}</svg>`;
 }
 
 /** The emblem's parts as SVG elements; `id` keeps gradient ids apart. */

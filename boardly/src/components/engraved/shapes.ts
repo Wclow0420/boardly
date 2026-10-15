@@ -51,6 +51,16 @@ export function shade(hex: string, amount: number) {
     .join("")}`;
 }
 
+/** Any colour as cloth, skin or hair: a soft fall of light rather than a
+ *  metal's sheen, inked a little darker than itself. */
+export function cloth(hex: string) {
+  return {
+    colors: [shade(hex, 0.32), hex, shade(hex, -0.2)],
+    ink: shade(hex, -0.72),
+    vein: shade(hex, -0.38),
+  };
+}
+
 /** Any colour as an enamel: its fill, outline and engraving. */
 export function enamel(hex: string) {
   return {

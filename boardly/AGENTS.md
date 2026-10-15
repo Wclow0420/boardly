@@ -116,7 +116,8 @@ and Baroque Silver (`art/baroque.tsx`).
     and at text size. Every icon must read at about 17pt.
   - Never ship a bare emoji or a line icon as UI.
 - Life comes from a light `Sweep`, `Glint`s, one jewel that glows or
-  beats, and a gentle sway. Never draw faces or heads in code.
+  beats, and a gentle sway. No creature heads drawn in code. People
+  with faces are only the avatar figures (`src/features/avatar`).
 
 # Standards for a new game
 

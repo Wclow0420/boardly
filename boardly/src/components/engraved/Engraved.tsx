@@ -133,16 +133,20 @@ export function JewelDot({
   );
 }
 
-/** An icon's canvas: 48 × 48 units drawn at `size` points. */
+/** An icon's canvas: 48 × 48 units drawn at `size` points wide (or a
+ *  drawing of another `box`, such as a figure, at its own proportions). */
 export function EmblemSvg({
   size,
+  box = [48, 48],
   children,
 }: {
   size: number;
+  box?: [number, number];
   children: ReactNode;
 }) {
+  const [w, h] = box;
   return (
-    <Svg width={size} height={size} viewBox="0 0 48 48">
+    <Svg width={size} height={(size * h) / w} viewBox={`0 0 ${w} ${h}`}>
       {children}
     </Svg>
   );
@@ -154,13 +158,15 @@ export function EmblemGlyph({
   data,
   size,
   color,
+  box,
 }: {
   data: EmblemData;
   size: number;
   color?: string;
+  box?: [number, number];
 }) {
   return (
-    <EmblemSvg size={size}>
+    <EmblemSvg size={size} box={box}>
       {data.map((part, i) => {
         const body =
           "dark" in part ? (
