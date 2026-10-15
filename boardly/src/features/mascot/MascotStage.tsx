@@ -6,7 +6,7 @@
 
 import { Canvas, Group, Picture } from "@shopify/react-native-skia";
 import { useMemo } from "react";
-import { Pressable } from "react-native";
+import { Pressable, View } from "react-native";
 import {
   Easing,
   useDerivedValue,
@@ -28,6 +28,11 @@ import { BOX, GRIP, LIFT } from "./rig";
 export const FEET = { x: 50, y: LIFT + 98.4 };
 const EYE_LINE = LIFT + 28;
 const HOLD = { x: GRIP[0], y: GRIP[1] + LIFT };
+
+/** Room drawn round the box, in its units, so nothing that moves out of
+ *  it is cut off: the hop and a tall hat above, wide wings and a swung
+ *  sword at the sides. The figure's place on the page stays its box. */
+const PAD = { x: 22, top: 30, bottom: 6 };
 
 /** A number from a string, so each mascot keeps its own rhythm. */
 const seedOf = (text: string) => {
@@ -71,6 +76,7 @@ export function MascotFigure({
   }, !still);
 
   const scale = width / BOX[0];
+  const height = (width * BOX[1]) / BOX[0];
   const whole = useDerivedValue(() => {
     const breath = Math.sin(t.get() * 2.4);
     const h = hop?.get() ?? 0;
@@ -79,6 +85,8 @@ export function MascotFigure({
     const squash = h > 0.85 ? (1 - h) * 6 * 0.06 : 0;
     return [
       { scale },
+      { translateX: PAD.x },
+      { translateY: PAD.top },
       { translateX: FEET.x },
       { translateY: FEET.y - lift },
       { scaleX: 1 - breath * 0.008 + squash },
@@ -90,7 +98,11 @@ export function MascotFigure({
   const blink = useDerivedValue(() => {
     const phase = t.get() % 3.6;
     const shut = phase < 0.14 ? Math.sin((phase / 0.14) * Math.PI) * 0.9 : 0;
-    return [{ translateY: EYE_LINE }, { scaleY: 1 - shut }, { translateY: -EYE_LINE }];
+    return [
+      { translateY: EYE_LINE },
+      { scaleY: 1 - shut },
+      { translateY: -EYE_LINE },
+    ];
   });
   const sway = useDerivedValue(() => [
     { translateX: HOLD.x },
@@ -106,21 +118,32 @@ export function MascotFigure({
   ]);
 
   return (
-    <Canvas style={{ width, height: (width * BOX[1]) / BOX[0] }} pointerEvents="none">
-      <Group transform={whole}>
-        <Group transform={flutter}>
-          <Picture picture={pictures.back} />
+    // the canvas spills past the box on every side; the box is the layout
+    <View style={{ width, height }} pointerEvents="none">
+      <Canvas
+        style={{
+          position: "absolute",
+          left: -PAD.x * scale,
+          top: -PAD.top * scale,
+          width: width + 2 * PAD.x * scale,
+          height: height + (PAD.top + PAD.bottom) * scale,
+        }}
+      >
+        <Group transform={whole}>
+          <Group transform={flutter}>
+            <Picture picture={pictures.back} />
+          </Group>
+          <Picture picture={pictures.body} />
+          <Group transform={blink}>
+            <Picture picture={pictures.eyes} />
+          </Group>
+          <Picture picture={pictures.hat} />
+          <Group transform={sway}>
+            <Picture picture={pictures.hand} />
+          </Group>
         </Group>
-        <Picture picture={pictures.body} />
-        <Group transform={blink}>
-          <Picture picture={pictures.eyes} />
-        </Group>
-        <Picture picture={pictures.hat} />
-        <Group transform={sway}>
-          <Picture picture={pictures.hand} />
-        </Group>
-      </Group>
-    </Canvas>
+      </Canvas>
+    </View>
   );
 }
 

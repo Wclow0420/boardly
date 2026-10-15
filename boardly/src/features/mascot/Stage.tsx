@@ -12,10 +12,11 @@ export function Stage({ width, children }: { width: number; children: ReactNode 
     <View style={{ width, height, alignItems: "center", justifyContent: "flex-end" }}>
       <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
         <Defs>
-          <RadialGradient id="light" cx="50%" cy="40%" r="55%">
+          {/* fades to nothing well inside its ellipse: no edge to see */}
+          <RadialGradient id="light" cx="50%" cy="42%" r="50%">
             <Stop offset="0" stopColor="#FFE6A8" stopOpacity="0.55" />
-            <Stop offset="0.6" stopColor="#F7C948" stopOpacity="0.12" />
-            <Stop offset="1" stopColor="#F7C948" stopOpacity="0" />
+            <Stop offset="0.5" stopColor="#F7C948" stopOpacity="0.14" />
+            <Stop offset="0.85" stopColor="#F7C948" stopOpacity="0" />
           </RadialGradient>
           <RadialGradient id="plinth" cx="50%" cy="35%" r="70%">
             <Stop offset="0" stopColor="#B07A48" />

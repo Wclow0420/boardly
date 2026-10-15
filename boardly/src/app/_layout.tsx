@@ -127,9 +127,11 @@ function RootNavigator() {
               <Stack.Screen name="game/[code]" />
               <Stack.Screen name="join/[code]" />
               <Stack.Screen name="borders" />
+              {/* the wardrobe brings its own way in and out (MeepleReveal);
+                  only its back button closes it */}
               <Stack.Screen
                 name="wardrobe"
-                options={{ animation: "slide_from_bottom", gestureDirection: "vertical" }}
+                options={{ animation: "none", gestureEnabled: false }}
               />
             </Stack.Protected>
             <Stack.Protected guard={!signedIn}>

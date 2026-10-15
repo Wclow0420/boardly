@@ -1,18 +1,25 @@
 import { View } from "react-native";
 
+import type { MascotLook } from "@/api/client";
+
 import { fontFamily, useTheme } from "@/theme";
 import { AppText } from "./AppText";
 import { Avatar } from "./Avatar";
 
 export interface AvatarStackProps {
   names: string[];
+  /** Each one's mascot (same order as names), shown where there is no
+   *  photo. */
+  mascots?: (MascotLook | null | undefined)[];
+  /** Each one's photo path, if any (same order). */
+  imageUris?: (string | null | undefined)[];
   /** Show at most this many avatars; the rest collapse into "+N". */
   max?: number;
   size?: number;
 }
 
 /** Overlapping avatar row with a "+N" overflow bubble. */
-export function AvatarStack({ names, max = 3, size = 22 }: AvatarStackProps) {
+export function AvatarStack({ names, mascots, imageUris, max = 3, size = 22 }: AvatarStackProps) {
   const { colors } = useTheme();
   const visible = names.slice(0, max);
   const overflow = names.length - visible.length;
@@ -29,7 +36,7 @@ export function AvatarStack({ names, max = 3, size = 22 }: AvatarStackProps) {
             borderColor: colors.card,
           }}
         >
-          <Avatar name={name} size={size} />
+          <Avatar name={name} size={size} mascot={mascots?.[i]} imageUri={imageUris?.[i]} />
         </View>
       ))}
       {overflow > 0 ? (

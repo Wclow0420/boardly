@@ -11,10 +11,9 @@ import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { api, ApiError } from "@/api/client";
+import { api, assetUrl, ApiError } from "@/api/client";
 import {
   AppText,
-  Avatar,
   AvatarStack,
   Button,
   Card,
@@ -132,7 +131,13 @@ export default function JoinScreen() {
           </AppText>
         ) : null}
         <View style={{ marginTop: spacing.md }}>
-          <AvatarStack names={room.players.map((p) => p.username)} max={4} size={28} />
+          <AvatarStack
+            names={room.players.map((p) => p.username)}
+            mascots={room.players.map((p) => p.mascot)}
+            imageUris={room.players.map((p) => assetUrl(p.avatarUrl ?? null))}
+            max={4}
+            size={28}
+          />
         </View>
         <AppText variant="tiny" color="textSubtle" style={{ marginTop: spacing.sm }}>
           {t("lobby.playersCount", {

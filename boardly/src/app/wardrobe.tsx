@@ -5,21 +5,41 @@
 
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { useMemo, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { EmblemGlyph } from "@/components/engraved";
 import { BackIcon, Emblem } from "@/components/icons";
 import { AppText, Button, IconButton, Ribbon, Texture } from "@/components/ui";
 import { CoinIcon } from "@/features/coins/CoinIcon";
 import { CoinPill } from "@/features/coins/CoinPill";
 import { useSession } from "@/context/SessionContext";
-import { CATALOG, STARTER, asLook, dress, type Look, type Slot } from "@/features/mascot/dress";
+import {
+  CATALOG,
+  STARTER,
+  asLook,
+  type Look,
+  type Slot,
+} from "@/features/mascot/dress";
+import { MascotThumb } from "@/features/mascot/MascotThumb";
+import { MeepleReveal, useMeepleReveal } from "@/features/mascot/MeepleReveal";
 import { MascotStage } from "@/features/mascot/MascotStage";
 import { Stage } from "@/features/mascot/Stage";
-import { BOX, type PartDef } from "@/features/mascot/rig";
+import type { PartDef } from "@/features/mascot/rig";
 import { COLOURS, SKINS } from "@/features/mascot/skins";
 import { TABLE, fontFamily } from "@/theme";
 import { errorHaptic, successHaptic, tapHaptic } from "@/utils/haptics";
@@ -61,15 +81,15 @@ function unpaid(look: Look, owned: Set<string>) {
   const check = (tab: Tab, id: string | undefined) => {
     if (!id) return;
     const price = priceOf(tab, id);
-    if (price > 0 && !owned.has(keyOf(tab, id))) items.push({ key: keyOf(tab, id), price });
+    if (price > 0 && !owned.has(keyOf(tab, id)))
+      items.push({ key: keyOf(tab, id), price });
   };
   check("skin", look.skin);
   for (const [slot, id] of Object.entries(look.wear)) check(slot as Slot, id);
   return items;
 }
 
-
-function ItemCard({
+const ItemCard = memo(function ItemCard({
   look,
   tab,
   id,
@@ -77,7 +97,7 @@ function ItemCard({
   price,
   owned,
   wearing,
-  onPress,
+  onPick,
 }: {
   look: Look;
   tab: Tab;
@@ -86,24 +106,39 @@ function ItemCard({
   price: number;
   owned: boolean;
   wearing: boolean;
-  onPress: () => void;
+  onPick: (tab: Tab, id: string) => void;
 }) {
   const { t } = useTranslation();
   // shown on you, so you see the thing itself, not a picture of it
-  const preview = useMemo(() => dress(withItem(look, tab, id)), [look, tab, id]);
+  const preview = useMemo(() => withItem(look, tab, id), [look, tab, id]);
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.card, wearing && styles.cardOn, pressed && { opacity: 0.8 }]}>
-      <LinearGradient colors={wearing ? TABLE.yellow.fill : TABLE.wood.fill} style={styles.cardFill}>
+    <Pressable
+      onPress={() => onPick(tab, id)}
+      style={({ pressed }) => [
+        styles.card,
+        wearing && styles.cardOn,
+        pressed && { opacity: 0.8 },
+      ]}
+    >
+      <LinearGradient
+        colors={wearing ? TABLE.yellow.fill : TABLE.wood.fill}
+        style={styles.cardFill}
+      >
         <Texture radius={12} />
-        <EmblemGlyph data={preview} size={62} box={BOX} />
-        <AppText numberOfLines={1} style={[styles.cardName, wearing && { color: TABLE.ink }]}>
+        <MascotThumb look={preview} width={62} />
+        <AppText
+          numberOfLines={1}
+          style={[styles.cardName, wearing && { color: TABLE.ink }]}
+        >
           {name}
         </AppText>
         <View style={styles.priceRow}>
           {wearing ? (
             <Emblem emoji="✓" size={14} />
           ) : owned || price === 0 ? (
-            <AppText style={styles.owned}>{price === 0 ? t("mascot.free") : t("mascot.owned")}</AppText>
+            <AppText style={styles.owned}>
+              {price === 0 ? t("mascot.free") : t("mascot.owned")}
+            </AppText>
           ) : (
             <>
               <CoinIcon size={13} />
@@ -114,7 +149,7 @@ function ItemCard({
       </LinearGradient>
     </Pressable>
   );
-}
+});
 
 export default function Wardrobe() {
   const router = useRouter();
@@ -127,7 +162,26 @@ export default function Wardrobe() {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const coins = user?.coins ?? 0;
-  const owned = useMemo(() => new Set(user?.ownedMascot ?? []), [user?.ownedMascot]);
+  const owned = useMemo(
+    () => new Set(user?.ownedMascot ?? []),
+    [user?.ownedMascot],
+  );
+  // The stage shows a change at once; the cards (each a whole dressed
+  // mascot) follow a moment later, so a tap never waits on the grid.
+  const cardsLook = useDeferredValue(look);
+  const shownTab = useDeferredValue(tab);
+  // the grid fills in on the frame after the screen first shows
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setReady(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  const onPick = useCallback((slot: Tab, id: string) => {
+    tapHaptic();
+    setLook((current) => withItem(current, slot, id));
+  }, []);
+  // in and out through the meeple, like the app's opening
+  const reveal = useMeepleReveal(() => router.back());
 
   const keep = async (buy: boolean) => {
     setBusy(true);
@@ -148,28 +202,45 @@ export default function Wardrobe() {
   const changed = JSON.stringify(look) !== JSON.stringify(saved);
 
   const items: { id: string; name: string; price: number }[] =
-    tab === "skin"
-      ? Object.entries(SKINS).map(([id, s]) => ({ id, name: s.name, price: s.price }))
-      : tab === "colour"
+    shownTab === "skin"
+      ? Object.entries(SKINS).map(([id, s]) => ({
+          id,
+          name: s.name,
+          price: s.price,
+        }))
+      : shownTab === "colour"
         ? []
-        : Object.entries(CATALOG[tab] as Record<string, PartDef>).map(([id, p]) => ({
-            id,
-            name: p.name,
-            price: p.price,
-          }));
+        : Object.entries(CATALOG[shownTab] as Record<string, PartDef>).map(
+            ([id, p]) => ({
+              id,
+              name: p.name,
+              price: p.price,
+            }),
+          );
   // an empty slot is wearing its "none"
   const wearingId =
-    tab === "skin" ? look.skin : tab === "colour" ? look.colour : (look.wear[tab as Slot] ?? "none");
+    shownTab === "skin"
+      ? look.skin
+      : shownTab === "colour"
+        ? look.colour
+        : (look.wear[shownTab as Slot] ?? "none");
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: TABLE.table[1] }}>
       <LinearGradient colors={TABLE.table} style={StyleSheet.absoluteFill} />
       {/* header */}
       <View style={styles.header}>
-        <IconButton accessibilityLabel={t("mascot.close")} onPress={() => router.back()}>
+        <IconButton
+          accessibilityLabel={t("mascot.close")}
+          onPress={reveal.close}
+        >
           <BackIcon size={20} />
         </IconButton>
-        <Ribbon label={t("mascot.wardrobe")} colors={TABLE.ribbonGold} standalone />
+        <Ribbon
+          label={t("mascot.wardrobe")}
+          colors={TABLE.ribbonGold}
+          standalone
+        />
         <View style={{ flex: 1 }} />
         <CoinPill amount={coins} />
       </View>
@@ -183,7 +254,12 @@ export default function Wardrobe() {
       </View>
 
       {/* the slots */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} style={{ flexGrow: 0, flexShrink: 0 }}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.tabs}
+        style={{ flexGrow: 0, flexShrink: 0 }}
+      >
         {TABS.map((item) => (
           <Pressable
             key={item.key}
@@ -193,7 +269,9 @@ export default function Wardrobe() {
             }}
             style={[styles.tab, tab === item.key && styles.tabOn]}
           >
-            <AppText style={[styles.tabText, tab === item.key && { color: TABLE.ink }]}>
+            <AppText
+              style={[styles.tabText, tab === item.key && { color: TABLE.ink }]}
+            >
               {t(`mascot.tabs.${item.key}`)}
             </AppText>
           </Pressable>
@@ -202,33 +280,33 @@ export default function Wardrobe() {
 
       {/* what's in the slot, on you */}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.grid}>
-        {tab === "colour"
-          ? Object.entries(COLOURS).map(([name, colour]) => (
-              <Pressable
-                key={name}
-                onPress={() => {
-                  tapHaptic();
-                  setLook(withItem(look, "colour", colour));
-                }}
-                style={[styles.swatch, { backgroundColor: colour }, look.colour === colour && styles.swatchOn]}
-              />
-            ))
-          : items.map((item) => (
-              <ItemCard
-                key={item.id}
-                look={look}
-                tab={tab}
-                id={item.id}
-                name={item.name}
-                price={item.price}
-                owned={owned.has(keyOf(tab, item.id))}
-                wearing={wearingId === item.id}
-                onPress={() => {
-                  tapHaptic();
-                  setLook(withItem(look, tab, item.id));
-                }}
-              />
-            ))}
+        {!ready
+          ? null
+          : shownTab === "colour"
+            ? Object.entries(COLOURS).map(([name, colour]) => (
+                <Pressable
+                  key={name}
+                  onPress={() => onPick("colour", colour)}
+                  style={[
+                    styles.swatch,
+                    { backgroundColor: colour },
+                    look.colour === colour && styles.swatchOn,
+                  ]}
+                />
+              ))
+            : items.map((item) => (
+                <ItemCard
+                  key={item.id}
+                  look={cardsLook}
+                  tab={shownTab}
+                  id={item.id}
+                  name={item.name}
+                  price={item.price}
+                  owned={owned.has(keyOf(shownTab, item.id))}
+                  wearing={wearingId === item.id}
+                  onPick={onPick}
+                />
+              ))}
       </ScrollView>
 
       {/* keep the look: buy what you're trying on first */}
@@ -241,7 +319,10 @@ export default function Wardrobe() {
         />
         {toPay.length > 0 ? (
           <Button
-            label={t("mascot.buy", { count: toPay.length, price: total.toLocaleString() })}
+            label={t("mascot.buy", {
+              count: toPay.length,
+              price: total.toLocaleString(),
+            })}
             leftIcon={<CoinIcon size={16} />}
             disabled={total > coins || busy}
             loading={busy}
@@ -258,12 +339,19 @@ export default function Wardrobe() {
           />
         )}
       </View>
+      <MeepleReveal {...reveal} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingTop: 4 },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingTop: 4,
+  },
   hint: { color: TABLE.creamMuted, fontSize: 11, marginTop: -4 },
   tabs: { gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
   tab: {
@@ -274,17 +362,51 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: TABLE.wood.border,
   },
-  tabOn: { backgroundColor: TABLE.yellow.fill[0], borderColor: TABLE.yellow.border },
-  tabText: { color: TABLE.cream, fontFamily: fontFamily.semiBold, fontSize: 13 },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 10, paddingHorizontal: 16, paddingBottom: 16 },
-  card: { width: "22.6%", borderRadius: 14, borderWidth: 2, borderColor: TABLE.wood.border, overflow: "hidden" },
+  tabOn: {
+    backgroundColor: TABLE.yellow.fill[0],
+    borderColor: TABLE.yellow.border,
+  },
+  tabText: {
+    color: TABLE.cream,
+    fontFamily: fontFamily.semiBold,
+    fontSize: 13,
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  card: {
+    width: "22.6%",
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: TABLE.wood.border,
+    overflow: "hidden",
+  },
   cardOn: { borderColor: TABLE.yellow.border },
   cardFill: { alignItems: "center", paddingTop: 6, paddingBottom: 6, gap: 2 },
-  cardName: { color: TABLE.cream, fontFamily: fontFamily.semiBold, fontSize: 11 },
-  priceRow: { flexDirection: "row", alignItems: "center", gap: 3, minHeight: 16 },
+  cardName: {
+    color: TABLE.cream,
+    fontFamily: fontFamily.semiBold,
+    fontSize: 11,
+  },
+  priceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    minHeight: 16,
+  },
   price: { color: "#FBDD7E", fontFamily: fontFamily.bold, fontSize: 11 },
   owned: { color: TABLE.creamMuted, fontSize: 10 },
-  swatch: { width: 52, height: 52, borderRadius: 26, borderWidth: 3, borderColor: TABLE.wood.border },
+  swatch: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 3,
+    borderColor: TABLE.wood.border,
+  },
   swatchOn: { borderColor: "#FFFFFF", transform: [{ scale: 1.08 }] },
   footer: {
     flexDirection: "row",
