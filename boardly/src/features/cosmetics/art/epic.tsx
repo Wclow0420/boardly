@@ -8,11 +8,16 @@ import {
   Oval,
   Path,
   RadialGradient,
+  Rect,
+  Shader,
+  Skia,
   SweepGradient,
   vec,
 } from "@shopify/react-native-skia";
 import { useMemo } from "react";
 import { useDerivedValue } from "react-native-reanimated";
+
+import { NOISE } from "@/components/iso/noise";
 
 import {
   Band,
@@ -138,13 +143,41 @@ const Glacier: ArtBorderDrawing = {
   ),
 };
 
-// ── Thunderstorm: a cloud ring, lightning cracking round it ──────────
+// ── Thunderstorm: a ring of storm cloud churning round, lit by lightning
 
-const PUFFS = Array.from({ length: 26 }, (_, i) => ({
-  a: (i / 26) * TAU + rnd(i + 8) * 0.1,
-  r: 62 + rnd(i) * 12,
-  s: 8 + rnd(i + 3) * 7,
-}));
+const STORM = `
+uniform float t;
+uniform float flash;
+${NOISE}
+half4 main(vec2 xy) {
+  float r = length(xy);
+  float h = (r - 48.0) / 42.0;
+  if (h < 0.0 || h > 1.0) return half4(0.0);
+  vec2 dir = xy / r;
+  // the whole ring of cloud swirls round, churning as it goes
+  float a = t * 0.55;
+  vec2 d = vec2(dir.x * cos(a) - dir.y * sin(a), dir.x * sin(a) + dir.y * cos(a));
+  vec2 p = d * 2.2 + vec2(h * 1.8, -h * 1.2);
+  vec2 w = vec2(fbm(p + t * 0.7), fbm(p - t * 0.6 + 3.1));
+  float n = fbm(p * 1.7 + w * 1.9 - vec2(t * 1.1, t * 0.5));
+  float tip = 0.5 + 0.5 * fbm(dir * 3.0 + vec2(-t * 0.5, t * 0.35));
+  float dense = (1.0 - h / tip) * (0.6 + n * 0.9);
+  dense = max(dense, (1.0 - smoothstep(0.0, 0.18, h)) * 0.95);
+  vec3 col = mix(vec3(0.015, 0.02, 0.05), vec3(0.07, 0.12, 0.3), smoothstep(0.3, 0.75, n));
+  col = mix(col, vec3(0.22, 0.42, 0.85), smoothstep(0.62, 0.95, n) * 0.75);
+  // lightning lights the cloud from inside
+  col += vec3(0.5, 0.72, 1.0) * flash * (0.35 + n * 0.9) * (1.0 - h * 0.5);
+  float alpha = smoothstep(0.05, 0.35, dense);
+  return half4(col * alpha, alpha);
+}`;
+
+/** How bright the strike is now: a double flicker every 2.6 s. */
+function useFlash(t: Clock) {
+  return useDerivedValue(() => {
+    const p = (t.value % 2.6) / 0.32;
+    return p < 1 ? (p < 0.2 || p > 0.45 ? 1 - p * 0.6 : 0.2) : 0;
+  });
+}
 
 /** A jagged bolt between two points on the ring, the same for one strike. */
 function boltPath(seed: number) {
@@ -162,41 +195,6 @@ function boltPath(seed: number) {
   return d;
 }
 const BOLTS = Array.from({ length: 6 }, (_, i) => boltPath(i * 17 + 3));
-
-function Puff({
-  t,
-  a,
-  r,
-  s,
-  i,
-}: {
-  t: Clock;
-  a: number;
-  r: number;
-  s: number;
-  i: number;
-}) {
-  const transform = useDerivedValue(() => {
-    const p = polar(a + Math.sin(t.value * 0.3 + i) * 0.04, r);
-    return [
-      { translateX: p.x },
-      { translateY: p.y },
-      { scale: 1 + 0.06 * Math.sin(t.value * 0.7 + i) },
-    ];
-  });
-  return (
-    <Group transform={transform}>
-      <Circle cx={0} cy={0} r={s}>
-        <RadialGradient
-          c={vec(-s * 0.35, -s * 0.45)}
-          r={s * 1.5}
-          colors={["#A9B2C6", "#565E74", "#262B3B"]}
-        />
-        <BlurMask blur={1.6} style="solid" />
-      </Circle>
-    </Group>
-  );
-}
 
 function Bolt({ t, k }: { t: Clock; k: number }) {
   // strikes every 2.6 s; each strike picks one of the bolts
@@ -229,16 +227,17 @@ function Bolt({ t, k }: { t: Clock; k: number }) {
 }
 
 function ThunderBack({ t }: { t: Clock }) {
-  const flash = useDerivedValue(() => {
-    const p = (t.value % 2.6) / 0.32;
-    return p < 1 ? 0.6 * (1 - p) : 0;
-  });
+  const flash = useFlash(t);
+  const source = useMemo(() => Skia.RuntimeEffect.Make(STORM), []);
+  const uniforms = useDerivedValue(() => ({ t: t.value, flash: flash.value }));
+  const glow = useDerivedValue(() => 0.25 + flash.value * 0.5);
+  if (!source) return null;
   return (
     <Group>
-      <Halo r={90} color="#7FB8FF" opacity={flash} />
-      {PUFFS.map((p, i) => (
-        <Puff key={i} t={t} i={i} {...p} />
-      ))}
+      <Halo r={94} color="#3E6FD9" opacity={glow} />
+      <Rect x={-92} y={-92} width={184} height={184}>
+        <Shader source={source} uniforms={uniforms} />
+      </Rect>
     </Group>
   );
 }
@@ -247,7 +246,12 @@ const Thunderstorm: ArtBorderDrawing = {
   back: ThunderBack,
   front: ({ t }) => (
     <Group>
-      <Band r={53} width={5} colors={["#5A6378", "#232838"]} />
+      <Band
+        r={52.5}
+        width={5}
+        colors={["#8FB4FF", "#2B4A9E", "#0E1630"]}
+        rim="#05070F"
+      />
       {BOLTS.map((_, k) => (
         <Bolt key={k} t={t} k={k} />
       ))}

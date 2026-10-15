@@ -36,7 +36,7 @@ export default function BordersPreview() {
             marginTop: 50,
           }}
         >
-          {["king-crown", "queen-crown", "angel-wings", "phoenix"].map((id) => (
+          {["thunderstorm", "campfire", "king-crown", "queen-crown"].map((id) => (
             <View key={id} style={{ padding: 34 }}>
               <AvatarBorder name="Wei" size={96} borderId={id} />
             </View>
