@@ -6,6 +6,7 @@ import { Image } from "expo-image";
 import { StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
+import { Emblem } from "@/components/icons";
 import { AppText } from "@/components/ui";
 import { RulesText } from "@/features/game/RulesText";
 import { fontFamily, useTheme } from "@/theme";
@@ -121,9 +122,7 @@ function ActionsPage() {
                 <Image source={art} style={styles.icon} contentFit="contain" />
               ) : (
                 <View style={[styles.icon, { backgroundColor: `${tint}33` }]}>
-                  <AppText style={styles.iconEmoji}>
-                    {ACTION_EMOJI[action.type]}
-                  </AppText>
+                  <Emblem emoji={ACTION_EMOJI[action.type]} size={30} />
                 </View>
               )}
               <View style={styles.grow}>
@@ -207,5 +206,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  iconEmoji: { fontSize: 20, lineHeight: 26 },
 });

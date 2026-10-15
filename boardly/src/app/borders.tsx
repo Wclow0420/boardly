@@ -8,7 +8,6 @@ import { BackIcon, Emblem } from "@/components/icons";
 import {
   AppText,
   Button,
-  EmblemText,
   Frame,
   IconButton,
   Ribbon,
@@ -124,13 +123,13 @@ export default function BordersScreen() {
           </View>
           <View style={styles.price}>
             {selected.price > 0 ? <CoinIcon size={16} /> : null}
-            <EmblemText variant="label" style={{ color: TABLE.yellow.fill[0] }}>
+            <AppText variant="label" style={{ color: TABLE.yellow.fill[0] }}>
               {earnedBy
                 ? `🏅 ${badgeText(t, earnedBy).name}`
                 : selected.price > 0
                   ? selected.price
                   : t("borders.free")}
-            </EmblemText>
+            </AppText>
           </View>
         </View>
         <Button

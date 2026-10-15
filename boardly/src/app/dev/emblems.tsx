@@ -22,6 +22,7 @@ import {
   ScrollEmblem,
   type EmblemProps,
 } from "@/components/engraved";
+import { EMOJI_EMBLEMS } from "@/components/engraved/emoji";
 import { AppText } from "@/components/ui";
 import { TABLE, useTheme } from "@/theme";
 
@@ -64,6 +65,16 @@ export default function EmblemsPreview() {
             <Emblem size={112} />
           </LinearGradient>
         ))}
+        {/* every emoji the app draws as an emblem, written in text */}
+        <AppText variant="title" style={{ color: "#FFFFFF", marginTop: 16 }}>
+          {"Emoji in text"}
+        </AppText>
+        <AppText style={{ color: "#FFFFFF", fontSize: 17, lineHeight: 30 }}>
+          {Object.keys(EMOJI_EMBLEMS).join(" ")}
+        </AppText>
+        <AppText style={{ color: "#FFFFFF" }}>
+          {"🎲 Your turn · 🍺 ×3 · 🪓 Split them! · 🕴 Boss · 👍 3 👎 1 · ☑ Zhai"}
+        </AppText>
         <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>

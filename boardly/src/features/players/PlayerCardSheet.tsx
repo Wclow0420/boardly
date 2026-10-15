@@ -18,7 +18,6 @@ import {
   AppText,
   BottomSheetModal,
   Button,
-  EmblemText,
   GorhomBottomSheetModal,
   Skeleton,
   Texture,
@@ -196,9 +195,9 @@ function Body({
             </AppText>
           ) : null}
           {status ? (
-            <EmblemText variant="tiny" style={{ color: status.color }}>
+            <AppText variant="tiny" style={{ color: status.color }}>
               {status.text}
-            </EmblemText>
+            </AppText>
           ) : null}
         </View>
       </View>
@@ -229,9 +228,9 @@ function Body({
       {/* what we've played together */}
       {!bot ? (
         <View style={styles.together}>
-          <EmblemText style={styles.togetherText}>
+          <AppText style={styles.togetherText}>
             {`🎲  ${together?.games ? t("friends.together.count", { count: together.games }) : t("friends.together.none")}`}
-          </EmblemText>
+          </AppText>
           {together?.games && together.lastGameType && together.lastPlayedAt ? (
             <AppText variant="tiny" style={styles.muted}>
               {t("friends.together.last", {

@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import type { ReactNode } from "react";
 
 import { Meeple } from "@/components/tabletop/Meeple";
-import { AppText, Button, EmblemText } from "@/components/ui";
+import { AppText, Button } from "@/components/ui";
 import type { Friend } from "@/data/types";
 import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
 import { GameBox } from "@/features/games/GameBox";
@@ -109,10 +109,10 @@ export function RecentAction({ friend }: { friend: Friend }) {
   }
   if (friend.relation === "friend") {
     return (
-      <EmblemText
+      <AppText
         variant="tiny"
         style={styles.muted}
-      >{`✓ ${t("friends.tabs.friends")}`}</EmblemText>
+      >{`✓ ${t("friends.tabs.friends")}`}</AppText>
     );
   }
   if (friend.relation === "outgoing") {

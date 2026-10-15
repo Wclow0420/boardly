@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import type { RoomInfo } from "@/api/client";
-import { AppText, Card, EmblemText } from "@/components/ui";
+import { AppText, Card } from "@/components/ui";
 import { useTheme } from "@/theme";
 import { tapHaptic } from "@/utils/haptics";
 import { useSetRoomOptions } from "./hooks";
@@ -32,7 +32,7 @@ export function GameSettings({
 
   return (
     <Card style={{ marginBottom: spacing.lg }}>
-      <EmblemText variant="label">{`⚙️  ${t("lobby.settings")}`}</EmblemText>
+      <AppText variant="label">{`⚙️  ${t("lobby.settings")}`}</AppText>
       {names.map((name) => {
         const current = room.options?.[name] ?? choices[name][0];
         return (

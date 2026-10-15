@@ -10,6 +10,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { Emblem } from "@/components/icons";
 import {
   AppText,
   BottomSheetModal,
@@ -714,7 +715,7 @@ function ActionTile({
         <Image source={art} style={styles.tileIcon} contentFit="contain" />
       ) : (
         <View style={[styles.tileIcon, { backgroundColor: alpha(tint, "33") }]}>
-          <AppText style={styles.tileEmoji}>{ACTION_EMOJI[type]}</AppText>
+          <Emblem emoji={ACTION_EMOJI[type]} size={28} />
         </View>
       )}
       <View style={styles.grow}>
@@ -840,7 +841,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  tileEmoji: { fontSize: 18, lineHeight: 24 },
   resultEmoji: { fontSize: 44, lineHeight: 54 },
   logLine: {
     flexDirection: "row",

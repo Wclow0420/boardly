@@ -13,6 +13,7 @@ import {
   LockEmblem,
   ProfileEmblem,
 } from "@/components/engraved";
+import { EMOJI_EMBLEMS } from "@/components/engraved/emoji";
 import { UI_EMBLEMS, type UiEmblemName } from "@/components/engraved/ui";
 
 export interface IconProps {
@@ -93,17 +94,24 @@ const EMOJI_EMBLEM: Record<string, UiEmblemName | keyof typeof JSX_EMBLEMS> = {
   "👥": "people",
   "☀": "sun",
   "🎟": "ticket",
+  "⭕": "noughts",
 };
 
-const strip = (emoji: string) => emoji.replace(/️/g, "");
+const strip = (emoji: string) => emoji.replace(/\uFE0F/g, "");
 
 /** Whether `emoji` has an emblem. */
-export const hasEmblem = (emoji: string) => strip(emoji) in EMOJI_EMBLEM;
+export const hasEmblem = (emoji: string) =>
+  strip(emoji) in EMOJI_EMBLEM || strip(emoji) in EMOJI_EMBLEMS;
 
 /** The emblem for an emoji, `size` points square (nothing if none). */
 export function Emblem({ emoji, size }: { emoji: string; size: number }) {
   const name = EMOJI_EMBLEM[strip(emoji)];
-  if (!name) return null;
+  if (!name) {
+    const found = EMOJI_EMBLEMS[strip(emoji)];
+    return found ? (
+      <EmblemGlyph data={found.data} size={size} color={found.tint} />
+    ) : null;
+  }
   if (name in JSX_EMBLEMS) {
     const Drawn = JSX_EMBLEMS[name as keyof typeof JSX_EMBLEMS];
     return <Drawn size={size} />;
@@ -112,6 +120,13 @@ export function Emblem({ emoji, size }: { emoji: string; size: number }) {
 }
 
 /** Splits text at every emoji that has an emblem; the odd parts are the
- *  emoji. */
-const EMOJI = new RegExp(`(${Object.keys(EMOJI_EMBLEM).join("|")})️?`, "u");
+ *  emoji. Longest first, so an emoji that contains another is found
+ *  whole. */
+const EMOJI = new RegExp(
+  `(${[...Object.keys(EMOJI_EMBLEM), ...Object.keys(EMOJI_EMBLEMS)]
+    .sort((a, b) => b.length - a.length)
+    .map((e) => e.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|")})\uFE0F?`,
+  "u",
+);
 export const splitEmblems = (text: string) => text.split(EMOJI);

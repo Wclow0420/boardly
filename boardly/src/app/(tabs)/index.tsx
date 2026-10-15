@@ -8,7 +8,6 @@ import { useTranslation } from "react-i18next";
 import { BellIcon, ChevronRightIcon, Emblem, PlusIcon } from "@/components/icons";
 import {
   AppText,
-  EmblemText,
   GorhomBottomSheetModal,
   IconButton,
   Screen,
@@ -109,7 +108,7 @@ export default function HomeScreen() {
       )}
       <View style={styles.grow}>
         <AppText style={styles.quickTitle}>{t("home.quickPlay")}</AppText>
-        <EmblemText
+        <AppText
           style={styles.quickSubtitle}
           numberOfLines={1}
           adjustsFontSizeToFit
@@ -120,7 +119,7 @@ export default function HomeScreen() {
             : rolling
               ? t("home.rolling")
               : t("home.quickPlaySubtitle")}
-        </EmblemText>
+        </AppText>
       </View>
       <LinearGradient colors={HOME.button} style={styles.startButton}>
         <AppText style={styles.startText}>{t("home.start")}</AppText>

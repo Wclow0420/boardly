@@ -282,6 +282,14 @@ export const UI_EMBLEMS = {
     { d: disc(24, 31.5, 12), shine: "M14.6 27A10 10 0 0 1 19.6 21.8" },
     { d: STAR_SMALL, m: "ivory", ink: 1 },
   ],
+  // Tic-Tac-Toe's ⭕: a little board, a gold X and a silver O on it
+  noughts: [
+    { d: rrect(4, 4, 40, 40, 6), m: "wood", vein: "M17.3 7V41M30.7 7V41M7 17.3H41M7 30.7H41", shine: "M7 9V39" },
+    { d: "M8.6 6.4L10.8 8.6L13 6.4L15.2 8.6L13 10.8L15.2 13L13 15.2L10.8 13L8.6 15.2L6.4 13L8.6 10.8L6.4 8.6Z", ink: 1, t: "translate(13.4 13.4) scale(1.15) translate(-10.8 -10.8)" },
+    { d: ring(24, 24, 5.6, 3), evenOdd: true, m: "silver", ink: 1.1 },
+    { d: "M8.6 6.4L10.8 8.6L13 6.4L15.2 8.6L13 10.8L15.2 13L13 15.2L10.8 13L8.6 15.2L6.4 13L8.6 10.8L6.4 8.6Z", ink: 1, t: "translate(34.6 34.6) scale(1.15) translate(-10.8 -10.8)" },
+    { d: ring(34.6, 13.4, 5.6, 3), evenOdd: true, m: "silver", ink: 1.1 },
+  ],
   ticket: [
     {
       d: "M6 13H42V21A3 3 0 0 0 42 27V35H6V27A3 3 0 0 0 6 21Z",

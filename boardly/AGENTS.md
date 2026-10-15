@@ -102,8 +102,13 @@ and Baroque Silver (`art/baroque.tsx`).
   - App icons: `components/icons` (same names as ever) from
     `engraved/ui.ts`.
   - The tab bar, settings rows and gear: `engraved/icons.tsx`.
-  - Emoji used as pictures: `<Emblem emoji="🏆" size>`; in a label,
-    `EmblemText`.
+  - Emoji: `AppText` draws every emoji that has an emblem as that
+    emblem, inline at letter height (a lone emoji is centred), so
+    labels, buttons and game text need nothing. Use
+    `<Emblem emoji="🏆" size>` for a picture on its own. The emblems
+    come from `engraved/emoji/` (the app's set wins, then the sets
+    drawn there, then the games' icons). A new emoji in any text gets
+    an emblem there.
   - A game's icons: `src/games/<game>/emblems`, which its `GameIcon`
     draws. The line `GLYPHS` stay for badges and as the fallback.
   - Look a set over with
