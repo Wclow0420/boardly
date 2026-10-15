@@ -172,7 +172,7 @@ function SteelFront({ t }: { t: Clock }) {
       {corners.map((p, k) => (
         <Rivet key={k} x={p.x} y={p.y} />
       ))}
-      <Sweep t={t} d={PLATE} every={4.4} />
+      <Sweep t={t} d={PLATE} evenOdd every={4.4} />
       <Glint t={t} x={corners[5].x} y={corners[5].y} size={5} phase={0.6} />
       <Glint t={t} x={corners[1].x} y={corners[1].y} size={4} phase={2.4} />
     </Group>
@@ -364,7 +364,7 @@ function RoyalFront({ t }: { t: Clock }) {
           />
         </Circle>
       ))}
-      <Sweep t={t} d={RING} every={4.6} />
+      <Sweep t={t} d={RING} evenOdd every={4.6} />
       {/* the crown over it */}
       <Path path={VELVET}>
         <LinearGradient

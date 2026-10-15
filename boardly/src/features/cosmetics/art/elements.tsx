@@ -355,7 +355,7 @@ function GlassFront({ t }: { t: Clock }) {
           />
         );
       })}
-      <Sweep t={t} d={RIM_OUT + RIM_IN + FOIL_RIMS} every={4.6} />
+      <Sweep t={t} d={RIM_OUT + RIM_IN + FOIL_RIMS} evenOdd every={4.6} />
       <Glint t={t} x={FOILS[0].c.x} y={FOILS[0].c.y} size={6} phase={0.5} />
       <Glint t={t} x={PANES[4].c.x} y={PANES[4].c.y} size={5} phase={2.3} />
       <Glint t={t} x={FOILS[8].c.x} y={FOILS[8].c.y} size={5} phase={4.1} />
@@ -629,7 +629,7 @@ function BrazierFront({ t }: { t: Clock }) {
         }),
       )}
       <Group opacity={0.45}>
-        <Sweep t={t} d={BZ_RING} every={5.2} />
+        <Sweep t={t} d={BZ_RING} evenOdd every={5.2} />
       </Group>
       {/* the coals, a fire's glow round them */}
       <Group opacity={heat}>
@@ -877,7 +877,7 @@ function SnowFront({ t }: { t: Clock }) {
         const p = polar(m.tip.a, 53.25);
         return <IceCrystal key={k} x={p.x} y={p.y} r={3} a={m.tip.a} />;
       })}
-      <Sweep t={t} d={SNOW_RING} every={4.8} phase={0.25} />
+      <Sweep t={t} d={SNOW_RING} evenOdd every={4.8} phase={0.25} />
       <Group transform={run}>
         <Group opacity={pulse}>
           <Circle cx={0} cy={-53.25} r={4.5} color="#8ACCFF">

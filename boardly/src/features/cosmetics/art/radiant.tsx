@@ -293,7 +293,7 @@ function SunFront({ t }: { t: Clock }) {
         veinColor={VEIN_GOLD}
         shine={arc(59.6, -168, -112)}
       />
-      <Sweep t={t} d={SUN_RING} every={4.2} />
+      <Sweep t={t} d={SUN_RING} evenOdd every={4.2} />
       {/* the fire opal on top glows with the halo */}
       <Circle cx={0} cy={-56} r={9} color="#FF9A2A" opacity={beat}>
         <BlurMask blur={6} style="normal" />
@@ -494,7 +494,7 @@ function GroveFront({ t }: { t: Clock }) {
         veinColor={VEIN_STEEL}
         shine={arc(58.4, -170, -110)}
       />
-      <Sweep t={t} d={GROVE_RING} every={4.6} />
+      <Sweep t={t} d={GROVE_RING} evenOdd every={4.6} />
       <Metal
         d={TENDRIL_D}
         colors={["#B8E07A", "#4A8A2A", "#1E4A12"]}
@@ -687,7 +687,7 @@ function MoonFront({ t }: { t: Clock }) {
         veinColor={VEIN_STEEL}
         shine={arc(60.9, -168, -112)}
       />
-      <Sweep t={t} d={MOON_RING} every={4.8} />
+      <Sweep t={t} d={MOON_RING} evenOdd every={4.8} />
       {PEARLS.map((p, k) => (
         <Pearl key={k} x={p.x} y={p.y} r={2.35} />
       ))}

@@ -12,12 +12,14 @@ import { HERALDRY_ART } from "./heraldry";
 import type { ArtBorderDrawing } from "./kit";
 import { LEGENDARY_ART } from "./legendary";
 import { RADIANT_ART } from "./radiant";
-import { RARE_ART } from "./rare";
+import { GARDEN_ART } from "./garden";
+import { TABLETOP_ART } from "./tabletop";
 import { RIM_ART } from "./rimBorders";
 import { SERAPH_ART } from "./seraph";
 
 export const ART: Record<string, ArtBorderDrawing> = {
-  ...RARE_ART,
+  ...TABLETOP_ART,
+  ...GARDEN_ART,
   ...EPIC_ART,
   ...LEGENDARY_ART,
   ...EARNED_ART,

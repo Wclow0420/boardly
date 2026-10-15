@@ -4,6 +4,7 @@
 
 import {
   Circle,
+  FillType,
   Group,
   LinearGradient,
   Oval,
@@ -31,13 +32,21 @@ export function Sweep({
   d,
   every = 3.6,
   phase = 0,
+  evenOdd = false,
 }: {
   t: Clock;
   d: string;
   every?: number;
   phase?: number;
+  /** `d` cuts holes (a ring drawn as two circles): keep the light out of
+   *  them. */
+  evenOdd?: boolean;
 }) {
-  const clip = useMemo(() => Skia.Path.MakeFromSVGString(d), [d]);
+  const clip = useMemo(() => {
+    const path = Skia.Path.MakeFromSVGString(d);
+    if (path && evenOdd) path.setFillType(FillType.EvenOdd);
+    return path;
+  }, [d, evenOdd]);
   const transform = useDerivedValue(() => {
     const p = ((t.value + phase) % every) / 1.1;
     // from well clear of one side to well clear of the other
