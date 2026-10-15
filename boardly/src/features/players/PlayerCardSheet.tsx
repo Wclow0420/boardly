@@ -363,9 +363,11 @@ function Body({
 const TOKEN = 46;
 
 const styles = StyleSheet.create({
-  body: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 36, gap: 16 },
+  body: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 36, gap: 16 },
   identity: { flexDirection: "row", alignItems: "center", gap: 14 },
-  avatar: { padding: 4 },
+  // the widest glowing borders reach ~24pt past a 64pt avatar: room for
+  // all of it, or the sheet's edge cuts the glow off
+  avatar: { padding: 12, marginLeft: -8 },
   who: { flex: 1, gap: 2 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   name: {
