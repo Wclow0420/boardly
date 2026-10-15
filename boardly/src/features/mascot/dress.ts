@@ -83,29 +83,44 @@ export function dress(look: Look): EmblemData {
 /** Some looks, for looking over. */
 export const EMBLEMS: Record<string, EmblemData> = {
   starter: dress(STARTER),
-  "tee & pants": dress({
-    skin: "glossy",
-    colour: COLOURS.blue,
-    wear: { eyes: "dots", mouth: "smile", nose: "dot", top: "tee", bottom: "pants", shoes: "sneakers", hat: "beanie" },
-  }),
-  "sweater & skirt": dress({
-    skin: "glossy",
-    colour: COLOURS.yellow,
-    wear: { eyes: "happy", mouth: "smile", top: "sweater", bottom: "skirt", shoes: "sneakers", back: "backpack" },
-  }),
-  knight: dress({
+  wizard: dress({
     skin: "glossy",
     colour: COLOURS.purple,
-    wear: { eyes: "googly", mouth: "grin", hat: "tophat", hand: "sword", back: "wings" },
+    wear: { eyes: "sparkly", mouth: "smile", hat: "wizard", top: "cardigan", bottom: "skirt", shoes: "boots", hand: "wand", back: "cape" },
   }),
-  gingerbread: dress({
+  knight: dress({
+    skin: "robot",
+    colour: COLOURS.orange,
+    wear: { eyes: "determined", mouth: "flat", hat: "viking", hand: "sword", back: "wings" },
+  }),
+  chef: dress({
+    skin: "glossy",
+    colour: COLOURS.white,
+    wear: { eyes: "happy", mouth: "laugh", nose: "freckles", hat: "chef", top: "tee", bottom: "pants", shoes: "slippers", hand: "spatula" },
+  }),
+  royal: dress({
+    skin: "statue",
+    colour: COLOURS.orange,
+    wear: { eyes: "cool", mouth: "smile", hat: "crown", hand: "shield", back: "cape" },
+  }),
+  cookie: dress({
     skin: "gingerbread",
     colour: COLOURS.orange,
-    wear: { eyes: "icing", mouth: "icing" },
+    wear: { eyes: "icing", mouth: "icing", hat: "party", hand: "balloon" },
   }),
-  "gingerbread dressed": dress({
-    skin: "gingerbread",
-    colour: COLOURS.orange,
-    wear: { eyes: "dots", mouth: "smile", hat: "beanie", hand: "sword", top: "sweater" },
+  student: dress({
+    skin: "glossy",
+    colour: COLOURS.pink,
+    wear: { eyes: "sparkly", mouth: "cat", nose: "heart", hat: "bow", top: "sailor", bottom: "pleated", shoes: "dress", back: "backpack" },
+  }),
+  qipao: dress({
+    skin: "mochi",
+    colour: COLOURS.red,
+    wear: { eyes: "wink", mouth: "kiss", hat: "flowers", top: "qipao", bottom: "skirt", shoes: "sandals", hand: "umbrella" },
+  }),
+  space: dress({
+    skin: "galaxy",
+    colour: COLOURS.blue,
+    wear: { eyes: "star", mouth: "oh", hat: "halo", back: "jetpack" },
   }),
 };
