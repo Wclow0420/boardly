@@ -35,8 +35,13 @@ export function useMakeMove(code: string, room: RoomInfo | undefined) {
     onSuccess: ({ session }) => {
       // Update our own cache immediately; the other players get the
       // same session via the game_updated socket broadcast.
+      // (the socket may already have brought a newer one)
       queryClient.setQueryData(["room", code], (prev: RoomInfo | undefined) =>
-        prev ? { ...prev, session } : prev
+        !prev
+          ? prev
+          : prev.session?.id === session.id && (prev.session.version ?? -1) > (session.version ?? 0)
+            ? prev
+            : { ...prev, session }
       );
     },
   });

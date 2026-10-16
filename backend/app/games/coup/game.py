@@ -22,8 +22,13 @@ Full state (server only — clients get `view_for`):
                     "claim": "captain"},
   "block": null | {"seat": 2, "role": "ambassador"},
   "passed": [1, 3],                # who let the current claim through
-  "pending": null | {"seat": 1, "next": "end"},   # must lose a card
+  "pending": null | {"seat": 1, "next": "end", "why": "challenge"},
+                                   # must lose a card, and why:
+                                   # "challenge" | "coup" | "assassinate"
   "exchange": null | ["duke", "captain", "contessa", "duke"],
+  "bluffs": [0, 2, ...],           # by seat: claims made without the
+                                   # card that nobody caught (server only,
+                                   # for badges; absent in older games)
   "log": [ ...public events... ],
   "winner": null | seat
 }
@@ -40,7 +45,7 @@ Moves:
 import copy
 import random
 
-from app.games.base import BaseGame, GameError, Badge
+from app.games.base import BaseGame, GameError, Badge, FEAT, QUICK_WINS, RARE
 
 ROLES = ["duke", "assassin", "captain", "ambassador", "contessa"]
 COPIES_PER_ROLE = 3
@@ -96,6 +101,19 @@ def responders(state):
     return []
 
 
+def _facts(outcome) -> dict:
+    return outcome.facts or {}
+
+
+def _note_bluff(state, seat, role):
+    """A claim went through unchallenged: count it if it was a bluff.
+    Kept on the server only (never in a view), for the badges."""
+    if any(not c["revealed"] and c["role"] == role for c in state["players"][seat]["cards"]):
+        return
+    bluffs = state.setdefault("bluffs", [0] * state["numPlayers"])
+    bluffs[seat] += 1
+
+
 class Coup(BaseGame):
     key = "coup"
     name = "Hustle"
@@ -109,8 +127,18 @@ class Coup(BaseGame):
     tag = "card"
 
     badges = [
-        Badge("coup.firstWin", "bronze", 1, series="wins"),
-        Badge("coup.kingpin", "gold", 10, series="wins"),
+        # every win
+        Badge("coup.kingpin", QUICK_WINS),
+        # win without ever turning a card over
+        Badge("coup.untouchable", RARE,
+              lambda o: o.won and not o.abandoned and _facts(o).get("cardsLeft") == 2),
+        # win having bluffed and never been caught at it
+        Badge("coup.smooth", RARE,
+              lambda o: o.won and not o.abandoned
+              and _facts(o).get("bluffs", 0) >= 1 and _facts(o).get("caught", 0) == 0),
+        # catch someone bluffing (win or lose)
+        Badge("coup.sharpEye", FEAT,
+              lambda o: not o.abandoned and _facts(o).get("callouts", 0) >= 1),
     ]
 
     def initial_state(self, num_players: int, rng: random.Random | None = None) -> dict:
@@ -143,6 +171,7 @@ class Coup(BaseGame):
             "passed": [],
             "pending": None,
             "exchange": None,
+            "bluffs": [0] * num_players,
             "log": [],
             "winner": None,
         }
@@ -222,10 +251,12 @@ class Coup(BaseGame):
 
         phase = s["phase"]
         if phase == "challengeAction":
+            _note_bluff(s, s["action"]["actor"], s["action"]["claim"])
             self._action_stands(s)
         elif phase == "block":
             self._resolve(s)
         else:  # challengeBlock: nobody doubted the block
+            _note_bluff(s, s["block"]["seat"], s["block"]["role"])
             self._block_stands(s)
 
     def _challenge(self, s, seat, move):
@@ -259,15 +290,15 @@ class Coup(BaseGame):
             s["deck"].append(proof["role"])
             _rng.shuffle(s["deck"])
             proof["role"] = s["deck"].pop()
-            self._lose(s, seat, "actionStands" if on_action else "blockStands")
+            self._lose(s, seat, "actionStands" if on_action else "blockStands", "challenge")
         elif on_action:
             # Bluff called: the action never happens, its cost is returned
             cost = ACTIONS[s["action"]["type"]].get("cost", 0)
             s["players"][claimant]["coins"] += cost
-            self._lose(s, claimant, "end")
+            self._lose(s, claimant, "end", "challenge")
         else:
             s["block"] = None
-            self._lose(s, claimant, "resolve")
+            self._lose(s, claimant, "resolve", "challenge")
 
     def _block(self, s, seat, move):
         if s["phase"] != "block":
@@ -292,8 +323,9 @@ class Coup(BaseGame):
         if type(card) is not int or card not in hand(s, seat):
             raise GameError("Pick one of your face-down cards")
         next_step = s["pending"]["next"]
+        why = s["pending"].get("why")
         s["pending"] = None
-        self._flip(s, seat, card)
+        self._flip(s, seat, card, why)
         self._continue(s, next_step)
 
     def _exchange(self, s, seat, move):
@@ -350,7 +382,7 @@ class Coup(BaseGame):
             player["coins"] += taken
         elif kind in ("coup", "assassinate"):
             # The target may already be out (lost a challenge on the way)
-            self._lose(s, target, "end")
+            self._lose(s, target, "end", kind)
             return
         elif kind == "exchange":
             drawn = [s["deck"].pop(), s["deck"].pop()]
@@ -361,24 +393,26 @@ class Coup(BaseGame):
             return
         self._end_turn(s)
 
-    def _lose(self, s, seat, next_step):
-        """`seat` must give up an influence, then play continues with
+    def _lose(self, s, seat, next_step, why):
+        """`seat` must give up an influence (`why`: lost a challenge, or
+        the target of a coup / assassination), then play continues with
         `next_step`. With one card left there is nothing to choose."""
         cards = hand(s, seat)
         if len(cards) > 1:
             s["phase"] = "loseInfluence"
-            s["pending"] = {"seat": seat, "next": next_step}
+            s["pending"] = {"seat": seat, "next": next_step, "why": why}
             return
         if cards:
-            self._flip(s, seat, cards[0])
+            self._flip(s, seat, cards[0], why)
         self._continue(s, next_step)
 
-    def _flip(self, s, seat, card):
+    def _flip(self, s, seat, card, why=None):
         player = s["players"][seat]
         player["cards"][card]["revealed"] = True
-        s["log"].append(
-            {"t": "lose", "seat": seat, "role": player["cards"][card]["role"]}
-        )
+        event = {"t": "lose", "seat": seat, "role": player["cards"][card]["role"]}
+        if why:
+            event["why"] = why
+        s["log"].append(event)
         if not alive(s, seat):
             player["coins"] = 0
             s["log"].append({"t": "out", "seat": seat})
@@ -415,6 +449,21 @@ class Coup(BaseGame):
         s["phase"] = "action"
 
     # ----------------------------------------------------------- result
+
+    def player_outcome(self, state: dict, seat: int) -> dict:
+        """No sides in Hustle; the facts are what its badges look at:
+        cards still face down, bluffs nobody caught, times caught
+        bluffing, bluffs this player called out."""
+        challenges = [e for e in state.get("log", []) if e.get("t") == "challenge"]
+        bluffs = state.get("bluffs") or []
+        return {
+            "facts": {
+                "cardsLeft": len(hand(state, seat)),
+                "bluffs": bluffs[seat] if seat < len(bluffs) else 0,
+                "caught": sum(1 for e in challenges if e["caught"] and e["claimant"] == seat),
+                "callouts": sum(1 for e in challenges if e["caught"] and e["challenger"] == seat),
+            }
+        }
 
     def get_result(self, state: dict) -> dict | None:
         if state["phase"] != "finished":
@@ -473,6 +522,13 @@ class Coup(BaseGame):
             "waitingOn": waiting,
             "exchange": state["exchange"]
             if phase == "exchange" and state["action"]["actor"] == seat
+            else None,
+            # who is turning a card over and why, for the table to see
+            "losing": {
+                "seat": state["pending"]["seat"],
+                "why": state["pending"].get("why"),
+            }
+            if phase == "loseInfluence" and state.get("pending")
             else None,
             "log": state["log"],
             "winner": state["winner"],

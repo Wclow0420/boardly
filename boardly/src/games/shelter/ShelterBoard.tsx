@@ -21,6 +21,7 @@ import { Popup } from "@/features/game/Popup";
 import { useTheme } from "@/theme";
 import { heavyHaptic, moveHaptic, tapHaptic } from "@/utils/haptics";
 import type { GameBoardProps } from "../types";
+import { asLook } from "@/features/mascot/dress";
 import { GameButton as Button, GameText as AppText } from "./GameText";
 import { GameIcon } from "./icons";
 import {
@@ -164,6 +165,7 @@ export function ShelterBoard({
       label: nameOf(seat),
       me: seat === mySeat,
       post: night && seat === mySeat && state.myPost ? state.myPost.post : undefined,
+      look: asLook(players.find((p) => p.seat === seat)?.mascot),
     }));
 
   const postLabels = Object.fromEntries(
@@ -401,7 +403,7 @@ function Task({
                 { borderColor: PLACE_COLOR[place], backgroundColor: pressed ? colors.well : colors.card },
               ]}
             >
-              <IsoPicture shapes={placeScene(place)} width={PLACE_WIDTH} height={PLACE_HEIGHT} size={92} />
+              <IsoPicture shapes={() => placeScene(place)} width={PLACE_WIDTH} height={PLACE_HEIGHT} size={92} cacheKey={`shelter-place|${place}`} />
               <AppText variant="label" align="center">
                 {`${PLACE_EMOJI[place]} ${t(`shelter.places.${place}`)}`}
               </AppText>

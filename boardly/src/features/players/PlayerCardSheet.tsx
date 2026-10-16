@@ -1,29 +1,27 @@
 // Someone's player card, pulled out like a drawer: who they are and the
 // title their rarest badge gives them, their numbers on wooden tokens,
-// what we've played together, the badges they've earned (alive), and
+// what we've played together, the four badges they show, and
 // what I can do — which depends on how we know each other: add them,
 // answer their request, invite a friend to my table, or let them go.
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { LinearGradient } from "expo-linear-gradient";
 import { forwardRef, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { ApiError, api } from "@/api/client";
-import { Badge, TIER_METAL } from "@/components/badges/Badge";
-import { useIsoClock } from "@/components/iso";
+import { ApiError, api, type MascotLook } from "@/api/client";
+import { TIER_GLOW } from "@/components/badges/Badge";
 import { Meeple } from "@/components/tabletop/Meeple";
 import {
   AppText,
+  Medallion,
   BottomSheetModal,
   Button,
   GorhomBottomSheetModal,
   Skeleton,
-  Texture,
 } from "@/components/ui";
-import { badgeArt } from "@/features/badges/art";
-import { sortBadges, titleBadge } from "@/features/badges/order";
+import { titleBadge } from "@/features/badges/order";
+import { ShowcaseRow } from "@/features/badges/ShowcaseRow";
 import { badgeText } from "@/features/badges/strings";
 import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
 import { meepleColor } from "@/features/friends/seat";
@@ -39,6 +37,7 @@ export interface CardPerson {
   name: string;
   borderId?: string | null;
   avatarUrl?: string | null;
+  mascot?: MascotLook | null;
   isBot?: boolean;
 }
 
@@ -79,7 +78,6 @@ function Body({
   const { t } = useTranslation();
   const gameName = useGameName();
   const queryClient = useQueryClient();
-  const clock = useIsoClock(false);
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
 
   const query = useQuery({
@@ -164,6 +162,7 @@ function Body({
             name={person.name}
             borderId={card?.user.borderId ?? person.borderId ?? undefined}
             avatarUrl={card?.user.avatarUrl ?? person.avatarUrl}
+            mascot={card?.user.mascot ?? person.mascot}
             size={64}
             presence={
               card?.presence === "online" || card?.presence === "inGame"
@@ -185,7 +184,7 @@ function Body({
               style={[
                 styles.title,
                 {
-                  color: title ? TIER_METAL[title.tier].glow : TABLE.creamMuted,
+                  color: title ? TIER_GLOW[title.tier ?? "bronze"] : TABLE.creamMuted,
                 },
               ]}
             >
@@ -206,10 +205,9 @@ function Body({
         <View style={styles.tokens}>
           {tokens.map((token) => (
             <View key={token.label} style={styles.tokenWrap}>
-              <LinearGradient colors={TABLE.woodButton} style={styles.token}>
-                <Texture radius={22} />
+              <Medallion size={TOKEN}>
                 <AppText style={styles.tokenValue}>{token.value}</AppText>
-              </LinearGradient>
+              </Medallion>
               <AppText
                 variant="tiny"
                 align="center"
@@ -242,42 +240,11 @@ function Body({
         </View>
       ) : null}
 
-      {/* their badges, rarest first */}
+      {/* the four badges they show */}
       {card && !bot ? (
         <View style={styles.badges}>
-          <AppText variant="caption" style={styles.label}>
-            {`${t("friends.card.badges")} · ${card.badges.length}`}
-          </AppText>
           {card.badges.length ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.badgeRow}
-            >
-              {sortBadges(card.badges).map((badge, i) => {
-                const { art, face } = badgeArt(badge.key, badge.gameType);
-                return (
-                  <View key={badge.key} style={styles.badge}>
-                    <Badge
-                      art={art}
-                      face={face}
-                      tier={badge.tier}
-                      size={70}
-                      clock={clock}
-                      phase={i * 0.9}
-                    />
-                    <AppText
-                      variant="tiny"
-                      align="center"
-                      numberOfLines={2}
-                      style={styles.badgeName}
-                    >
-                      {badgeText(t, badge.key).name}
-                    </AppText>
-                  </View>
-                );
-              })}
-            </ScrollView>
+            <ShowcaseRow badges={card.badges} count={card.badgeCount} />
           ) : (
             <AppText variant="tiny" style={styles.muted}>
               {t("friends.card.noBadges")}
@@ -379,16 +346,6 @@ const styles = StyleSheet.create({
   title: { fontFamily: fontFamily.semiBold, fontSize: 13 },
   tokens: { flexDirection: "row" },
   tokenWrap: { flex: 1, alignItems: "center", gap: 4 },
-  token: {
-    width: TOKEN,
-    height: TOKEN,
-    borderRadius: TOKEN / 2,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderBottomWidth: 4,
-    borderColor: TABLE.woodButtonBorder,
-  },
   tokenValue: { fontFamily: fontFamily.bold, fontSize: 14, color: TABLE.cream },
   muted: { color: TABLE.creamMuted },
   together: {
@@ -404,9 +361,6 @@ const styles = StyleSheet.create({
   },
   badges: { gap: 8 },
   label: { color: TABLE.creamMuted, fontFamily: fontFamily.semiBold },
-  badgeRow: { gap: 4 },
-  badge: { width: 76, alignItems: "center" },
-  badgeName: { color: TABLE.cream, marginTop: -6 },
   actions: { flexDirection: "row", gap: 10 },
   grow: { flex: 1 },
 });

@@ -74,6 +74,8 @@ Moves:
   {"type": "patrol", "track": seat}                    phase "patrol"
   {"type": "room", "target"?: seat, "letters"?: [..], "pray"?: bool}
                                                        phase "room"
+  {"type": "pick", "team": [seats]}                    leader, "team"
+      (the team so far, shown to everyone as it's picked)
   {"type": "propose", "team": [seats]}                 leader, "team"
   {"type": "vote", "approve": bool}                    everyone, "vote"
   {"type": "mission", "card": "success" | "fail"}      team, "mission"
@@ -82,7 +84,7 @@ Moves:
 
 import random
 
-from app.games.base import BaseGame, GameError, Badge, won_as
+from app.games.base import BaseGame, GameError, Badge, FEAT, RARE, WINS, won_as
 from app.games.nightwatch.bot import nightwatch as bot_policy
 
 ROOMS = [
@@ -214,13 +216,13 @@ class Nightwatch(BaseGame):
     has_bots = True
 
     badges = [
-        Badge("nightwatch.sealed", "bronze", 1, won_as("good")),
-        Badge("nightwatch.possessed", "silver", 1, won_as("evil")),
-        Badge("nightwatch.prophet", "silver", 1, lambda o: o.won and o.role == "prophet"),
-        Badge("nightwatch.sharpEye", "gold", 1,
+        Badge("nightwatch.sealed", FEAT, won_as("good")),
+        Badge("nightwatch.possessed", FEAT, won_as("evil")),
+        Badge("nightwatch.prophet", RARE, lambda o: o.won and o.role == "prophet"),
+        Badge("nightwatch.sharpEye", RARE,
               lambda o: o.won and (o.facts or {}).get("assassin")
               and (o.facts or {}).get("reason") == "assassination"),
-        Badge("nightwatch.ghostbreaker", "legendary", 25, series="wins"),
+        Badge("nightwatch.ghostbreaker", WINS),
     ]
 
     def __init__(self, rng: random.Random | None = None):
@@ -341,6 +343,7 @@ class Nightwatch(BaseGame):
             "ready": self._ready,
             "patrol": self._patrol,
             "room": self._room,
+            "pick": self._pick,
             "propose": self._propose,
             "vote": self._vote,
             "mission": self._mission,
@@ -673,6 +676,25 @@ class Nightwatch(BaseGame):
         }
 
     # --- team and vote
+
+    def _pick(self, state, seat, move):
+        """The leader's picks so far, before proposing: everyone watches
+        the spotlights move. Never more than the team's size."""
+        if state["phase"] != "team":
+            raise GameError("Not choosing a team right now")
+        if seat != state["leader"]:
+            raise GameError("Only the leader picks the team")
+        n = state["numPlayers"]
+        team = move.get("team")
+        size = MISSION_SIZES[n][state["round"]]
+        if (
+            not isinstance(team, list)
+            or len(team) > size
+            or not all(type(s) is int and 0 <= s < n for s in team)
+            or len(set(team)) != len(team)
+        ):
+            raise GameError(f"Pick up to {size} different players")
+        return {**state, "team": sorted(team)}
 
     def _propose(self, state, seat, move):
         if state["phase"] != "team":

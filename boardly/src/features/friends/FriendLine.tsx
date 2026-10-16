@@ -68,6 +68,7 @@ export function FriendLine({
           name={friend.name}
           borderId={friend.borderId}
           avatarUrl={friend.avatarUrl}
+          mascot={friend.mascot}
           size={40}
         />
       </View>

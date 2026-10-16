@@ -1,853 +1,758 @@
-import { Image } from "expo-image";
-import { useState, type ReactNode } from "react";
-import {
-  Pressable,
-  StyleSheet,
-  View,
-  type StyleProp,
-  type ViewStyle,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+// Hustle, played on the stage (see "A game's flow on the stage" in the
+// root CLAUDE.md; Seal the Manor is the model). The den's eave across the
+// top shows whose turn it is and every player's tile; the middle is the
+// moment: my two cards dealt, the table under the lamps, the felt where I
+// choose my action, the player I aim it at, a claim the room may
+// challenge or block, a challenge settled (once per device), someone put
+// out, the card I must turn over, the cards I swap, and the ending with
+// every hand face up. My own hand is always in reach: the top tool down
+// the side is my two cards, small, and opens them large.
+
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
 
-import { Emblem } from "@/components/icons";
-import {
-  AppText,
-  BottomSheetModal,
-  Button,
-} from "@/components/ui";
-import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
-import { usePromptSheet } from "@/hooks/usePromptSheet";
-import { fontFamily, useTheme } from "@/theme";
+import { AppText, Button } from "@/components/ui";
+import { Journal } from "@/features/game/Journal";
+import { Popup, type PopupLook } from "@/features/game/Popup";
+import { stageText } from "@/features/game/stage/GameStage";
+import { ToolButton } from "@/features/game/stage/parts";
+import type { Light, Plate, Standing } from "@/features/game/stage/StageLineup";
+import { asLook } from "@/features/mascot/dress";
+import { fontFamily } from "@/theme";
 import { moveHaptic, tapHaptic } from "@/utils/haptics";
+import { HoldButton } from "@/games/nightwatch/lantern/HoldButton";
 import type { GameBoardProps } from "../types";
-import {
-  ACTION_ART,
-  ACTION_EMOJI,
-  ACTION_TINT,
-  CARD_BACK,
-  ROLE_ART,
-  ROLE_EMOJI,
-  ROLE_TINT,
-} from "./art";
-import { RolePortrait } from "./RolePortrait";
+import { ACTION_EMOJI, ROLE_EMOJI } from "./art";
+import { RoleCard } from "./cards";
+import { CardRow, type RowCard } from "./den/CardRow";
+import { ClaimScene } from "./den/ClaimScene";
+import { DenStage, DenTag } from "./den/DenStage";
+import type { DenTile } from "./den/DenSign";
+import { Ending } from "./den/Ending";
+import { Felt } from "./den/Felt";
+import { Showdown } from "./den/Showdown";
+import { TableLineup } from "./den/TableLineup";
 import {
   ACTIONS,
-  canTake,
   FORCED_COUP_AT,
+  ROLES,
+  aliveCount,
+  canTake,
+  claimOf,
+  claimWindow,
   handOf,
+  respondersOf,
   specOf,
   targetsFor,
   taskFor,
   toggleKeep,
+  turnCount,
   type ActionType,
   type CoupState,
   type LogEvent,
   type Role,
 } from "./logic";
+import { describe, hustlePages } from "./pages";
+import { useSetPieces } from "./useSetPieces";
 
-const LOG_LINES = 8;
-/** Blank space added under the table while the action sheet is up. */
-const SHEET_CLEARANCE = 380;
+/** The den's popups: a crimson lacquer sign, a jade jewel. */
+const DEN_POPUP: PopupLook = { enamel: ["#D2384A", "#8A1424", "#4A0812"], jewel: "emerald", glow: "#FFB45E" };
 
-/** "#RRGGBB" + alpha (00-ff) — tinted fills for tiles and icon wells. */
-const alpha = (hex: string, a: string) => `${hex}${a}`;
+type Panel = "hand" | "record" | "roles";
+type Staged = { at: number; event: Extract<LogEvent, { t: "challenge" } | { t: "out" }> };
 
-export function CoupBoard({
-  state,
-  mySeat,
-  players,
-  busy,
-  finished,
-  onMove,
-}: GameBoardProps<CoupState>) {
+/** What I've picked in the moment on the stage, tagged with its step. */
+type Pick = {
+  step: string;
+  action?: ActionType | null;
+  target?: number | null;
+  card?: number | null;
+  keep?: number[];
+  block?: Role;
+  /** I've answered the claim (shown at once, before the server). */
+  answered?: "pass" | "challenge" | "block";
+};
+
+export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, onMove, stage }: GameBoardProps<CoupState>) {
   const { t } = useTranslation();
-  const { colors, spacing } = useTheme();
-  const insets = useSafeAreaInsets();
-
-  // An action that still needs a target, and the cards picked to keep in
-  // an exchange. Tagged with the step so they clear when play moves on.
   const step = `${state.phase}:${state.turn}:${state.log.length}`;
-  const [draft, setDraft] = useState<{
-    step: string;
-    action: ActionType | null;
-    keep: number[];
-  }>({ step, action: null, keep: [] });
-  const current =
-    draft.step === step ? draft : { step, action: null, keep: [] };
-  // Your cards are face up for you; tap to cover them from onlookers
-  const [handHidden, setHandHidden] = useState(false);
+  const [pick, setPick] = useState<Pick>({ step });
+  const current: Pick = pick.step === step ? pick : { step };
+  const choose = (next: Omit<Pick, "step">) => setPick({ ...current, ...next, step });
 
   const over = finished || state.phase === "finished";
   const task = over ? null : taskFor(state, mySeat);
   const me = state.players[mySeat];
-  const targeting = task === "action" && current.action !== null;
-  const targets = targeting ? targetsFor(state, mySeat) : [];
+  const [panel, setPanel] = useState<Panel | null>(null);
 
-  // Whatever the game needs from me comes up as a sheet pinned to the
-  // bottom. It can't be swiped away — it closes when I've answered.
-  const needsMe = task !== null;
-  const { ref: sheetRef, onDismiss: onSheetDismiss } = usePromptSheet(
-    needsMe,
-    step
+  const nameOf = useCallback(
+    (seat: number) => (seat === mySeat ? t("game.you") : (players.find((p) => p.seat === seat)?.username ?? `#${seat + 1}`)),
+    [players, mySeat, t],
   );
-
-  const userOf = (seat: number) =>
-    players.find((p) => p.seat === seat)?.username ?? `#${seat + 1}`;
-  const nameOf = (seat: number) => (seat === mySeat ? t("game.you") : userOf(seat));
-
+  // narrative lines name everyone by their username ("Lin works a Day
+  // Job"), so the verbs agree; the stage's own labels say "You"
+  const userOf = useCallback((seat: number) => players.find((p) => p.seat === seat)?.username ?? `#${seat + 1}`, [players]);
   const send = (move: Record<string, unknown>) => {
     moveHaptic();
     onMove(move);
   };
 
-  const chooseAction = (type: ActionType) => {
-    if (specOf(type).needsTarget) {
-      tapHaptic();
-      setDraft({ step, action: type, keep: [] });
-    } else {
-      send({ type: "action", action: type });
-    }
-  };
-
-  /** One sentence for the action / block currently on the table. */
-  const claimLine = () => {
-    if (state.phase === "challengeBlock" && state.block) {
-      return describe(
-        { t: "block", seat: state.block.seat, role: state.block.role },
-        t,
-        userOf
-      );
-    }
-    if (state.action) {
-      return describe(
-        {
-          t: "action",
-          actor: state.action.actor,
-          action: state.action.type,
-          target: state.action.target,
-        },
-        t,
-        userOf
-      );
-    }
-    return "";
-  };
-
-  const waitingNames = state.waitingOn.map(nameOf).join(", ");
-
-  /** The question the game is asking me — shown in the bottom sheet. */
-  const prompt =
-    task === "action" ? (
-      targeting && current.action ? (
-        <>
-          <AppText variant="title">
-            {`🎯  ${t("coup.prompt.target", {
-              action: t(`coup.actions.${current.action}.name`),
-            })}`}
-          </AppText>
-          <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
-            {targets.map((seat) => (
-              <Pressable
-                key={seat}
-                accessibilityRole="button"
-                disabled={busy}
-                onPress={() =>
-                  send({ type: "action", action: current.action, target: seat })
-                }
-                style={({ pressed }) => [
-                  styles.target,
-                  {
-                    backgroundColor: pressed ? colors.primarySoft : colors.well,
-                    borderColor: colors.border,
-                  },
-                ]}
-              >
-                <AvatarBorder
-                  name={userOf(seat)}
-                  borderId={players.find((p) => p.seat === seat)?.borderId}
-                  avatarUrl={players.find((p) => p.seat === seat)?.avatarUrl}
-                  size={36}
-                />
-                <AppText variant="label" style={styles.grow} numberOfLines={1}>
-                  {userOf(seat)}
-                </AppText>
-                <AppText variant="label" color="primary">
-                  {t("coup.coins", { count: state.players[seat].coins })}
-                </AppText>
-              </Pressable>
-            ))}
-          </View>
-          <Button
-            label={t("common.cancel")}
-            variant="tertiary"
-            style={{ marginTop: spacing.sm }}
-            onPress={() => setDraft({ step, action: null, keep: [] })}
-          />
-        </>
-      ) : (
-        <>
-          <AppText variant="title">
-            {`⚡  ${
-              me && me.coins >= FORCED_COUP_AT
-                ? t("coup.prompt.mustCoup")
-                : t("coup.prompt.yourTurn")
-            }`}
-          </AppText>
-          <View style={[styles.tiles, { marginTop: spacing.md }]}>
-            {ACTIONS.map((action) => (
-              <ActionTile
-                key={action.type}
-                type={action.type}
-                claims={action.claim !== null}
-                enabled={!busy && canTake(state, mySeat, action.type)}
-                onPress={() => chooseAction(action.type)}
-              />
-            ))}
-          </View>
-        </>
-      )
-    ) : task === "challengeAction" || task === "challengeBlock" ? (
-      <>
-        <AppText variant="title">{claimLine()}</AppText>
-        <AppText variant="body" color="textMuted" style={{ marginTop: 4 }}>
-          {t("coup.prompt.challenge")}
-        </AppText>
-        <View style={[styles.buttons, { marginTop: spacing.md }]}>
-          <Button
-            label={t("coup.challenge")}
-            variant="danger"
-            style={styles.grow}
-            disabled={busy}
-            onPress={() => send({ type: "challenge" })}
-          />
-          <Button
-            label={t("coup.allow")}
-            variant="secondary"
-            style={styles.grow}
-            disabled={busy}
-            onPress={() => send({ type: "pass" })}
-          />
-        </View>
-      </>
-    ) : task === "block" && state.action ? (
-      <>
-        <AppText variant="title">{claimLine()}</AppText>
-        <AppText variant="body" color="textMuted" style={{ marginTop: 4 }}>
-          {t("coup.prompt.block")}
-        </AppText>
-        <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
-          {specOf(state.action.type).blockers.map((role) => (
-            <Button
-              key={role}
-              label={t("coup.blockWith", {
-                role: t(`coup.roles.${role}.name`),
-              })}
-              disabled={busy}
-              onPress={() => send({ type: "block", role })}
-            />
-          ))}
-          <Button
-            label={t("coup.allow")}
-            variant="secondary"
-            disabled={busy}
-            onPress={() => send({ type: "pass" })}
-          />
-        </View>
-      </>
-    ) : task === "reveal" && me ? (
-      <>
-        <AppText variant="title">{`💔  ${t("coup.prompt.reveal")}`}</AppText>
-        <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
-          {handOf(state, mySeat).map((index) => {
-            const role = me.cards[index].role;
-            return role ? (
-              <Button
-                key={index}
-                label={t(`coup.roles.${role}.name`)}
-                variant="danger"
-                disabled={busy}
-                onPress={() => send({ type: "reveal", card: index })}
-              />
-            ) : null;
-          })}
-        </View>
-      </>
-    ) : task === "exchange" && state.exchange ? (
-      <>
-        <AppText variant="title">
-          {`🔄  ${t("coup.prompt.exchange", {
-            count: handOf(state, mySeat).length,
-          })}`}
-        </AppText>
-        <View style={[styles.tiles, { marginTop: spacing.md }]}>
-          {state.exchange.map((role, index) => {
-            const picked = current.keep.includes(index);
-            return (
-              <Pressable
-                key={index}
-                accessibilityRole="button"
-                accessibilityState={{ selected: picked }}
-                onPress={() => {
-                  tapHaptic();
-                  setDraft({
-                    step,
-                    action: null,
-                    keep: toggleKeep(
-                      current.keep,
-                      index,
-                      handOf(state, mySeat).length
-                    ),
-                  });
-                }}
-                style={[
-                  styles.tile,
-                  {
-                    backgroundColor: picked
-                      ? alpha(ROLE_TINT[role], "33")
-                      : colors.well,
-                    borderColor: picked ? ROLE_TINT[role] : colors.border,
-                  },
-                ]}
-              >
-                <RolePortrait role={role} size={36} />
-                <AppText variant="label" style={styles.grow} numberOfLines={1}>
-                  {t(`coup.roles.${role}.name`)}
-                </AppText>
-              </Pressable>
-            );
-          })}
-        </View>
-        <Button
-          label={t("coup.keep")}
-          style={{ marginTop: spacing.md }}
-          disabled={current.keep.length !== handOf(state, mySeat).length}
-          loading={busy}
-          onPress={() => send({ type: "exchange", keep: current.keep })}
-        />
-      </>
-    ) : null;
-
-  return (
-    <View style={{ gap: spacing.md }}>
-      {/* Players */}
-      <View style={{ gap: spacing.sm }}>
-        {players
-          .slice()
-          .sort((a, b) => a.seat - b.seat)
-          .map((player) => {
-            const seat = player.seat;
-            const info = state.players[seat];
-            if (!info) return null;
-            const waitedOn = !over && state.waitingOn.includes(seat);
-            return (
-              <View
-                key={player.userId}
-                style={[
-                  styles.panel,
-                  styles.player,
-                  {
-                    backgroundColor: colors.card,
-                    borderColor: waitedOn
-                      ? colors.primarySoftBorder
-                      : colors.border,
-                    opacity: info.alive ? 1 : 0.45,
-                  },
-                ]}
-              >
-                <AvatarBorder
-                  name={player.username}
-                  borderId={player.borderId}
-                  avatarUrl={player.avatarUrl}
-                  size={44}
-                  ringColor={waitedOn ? colors.primary : colors.border}
-                />
-                <View style={styles.grow}>
-                  <AppText
-                    numberOfLines={1}
-                    style={{ fontFamily: fontFamily.semiBold, fontSize: 16 }}
-                  >
-                    {nameOf(seat)}
-                    {state.winner === seat ? "  🏆" : ""}
-                  </AppText>
-                  <AppText
-                    variant="caption"
-                    style={{
-                      marginTop: 2,
-                      color: info.alive ? colors.primary : colors.textSubtle,
-                    }}
-                  >
-                    {info.alive
-                      ? t("coup.coins", { count: info.coins })
-                      : t("coup.out")}
-                  </AppText>
-                </View>
-                <View style={styles.cards}>
-                  {info.cards.map((card, index) => (
-                    <MiniCard key={index} role={card.role} revealed={card.revealed} />
-                  ))}
-                </View>
-              </View>
-            );
-          })}
-        <View style={styles.rule}>
-          <View style={[styles.ruleLine, { backgroundColor: colors.border }]} />
-          <AppText variant="caption" color="textSubtle">
-            {t("coup.deck", { count: state.deckCount })}
-          </AppText>
-          <View style={[styles.ruleLine, { backgroundColor: colors.border }]} />
-        </View>
-      </View>
-
-      {/* My hand: two cards side by side */}
-      {me ? (
-        <Panel onPress={over ? undefined : () => setHandHidden((v) => !v)}>
-          <View style={styles.panelHeader}>
-            <AppText variant="label">{`🃏  ${t("coup.hand.title")}`}</AppText>
-            <AppText variant="label" color="primary">
-              {t("coup.coins", { count: me.coins })}
-            </AppText>
-          </View>
-          <View style={[styles.hand, { marginTop: spacing.sm }]}>
-            {me.cards.map((card, index) => (
-              <HandCard
-                key={index}
-                role={card.role}
-                lost={card.revealed}
-                faceDown={handHidden && !over && !card.revealed}
-              />
-            ))}
-          </View>
-          {!over ? (
-            <AppText
-              variant="tiny"
-              color="textSubtle"
-              align="center"
-              style={{ marginTop: spacing.sm }}
-            >
-              {t(handHidden ? "coup.hand.show" : "coup.hand.hide")}
-            </AppText>
-          ) : null}
-        </Panel>
-      ) : null}
-
-      {/* What's happening while it isn't on me, and the final result */}
-      {over ? (
-        <Panel>
-          <View style={{ alignItems: "center" }}>
-            <AppText style={styles.resultEmoji}>
-              {state.winner !== null ? "🏆" : "🚪"}
-            </AppText>
-            <AppText variant="h2" align="center">
-              {state.winner === null
-                ? t("coup.result.none")
-                : state.winner === mySeat
-                  ? t("game.youWin")
-                  : t("game.winner", { name: userOf(state.winner) })}
-            </AppText>
-          </View>
-        </Panel>
-      ) : !needsMe ? (
-        <Panel>
-          <AppText variant="title">
-            {state.phase === "action"
-              ? t("game.turn", { name: userOf(state.turn) })
-              : state.phase === "loseInfluence"
-                ? t("coup.prompt.losing", { name: waitingNames })
-                : claimLine()}
-          </AppText>
-          <AppText variant="caption" color="textSubtle" style={{ marginTop: 4 }}>
-            {`⏳  ${t("coup.prompt.waiting", { names: waitingNames })}`}
-          </AppText>
-        </Panel>
-      ) : null}
-
-      {/* Public log, newest first */}
-      {state.log.length > 0 ? (
-        <Panel>
-          <AppText variant="label">{`📜  ${t("avalon.history.title")}`}</AppText>
-          <View style={{ marginTop: spacing.sm }}>
-            {state.log
-              .slice(-LOG_LINES)
-              .reverse()
-              .map((event, index) => (
-                <View
-                  key={state.log.length - index}
-                  style={[
-                    styles.logLine,
-                    { borderTopColor: colors.divider },
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.logDot,
-                      {
-                        backgroundColor:
-                          index === 0 ? colors.primary : colors.textSubtle,
-                      },
-                    ]}
-                  />
-                  <AppText
-                    variant="caption"
-                    color={index === 0 ? "text" : "textMuted"}
-                    style={styles.grow}
-                  >
-                    {describe(event, t, userOf)}
-                  </AppText>
-                </View>
-              ))}
-          </View>
-        </Panel>
-      ) : null}
-
-      {/* Room to scroll the table clear of the open sheet */}
-      {needsMe ? <View style={{ height: SHEET_CLEARANCE }} /> : null}
-
-      <BottomSheetModal
-        ref={sheetRef}
-        onDismiss={onSheetDismiss}
-        dismissable={false}
-        backdrop={false}
-      >
-        <View
-          style={{
-            paddingHorizontal: spacing.xl,
-            paddingTop: spacing.xs,
-            paddingBottom: insets.bottom + spacing.xl,
-          }}
-        >
-          {prompt}
-        </View>
-      </BottomSheetModal>
-    </View>
+  // everyone at the table, as their mascot (a new array only when who's
+  // there or how they look changes)
+  const castKey = JSON.stringify(players.map((p) => [p.seat, p.username, p.mascot ?? null]));
+  const people: Standing[] = useMemo(
+    () =>
+      [...players]
+        .sort((a, b) => a.seat - b.seat)
+        .filter((p) => p.seat < state.numPlayers)
+        .map((p) => ({ seat: p.seat, name: p.seat === mySeat ? t("game.you") : p.username, look: asLook(p.mascot) })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- castKey stands for players
+    [castKey, mySeat, state.numPlayers, t],
   );
-}
+  const seats = people.map((p) => p.seat);
+  // the table's cards and cash, a new object only when they change
+  const tableKey = JSON.stringify(state.players);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- tableKey stands for state.players
+  const table = useMemo(() => state.players, [tableKey]);
 
-/** One of my two cards, drawn card-shaped: art on top, name and what
- *  it does underneath. */
-function HandCard({
-  role,
-  lost,
-  faceDown,
-}: {
-  role: Role | null;
-  lost: boolean;
-  faceDown: boolean;
-}) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-  if (!role) return null;
-  const tint = ROLE_TINT[role];
-  const art = ROLE_ART[role];
+  // ── the set pieces: my cards dealt, challenges settled, players out ──
+  const pieces = useSetPieces(sessionId);
+  const { ready, watched, mark } = pieces;
+  useEffect(() => {
+    if (ready && watched.shown === null) {
+      // joining a game already under way: nothing from before replays
+      mark({ shown: state.log.length, dealt: watched.dealt || state.log.length > 0 });
+    }
+  });
+  const shown = watched.shown ?? state.log.length;
+  const staged: Staged | null = useMemo(() => {
+    if (!ready || watched.shown === null) return null;
+    for (let at = shown; at < state.log.length; at++) {
+      const event = state.log[at];
+      if (event.t === "challenge" || (event.t === "out" && !over)) return { at, event } as Staged;
+    }
+    return null;
+  }, [ready, watched.shown, shown, state.log, over]);
+  const dealing = ready && watched.shown !== null && !watched.dealt && !over && me !== undefined && !staged;
+  const goOn = () => {
+    tapHaptic();
+    if (staged) mark({ shown: staged.at + 1 });
+  };
 
-  if (faceDown) {
-    return (
-      <View
-        style={[
-          styles.handCard,
-          styles.handCardBack,
-          { backgroundColor: colors.well, borderColor: colors.primarySoftBorder },
-        ]}
-      >
-        {CARD_BACK ? (
-          <Image source={CARD_BACK} style={StyleSheet.absoluteFill} contentFit="cover" />
-        ) : (
-          <AppText
-            style={{ fontFamily: fontFamily.bold, fontSize: 44, color: colors.primary }}
-          >
-            ?
-          </AppText>
-        )}
+  // ── held moves: aiming an action, turning a card over, a challenge ──
+  const hold = useSharedValue(0);
+  const holdAlt = useSharedValue(0);
+  const stream = useSharedValue(1);
+  useEffect(() => {
+    hold.set(0);
+    holdAlt.set(0);
+  }, [step, hold, holdAlt]);
+
+  const action = current.action ?? null;
+  const aiming = task === "action" && action !== null && specOf(action).needsTarget;
+  const target = aiming ? (current.target ?? null) : null;
+  const claim = claimOf(state);
+  const responders = claimWindow(state) ? respondersOf(state) : [];
+  const answered = current.answered ?? null;
+  const answering = (task === "challengeAction" || task === "block" || task === "challengeBlock") && answered === null;
+  const blockRoles = task === "block" && state.action ? specOf(state.action.type).blockers : [];
+  const blockAs = current.block ?? blockRoles[0];
+  const losing = state.losing ?? (state.phase === "loseInfluence" ? { seat: state.waitingOn[0] ?? -1, why: null } : null);
+
+  // ── which moment is on the stage ──
+  const scene = !ready
+    ? "table"
+    : staged
+      ? staged.event.t === "challenge"
+        ? `show-${staged.at}`
+        : `out-${staged.at}`
+      : dealing
+        ? "deal"
+        : over
+          ? "ending"
+          : task === "action"
+            ? aiming
+              ? "aim"
+              : "felt"
+            : claimWindow(state)
+              ? `claim-${state.phase}-${turnCount(state)}`
+              : task === "reveal"
+                ? `lose-${state.log.length}`
+                : task === "exchange"
+                  ? "exchange"
+                  : state.phase === "loseInfluence"
+                    ? `doomed-${state.log.length}`
+                    : "table";
+  const kind = scene.split("-")[0];
+  const paused = panel !== null;
+
+  // ── lights on the stage ──
+  const lightsOf = (fn: (seat: number) => Light) => Object.fromEntries(seats.map((s) => [s, fn(s)])) as Record<number, Light>;
+  const out = (seat: number) => !state.players[seat]?.alive;
+
+  const lineup = (props: {
+    lights: Record<number, Light>;
+    plates?: Record<number, Plate>;
+    selectable?: number[];
+    onPick?: (seat: number) => void;
+    aim?: number | null;
+    struck?: number | null;
+    held?: boolean;
+    bare?: boolean;
+  }) => (
+    <TableLineup
+      people={people}
+      table={table}
+      lights={props.lights}
+      plates={props.plates}
+      crown={over ? state.winner : state.turn}
+      selectable={props.selectable}
+      onPick={props.onPick}
+      hold={props.held ? stream : hold}
+      aim={props.aim}
+      struck={props.struck}
+      bare={props.bare}
+      paused={paused}
+    />
+  );
+
+  const actionName = (type: ActionType) => t(`coup.actions.${type}.name`);
+  const roleName = (role: Role) => t(`coup.roles.${role}.name`);
+  const enabled = me ? ACTIONS.filter((a) => canTake(state, mySeat, a.type)).map((a) => a.type) : [];
+
+  let centre: ReactNode = null;
+  let hint: ReactNode = null;
+  let bottom: ReactNode = null;
+
+  const waitingLine = (
+    <AppText style={stageText.strong} numberOfLines={2}>
+      {state.waitingOn.length > 0
+        ? `⏳  ${t("coup.prompt.waiting", { names: state.waitingOn.map(nameOf).join(", ") })}`
+        : t("coup.stage.moving")}
+    </AppText>
+  );
+  // the last few things that happened, for the hint over the plinth
+  const recent = state.log.slice(-2).map((e) => describe(e, t, userOf));
+  const recentLines = recent.map((line, i) => (
+    <AppText key={i} style={[stageText.hint, i < recent.length - 1 && styles.faded]} numberOfLines={2}>
+      {line}
+    </AppText>
+  ));
+
+  if (kind === "show" && staged?.event.t === "challenge") {
+    const e = staged.event;
+    const loser = e.caught ? e.claimant : e.challenger;
+    centre = (
+      <Showdown
+        title={t(e.challenger === mySeat ? "coup.show.titleMe" : "coup.show.title", { challenger: nameOf(e.challenger), claimant: nameOf(e.claimant), role: roleName(e.role) })}
+        role={e.role}
+        caught={e.caught}
+        verdict={t(`coup.show.${e.caught ? "caught" : "proved"}${loser === mySeat ? "Me" : ""}`, {
+          claimant: nameOf(e.claimant),
+          loser: nameOf(loser),
+          role: roleName(e.role),
+        })}
+        lineup={lineup({
+          lights: lightsOf((s) => (s === loser ? "red" : s === e.challenger || s === e.claimant ? "lit" : "dim")),
+          bare: true,
+        })}
+      />
+    );
+    bottom = <Button label={t("coup.stage.continue")} size="lg" style={styles.main} onPress={goOn} />;
+  } else if (kind === "out" && staged?.event.t === "out") {
+    const seat = staged.event.seat;
+    centre = lineup({ lights: lightsOf((s) => (s === seat ? "red" : out(s) ? "dim" : "soft")), struck: seat });
+    hint = (
+      <>
+        <AppText style={stageText.strong} numberOfLines={2}>
+          {seat === mySeat ? t("coup.stage.youOut") : t("coup.stage.out", { name: nameOf(seat) })}
+        </AppText>
+        <AppText style={stageText.hint} numberOfLines={2}>
+          {t("coup.stage.left", { count: aliveCount(state) })}
+        </AppText>
+      </>
+    );
+    bottom = <Button label={t("coup.stage.continue")} size="lg" style={styles.main} onPress={goOn} />;
+  } else if (kind === "deal" && me) {
+    const cards: RowCard[] = me.cards.flatMap((c, i) => (c.role ? [{ key: String(i), role: c.role, lost: c.revealed }] : []));
+    centre = <CardRow cards={cards} dealt />;
+    hint = (
+      <>
+        <AppText style={stageText.strong}>{t("coup.deal.title")}</AppText>
+        <AppText style={stageText.hint} numberOfLines={3}>
+          {t("coup.deal.hint")}
+        </AppText>
+      </>
+    );
+    bottom = (
+      <Button
+        label={t("coup.deal.go")}
+        size="lg"
+        style={styles.main}
+        onPress={() => {
+          tapHaptic();
+          mark({ dealt: true });
+        }}
+      />
+    );
+  } else if (kind === "ending") {
+    centre = <Ending state={state} mySeat={mySeat} people={people} nameOf={nameOf} afterGame={stage?.afterGame} paused={paused} />;
+    bottom = stage?.onward ?? (
+      <AppText style={stageText.strong}>{state.winner === mySeat ? t("game.youWin") : t("coup.result.none")}</AppText>
+    );
+  } else if (kind === "felt") {
+    centre = (
+      <Felt
+        enabled={busy ? [] : enabled}
+        picked={action}
+        onPick={(type) => {
+          hold.set(0);
+          choose({ action: type, target: null });
+        }}
+      />
+    );
+    hint = (
+      <AppText style={stageText.hint} numberOfLines={2}>
+        {me && me.coins >= FORCED_COUP_AT ? t("coup.prompt.mustCoup") : t("coup.stage.feltHint")}
+      </AppText>
+    );
+    bottom = action ? (
+      <Button
+        label={`${ACTION_EMOJI[action]} ${actionName(action)}`}
+        size="lg"
+        style={styles.main}
+        loading={busy}
+        onPress={() => send({ type: "action", action })}
+      />
+    ) : (
+      <AppText style={stageText.strong}>{t("coup.stage.pickAction")}</AppText>
+    );
+  } else if (kind === "aim" && action) {
+    const targets = targetsFor(state, mySeat);
+    centre = lineup({
+      lights: lightsOf((s) => (s === target ? "red" : s === mySeat ? "lit" : targets.includes(s) ? (target === null ? "lit" : "soft") : "dim")),
+      selectable: busy ? [] : targets,
+      onPick: (seat) => {
+        hold.set(0);
+        choose({ target: seat });
+      },
+      aim: target,
+    });
+    hint = (
+      <>
+        <AppText style={stageText.hint} numberOfLines={2}>
+          {t(`coup.aim.${action}`)}
+        </AppText>
+        <Pressable accessibilityRole="button" hitSlop={8} onPress={() => choose({ action: null, target: null })}>
+          <AppText style={[stageText.hint, styles.link]}>{`↩  ${t("coup.aim.back")}`}</AppText>
+        </Pressable>
+      </>
+    );
+    bottom =
+      target !== null ? (
+        <HoldButton
+          key={`${step}|${target}`}
+          label={t(`coup.aim.hold.${action}`, { name: nameOf(target) })}
+          tone="bad"
+          progress={hold}
+          disabled={busy}
+          onDone={() => onMove({ type: "action", action, target })}
+        />
+      ) : (
+        <AppText style={stageText.strong}>{t("coup.aim.pick")}</AppText>
+      );
+  } else if (kind === "claim" && claim && state.action) {
+    const a = state.action;
+    const blockPhase = state.phase === "block";
+    const passed = [...state.passed, ...(answered === "pass" ? [mySeat] : [])];
+    const role = claim.role;
+    const headline = claim.block
+      ? t("coup.claim.blocks", { role: roleName(claim.role!) })
+      : role
+        ? t("coup.claim.iam", { role: roleName(role) })
+        : t(`coup.claim.plain.${a.type}`);
+    const detail = claim.block
+      ? a.actor === mySeat
+        ? t("coup.claim.againstMe", { action: actionName(a.type) })
+        : t("coup.claim.against", { name: nameOf(a.actor), action: actionName(a.type) })
+      : `${ACTION_EMOJI[a.type]} ${actionName(a.type)} · ${t(`coup.felt.${a.type}`)}${a.target !== null ? ` · ${t("coup.claim.on", { name: nameOf(a.target) })}` : ""}`;
+    const doneCount = passed.filter((s) => responders.includes(s)).length;
+    centre = (
+      <ClaimScene
+        kicker={claim.seat === mySeat ? t("coup.claim.saysMe") : t("coup.claim.says", { name: nameOf(claim.seat) })}
+        headline={headline}
+        role={claim.block ? claim.role : role}
+        detail={detail}
+        done={doneCount}
+        total={responders.length}
+        progressLabel={t(blockPhase ? "coup.claim.progressBlock" : "coup.claim.progress", { done: doneCount, total: responders.length })}
+        chips={
+          answering && blockRoles.length > 1
+            ? { roles: blockRoles, picked: blockAs, label: (r) => t("coup.claim.blockAs", { role: roleName(r) }), onPick: (r) => choose({ block: r }) }
+            : undefined
+        }
+        lineup={lineup({
+          lights: lightsOf((s) =>
+            s === claim.seat ? "lit" : !claim.block && s === a.target ? "red" : claim.block && s === a.actor ? "red" : out(s) ? "dim" : "soft",
+          ),
+          plates: Object.fromEntries(passed.map((s) => [s, "voted" as Plate])),
+        })}
+      />
+    );
+    hint = (
+      <AppText style={stageText.hint} numberOfLines={2}>
+        {answering
+          ? t(blockPhase ? "coup.prompt.block" : "coup.prompt.challenge")
+          : answered === "pass"
+            ? t("coup.claim.youLet")
+            : t(blockPhase ? "coup.claim.watchBlock" : "coup.claim.watch")}
+      </AppText>
+    );
+    bottom = answering ? (
+      <View style={styles.pair}>
+        <View style={styles.half}>
+          <Button
+            label={t("coup.claim.letGo")}
+            variant="secondary"
+            size="lg"
+            style={styles.main}
+            disabled={busy}
+            onPress={() => {
+              choose({ answered: "pass" });
+              send({ type: "pass" });
+            }}
+          />
+        </View>
+        <View style={styles.half}>
+          {blockPhase ? (
+            <HoldButton
+              key={`${step}|${blockAs}`}
+              label={t("coup.claim.holdBlock")}
+              tone="plain"
+              progress={holdAlt}
+              disabled={busy}
+              onDone={() => {
+                choose({ answered: "block" });
+                onMove({ type: "block", role: blockAs });
+              }}
+            />
+          ) : (
+            <HoldButton
+              key={step}
+              label={t("coup.claim.holdChallenge")}
+              tone="bad"
+              progress={holdAlt}
+              disabled={busy}
+              onDone={() => {
+                choose({ answered: "challenge" });
+                onMove({ type: "challenge" });
+              }}
+            />
+          )}
+        </View>
       </View>
+    ) : (
+      waitingLine
+    );
+  } else if (kind === "lose" && me) {
+    const picked = current.card ?? null;
+    const cards: RowCard[] = me.cards.flatMap((c, i) =>
+      c.role
+        ? [
+            {
+              key: String(i),
+              role: c.role,
+              lost: c.revealed,
+              mark: i === picked ? ("doom" as const) : ("none" as const),
+              tag: i === picked ? t("coup.lose.tag") : undefined,
+            },
+          ]
+        : [],
+    );
+    centre = (
+      <CardRow
+        cards={cards}
+        onPress={(key) => {
+          hold.set(0);
+          choose({ card: Number(key) });
+        }}
+      />
+    );
+    hint = (
+      <>
+        <AppText style={stageText.strong} numberOfLines={2}>
+          {loseWhy(state, losing?.why ?? null, userOf, t)}
+        </AppText>
+        <AppText style={stageText.hint} numberOfLines={2}>
+          {t("coup.lose.hint")}
+        </AppText>
+      </>
+    );
+    const role = picked !== null ? me.cards[picked]?.role : null;
+    bottom =
+      picked !== null && role ? (
+        <HoldButton
+          key={`${step}|${picked}`}
+          label={t("coup.lose.hold", { role: roleName(role) })}
+          tone="bad"
+          progress={hold}
+          disabled={busy}
+          onDone={() => onMove({ type: "reveal", card: picked })}
+        />
+      ) : (
+        <AppText style={stageText.strong}>{t("coup.prompt.reveal")}</AppText>
+      );
+  } else if (kind === "exchange" && state.exchange && me) {
+    const need = handOf(state, mySeat).length;
+    const keep = current.keep ?? [];
+    const mine = handOf(state, mySeat).length;
+    const cards: RowCard[] = state.exchange.map((role, i) => ({
+      key: String(i),
+      role,
+      mark: keep.includes(i) ? "keep" : "none",
+      tag: keep.includes(i) ? t("coup.swap.keep") : i >= mine ? t("coup.swap.new") : undefined,
+    }));
+    centre = <CardRow cards={cards} maxWidth={120} onPress={(key) => choose({ keep: toggleKeep(keep, Number(key), need) })} />;
+    hint = (
+      <AppText style={stageText.hint} numberOfLines={2}>
+        {t("coup.prompt.exchange", { count: need })}
+      </AppText>
+    );
+    bottom = (
+      <Button
+        label={`${t("coup.keep")} (${keep.length}/${need})`}
+        size="lg"
+        style={styles.main}
+        disabled={keep.length !== need}
+        loading={busy}
+        onPress={() => send({ type: "exchange", keep })}
+      />
+    );
+  } else if (kind === "doomed" && losing) {
+    const a = state.action;
+    const blow = losing.why === "coup" || losing.why === "assassinate";
+    centre = lineup({
+      lights: lightsOf((s) => (s === losing.seat ? "red" : blow && a && s === a.actor ? "lit" : out(s) ? "dim" : "soft")),
+      aim: blow ? losing.seat : null,
+      held: true,
+    });
+    hint = (
+      <AppText style={stageText.hint} numberOfLines={2}>
+        {loseWhy(state, losing.why, userOf, t)}
+      </AppText>
+    );
+    bottom = (
+      <AppText style={stageText.strong} numberOfLines={2}>
+        {t("coup.prompt.losing", { name: userOf(losing.seat) })}
+      </AppText>
+    );
+  } else {
+    // the table: whose turn it is under the brightest lamp
+    const acting = state.phase === "exchange" && state.action ? state.action.actor : state.turn;
+    centre = lineup({ lights: lightsOf((s) => (out(s) ? "dim" : s === acting ? "lit" : "soft")) });
+    hint = recentLines;
+    bottom =
+      state.phase === "exchange" ? (
+        <AppText style={stageText.strong} numberOfLines={2}>
+          {t("coup.stage.swapping", { name: userOf(acting) })}
+        </AppText>
+      ) : (
+        <AppText style={stageText.strong} numberOfLines={2}>
+          {t("game.turn", { name: nameOf(state.turn) })}
+        </AppText>
+      );
+  }
+
+  if (stage?.error && !over) {
+    hint = (
+      <>
+        {hint}
+        <AppText style={[stageText.hint, styles.error]} numberOfLines={2}>
+          {stage.error}
+        </AppText>
+      </>
     );
   }
 
+  // ── the header: whose turn, how many still in, everyone's tile ──
+  const tiles: DenTile[] = people.map((p) => ({
+    seat: p.seat,
+    name: p.name,
+    hidden: state.players[p.seat]?.cards.filter((c) => !c.revealed).length ?? 0,
+    coins: state.players[p.seat]?.coins ?? 0,
+  }));
+  const title = over
+    ? state.winner !== null
+      ? state.winner === mySeat
+        ? t("coup.end.youWin")
+        : t("coup.den.won", { name: nameOf(state.winner) })
+      : t("coup.result.none")
+    : state.turn === mySeat
+      ? t("coup.den.yourTurn")
+      : t("coup.den.turn", { name: nameOf(state.turn) });
+  const subtitle = t("coup.den.subtitle", { n: Math.max(1, turnCount(state)), left: aliveCount(state), total: state.numPlayers });
+
+  const tools = (
+    <>
+      <HandTool label={t("coup.tools.hand")} roles={me?.cards ?? []} onPress={() => setPanel("hand")} />
+      <ToolButton emoji="📜" label={t("coup.tools.record")} onPress={() => setPanel("record")} />
+      <ToolButton emoji="🎭" label={t("coup.tools.roles")} onPress={() => setPanel("roles")} />
+    </>
+  );
+  const away = kind === "show" || kind === "out" || kind === "ending" || kind === "deal";
+  const sideTools = !away;
+
   return (
-    <View
-      style={[
-        styles.handCard,
-        {
-          backgroundColor: colors.well,
-          borderColor: lost ? colors.border : alpha(tint, "AA"),
-          opacity: lost ? 0.45 : 1,
-        },
-      ]}
-    >
-      <View style={[styles.handArt, { backgroundColor: alpha(tint, "2E") }]}>
-        {art ? (
-          <Image source={art} style={StyleSheet.absoluteFill} contentFit="contain" />
-        ) : (
-          <AppText style={styles.handEmoji}>{ROLE_EMOJI[role]}</AppText>
-        )}
-      </View>
-      <View style={styles.handText}>
-        <AppText
-          variant="title"
-          numberOfLines={1}
-          style={{
-            fontSize: 17,
-            textDecorationLine: lost ? "line-through" : "none",
-          }}
+    <DenStage
+      title={title}
+      subtitle={subtitle}
+      tiles={tiles}
+      turn={over ? state.winner : state.turn}
+      under={
+        !over && me ? (
+          <>
+            <DenTag label={t("coup.tags.purse")} value={`$${me.coins}`} />
+            <DenTag label={t("coup.tags.deck")} value={String(state.deckCount)} color="#C8E8D8" />
+          </>
+        ) : undefined
+      }
+      sceneKey={scene}
+      centre={<View style={[StyleSheet.absoluteFill, sideTools && styles.besideTools]}>{centre}</View>}
+      tools={over ? undefined : tools}
+      away={away}
+      bleed={kind === "ending"}
+      hint={hint}
+      bottom={bottom}
+      onBack={stage?.onBack}
+      onRules={stage?.onRules}
+      paused={paused}
+      overlays={
+        <Popup
+          look={DEN_POPUP}
+          visible={panel !== null}
+          title={panel ? t(`coup.tools.${panel}`) : ""}
+          onClose={() => setPanel(null)}
         >
-          {t(`coup.roles.${role}.name`)}
-        </AppText>
-        <AppText variant="tiny" color="textMuted" style={{ marginTop: 2 }}>
-          {lost ? t("coup.lost") : t(`coup.roles.${role}.desc`)}
-        </AppText>
-      </View>
-    </View>
+          {panel === "hand" ? (
+            <HandPanel state={state} mySeat={mySeat} />
+          ) : panel === "record" ? (
+            <Journal pages={hustlePages(state.log, mySeat, t, userOf)} emptyText={t("coup.journal.empty")} />
+          ) : panel === "roles" ? (
+            <RolesPanel />
+          ) : null}
+        </Popup>
+      }
+    />
   );
 }
 
-/** Rounded section container. */
-function Panel({
-  children,
-  onPress,
-  highlighted = false,
-  style,
-}: {
-  children: ReactNode;
-  onPress?: () => void;
-  highlighted?: boolean;
-  style?: StyleProp<ViewStyle>;
-}) {
-  const { colors } = useTheme();
-  const panelStyle = [
-    styles.panel,
-    {
-      backgroundColor: colors.card,
-      borderColor: highlighted ? colors.primarySoftBorder : colors.border,
-    },
-    style,
-  ];
-  if (!onPress) return <View style={panelStyle}>{children}</View>;
+/** Why someone is turning a card over, in a line. */
+function loseWhy(
+  state: CoupState,
+  why: string | null,
+  nameOf: (seat: number) => string,
+  t: (k: string, o?: Record<string, unknown>) => string,
+) {
+  const seat = state.losing?.seat ?? state.waitingOn[0] ?? -1;
+  const actor = state.action ? nameOf(state.action.actor) : "";
+  if (why === "coup") return t("coup.lose.coup", { name: nameOf(seat), actor });
+  if (why === "assassinate") return t("coup.lose.assassinate", { name: nameOf(seat), actor });
+  return t("coup.lose.challenge", { name: nameOf(seat) });
+}
+
+/** The top tool: my two cards, small and fanned; tap to see them large. */
+function HandTool({ label, roles, onPress }: { label: string; roles: CoupState["players"][number]["cards"]; onPress: () => void }) {
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      hitSlop={6}
       onPress={() => {
         tapHaptic();
         onPress();
       }}
-      style={panelStyle}
+      style={({ pressed }) => [styles.handTool, pressed && styles.pressed]}
     >
-      {children}
+      <View style={styles.fan}>
+        {roles.map((card, i) =>
+          card.role ? (
+            <View key={i} style={[styles.fanCard, { left: i * 15, transform: [{ rotate: `${i ? 9 : -9}deg` }] }, card.revealed && styles.fanLost]}>
+              <RoleCard role={card.role} width={26} />
+            </View>
+          ) : null,
+        )}
+      </View>
+      <AppText style={styles.toolLabel} numberOfLines={1}>
+        {label}
+      </AppText>
     </Pressable>
   );
 }
 
-/** A card in a player's row: face down, or lost and face up. */
-function MiniCard({ role, revealed }: { role: Role | null; revealed: boolean }) {
+/** My cards, large, with what each does. */
+function HandPanel({ state, mySeat }: { state: CoupState; mySeat: number }) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
-
-  if (revealed && role) {
-    return (
-      <View
-        style={[
-          styles.miniCard,
-          styles.miniCardLost,
-          { backgroundColor: colors.well, borderColor: colors.border },
-        ]}
-      >
-        <AppText style={styles.miniEmoji}>{ROLE_EMOJI[role]}</AppText>
-        <AppText
-          variant="tiny"
-          numberOfLines={1}
-          style={{ color: colors.textSubtle, textDecorationLine: "line-through" }}
-        >
-          {t(`coup.roles.${role}.name`)}
-        </AppText>
-      </View>
-    );
-  }
+  const me = state.players[mySeat];
+  if (!me) return null;
   return (
-    <View
-      style={[
-        styles.miniCard,
-        { backgroundColor: colors.well, borderColor: colors.primarySoftBorder },
-      ]}
-    >
-      {CARD_BACK ? (
-        <Image source={CARD_BACK} style={StyleSheet.absoluteFill} contentFit="cover" />
-      ) : (
-        <AppText
-          style={{ fontFamily: fontFamily.bold, fontSize: 18, color: colors.primary }}
-        >
-          ?
-        </AppText>
-      )}
+    <View style={styles.panelGap}>
+      <View style={styles.handRow}>
+        {me.cards.map((card, i) => (card.role ? <RoleCard key={i} role={card.role} width={138} lost={card.revealed} /> : null))}
+      </View>
+      <AppText variant="caption" color="textMuted" align="center">
+        {t("coup.hand.secret")}
+      </AppText>
     </View>
   );
 }
 
-function ActionTile({
-  type,
-  claims,
-  enabled,
-  onPress,
-}: {
-  type: ActionType;
-  /** Claims a role — a bluff others can challenge. */
-  claims: boolean;
-  enabled: boolean;
-  onPress: () => void;
-}) {
+/** Every role at a glance, and the actions anyone may take. */
+function RolesPanel() {
   const { t } = useTranslation();
-  const { colors } = useTheme();
-  const tint = ACTION_TINT[type];
-  const art = ACTION_ART[type];
-
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ disabled: !enabled }}
-      disabled={!enabled}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.tile,
-        {
-          backgroundColor: alpha(tint, pressed ? "40" : "1F"),
-          borderColor: alpha(tint, claims ? "AA" : "55"),
-          opacity: enabled ? 1 : 0.35,
-        },
-      ]}
-    >
-      {art ? (
-        <Image source={art} style={styles.tileIcon} contentFit="contain" />
-      ) : (
-        <View style={[styles.tileIcon, { backgroundColor: alpha(tint, "33") }]}>
-          <Emblem emoji={ACTION_EMOJI[type]} size={28} />
-        </View>
-      )}
-      <View style={styles.grow}>
-        <AppText variant="label" style={{ fontSize: 14 }} numberOfLines={1}>
-          {t(`coup.actions.${type}.name`)}
-        </AppText>
-        <AppText
-          variant="tiny"
-          numberOfLines={2}
-          style={{ marginTop: 1, color: colors.textMuted }}
-        >
-          {t(`coup.actions.${type}.desc`)}
-        </AppText>
+    <View style={styles.panelGap}>
+      <View style={styles.rolesGrid}>
+        {ROLES.map((role) => (
+          <RoleCard key={role} role={role} width={128} />
+        ))}
       </View>
-    </Pressable>
+      {ACTIONS.filter((a) => a.claim === null).map((a) => (
+        <AppText key={a.type} variant="caption">
+          {`${ACTION_EMOJI[a.type]} ${t(`coup.actions.${a.type}.name`)} — ${t(`rules.coup.effects.${a.type}`)}${
+            a.blockers.length ? ` (${t("coup.cardText.blockedBy", { role: a.blockers.map((r) => t(`coup.roles.${r}.name`)).join(", ") })})` : ""
+          }`}
+        </AppText>
+      ))}
+      <AppText variant="caption" color="textMuted">{`${ROLE_EMOJI.duke} ${t("coup.prompt.forced")}`}</AppText>
+    </View>
   );
 }
 
-/** A log event as one sentence. */
-function describe(
-  event: LogEvent,
-  t: (key: string, options?: Record<string, unknown>) => string,
-  userOf: (seat: number) => string
-): string {
-  switch (event.t) {
-    case "action":
-      return t(`coup.log.${event.action}`, {
-        actor: userOf(event.actor),
-        target: event.target !== null ? userOf(event.target) : "",
-      });
-    case "block":
-      return t("coup.log.block", {
-        name: userOf(event.seat),
-        role: t(`coup.roles.${event.role}.name`),
-      });
-    case "blocked":
-      return t("coup.log.blocked");
-    case "challenge":
-      return t(event.caught ? "coup.log.caught" : "coup.log.proved", {
-        challenger: userOf(event.challenger),
-        claimant: userOf(event.claimant),
-        role: t(`coup.roles.${event.role}.name`),
-      });
-    case "lose":
-      return t("coup.log.lose", {
-        name: userOf(event.seat),
-        role: t(`coup.roles.${event.role}.name`),
-      });
-    case "out":
-      return t("coup.log.out", { name: userOf(event.seat) });
-  }
-}
-
 const styles = StyleSheet.create({
-  grow: { flex: 1 },
-  buttons: { flexDirection: "row", gap: 12 },
-  panel: {
-    borderWidth: 1,
-    borderRadius: 20,
-    padding: 14,
+  main: { alignSelf: "stretch" },
+  pair: { flexDirection: "row", gap: 10, alignSelf: "stretch", alignItems: "center" },
+  half: { flex: 1 },
+  besideTools: { right: 60 },
+  faded: { opacity: 0.7 },
+  link: { color: "#FFD27A", fontFamily: fontFamily.semiBold },
+  error: { color: "#FF8A80" },
+  handTool: { alignItems: "center", width: 62, gap: 1 },
+  pressed: { opacity: 0.6, transform: [{ scale: 0.94 }] },
+  fan: { width: 44, height: 40, marginBottom: 1 },
+  fanCard: { position: "absolute", top: 2 },
+  fanLost: { opacity: 0.4 },
+  toolLabel: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 10.5,
+    lineHeight: 13,
+    color: "#F1E6D2",
+    textShadowColor: "rgba(0,0,0,0.85)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
-  panelHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  player: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 10,
-  },
-  cards: { flexDirection: "row", gap: 8 },
-  miniCard: {
-    width: 40,
-    height: 52,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  miniCardLost: { width: 64, paddingHorizontal: 4, opacity: 0.7 },
-  miniEmoji: { fontSize: 16, lineHeight: 22 },
-  rule: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 2 },
-  ruleLine: { flex: 1, height: 1 },
-  hand: { flexDirection: "row", gap: 12 },
-  handCard: {
-    flex: 1,
-    aspectRatio: 0.72,
-    borderRadius: 18,
-    borderWidth: 1.5,
-    overflow: "hidden",
-  },
-  handCardBack: { alignItems: "center", justifyContent: "center" },
-  handArt: { flex: 1, alignItems: "center", justifyContent: "center" },
-  handEmoji: { fontSize: 56, lineHeight: 70 },
-  handText: { paddingHorizontal: 12, paddingVertical: 10 },
-  target: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  tiles: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  tile: {
-    width: "48%",
-    flexGrow: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    borderWidth: 1.5,
-    borderRadius: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-  },
-  tileIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  resultEmoji: { fontSize: 44, lineHeight: 54 },
-  logLine: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    paddingVertical: 7,
-    borderTopWidth: 1,
-  },
-  logDot: { width: 7, height: 7, borderRadius: 4, marginTop: 5 },
+  panelGap: { gap: 12 },
+  handRow: { flexDirection: "row", gap: 12, justifyContent: "center" },
+  rolesGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center" },
 });

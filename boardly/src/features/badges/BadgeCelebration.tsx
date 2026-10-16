@@ -1,7 +1,7 @@
-// "New badge!" — when a game ends, every badge it earned stamps down in
-// the middle of the screen, one at a time: it falls from above, lands
-// with a thud and a ring of light in its tier's colour, rays turning
-// behind it. Then the next badge to work towards, and how far is left.
+// "New badge!" — when a game ends, every level it reached stamps down in
+// the middle of the screen, one at a time: the badge in its new frame
+// falls from above, lands with a thud and a ring of light in the level's
+// colour, rays turning behind it. Then the next badge to work towards.
 // Each is remembered as shown, so the player card won't stamp it again.
 
 import { useEffect, useState } from "react";
@@ -27,7 +27,7 @@ import Animated, {
 import Svg, { Path } from "react-native-svg";
 
 import type { BadgeRecord } from "@/api/client";
-import { Badge, TIER_METAL } from "@/components/badges/Badge";
+import { Badge, TIER_GLOW } from "@/components/badges/Badge";
 import { useIsoClock } from "@/components/iso";
 import { AppText, Button } from "@/components/ui";
 import { useGameName } from "@/games/names";
@@ -35,6 +35,7 @@ import { fontFamily } from "@/theme";
 import { heavyHaptic, successHaptic } from "@/utils/haptics";
 import { badgeArt } from "./art";
 import { NextBadge } from "./NextBadge";
+import { goalOf, levelId, type LevelUp } from "./order";
 import { badgeText } from "./strings";
 
 /** Twelve soft rays fanning out from the middle. */
@@ -52,12 +53,12 @@ export function BadgeCelebration({
   onShown,
   onProfile,
 }: {
-  /** The badges to celebrate, in order; empty shows nothing. */
-  badges: BadgeRecord[];
+  /** The levels to celebrate, in order; empty shows nothing. */
+  badges: LevelUp[];
   /** The next badge to work towards, shown under the last one. */
   next: BadgeRecord | null;
-  /** Called with each badge's key once it has been shown. */
-  onShown: (key: string) => void;
+  /** Called with each level's id (levelId) once it has been shown. */
+  onShown: (id: string) => void;
   onProfile: () => void;
 }) {
   const { t } = useTranslation();
@@ -65,13 +66,14 @@ export function BadgeCelebration({
   const { width } = useWindowDimensions();
   const still = useReducedMotion();
   const [index, setIndex] = useState(0);
-  const badge = badges[index] ?? null;
+  const up = badges[index] ?? null;
+  const badge = up?.badge ?? null;
   const clock = useIsoClock(badge === null);
   const drop = useSharedValue(0);
   const flash = useSharedValue(0);
   const spin = useSharedValue(0);
 
-  const key = badge?.key;
+  const key = up ? levelId(up.badge.key, up.tier) : undefined;
   useEffect(() => {
     if (!key) return;
     onShown(key);
@@ -135,11 +137,11 @@ export function BadgeCelebration({
     opacity: Math.max(0, Math.min(1, (drop.value - 0.6) * 2.5)),
   }));
 
-  if (!badge) return null;
+  if (!up || !badge) return null;
   const last = index === badges.length - 1;
-  const { art, face } = badgeArt(badge.key, badge.gameType);
-  const text = badgeText(t, badge.key);
-  const metal = TIER_METAL[badge.tier];
+  const { art, face, frames } = badgeArt(badge.key, badge.gameType);
+  const text = badgeText(t, badge.key, goalOf(badge, up.tier));
+  const metal = { glow: TIER_GLOW[up.tier] };
   const size = Math.min(240, width * 0.6);
 
   return (
@@ -181,7 +183,8 @@ export function BadgeCelebration({
             <Badge
               art={art}
               face={face}
-              tier={badge.tier}
+              frames={frames}
+              tier={up.tier}
               size={size}
               clock={clock}
             />
@@ -199,7 +202,7 @@ export function BadgeCelebration({
         <Animated.View style={[styles.words, rise]}>
           <AppText style={styles.name}>{text.name}</AppText>
           <AppText style={[styles.tier, { color: metal.glow }]}>
-            {`${t(`badges.tiers.${badge.tier}`)}${badge.gameType ? `  ·  ${gameName(badge.gameType)}` : ""}`}
+            {`${t(`badges.tiers.${up.tier}`)}${badge.gameType ? `  ·  ${gameName(badge.gameType)}` : ""}`}
           </AppText>
           <AppText style={styles.desc}>{text.desc}</AppText>
 

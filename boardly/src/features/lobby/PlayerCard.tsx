@@ -56,12 +56,13 @@ export function PlayerCard({
         name={player.name}
         borderId={player.borderId}
         avatarUrl={player.avatarUrl}
+        mascot={player.mascot}
         size={74}
         crown={player.isHost}
         ringColor={player.isHost ? colors.accent : colors.border}
       />
       <AppText
-        style={{ fontFamily: fontFamily.semiBold, fontSize: 15, marginTop: 12 }}
+        style={{ fontFamily: fontFamily.semiBold, fontSize: 15, marginTop: 24 }}
       >
         {player.name}
       </AppText>
@@ -135,7 +136,9 @@ const styles = StyleSheet.create({
   removeMark: { fontFamily: fontFamily.semiBold },
   card: {
     alignItems: "center",
-    paddingVertical: 18,
+    // room for a border's wings and flames above and below the avatar
+    paddingTop: 26,
+    paddingBottom: 18,
     paddingHorizontal: 10,
     flex: 1,
   },

@@ -1,5 +1,6 @@
 import { BADGE_GLYPHS as G } from "@/components/badges/glyphs";
 import type { GameDefinition } from "../types";
+import { BADGE_FRAMES } from "./badgeFrames";
 import { LiarsDiceBoard } from "./LiarsDiceBoard";
 import { currentSeat, taskFor, type LiarsDiceState } from "./logic";
 
@@ -42,7 +43,7 @@ export const liarsdice: GameDefinition<LiarsDiceState> = {
   maxPlayers: 10,
   Board: LiarsDiceBoard,
   currentSeat,
-  layout: "custom",
+  layout: "stage",
   skin: {
     colors: SKIN_COLORS,
     backdrop: ["#4A1414", "rgba(20,12,12,0)"],
@@ -50,7 +51,7 @@ export const liarsdice: GameDefinition<LiarsDiceState> = {
   },
   needsMe: (state, mySeat) => taskFor(state, mySeat) !== null,
   badges: {
-    "liarsdice.firstWin": { glyph: G.cup, loop: "sway" },
-    "liarsdice.bluffer": { glyph: G.die, loop: "tumble" },
+    "liarsdice.bluffer": { glyph: G.die, emoji: "🎲", loop: "tumble" },
   },
+  badgeFrames: BADGE_FRAMES,
 };

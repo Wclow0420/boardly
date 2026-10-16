@@ -1,43 +1,38 @@
 // The profile is the player's card: who they are and the title their
-// rarest badge gives them, their numbers as tokens, every badge (alive,
-// on one clock), and how they do in each game. Settings sit behind the
-// gear.
+// best badge gives them, their numbers on gold medallions, the four
+// badges they show (the way into the badge hall), and how they do in
+// each game. Settings sit behind the gear.
 
 import { useQuery } from "@tanstack/react-query";
-import { LinearGradient } from "expo-linear-gradient";
-import { useIsFocused, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "expo-router";
+import { useRef } from "react";
 import {
-  AppState,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
 } from "react-native";
 import { useTranslation } from "react-i18next";
-import { useReducedMotion, useSharedValue } from "react-native-reanimated";
 
 import { Emblem } from "@/components/icons";
-import { api } from "@/api/client";
-import { TIER_METAL } from "@/components/badges/Badge";
-import { GearEmblem } from "@/components/engraved";
-import { useIsoClock } from "@/components/iso";
+import { TIER_GLOW } from "@/components/badges/Badge";
+import { FrameEmblem, GearEmblem } from "@/components/engraved";
 import {
   AppText,
+  AvatarStage,
+  Medallion,
   Frame,
   GorhomBottomSheetModal,
   IconButton,
-  Ribbon,
+  SectionTitle, TitlePlaque,
   Screen,
   TableBackdrop,
-  Texture,
 } from "@/components/ui";
 import { useSession } from "@/context/SessionContext";
-import { BadgeGrid } from "@/features/badges/BadgeGrid";
-import { NextBadge } from "@/features/badges/NextBadge";
-import { nextBadge, titleBadge } from "@/features/badges/order";
+import { ShowcaseRow } from "@/features/badges/ShowcaseRow";
+import { titleBadge } from "@/features/badges/order";
 import { badgeText } from "@/features/badges/strings";
-import { useSeenBadges } from "@/features/badges/useSeenBadges";
+import { useMeepleTransition } from "@/features/mascot/MeepleTransition";
 import { CoinPill } from "@/features/coins/CoinPill";
 import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
 import { useEquippedBorder } from "@/features/cosmetics/store";
@@ -46,6 +41,7 @@ import { DeleteAccountSheet } from "@/features/profile/DeleteAccountSheet";
 import { GameRecords } from "@/features/profile/GameRecords";
 import { LanguageSheet } from "@/features/profile/LanguageSheet";
 import { PhotoSheet } from "@/features/profile/PhotoSheet";
+import { statsQuery as playerCardQuery } from "@/features/profile/warm";
 import {
   SettingsSheet,
   type SettingKey,
@@ -66,41 +62,15 @@ export default function ProfileScreen() {
   const deleteSheetRef = useRef<GorhomBottomSheetModal>(null);
   const photoSheetRef = useRef<GorhomBottomSheetModal>(null);
 
-  const statsQuery = useQuery({
-    queryKey: ["stats", user?.id],
-    queryFn: async () => (await api.auth.stats()).stats,
-    enabled: user !== null,
-  });
+  // usually already fetched by the time the profile opens (useWarmProfile)
+  const statsQuery = useQuery(playerCardQuery(user?.id));
   const card = statsQuery.data;
+  // into the badge hall through the meeple, like the wardrobe
+  const go = useMeepleTransition();
 
-  // One clock for every badge; it stops when nobody is looking
-  const focused = useIsFocused();
-  const reduceMotion = useReducedMotion();
-  const [active, setActive] = useState(AppState.currentState === "active");
-  useEffect(() => {
-    const watch = AppState.addEventListener("change", (s) =>
-      setActive(s === "active"),
-    );
-    return () => watch.remove();
-  }, []);
-  const clock = useIsoClock(!focused || !active || reduceMotion);
-  const still = useSharedValue(0);
-
-  // Badges earned since this device last showed them stamp down, once
-  const { seen, markSeen } = useSeenBadges(user?.id);
-  const fresh = useMemo(() => {
-    if (!card || !seen || !focused) return new Set<string>();
-    return new Set(
-      card.badges
-        .filter((b) => b.unlockedAt && !seen.has(b.key))
-        .map((b) => b.key),
-    );
-  }, [card, seen, focused]);
-  const onStamped = useCallback((keys: string[]) => markSeen(keys), [markSeen]);
 
   const title = card ? titleBadge(card.badges) : null;
-  const next = card ? nextBadge(card.badges) : null;
-  const earned = card?.badges.filter((b) => b.unlockedAt).length ?? 0;
+  const earned = card?.badges.filter((b) => b.tier).length ?? 0;
   const tokens = [
     { label: t("profile.gamesPlayed"), value: card?.gamesPlayed },
     { label: t("profile.wins"), value: card?.wins },
@@ -116,8 +86,7 @@ export default function ProfileScreen() {
   ];
 
   const openSetting = (key: SettingKey) => {
-    if (key === "borders") router.push("/borders");
-    else if (key === "language") languageSheetRef.current?.present();
+    if (key === "language") languageSheetRef.current?.present();
     else if (key === "password") passwordSheetRef.current?.present();
     else if (key === "privacy" || key === "terms") openLegalPage(key);
     else if (key === "logout") logout();
@@ -134,128 +103,126 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        <View style={styles.header}>
-          <Ribbon
-            label={t("profile.title")}
-            colors={TABLE.ribbonGold}
-            standalone
-          />
-          <IconButton
-            accessibilityLabel={t("profile.settings")}
-            onPress={() => {
-              tapHaptic();
-              settingsRef.current?.present();
-            }}
-          >
-            <GearEmblem size={32} />
-          </IconButton>
-        </View>
-
-        {/* The player card */}
-        <Frame tone="wood" style={styles.card}>
-          <View style={styles.identity}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("profile.photo.title")}
+        {/* bordered avatars draw over everything on the page */}
+        <AvatarStage>
+          <View style={styles.header}>
+            <TitlePlaque label={t("profile.title")} />
+            <IconButton
+              accessibilityLabel={t("profile.settings")}
               onPress={() => {
                 tapHaptic();
-                photoSheetRef.current?.present();
+                settingsRef.current?.present();
               }}
             >
-              <AvatarBorder
-                name={user?.username ?? "?"}
-                size={64}
-                borderId={borderId}
-                avatarUrl={user?.avatarUrl}
-              />
-              <View style={styles.editBadge}>
-                <Emblem emoji="📷" size={16} />
-              </View>
-            </Pressable>
-            <View style={styles.who}>
-              <AppText numberOfLines={1} style={styles.username}>
-                {user?.username ?? ""}
-              </AppText>
-              <AppText
-                numberOfLines={1}
-                style={[
-                  styles.title,
-                  {
-                    color: title
-                      ? TIER_METAL[title.tier].glow
-                      : TABLE.creamMuted,
-                  },
-                ]}
+              <GearEmblem size={32} />
+            </IconButton>
+          </View>
+
+          {/* The player card */}
+          <Frame tone="wood" style={styles.card}>
+            <View style={styles.identity}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t("profile.photo.title")}
+                onPress={() => {
+                  tapHaptic();
+                  photoSheetRef.current?.present();
+                }}
               >
-                {title
-                  ? badgeText(t, title.key).name
-                  : t("profile.card.newcomer")}
-              </AppText>
-              <View style={styles.coins}>
-                <CoinPill amount={user?.coins ?? 0} />
-              </View>
-            </View>
-          </View>
-          <View style={styles.tokens}>
-            {tokens.map((token) => (
-              <View key={token.label} style={styles.tokenWrap}>
-                <LinearGradient colors={TABLE.woodButton} style={styles.token}>
-                  <Texture radius={26} />
-                  <AppText style={styles.tokenValue}>
-                    {token.value ?? "–"}
-                  </AppText>
-                </LinearGradient>
-                <AppText
-                  variant="tiny"
-                  align="center"
-                  numberOfLines={2}
-                  style={styles.tokenLabel}
+                <AvatarBorder
+                  name={user?.username ?? "?"}
+                  size={64}
+                  borderId={borderId}
+                  avatarUrl={user?.avatarUrl}
+                  mascot={user?.mascot}
                 >
-                  {token.label}
+                  <View style={styles.editBadge}>
+                    <Emblem emoji="📷" size={16} />
+                  </View>
+                </AvatarBorder>
+              </Pressable>
+              <View style={styles.who}>
+                <AppText numberOfLines={1} style={styles.username}>
+                  {user?.username ?? ""}
                 </AppText>
+                <AppText
+                  numberOfLines={1}
+                  style={[
+                    styles.title,
+                    {
+                      color: title
+                        ? TIER_GLOW[title.tier ?? "bronze"]
+                        : TABLE.creamMuted,
+                    },
+                  ]}
+                >
+                  {title
+                    ? badgeText(t, title.key).name
+                    : t("profile.card.newcomer")}
+                </AppText>
+                <View style={styles.coins}>
+                  <CoinPill amount={user?.coins ?? 0} />
+                </View>
               </View>
-            ))}
-          </View>
-          {next ? (
-            <View style={styles.next}>
-              <NextBadge badge={next} clock={still} />
             </View>
-          ) : null}
-        </Frame>
+            <View style={styles.tokens}>
+              {tokens.map((token) => (
+                <View key={token.label} style={styles.tokenWrap}>
+                  <Medallion size={TOKEN}>
+                    <AppText style={styles.tokenValue}>
+                      {token.value ?? "–"}
+                    </AppText>
+                  </Medallion>
+                  <AppText
+                    variant="tiny"
+                    align="center"
+                    numberOfLines={2}
+                    style={styles.tokenLabel}
+                  >
+                    {token.label}
+                  </AppText>
+                </View>
+              ))}
+            </View>
+            {card ? (
+              <View style={styles.next}>
+                <ShowcaseRow
+                  badges={card.showcase
+                    .map((k) => card.badges.find((b) => b.key === k))
+                    .filter((b) => b !== undefined)}
+                  count={earned}
+                  total={card.badges.length}
+                  onOpen={() => go(() => router.push("/badges"))}
+                />
+              </View>
+            ) : null}
+            {/* how the card looks: the border now; later its background
+                and a title (drawn last, so nothing on the card covers it) */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("profile.style")}
+              hitSlop={6}
+              onPress={() => {
+                tapHaptic();
+                router.push("/borders");
+              }}
+              style={({ pressed }) => [styles.style, pressed && styles.pressed]}
+            >
+              <FrameEmblem size={26} />
+              <AppText style={styles.styleText}>{t("profile.style")}</AppText>
+            </Pressable>
+          </Frame>
 
-        {/* Badges */}
-        <View style={[styles.sectionHead, { marginTop: spacing.xl }]}>
-          <Ribbon label={t("profile.card.badges")} colors={TABLE.ribbonRed} />
-          {card ? (
-            <AppText variant="tiny" style={styles.count}>
-              {t("profile.card.unlocked", {
-                n: earned,
-                total: card.badges.length,
-              })}
-            </AppText>
-          ) : null}
-        </View>
-        <Frame tone="blue" stitched style={styles.badges}>
-          {card ? (
-            <BadgeGrid
-              badges={card.badges}
-              clock={clock}
-              still={still}
-              fresh={fresh}
-              onStamped={onStamped}
-            />
-          ) : null}
-        </Frame>
-
-        {/* By game */}
-        <Ribbon
-          label={t("profile.card.byGame")}
-          colors={TABLE.ribbonGreen}
-          style={{ marginTop: spacing.xl }}
-        />
-        <Frame tone="wood" style={styles.games}>
-          {card ? <GameRecords games={card.games} /> : null}
-        </Frame>
+          {/* By game */}
+          <SectionTitle
+            label={t("profile.card.byGame")}
+            colors={TABLE.ribbonGreen}
+            style={{ marginTop: spacing.xl }}
+          />
+          <Frame tone="wood" style={styles.games}>
+            {card ? <GameRecords games={card.games} /> : null}
+          </Frame>
+        </AvatarStage>
       </ScrollView>
 
       <SettingsSheet ref={settingsRef} onPick={openSetting} />
@@ -301,22 +268,14 @@ const styles = StyleSheet.create({
   },
   editIcon: { fontSize: 12, lineHeight: 15 },
   who: { flex: 1, gap: 1 },
+  style: { position: "absolute", top: 10, right: 12, zIndex: 2, alignItems: "center" },
+  pressed: { opacity: 0.6, transform: [{ scale: 0.94 }] },
+  styleText: { fontFamily: fontFamily.semiBold, fontSize: 10, lineHeight: 13, color: TABLE.cream },
   username: { fontFamily: fontFamily.bold, fontSize: 19, color: TABLE.cream },
   title: { fontFamily: fontFamily.semiBold, fontSize: 13, letterSpacing: 0.3 },
   coins: { alignSelf: "flex-start", marginTop: 6 },
   tokens: { flexDirection: "row", justifyContent: "space-between" },
   tokenWrap: { flex: 1, alignItems: "center", gap: 4 },
-  // each number on a round wooden token
-  token: {
-    width: TOKEN,
-    height: TOKEN,
-    borderRadius: TOKEN / 2,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderBottomWidth: 4,
-    borderColor: TABLE.woodButtonBorder,
-  },
   tokenValue: { fontFamily: fontFamily.bold, fontSize: 16, color: TABLE.cream },
   tokenLabel: { color: TABLE.creamMuted },
   next: {

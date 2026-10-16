@@ -1,5 +1,6 @@
 import { BADGE_GLYPHS as G } from "@/components/badges/glyphs";
 import type { GameDefinition } from "../types";
+import { BADGE_FRAMES } from "./badgeFrames";
 import { ManorBoard } from "./ManorBoard";
 import { currentSeat, taskFor, type ManorState } from "./logic";
 
@@ -50,9 +51,10 @@ export const manor: GameDefinition<ManorState> = {
   },
   needsMe: (state, mySeat) => taskFor(state, mySeat) !== null,
   badges: {
-    "manor.dawn": { glyph: G.sunrise, loop: "bob" },
-    "manor.intruder": { glyph: G.mask, loop: "bob" },
-    "manor.caught": { glyph: G.target, loop: "pulse" },
-    "manor.lord": { glyph: G.crown, loop: "spin" },
+    "manor.dawn": { glyph: G.sunrise, emoji: "🌅", loop: "bob" },
+    "manor.intruder": { glyph: G.mask, emoji: "🎭", loop: "bob" },
+    "manor.caught": { glyph: G.target, emoji: "🎯", loop: "pulse" },
+    "manor.lord": { glyph: G.crown, emoji: "👑", loop: "spin" },
   },
+  badgeFrames: BADGE_FRAMES,
 };

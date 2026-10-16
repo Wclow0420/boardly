@@ -77,29 +77,29 @@ def _fill_in(rows):
 
 
 def _streaks(rows):
-    """(current, best, when best first reached 3) over games in order."""
+    """(current, best, when a run of wins first reached 1, 2, 3...) over
+    games in order."""
     current = best = 0
-    reached3 = None
+    reached = []
     for row in rows:
         current = current + 1 if row.won else 0
-        best = max(best, current)
-        if reached3 is None and current >= 3:
-            reached3 = row.finished_at
-    return current, best, reached3
+        if current > best:
+            best = current
+            reached.append(row.finished_at)
+    return current, best, reached
 
 
-def _count(rows, match, goal):
-    """(progress, unlocked at) of a counted badge."""
-    hits = [row for row in rows if match(row)]
-    unlocked = hits[goal - 1].finished_at if len(hits) >= goal else None
-    return len(hits), unlocked
+def _count(rows, match):
+    """(progress, when it reached 1, 2, 3...) of a counted badge."""
+    hits = [row.finished_at for row in rows if match(row)]
+    return len(hits), hits
 
 
 def _iso(when):
     return when.isoformat() if when else None
 
 
-def player_card(user_id) -> dict:
+def player_card(user_id, chosen=None) -> dict:
     rows = (
         SessionPlayer.query.filter_by(user_id=user_id)
         .order_by(SessionPlayer.finished_at)
@@ -108,7 +108,7 @@ def player_card(user_id) -> dict:
     _fill_in(rows)
     # games I was at the end of (walking out still counts as played)
     played = rows
-    current, best, reached3 = _streaks(played)
+    current, best, reached = _streaks(played)
 
     games = {}
     for row in played:
@@ -126,21 +126,22 @@ def player_card(user_id) -> dict:
 
     ctx = {
         "rows": played,
-        "best_streak": (best, reached3),
+        "best_streak": best,
+        "streak_reached": reached,
         "co_players": _co_players(user_id, played),
     }
     badges = []
     for badge in GENERAL_BADGES:
         if badge.key in MEASURED:
-            progress, unlocked = MEASURED[badge.key](ctx, badge.goal)
+            progress, times = MEASURED[badge.key](ctx)
         else:
-            progress, unlocked = _count(played, badge.match, badge.goal)
-        badges.append(_badge(badge, None, progress, unlocked))
+            progress, times = _count(played, badge.match)
+        badges.append(_badge(badge, None, progress, times))
     for key, game in GAMES.items():
         mine = [r for r in played if r.game_type == key and not r.abandoned]
         for badge in game.badges:
-            progress, unlocked = _count(mine, badge.match, badge.goal)
-            badges.append(_badge(badge, key, progress, unlocked))
+            progress, times = _count(mine, badge.match)
+            badges.append(_badge(badge, key, progress, times))
 
     return {
         "gamesPlayed": len(played),
@@ -153,26 +154,56 @@ def player_card(user_id) -> dict:
         "lastGameAt": _iso(played[-1].finished_at) if played else None,
         "games": by_game,
         "badges": badges,
+        # the four the card shows (`chosen` by the player, else the best)
+        "showcase": showcase(badges, chosen),
         "tiers": list(TIERS),
     }
 
 
-def has_badge(user_id, key) -> bool:
-    """Whether this player has earned the badge `key`."""
+# How many badges a player card shows
+SHOWCASE_SIZE = 4
+
+
+def showcase(badges, chosen) -> list:
+    """The badges a card shows: the ones the player picked (in the order
+    picked), or, if they never picked, their four best (highest level,
+    then most recently reached)."""
+    earned = {b["key"]: b for b in badges if b["tier"]}
+    picked = [k for k in dict.fromkeys(chosen or []) if k in earned]
+    if picked:
+        return picked[:SHOWCASE_SIZE]
+    best = sorted(
+        earned.values(),
+        key=lambda b: (TIERS.index(b["tier"]), b["unlocked"][b["tier"]]),
+        reverse=True,
+    )
+    return [b["key"] for b in best[:SHOWCASE_SIZE]]
+
+
+def has_badge(user_id, key, tier="bronze") -> bool:
+    """Whether this player has reached `tier` of the badge `key`."""
     return any(
-        b["key"] == key and b["unlockedAt"] for b in player_card(user_id)["badges"]
+        b["key"] == key and tier in b["unlocked"]
+        for b in player_card(user_id)["badges"]
     )
 
 
-def _badge(badge, game_type, progress, unlocked):
+def _badge(badge, game_type, progress, times):
+    """A badge as the app sees it: its four goals, how far I am, the
+    highest level reached (None before bronze) and when each level was
+    reached. `times[n - 1]` is when progress first reached n."""
+    unlocked = {
+        tier: _iso(times[goal - 1])
+        for tier, goal in zip(TIERS, badge.goals)
+        if len(times) >= goal
+    }
     return {
         "key": badge.key,
         "gameType": game_type,
-        "tier": badge.tier,
-        "series": badge.series,
-        "goal": badge.goal,
-        "progress": min(progress, badge.goal),
-        "unlockedAt": _iso(unlocked),
+        "goals": list(badge.goals),
+        "progress": min(progress, badge.goals[-1]),
+        "tier": next((t for t in reversed(TIERS) if t in unlocked), None),
+        "unlocked": unlocked,
     }
 
 

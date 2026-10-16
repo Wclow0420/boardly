@@ -28,7 +28,8 @@
     "home": "Utama",
     "games": "Permainan",
     "friends": "Rakan",
-    "profile": "Profil"
+    "profile": "Profil",
+    "mascot": "Maskot"
   },
   "home": {
     "greeting": "Hai, {{name}}!",
@@ -222,171 +223,186 @@
     "title": "Cara bermain",
     "close": "Faham",
     "tictactoe": {
-      "intro": "Bergilir-gilir meletakkan tanda anda pada papan 3×3.",
-      "sections": [
-        {
-          "title": "Cara menang",
-          "items": [
-            "Dapatkan tiga tanda anda sebaris — melintang, menegak atau menyerong.",
-            "Jika papan penuh tanpa sebarang baris, permainan seri."
-          ]
-        }
-      ]
+      "intro": "Permainan klasik: dua pemain bergilir-gilir di atas papan 3 × 3.",
+      "overview": {
+        "win": "Dapatkan tiga tanda anda sebaris untuk menang. Papan penuh tanpa barisan ialah seri.",
+        "length": "2 pemain · kira-kira seminit."
+      },
+      "play": {
+        "lead": "Bergilir-gilir, satu tanda setiap kali.",
+        "steps": {
+          "first": {
+            "title": "Pangkah bermula dahulu",
+            "detail": "Pemain pertama meletakkan pangkah, yang kedua bulatan."
+          },
+          "turn": {
+            "title": "Bergilir-gilir",
+            "detail": "Ketik petak kosong untuk meletakkan tanda anda. Tanda tidak boleh dialih."
+          },
+          "line": {
+            "title": "Tiga sebaris menang",
+            "detail": "Melintang, menegak atau menyerong."
+          },
+          "draw": {
+            "title": "Papan penuh, tiada barisan",
+            "detail": "Kesemua sembilan petak penuh tanpa barisan: seri."
+          }
+        },
+        "note": "Ambil tengah atau penjuru, dan sentiasa sekat dua sebaris. Paling hebat: buat dua ancaman serentak — serampang — supaya hanya satu boleh disekat."
+      }
     },
     "avalon": {
-      "intro": "Para ejen cuba menjayakan tiga misi. Pengkhianat bersembunyi dalam kalangan mereka dan cuba menggagalkan tiga misi.",
-      "pages": {
-        "overview": {
-          "title": "Ringkasan",
-          "intro": "Permainan berpasukan dengan identiti tersembunyi. Ejen cuba menjayakan misi; pengkhianat bersembunyi dan mensabotaj.",
-          "items": [
-            "Setiap pemain secara rahsia ialah Ejen atau Pengkhianat. Pengkhianat saling mengenali; kebanyakan ejen tidak mengenali sesiapa.",
-            "Permainan berlangsung sehingga lima misi. Ejen perlukan tiga kejayaan; pengkhianat perlukan tiga kegagalan.",
-            "Ejen yang mencapai tiga kejayaan masih perlu terlepas daripada tekaan Pembunuh Upahan tentang Pengendali.",
-            "Pengkhianat juga menang jika lima pasukan berturut-turut ditolak.",
-            "Peranan diagih secara rawak dan bergantung pada bilangan pemain (lihat Persediaan)."
-          ]
+      "intro": "Ejen cuba menyelesaikan tiga operasi. Pengkhianat bersembunyi di kalangan mereka dan cuba menggagalkan tiga operasi.",
+      "overview": {
+        "lead": "Permainan pasukan dengan peranan tersembunyi: ejen menentang pengkhianat yang bersembunyi di kalangan mereka.",
+        "win": "Ejen menang dengan menyelesaikan tiga operasi. Pengkhianat menang dengan menggagalkan tiga.",
+        "shot": "Walaupun ejen berjaya, Pembunuh Upahan dapat satu tembakan ke arah Pengendali, dan jika kena, kemenangan dirampas.",
+        "size": "{{min}}–{{max}} pemain, kira-kira 30 minit."
+      },
+      "teams": {
+        "lead": "Setiap pemain secara rahsia berada di salah satu pihak.",
+        "good": {
+          "name": "Ejen",
+          "text": "Kebanyakan pemain, dan hampir semuanya tidak tahu apa-apa. Menang apabila tiga operasi berjaya dan Pembunuh Upahan tersasar daripada Pengendali."
         },
-        "round": {
-          "title": "Setiap pusingan",
-          "items": [
-            "Ketua: pemain bermahkota mencadangkan pasukan mengikut saiz pada trek.",
-            "Undi: semua orang setuju atau tolak. Undian didedahkan serentak selepas semua mengundi.",
-            "Majoriti mutlak meluluskan pasukan. Seri bermaksud ditolak.",
-            "Ditolak: mahkota berpindah kepada pemain seterusnya, yang mencadangkan pasukan baharu. Lima penolakan berturut-turut dan pengkhianat menang.",
-            "Diluluskan: setiap ahli pasukan memainkan Berjaya atau Gagal secara rahsia — tahan kad selama 2 saat. Ejen hanya boleh main Berjaya; pengkhianat boleh pilih.",
-            "Kad didedahkan tanpa nama. Satu Gagal menggagalkan misi (Misi 4 perlukan dua dengan 7 pemain atau lebih).",
-            "Mahkota berpindah dan misi seterusnya bermula."
-          ]
-        },
-        "roles": {
-          "title": "Peranan",
-          "intro": "Lapan peranan semuanya. Peranan yang digunakan bergantung pada bilangan pemain — lihat Persediaan."
-        },
-        "setup": {
-          "title": "Persediaan",
-          "intro": "Peranan yang digunakan dan saiz pasukan bagi setiap lima misi, mengikut bilangan pemain."
-        },
-        "ending": {
-          "title": "Pengakhiran",
-          "items": [
-            "Tiga misi gagal: pengkhianat menang serta-merta.",
-            "Tiga misi berjaya: pengkhianat didedahkan dan boleh berbincang. Pembunuh Upahan kemudian menamakan seorang ejen sebagai Pengendali.",
-            "Jika tekaan betul, pengkhianat merampas kemenangan. Jika salah, ejen menang.",
-            "Apabila permainan tamat, peranan semua orang ditunjukkan."
-          ]
-        },
-        "more": {
-          "title": "Peraturan lain",
-          "items": [
-            "Perbincangan dibuat secara lisan. Sesiapa boleh berbohong tentang apa sahaja — tetapi jangan tunjuk skrin anda.",
-            "Kad peranan anda tertutup sehingga anda mengetiknya. Ketik lagi untuk menyembunyikannya.",
-            "Undian pasukan menjadi umum selepas didedahkan dan kekal dalam Sejarah. Kad misi tidak pernah dikaitkan dengan pemain — hanya bilangan Gagal ditunjukkan.",
-            "Pengendali: beri bayangan, jangan umumkan. Lebih jelas anda, lebih mudah kerja Pembunuh Upahan.",
-            "Pengkhianat dalam pasukan tidak semestinya main Gagal. Main Berjaya boleh membina kepercayaan.",
-            "Jika pemain keluar di tengah permainan, permainan tamat untuk semua dan semua peranan didedahkan."
-          ]
+        "evil": {
+          "name": "Pengkhianat",
+          "text": "Saling mengenali (kecuali Kad Liar). Menang dengan tiga operasi gagal, {{rejections}} pasukan ditolak berturut-turut, atau Pembunuh Upahan menemui Pengendali."
         }
       },
-      "roleFacts": {
-        "merlin": {
-          "knows": "Semua pengkhianat, kecuali Ejen Tidur.",
-          "note": "Kekal tersembunyi. Jika ejen menjayakan tiga misi, Pembunuh Upahan menang dengan menamakan anda."
-        },
-        "percival": {
-          "knows": "Siapa Pengendali dan Umpan — tetapi bukan yang mana satu.",
-          "note": "Kenal pasti Pengendali sebenar dan lindungi mereka."
-        },
-        "servant": {
-          "knows": "Tiada apa-apa."
-        },
-        "assassin": {
-          "knows": "Pengkhianat lain, kecuali Kad Liar.",
-          "note": "Jika ejen menjayakan tiga misi, anda menamakan seorang ejen sebagai Pengendali. Teka betul dan pengkhianat menang."
-        },
-        "morgana": {
-          "knows": "Pengkhianat lain, kecuali Kad Liar.",
-          "note": "Pengawal Peribadi melihat anda sebagai kemungkinan Pengendali."
-        },
-        "mordred": {
-          "knows": "Pengkhianat lain, kecuali Kad Liar.",
-          "note": "Pengendali tidak dapat melihat anda."
-        },
-        "oberon": {
-          "knows": "Tiada apa-apa — dan pengkhianat lain juga tidak mengenali anda.",
-          "note": "Tetapi Pengendali nampak anda."
-        },
-        "minion": {
-          "knows": "Pengkhianat lain, kecuali Kad Liar."
-        }
+      "tags": {
+        "perGame": "{{n}} setiap permainan",
+        "from": "Dari {{n}} pemain",
+        "only": "Hanya dengan {{counts}} pemain"
       },
-      "labels": {
-        "knows": "Tahu",
-        "note": "Nota",
-        "teams": "Pasukan",
-        "players": "{{count}} pemain",
-        "split": "{{agents}} ejen · {{moles}} pengkhianat",
-        "twoFails": "* Misi ini memerlukan dua kad Gagal untuk gagal."
+      "roles": {
+        "lead": "Siapa anda mungkin. Hanya anda nampak kad anda; sesetengah peranan juga nampak orang lain.",
+        "merlin": "Nampak setiap pengkhianat kecuali Ejen Tidur. Bimbing ejen dengan petunjuk: jika Pembunuh Upahan menamakan anda di akhir, pengkhianat menang.",
+        "percival": "Nampak Pengendali dan Umpan, tetapi tak tahu yang mana satu. Cari Pengendali sebenar dan lindungi dia.",
+        "servant": "Tidak tahu apa-apa. Perhatikan undian dan keputusan untuk mencari pengkhianat.",
+        "assassin": "Kenal pengkhianat lain (kecuali Kad Liar). Jika ejen menang tiga operasi, dapat satu tembakan ke arah Pengendali.",
+        "morgana": "Kenal pengkhianat lain (kecuali Kad Liar). Kelihatan seperti Pengendali kepada Pengawal Peribadi.",
+        "mordred": "Kenal pengkhianat lain (kecuali Kad Liar), dan Pengendali tidak nampak Ejen Tidur.",
+        "oberon": "Pengkhianat seorang diri: tak kenal pengkhianat lain, dan mereka tak kenal Kad Liar. Pengendali tetap nampak Kad Liar.",
+        "minion": "Kenal pengkhianat lain (kecuali Kad Liar). Sabotaj tanpa tertangkap."
+      },
+      "play": {
+        "lead": "Sehingga lima operasi. Setiap satu begini:",
+        "role": {
+          "title": "Lihat peranan anda",
+          "detail": "Pada mulanya, ketik kad anda untuk melihat siapa anda dan siapa yang anda kenal. Rahsiakan."
+        },
+        "team": {
+          "title": "Ketua memilih pasukan",
+          "detail": "Ketua memilih seramai yang diperlukan operasi. Semua orang nampak pilihannya. Bincangkan."
+        },
+        "vote": {
+          "title": "Semua mengundi",
+          "detail": "Setuju atau tolak, serentak. Lebih separuh mesti setuju; seri bermakna ditolak."
+        },
+        "rejected": {
+          "title": "Ditolak? Ketua seterusnya",
+          "detail": "Mahkota ketua beralih satu tempat dan pasukan baru dipilih. {{rejections}} pasukan ditolak berturut-turut dan pengkhianat menang."
+        },
+        "operation": {
+          "title": "Pasukan main kad",
+          "detail": "Setiap ahli secara rahsia menekan Berjaya atau Gagal selama 2 saat. Ejen hanya boleh main Berjaya; pengkhianat boleh main mana-mana."
+        },
+        "verdict": {
+          "title": "Keputusan",
+          "detail": "Kad ditunjukkan tanpa nama. Satu Gagal menggagalkan operasi (Operasi 4 perlu dua dengan 7 pemain atau lebih). Kemudian ketua seterusnya memilih."
+        },
+        "end": {
+          "title": "Tiga yang sama menamatkannya",
+          "detail": "Tiga operasi gagal: pengkhianat menang. Tiga berjaya: terus ke tembakan Pembunuh Upahan."
+        },
+        "shot": {
+          "title": "Tembakan Pembunuh Upahan",
+          "detail": "Pengkhianat didedahkan dan berbincang. Pembunuh Upahan menekan untuk menamakan seorang ejen: jika Pengendali, pengkhianat menang; jika bukan, ejen menang."
+        },
+        "talk": "Bercakap dengan kuat; sesiapa boleh menipu. Undian adalah terbuka, tetapi tiada siapa tahu siapa main Gagal.",
+        "tip": "Pengendali: beri petunjuk, jangan umumkan. Pengkhianat: main Berjaya boleh meraih kepercayaan."
+      },
+      "counts": {
+        "lead": "Siapa dalam permainan dan saiz pasukan setiap operasi, mengikut bilangan pemain.",
+        "teams": "Pihak dan pasukan operasi",
+        "op": "Op {{n}}",
+        "twoFails": "* Operasi ini perlu dua kad Gagal untuk gagal.",
+        "roles": "Peranan dalam permainan"
       }
     },
     "coup": {
-      "intro": "Setiap pemain ada dua kad tersembunyi. Menipu, mencabar dan menyekat sehingga anda pemain terakhir yang masih ada kad. Dek ada 15 kad: 3 setiap satu untuk Bos, Samseng, Penyeluk Saku, Orang Tengah dan Makcik.",
-      "pages": {
-        "overview": {
-          "title": "Ringkasan",
-          "intro": "Setiap pemain ada dua kad tersembunyi. Menipu, mencabar dan menyekat sehingga anda pemain terakhir yang masih ada kad.",
-          "items": [
-            "Persediaan: setiap pemain dapat 2 kad tertutup dan $2. Dek ada 15 kad — 3 setiap satu untuk Bos, Samseng, Penyeluk Saku, Orang Tengah dan Makcik.",
-            "Pada giliran anda, ambil tepat satu tindakan. Sesetengah tindakan memerlukan peranan — tetapi anda boleh mendakwa peranan yang anda tiada.",
-            "Selepas anda mengumumkan tindakan, pemain lain boleh mencabar dakwaan anda atau menyekat tindakan itu.",
-            "Kad yang hilang akan dibuka. Hilang kedua-duanya dan anda tersingkir.",
-            "Pemain terakhir yang masih ada kad menang.",
-            "Wang dan kad yang hilang semua pemain adalah umum. Kad tertutup dan dek adalah rahsia."
-          ]
+      "intro": "Permainan kad bluf: mengaku apa-apa peranan, tangkap penipu, dan jadilah pemain terakhir yang masih ada kad.",
+      "overview": {
+        "lead": "Permainan kad bluf: jadilah pemain terakhir yang masih ada kad.",
+        "cards": "Setiap orang dapat dua kad rahsia dan {{cash}}. Setiap kad ialah satu peranan, dan setiap peranan ada kuasanya.",
+        "win": "Anda boleh mengaku apa-apa peranan, walaupun tiada kadnya. Jika dicabar dan tertangkap menipu, anda hilang satu kad. Hilang kedua-duanya dan anda terkeluar.",
+        "size": "{{min}}–{{max}} pemain, kira-kira 15 minit."
+      },
+      "roles": {
+        "lead": "Lima peranan, tiga kad setiap satu. Anda boleh mengaku mana-mana peranan, ada atau tidak.",
+        "duke": "Pencari wang. Kutip sewa dan halang orang meminjam.",
+        "assassin": "Bayar untuk membelasah pemain; dia hilang satu kad.",
+        "captain": "Ambil $2 daripada pemain lain, dan halang orang menyeluk saku anda.",
+        "ambassador": "Tukar kad dengan dek untuk menukar peranan secara rahsia, dan halang seluk saku.",
+        "contessa": "Tiada tindakan sendiri, tetapi menyelamatkan anda daripada dibelasah."
+      },
+      "tags": {
+        "does": "Buat: {{action}}",
+        "blocks": "Halang: {{action}}",
+        "cost": "Kos {{cash}}",
+        "free": "Percuma",
+        "claims": "Mengaku {{role}}",
+        "noClaim": "Tiada peranan",
+        "unblockable": "Tak boleh dihalang",
+        "anyoneBlocks": "Sesiapa halang dengan {{roles}}",
+        "targetBlocks": "Sasaran halang dengan {{roles}}"
+      },
+      "play": {
+        "lead": "Pemain bergilir-gilir. Setiap giliran begini:",
+        "act": {
+          "title": "Pilih satu tindakan",
+          "detail": "Letakkan cip anda pada satu tindakan di atas kain. Dengan {{forced}} atau lebih, anda mesti Tutup Kedai."
         },
-        "roles": {
-          "title": "Peranan",
-          "intro": "Lima peranan, tiga salinan setiap satu. Peranan memberi anda tindakan khas, membolehkan anda menyekat sesuatu, atau kedua-duanya."
+        "claim": {
+          "title": "Mengaku peranannya, jika ada",
+          "detail": "Tindakan berperanan bermaksud anda pegang kad itu. Anda mungkin menipu."
         },
-        "actions": {
-          "title": "Tindakan",
-          "intro": "Ambil satu setiap giliran. \"Perlu\" ialah peranan yang mesti anda dakwa — benar atau tidak."
+        "challenge": {
+          "title": "Sesiapa boleh mencabar",
+          "detail": "Pemain lain sama ada biarkan atau cabar. Tertangkap menipu: anda hilang satu kad dan tindakan batal. Bercakap benar: pencabar hilang satu kad, dan kad yang anda tunjuk ditukar dengan kad baru."
         },
-        "challenges": {
-          "title": "Cabaran",
-          "items": [
-            "Setiap kali pemain mendakwa peranan — untuk bertindak atau menyekat — mana-mana pemain lain boleh mencabar.",
-            "Pemain lain memilih Cabar atau Benarkan. Cabaran pertama menentukannya.",
-            "Jika ia tipu: penipu kehilangan kad. Tindakan tipu tidak berlaku; sekatan tipu gagal dan tindakan diteruskan.",
-            "Jika ia benar: pencabar kehilangan kad. Kad yang dibuktikan dikocok semula ke dalam dek dan diganti dengan yang baharu, supaya ia kekal rahsia.",
-            "Kerja Harian, Pinjam dan Tutup Kedai tidak mendakwa peranan, jadi tidak boleh dicabar.",
-            "Selepas anda ketik Benarkan, anda tidak boleh mencabar dakwaan itu lagi."
-          ]
+        "block": {
+          "title": "Sesetengah tindakan boleh dihalang",
+          "detail": "Halangan juga mengaku peranan, jadi boleh dicabar dengan cara yang sama. Halaman Tindakan menunjukkan siapa halang apa."
         },
-        "blocks": {
-          "title": "Sekatan",
-          "items": [
-            "Pinjam boleh disekat oleh mana-mana pemain yang mendakwa Bos.",
-            "Seluk Saku hanya boleh disekat oleh sasarannya, dengan mendakwa Penyeluk Saku atau Orang Tengah.",
-            "Belasah hanya boleh disekat oleh sasarannya, dengan mendakwa Makcik.",
-            "Sekatan ialah dakwaan, jadi sesiapa boleh mencabarnya. Jika sekatan itu tipu, penyekat kehilangan kad dan tindakan tetap berlaku.",
-            "Sekatan yang berjaya membatalkan tindakan. Wang yang sudah dibayar tidak dikembalikan.",
-            "Kerja Harian, Kutip Sewa, Tukar dan Tutup Kedai tidak boleh disekat."
-          ]
+        "resolve": {
+          "title": "Tiada siapa halang? Ia berlaku",
+          "detail": "Ambil wang, tukar kad, atau buat sasaran hilang satu kad. Kemudian giliran pemain seterusnya."
         },
-        "more": {
-          "title": "Peraturan lain",
-          "items": [
-            "Dengan $10 atau lebih pada permulaan giliran, anda mesti Tutup Kedai seseorang.",
-            "Belasah memerlukan bayaran $3 dahulu. Anda dapat semula hanya jika tertangkap menipu sebagai Samseng — bukan jika tindakan disekat.",
-            "Rugi berganda: menipu sebagai Makcik terhadap Belasah dan dicabar, anda hilang satu kad kerana menipu dan satu lagi kerana Belasah.",
-            "Dengan dua kad, anda pilih kad mana yang dilepaskan. Dengan satu kad, tiada pilihan.",
-            "Apabila tersingkir, wang anda hilang dan anda hanya menonton.",
-            "Dua pemain: pemain pertama bermula dengan $1, bukan $2.",
-            "Jika pemain keluar di tengah permainan, permainan tamat untuk semua tanpa pemenang.",
-            "Ketik kad anda untuk menutupnya apabila ada yang mungkin mengintai."
-          ]
-        }
+        "lose": {
+          "title": "Hilang kad",
+          "detail": "Anda pilih kad mana untuk dibuka. Ia terkeluar buat selamanya."
+        },
+        "win": {
+          "title": "Yang terakhir menang",
+          "detail": "Hilang kedua-dua kad dan anda terkeluar. Pemain terakhir yang masih ada kad tertutup menang."
+        },
+        "doubleLoss": "{{cost}} untuk Belasah tetap hilang walaupun dihalang. Pura-pura Makcik untuk menghalangnya dan tertangkap, anda hilang kedua-dua kad sekali gus.",
+        "secret": "Hanya anda nampak kad anda. Ketik untuk menutupnya jika ada yang mengintai."
+      },
+      "actions": {
+        "lead": "Satu tindakan setiap giliran. Tindakan yang mengaku peranan boleh dicabar.",
+        "forced": "Dengan {{forced}} atau lebih pada awal giliran, anda mesti Tutup Kedai seseorang."
+      },
+      "counts": {
+        "lead": "Setiap permainan guna {{cards}} kad yang sama: tiga untuk setiap peranan.",
+        "dealt": "Kad diagih",
+        "deck": "Baki dalam dek",
+        "cash": "Wang permulaan",
+        "first": "Wang pemain pertama",
+        "two": "Dengan 2 pemain, pemain pertama mula dengan {{first}}, bukan {{cash}}.",
+        "leave": "Jika pemain keluar di tengah permainan, permainan tamat tanpa pemenang."
       },
       "effects": {
         "income": "Ambil $1 daripada bank.",
@@ -396,304 +412,469 @@
         "exchange": "Cabut 2 kad daripada dek, kemudian pulangkan mana-mana 2. Menukar peranan anda secara rahsia.",
         "assassinate": "Pilih seorang pemain; mereka kehilangan kad.",
         "coup": "Pilih seorang pemain; mereka kehilangan kad. Tiada apa boleh menghalangnya."
-      },
-      "labels": {
-        "action": "Tindakan",
-        "blocks": "Menyekat",
-        "cost": "Kos",
-        "needs": "Perlu",
-        "blockedBy": "Disekat oleh",
-        "noAction": "Tiada tindakan sendiri",
-        "blocksNothing": "Tiada",
-        "free": "Percuma",
-        "anyone": "Tiada peranan — sesiapa boleh buat",
-        "needsRole": "{{role}} (dakwa)",
-        "byAnyone": "(mana-mana pemain)",
-        "byTarget": "(sasaran sahaja)",
-        "noBlock": "Tidak boleh disekat"
       }
     },
     "overview": "Ringkasan",
     "manor": {
-      "intro": "Seorang datuk tua yang kaya menjemput saudara-maranya bermalam. Sebahagian daripada mereka ialah penceroboh yang menyamar dan mahu dia mati sebelum subuh. Yang lain mesti memastikan dia hidup hingga 6 pagi.",
-      "sections": [
-        {
-          "title": "Pihak",
-          "items": [
-            "Keluarga: Butler, Pengawal Keselamatan dan Tetamu. Penceroboh: 1 untuk 4 pemain, 2 untuk 5–6, 3 untuk 7–8.",
-            "Penceroboh saling mengenali. Butler sentiasa tahu di mana datuk tua pada awal setiap jam. Pengawal Keselamatan membawa lampu suluh.",
-            "Dengan 4 pemain, penceroboh tunggal bermula dengan pisau."
-          ]
+      "intro": "Seorang datuk tua yang kaya menjemput saudara-maranya bermalam. Sebahagian daripada mereka ialah penceroboh yang menyamar.",
+      "overview": {
+        "win": "Penceroboh menang jika mereka menyerangnya dua kali sebelum subuh. Isi rumah menang jika dia masih hidup pada pukul 6 pagi, atau semua penceroboh dikurung.",
+        "length": "{{min}}–{{max}} pemain · {{hours}} jam malam · kira-kira 30 minit."
+      },
+      "teams": {
+        "lead": "Dua pihak. Tiada siapa tahu siapa siapa — kecuali penceroboh, yang saling mengenali.",
+        "household": {
+          "name": "Isi rumah",
+          "text": "Butler, Pengawal Keselamatan dan Tetamu. Pastikan datuk tua hidup sehingga 6 pagi, atau kurung semua penceroboh."
         },
-        {
-          "title": "Setiap jam",
-          "items": [
-            "Malam bermula 10 malam hingga 6 pagi: 8 jam. Semua bermula di Dewan Besar; datuk tua bermula di Bilik Tidur.",
-            "Bergerak: secara rahsia kekal, atau pergi satu bilik ke atas, bawah, kiri atau kanan. Penceroboh boleh menyelinap ke mana-mana bilik. Tiada sesiapa boleh kekal di Bilik Kawalan dua jam berturut-turut.",
-            "Bertindak: Secara rahsia pilih satu tindakan. Gelap — anda tahu sama ada ada orang lain di bilik anda dan sama ada datuk tua ada, tetapi bukan siapa, berapa ramai atau apa yang mereka buat."
-          ]
-        },
-        {
-          "title": "Tindakan",
-          "items": [
-            "Kawal: lindungi datuk tua. Serang (penceroboh bersenjata): mencederakannya jika penyerang lebih ramai daripada pengawal.",
-            "Ambil senjata: pisau (Dapur), kaki lilin (Perpustakaan) atau racun (Bilik Wain). Anda bawa satu barang; mengambil yang lain akan menukarnya.",
-            "Baiki kamera (Perpustakaan, Bilik Tidur, Dapur, Ruang Masuk, Taman); penceroboh boleh merosakkannya. Anda hanya nampak sama ada kamera hidup dari biliknya sendiri atau dari Bilik Kawalan — tiada sesiapa diberitahu apabila ia berubah.",
-            "Tonton monitor (Bilik Kawalan): lihat siapa yang dirakam kamera jam ini dan sama ada datuk tua masuk atau keluar — bukan apa yang orang buat.",
-            "Geledah: raba seseorang secara rawak — anda hanya tahu sama ada dia membawa sesuatu. Pengawal Keselamatan tahu siapa dan apa yang dibawa.",
-            "Lampu suluh (Pengawal Keselamatan): lihat siapa di bilik anda dan apa yang setiap orang buat jam ini. Iring: datuk tua ikut anda jam seterusnya.",
-            "Sekali dalam permainan, penceroboh boleh menyembunyikan senjata selama sejam: geledahan tidak menjumpai apa-apa."
-          ]
-        },
-        {
-          "title": "Mesyuarat",
-          "items": [
-            "Selepas tengah malam, selepas 3 pagi dan selepas setiap jeritan, keluarga berbincang dan mengundi.",
-            "Undi majoriti mengurung seorang pemain hingga subuh. Perannya kekal rahsia."
-          ]
-        },
-        {
-          "title": "Cara tamat",
-          "items": [
-            "Penceroboh menang jika datuk tua diserang dua kali. Serangan pertama membuatnya menjerit — semua tahu biliknya, bukan siapa.",
-            "Keluarga menang jika semua penceroboh dikurung, atau datuk tua masih hidup ketika subuh.",
-            "Ketika subuh, penceroboh dapat satu peluang terakhir: ketua mereka meneka Butler. Jika betul, penceroboh menang."
-          ]
+        "intruders": {
+          "name": "Penceroboh",
+          "text": "Serang datuk tua dua kali sebelum subuh. Jika dia selamat, teka Butler pada waktu subuh dan anda tetap menang."
         }
-      ]
+      },
+      "roles": {
+        "lead": "Peranan anda rahsia. Anda melihatnya apabila malam bermula.",
+        "perGame": "{{count}} setiap permainan",
+        "perGame_other": "{{count}} setiap permainan",
+        "range": "{{from}}–{{to}}, ikut bilangan pemain",
+        "butler": "Sentiasa tahu bilik datuk tua pada awal setiap jam. Pimpin isi rumah secara senyap: jika penceroboh meneka anda pada waktu subuh, mereka menang.",
+        "guard": "Membawa lampu suluh: lihat siapa dalam bilik anda dan apa yang setiap orang buat. Geledahan anda menunjukkan siapa yang digeledah dan apa yang dibawa.",
+        "guest": "Tiada kuasa khas. Kawal datuk tua, baiki kamera, geledah, dan cari penceroboh.",
+        "intruder": "Kenal penceroboh lain. Menyelinap ke mana-mana bilik setiap jam, menyerang dengan senjata, merosakkan kamera. Sekali sepermainan, boleh sorokkan senjata daripada geledahan."
+      },
+      "play": {
+        "lead": "Malam berlangsung dari 10 malam hingga 6 pagi. Setiap jam ada dua langkah rahsia.",
+        "steps": {
+          "start": {
+            "title": "Malam tiba",
+            "detail": "Semua orang bermula di Dewan Besar, datuk tua di Bilik Tidur. Lihat peranan anda."
+          },
+          "move": {
+            "title": "Bergerak",
+            "detail": "Secara rahsia, kekal atau pergi satu bilik ke atas, bawah, kiri atau kanan. Penceroboh boleh ke mana-mana bilik."
+          },
+          "act": {
+            "title": "Bertindak",
+            "detail": "Secara rahsia, pilih satu tindakan untuk bilik anda (lihat Tindakan). Semuanya berlaku serentak."
+          },
+          "dark": {
+            "title": "Gelap gelita",
+            "detail": "Anda hanya tahu sama ada ada orang lain dalam bilik anda dan sama ada datuk tua ada — bukan siapa, atau apa yang mereka buat. Buku nota anda menyimpan apa yang anda tahu."
+          },
+          "owner": {
+            "title": "Datuk tua merayau",
+            "detail": "Setiap jam dia pergi ke bilik sebelah atau kekal — kecuali seseorang mengiringnya."
+          },
+          "meet": {
+            "title": "Berbincang dan undi",
+            "detail": "Dalam mesyuarat (lihat Peristiwa khas), kongsi apa yang anda lihat — atau berbohong — dan undi untuk mengurung seseorang."
+          },
+          "dawn": {
+            "title": "Subuh",
+            "detail": "Jika dia masih hidup pada 6 pagi, penceroboh dapat satu tekaan terakhir tentang Butler."
+          }
+        },
+        "note": "Tiada siapa boleh kekal di Bilik Kawalan dua jam berturut-turut."
+      },
+      "actions": {
+        "lead": "Pilih satu setiap jam. Apa yang boleh dibuat bergantung pada bilik dan peranan anda.",
+        "tags": {
+          "ownerHere": "Datuk tua ada",
+          "intruders": "Penceroboh",
+          "weapon": "Perlu senjata",
+          "guard": "Pengawal",
+          "security": "Bilik Kawalan",
+          "broken": "Kamera rosak di sini",
+          "working": "Kamera berfungsi di sini",
+          "someone": "Ada orang lain",
+          "once": "Sekali sepermainan",
+          "itemHere": "Senjata di sini"
+        },
+        "guard": "Setiap pengawal menghalang seorang penyerang.",
+        "attack": "Mencederakannya jika penyerang lebih ramai daripada pengawal. Setiap serangan membuatnya menjerit.",
+        "escort": "Dia mengikut anda jam seterusnya, bukan merayau.",
+        "takeName": "Ambil senjata",
+        "take": "Ambil senjata yang ada dalam bilik anda. Anda bawa satu barang; ambil yang lain dan barang anda ditinggalkan.",
+        "fix": "Hidupkan kamera yang rosak. Ia merakam siapa keluar masuk.",
+        "break": "Matikan kamera yang berfungsi. Tiada siapa diberitahu.",
+        "watch": "Lihat siapa yang dirakam setiap kamera berfungsi jam ini, dan sama ada datuk tua datang atau pergi — bukan apa yang dibuat.",
+        "search": "Raba seseorang secara rawak dalam bilik anda: anda hanya rasa sama ada dia membawa sesuatu. Pengawal nampak siapa dan apa.",
+        "flashlight": "Lihat siapa dalam bilik anda dan apa yang setiap orang buat jam ini.",
+        "wait": "Tidak buat apa-apa jam ini.",
+        "hideName": "Sorok senjata",
+        "hide": "Bersama tindakan anda: geledahan tidak menjumpai apa-apa pada anda jam ini."
+      },
+      "rooms": {
+        "lead": "Sembilan bilik dalam pelan 3 × 3. Anda ke bilik sebelah, tidak sekali-kali menyerong.",
+        "camera": "📷 Kamera",
+        "next": "Sebelah: {{rooms}}",
+        "hall": "Semua orang bermula di sini.",
+        "bedroom": "Datuk tua bermula di sini.",
+        "security": "Tonton monitor di sini dan lihat semua kamera. Tidak boleh kekal dua jam berturut-turut.",
+        "note": "Semua kamera rosak pada awal malam. Anda hanya nampak keadaan kamera dari biliknya sendiri atau dari Bilik Kawalan."
+      },
+      "events": {
+        "lead": "Detik yang menghentikan malam.",
+        "scream": {
+          "name": "Jeritan",
+          "text": "Apabila datuk tua diserang, semua orang dengar dari bilik mana — bukan siapa. Mesyuarat menyusul. Serangan kedua membunuhnya."
+        },
+        "meeting": {
+          "name": "Mesyuarat isi rumah",
+          "text": "Selepas tengah malam, selepas 3 pagi dan selepas setiap jeritan. Semua yang masih bebas mengundi; majoriti mengurung seorang pemain hingga subuh, peranannya kekal rahsia. Kurung semua penceroboh dan isi rumah menang."
+        },
+        "dawn": {
+          "name": "Subuh",
+          "text": "Pada 6 pagi penceroboh didedahkan. Ketua mereka menamakan seorang pemain sebagai Butler: betul, penceroboh menang; salah, isi rumah menang."
+        }
+      },
+      "counts": {
+        "lead": "Lebih ramai pemain, lebih ramai penceroboh.",
+        "note": "Dengan {{min}} pemain, penceroboh tunggal memulakan malam dengan pisau."
+      }
     },
     "liarsdice": {
-      "intro": "Permainan klasik di bar. Semua orang goncang 5 dadu dan hanya lihat dadu sendiri. Bergilir-gilir teka berapa banyak satu nombor di seluruh meja — sehingga ada yang kata anda menipu.",
-      "sections": [
-        {
-          "title": "Panggilan",
-          "items": [
-            "Panggilan ialah \"N × nombor\": sekurang-kurangnya N dadu di meja menunjukkan nombor itu, kira dadu semua orang.",
-            "Panggilan pertama mesti lebih daripada bilangan pemain (2 pemain: sekurang-kurangnya 3).",
-            "Setiap panggilan mesti lebih tinggi: lebih banyak dadu, atau jumlah sama dengan nombor lebih tinggi. Susunan: 2 < 3 < 4 < 5 < 6 < 1.",
-            "Bersepah (散骰): jika kelima-lima dadu anda berbeza, anda boleh tunjukkan kepada semua dan goncang semula — bila-bila masa sebelum panggilan pertama anda dalam pusingan itu."
-          ]
+      "intro": "Permainan klasik bar: semua orang goncang lima dadu di bawah cawan dan hanya lihat dadu sendiri.",
+      "overview": {
+        "calls": "Bergilir-gilir teka berapa banyak dadu satu nombor di seluruh meja, setiap panggilan lebih tinggi daripada yang terakhir — sehingga ada yang kata ia tipu.",
+        "win": "Kalah panggilan, anda minum. Kalah mati: {{cups}} cawan dan anda keluar; yang terakhir bertahan menang. Tanpa had: paling sedikit cawan menang apabila meja berhenti.",
+        "length": "{{min}}–{{max}} pemain · kira-kira 15 minit."
+      },
+      "play": {
+        "lead": "Satu pusingan, dari goncang hingga minum.",
+        "steps": {
+          "shake": {
+            "title": "Semua goncang",
+            "detail": "Lima dadu setiap orang, di bawah cawan. Lihat dadu sendiri sahaja."
+          },
+          "call": {
+            "title": "Panggilan pertama",
+            "detail": "\"4 × lima\" bermaksud sekurang-kurangnya empat dadu 5 di seluruh meja, kira dadu semua orang. Panggil lebih banyak dadu daripada bilangan pemain."
+          },
+          "raise": {
+            "title": "Naikkan, atau kata tipu",
+            "detail": "Pemain seterusnya: panggil lebih tinggi — lebih banyak dadu, atau jumlah sama dengan nombor lebih tinggi — atau buka panggilan terakhir. Susunan: 2 < 3 < 4 < 5 < 6 < 1."
+          },
+          "reveal": {
+            "title": "Angkat cawan dan kira",
+            "detail": "Cukup dadu: yang kata tipu minum. Tidak cukup: yang memanggil minum."
+          },
+          "again": {
+            "title": "Goncang semula",
+            "detail": "Yang kalah memulakan pusingan seterusnya."
+          }
         },
-        {
-          "title": "1 joker dan zhai",
-          "items": [
-            "Panggilan pertama menentukan pusingan: zhai (斋) — 1 hanya dikira sebagai 1 — atau kaizhai (开斋) — 1 ialah joker. Panggil 1 sentiasa zhai.",
-            "Pusingan zhai boleh buka puasa (开斋, juga dipanggil 飞): 1 jadi joker semula, tetapi mesti panggil sekurang-kurangnya dua kali ganda (selepas 3 × 4 zhai, sekurang-kurangnya 6). Panggilan pertama zhai boleh serendah bilangan pemain.",
-            "Sekali kaizhai, kekal kaizhai: tiada siapa boleh kembali ke zhai, jadi tiada siapa boleh panggil 1.",
-            "Lima sama (豹子): cawan yang kelima-lima dadunya dikira untuk panggilan dikira sebagai enam. Dengan 1 joker, dua 1 + tiga 3 ialah enam 3; dalam zhai hanya tiga 3, manakala lima 3 sebenar tetap dikira enam."
-          ]
+        "onesHeading": "1 joker",
+        "kaizhai": {
+          "name": "Kaizhai (开斋): 1 ialah joker",
+          "text": "1 dikira sebagai apa-apa nombor. Panggilan pertama tanpa zhai menjadikan pusingan kaizhai."
         },
-        {
-          "title": "Buka, belah, balas",
-          "items": [
-            "Buka (开): pada giliran anda, kata panggilan terakhir menipu. Semua dadu didedahkan dan dikira. Jika cukup, yang buka minum 1 cawan; jika tidak, yang panggil minum.",
-            "Belah (劈): sesiapa sahaja — bukan hanya yang bergilir — boleh belah panggilan terakhir pada bila-bila masa. Yang kalah minum 2 cawan.",
-            "Balas belah (反劈): yang dibelah boleh membalas. Yang kalah minum 4."
-          ]
+        "zhai": {
+          "name": "Zhai (斋): 1 hanya 1",
+          "text": "Tandakan zhai pada panggilan pertama dan 1 hanya dikira sebagai 1. Panggilan pertama zhai boleh serendah bilangan pemain. Panggil 1 sentiasa zhai."
         },
-        {
-          "title": "Menang",
-          "items": [
-            "Selepas setiap buka, yang masih bermain goncang semula, dan yang kalah mula pusingan seterusnya.",
-            "Kalah keluar: 5 cawan dan anda mabuk — keluar. Pemain terakhir yang bertahan menang.",
-            "Tanpa had: tiada siapa keluar; cawan terus dikira. Apabila lebih separuh meja mengundi berhenti, paling sedikit cawan menang.",
-            "Hos memilih mod di bilik."
-          ]
-        }
-      ]
+        "fly": {
+          "name": "Buka puasa (飞)",
+          "text": "Dalam pusingan zhai, panggilan seterusnya boleh jadikan 1 joker semula — dengan dua kali ganda dadu (selepas 3 × empat zhai, sekurang-kurangnya 6). Selepas itu pusingan kekal kaizhai: tiada zhai, tiada 1."
+        },
+        "leopard": {
+          "name": "Lima sama (豹子)",
+          "text": "Cawan yang kelima-lima dadunya dikira untuk panggilan dikira sebagai enam. Dengan 1 joker, dua 1 dan tiga 3 ialah enam 3."
+        },
+        "winHeading": "Menang",
+        "knockout": {
+          "name": "Kalah mati",
+          "text": "{{cups}} cawan dan anda mabuk — keluar. Yang terakhir bertahan menang."
+        },
+        "endless": {
+          "name": "Tanpa had",
+          "text": "Tiada siapa keluar; cawan terus dikira. Apabila lebih separuh meja mengundi berhenti, paling sedikit cawan menang."
+        },
+        "note": "Hos memilih mod di lobi."
+      },
+      "actions": {
+        "lead": "Pada giliran anda, panggil atau buka. Sesiapa boleh belah, bila-bila masa.",
+        "call": {
+          "name": "Panggil",
+          "text": "Sebut jumlah dan nombor, lebih tinggi daripada panggilan terakhir. Tandakan zhai pada panggilan pertama supaya 1 hanya dikira sebagai 1."
+        },
+        "open": {
+          "name": "Buka (开)",
+          "text": "Kata panggilan terakhir tipu. Semua angkat cawan. Cukup dadu: anda minum. Tidak cukup: yang memanggil minum."
+        },
+        "split": {
+          "name": "Belah (劈)",
+          "text": "Tak perlu tunggu giliran: kata panggilan terakhir tipu bila-bila masa (asalkan bukan panggilan anda). Yang memanggil kemudian terima atau balas."
+        },
+        "counter": {
+          "name": "Balas belah (反劈)",
+          "text": "Kena belah, dan yakin dengan panggilan anda? Balas, dan pertaruhan berganda."
+        },
+        "reshake": {
+          "name": "Bersepah (散骰)",
+          "text": "Kelima-lima dadu berbeza? Tunjukkan kepada meja dan goncang semula."
+        },
+        "stop": {
+          "name": "Undi berhenti",
+          "text": "Bila-bila masa. Apabila lebih separuh meja mengundi, permainan tamat dan paling sedikit cawan menang."
+        },
+        "tags": {
+          "yourTurn": "Giliran anda",
+          "anyone": "Sesiapa, bila-bila masa",
+          "bidder": "Yang dibelah",
+          "beforeFirst": "Sebelum panggilan pertama anda",
+          "endless": "Mod tanpa had",
+          "drinks": "Yang kalah minum {{count}} cawan",
+          "drinks_other": "Yang kalah minum {{count}} cawan"
+        },
+        "note": "Yang kalah memulakan pusingan seterusnya."
+      },
+      "counts": {
+        "lead": "Lebih ramai pemain, lebih banyak dadu — dan panggilan pertama lebih besar. Jadual menunjukkan panggilan pertama paling kecil.",
+        "dice": "Dadu di meja",
+        "opening": "Panggilan pertama",
+        "zhai": "Zhai pertama",
+        "note": "Apabila seseorang tersingkir, panggilan pertama hanya mengira pemain yang masih ada."
+      }
     },
     "nightwatch": {
       "intro": "Rumah agam ini berhantu. Selama lima malam para pengawal mesti menyalakan pelita meterai untuk mengurung hantu — tetapi ada antara mereka yang telah dirasuk dan diam-diam menggagalkan meterai.",
-      "roles": {
-        "title": "Peranan",
-        "intro": "Lapan peranan semuanya. Peranan yang digunakan bergantung pada bilangan pemain. Pemain jahat saling mengenali, dan pemain jahat di tempat duduk terendah juga pembunuh.",
-        "everyGame": "setiap permainan",
-        "fromPlayers": "{{count}}+ pemain",
-        "twoFrom": "dua dengan {{count}}+"
+      "overview": {
+        "win": "Para pengawal menang apabila tiga misi berjaya — kecuali pembunuh kemudian meneka Peramal. Para hantu menang apabila tiga misi gagal.",
+        "secret": "Peranan anda rahsia, begitu juga di mana anda berdiri. Berbincang, fikirkan, dan berbohong jika perlu.",
+        "length": "{{min}}–{{max}} pemain · satu misi semalam."
       },
-      "sections": [
-        {
-          "title": "Pihak",
-          "items": [
-            "Baik: Peramal, Perantis, Penjejak, Penjaga Pintu (6+), Pengawal Malam (8+). Jahat: Bayangan, Pertapa, Dirasuk (7+, dua untuk 10 pemain).",
-            "5 pemain: 3 baik, 2 jahat · 6: 4/2 · 7: 4/3 · 8: 5/3 · 9: 6/3 · 10: 6/4.",
-            "Pemain jahat saling mengenali. Pemain jahat di tempat duduk terendah juga pembunuh.",
-            "Peramal: tahu siapa jahat, kecuali Pertapa. Perantis: nampak Peramal dan Bayangan, tetapi tidak tahu yang mana.",
-            "Penjejak (dua kali): semasa rondaan, ikut seorang pemain ke bilik sebenar mereka, sejauh mana pun. Penjaga Pintu (sekali): sebelum rondaan, kunci satu pintu untuk malam itu — hanya pintu diumumkan, bukan siapa yang mengunci.",
-            "Bayangan (dua kali): semasa rondaan, pilih bilik sebenar dan bilik bayang, kedua-duanya boleh dicapai. Orang di bilik bayang nampak anda; di bilik sebenar tiada siapa nampak, tetapi anda masih guna fungsinya. Bayang dikira seorang dalam biliknya, tetapi bukan untuk Taman; Dapur mendengar bilik bayang; di Bilik Makan bayang kelihatan baik."
-          ]
+      "teams": {
+        "lead": "Dua pihak tersembunyi. Tiada siapa tahu siapa — kecuali para hantu, yang saling mengenali.",
+        "and": ", ",
+        "size": "{{min}}–{{max}} sepermainan",
+        "good": {
+          "name": "Para pengawal",
+          "tag": "Baik",
+          "text": "{{roles}}. Mereka menang apabila tiga misi berjaya dan pembunuh kemudian tersilap meneka Peramal."
         },
-        {
-          "title": "Rumah",
-          "items": [
-            "3×3 bilik: Menara Loceng, Bilik Bacaan, Kapel / Galeri, Dewan, Bilik Makan / Bilik Bawah Tanah, Dapur, Taman. Bergerak atas, bawah, kiri atau kanan — tidak pepenjuru.",
-            "Semua bermula di Dewan. Kedudukan anda rahsia: selepas bergerak anda hanya nampak siapa sebilik. Di mana orang lain hanyalah apa yang mereka katakan.",
-            "Bilik misi setiap malam dicabut secara rawak — bukan Dewan, bukan bilik yang sama dua malam berturut-turut. Bilik malam seterusnya diumumkan awal."
-          ]
-        },
-        {
-          "title": "Setiap malam",
-          "items": [
-            "Pengumuman: bilik dan saiz misi malam ini, bilik malam seterusnya, dan dari malam ke-2 satu kejadian malam.",
-            "Rondaan (rahsia, serentak): kekal, atau berjalan satu bilik. Kemudian anda nampak siapa dalam bilik anda.",
-            "Bilik: guna fungsi bilik anda. Ia tidak berfungsi di bilik misi malam ini atau Dewan, atau di bilik yang fungsinya anda guna malam tadi (dihantar ke misi atau dipindahkan ke Dewan tidak dikira).",
-            "Perbincangan: surat tanpa nama ditunjukkan dahulu. Kemudian berbual — berbohong dibenarkan.",
-            "Pasukan: ketua (ikut tempat duduk; Menara Loceng memotong giliran) memilih tepat saiz pasukan. Semua mengundi secara terbuka; lebih separuh setuju, pasukan pergi. Jika tidak, ketua seterusnya mencuba tanpa rondaan baru. Lima pasukan ditolak dalam satu malam dan pihak jahat menang.",
-            "Misi: pasukan berjalan ke bilik misi — paling jauh dua bilik (pintu rahsia dan laluan Bilik Bawah Tanah dikira). Jika ada yang tidak sampai, misi terus gagal dan aplikasi menyebut siapa tidak sampai. Jika tidak, setiap ahli bermain Berjaya atau Gagal secara rahsia (pihak baik hanya Berjaya); hanya bilangan gagal ditunjukkan.",
-            "Satu kad gagal menggagalkan misi — kecuali misi ke-4 dengan 7 pemain atau lebih, yang perlu dua. Pasukan kekal di bilik misi; rondaan seterusnya bermula dari kedudukan semasa."
-          ]
-        },
-        {
-          "title": "Fungsi bilik"
-        },
-        {
-          "title": "Kejadian malam"
-        },
-        {
-          "title": "Penamat",
-          "items": [
-            "Pihak jahat menang dengan tiga misi gagal, atau lima pasukan ditolak dalam satu malam.",
-            "Apabila tiga misi berjaya, pihak jahat didedahkan dan boleh berbincang; pembunuh kemudian meneka Peramal. Betul, pihak jahat menang. Salah, pihak baik menang."
-          ]
+        "evil": {
+          "name": "Para hantu",
+          "tag": "Jahat",
+          "text": "{{roles}}. Mereka saling mengenali. Mereka menang dengan tiga misi gagal, lima pasukan ditolak dalam satu malam, atau dengan meneka Peramal pada akhirnya."
         }
-      ],
+      },
+      "roles": {
+        "lead": "Peranan anda diberi secara rahsia. Peranan yang digunakan bergantung pada bilangan pemain.",
+        "everyGame": "Setiap permainan",
+        "from": "Dari {{count}} pemain",
+        "two": "Dua dari {{count}}",
+        "prophet": "Tahu setiap hantu, kecuali Pertapa. Bimbing yang lain diam-diam: jika para pengawal menang, pembunuh memburu anda.",
+        "apprentice": "Nampak dua pemain: seorang Peramal, seorang lagi Bayangan. Anda tidak tahu yang mana.",
+        "tracker": "Dua kali sepermainan, semasa rondaan, ikut seorang pemain dan bukan berjalan: anda tiba di bilik sebenar mereka, sejauh mana pun.",
+        "keeper": "Sekali sepermainan, semasa pengumuman, kunci satu pintu untuk malam itu. Semua dengar pintu mana, bukan siapa yang mengunci.",
+        "watcher": "Tiada kuasa. Meronda, mendengar dan mengundi dengan baik.",
+        "double": "Dua kali sepermainan, semasa rondaan, tinggalkan bayang di bilik lain yang boleh dicapai. Orang di sana nampak anda; di bilik sebenar anda, tiada siapa nampak.",
+        "hermit": "Peramal tidak dapat melihat anda.",
+        "possessed": "Tiada kuasa. Menyamar dan gagalkan meterai.",
+        "assassin": "Hantu di tempat duduk terendah juga pembunuh, yang mendapat peluang terakhir pada akhirnya.",
+        "decoy": "Bayang Bayangan dikira seorang dalam biliknya (bukan untuk Taman), Dapur mendengar bilik bayang, dan di Bilik Makan bayang kelihatan baik. Perantis melihat Bayangan sebagai kemungkinan Peramal."
+      },
+      "play": {
+        "lead": "Semua bermula di Dewan. Setiap satu daripada {{nights}} malam berjalan begini:",
+        "announce": {
+          "title": "Pengumuman",
+          "detail": "Bilik dan saiz misi malam ini, dan bilik malam seterusnya. Dari malam ke-2, satu kejadian malam juga."
+        },
+        "patrol": {
+          "title": "Rondaan, secara rahsia",
+          "detail": "Kekal, atau berjalan satu bilik ke atas, bawah, kiri atau kanan. Kemudian anda nampak siapa sebilik. Orang lain tidak tahu di mana anda."
+        },
+        "room": {
+          "title": "Guna bilik anda",
+          "detail": "Setiap bilik ada fungsi (lihat Bilik). Bukan di bilik misi malam ini atau Dewan, dan bukan bilik yang sama dua malam berturut-turut."
+        },
+        "talk": {
+          "title": "Berbincang",
+          "detail": "Surat tanpa nama dari Galeri dibaca dahulu. Kemudian berbincang. Berbohong dibenarkan."
+        },
+        "team": {
+          "title": "Pasukan dan undi",
+          "detail": "Ketua (ikut tempat duduk; Menara Loceng memotong giliran) memilih tepat saiz pasukan. Semua mengundi secara terbuka: lebih separuh mesti setuju, atau ketua seterusnya mencuba."
+        },
+        "mission": {
+          "title": "Misi",
+          "detail": "Pasukan berjalan ke bilik misi, paling jauh dua bilik. Setiap ahli memainkan Berjaya atau Gagal secara rahsia; pengawal hanya boleh memainkan Berjaya."
+        },
+        "cards": "Satu Gagal memecahkan meterai (dua pada malam ke-4 dengan 7+ pemain). Hanya bilangan Gagal ditunjukkan. Jika sesiapa dalam pasukan tidak dapat sampai, misi terus gagal. Pasukan kekal di sana untuk rondaan seterusnya.",
+        "lastTitle": "Peluang terakhir",
+        "last": "Apabila tiga misi berjaya, para hantu didedahkan dan berbincang. Kemudian pembunuh meneka Peramal: betul, para hantu menang; salah, para pengawal menang.",
+        "rejected": "Lima pasukan ditolak dalam satu malam dan para hantu menang."
+      },
       "rooms": {
-        "intro": "Selepas rondaan, anda menggunakan fungsi bilik tempat anda berada. Bilik yang memerlukan bilangan orang yang tepat tidak berfungsi dengan bilangan lain. Bilik misi malam ini dan Dewan tiada fungsi, dan fungsi sesebuah bilik tidak boleh digunakan dua pusingan berturut-turut (menyertai misi atau dipindahkan ke Dewan tidak dikira).",
-        "belltower": "Bunyikan loceng: anda ketua pusingan ini (memotong giliran, kemudian giliran diteruskan).",
-        "study": "Baca rekod: pilih seorang ahli misi malam tadi dan ketahui sama ada dia bermain berjaya atau gagal.",
-        "chapel": "Berdoa: misi malam ini kehilangan satu kad gagal. Hanya berjaya sekali sepermainan, dan tidak dikira jika tiada kad gagal untuk ditarik. Hanya mereka di Kapel malam itu tahu sama ada ia berjaya. Sesiapa yang masuk kemudian boleh membuka buku di atas rehal: sama ada ada yang berdoa pada setiap malam lalu dan hasilnya (bukan siapa).",
-        "gallery": "Surat tanpa nama: tulis satu ayat, ditunjukkan apabila perbincangan bermula tanpa nama.",
-        "hall": "Persimpangan: tiada fungsi, tetapi selangkah dari empat bilik.",
-        "dining": "Minum bersama: anda berdua saling tahu pihak masing-masing.",
-        "cellar": "Laluan rahsia: jika dinamakan untuk misi malam ini, anda sampai ke bilik misi dari sini sejauh mana pun; jika tidak, rondaan seterusnya boleh ke mana-mana bilik.",
-        "kitchen": "Curi dengar: pilih seorang pemain dan ketahui di bilik mana dia berada selepas rondaan ini.",
-        "garden": "Tinjau: ketahui berapa orang dalam setiap bilik pusingan ini (bukan siapa)."
+        "lead": "Rumah ini 3 × 3 bilik. Anda berjalan ke atas, bawah, kiri atau kanan — tidak pepenjuru.",
+        "mission": "Bilik misi setiap malam dicabut secara rawak (bukan Dewan, tidak dua kali berturut-turut). Bilik seterusnya diumumkan semalam lebih awal.",
+        "use": "Selepas rondaan, guna bilik anda. Bilik yang perlukan bilangan orang tertentu tidak berfungsi dengan bilangan lain.",
+        "needs": {
+          "one": "Bersendirian",
+          "two": "Tepat 2",
+          "any": "Berapa pun",
+          "none": "Tiada fungsi"
+        },
+        "fn": {
+          "belltower": "Bunyikan loceng",
+          "study": "Baca rekod",
+          "chapel": "Berdoa",
+          "gallery": "Surat tanpa nama",
+          "hall": "Persimpangan",
+          "dining": "Minum bersama",
+          "cellar": "Laluan rahsia",
+          "kitchen": "Curi dengar",
+          "garden": "Tinjau"
+        },
+        "text": {
+          "belltower": "Anda ketua pusingan ini: anda memotong giliran, kemudian susunan diteruskan.",
+          "study": "Pilih seorang ahli pasukan malam tadi dan ketahui sama ada dia memainkan Berjaya atau Gagal.",
+          "chapel": "Misi malam ini kehilangan satu kad Gagal. Hanya berjaya sekali sepermainan, dan tidak terpakai jika tiada Gagal. Hanya yang di Kapel tahu hasilnya; sesiapa yang datang kemudian boleh membaca dalam buku sama ada seseorang berdoa setiap malam (bukan siapa).",
+          "gallery": "Tulis satu ayat. Ia ditunjukkan tanpa nama apabila perbincangan bermula.",
+          "hall": "Tiada fungsi, tetapi ia satu langkah dari empat bilik.",
+          "dining": "Anda berdua saling tahu pihak masing-masing.",
+          "cellar": "Jika anda dalam pasukan malam ini, anda sampai ke bilik misi dari sini sejauh mana pun. Jika tidak, rondaan seterusnya boleh ke mana-mana bilik.",
+          "kitchen": "Pilih seorang pemain dan ketahui di bilik mana dia berada selepas rondaan ini.",
+          "garden": "Ketahui berapa orang dalam setiap bilik pusingan ini (bukan siapa)."
+        }
       },
       "events": {
-        "intro": "Bermula malam ke-2, satu kejadian malam dibuka pada setiap pengumuman, untuk dilihat semua.",
-        "blackout": "Selepas rondaan ini anda tidak nampak siapa sebilik dengan anda — cuma sama ada ada orang.",
-        "collapse": "Satu bilik rawak ditutup selama-lamanya: tiada siapa boleh masuk lagi, dan sesiapa di dalamnya dipindahkan ke Dewan. Ia bukan bilik misi malam ini atau malam seterusnya.",
-        "secretDoor": "Dua bilik pepenjuru rawak bersambung selama-lamanya: anda boleh berjalan terus di antaranya.",
-        "storm": "Tiada siapa boleh bergerak dalam rondaan ini, dan Penjejak tidak boleh mengikut sesiapa.",
-        "insomnia": "Semua boleh berjalan sehingga dua bilik dalam rondaan ini.",
-        "echo": "Galeri boleh menghantar dua surat tanpa nama pusingan ini.",
-        "fog": "Pasukan hanya boleh berjalan satu bilik ke misi pusingan ini, bukan dua.",
-        "calm": "Tiada apa-apa berlaku."
+        "lead": "Dari malam ke-2, satu kejadian dibuka pada setiap pengumuman untuk semua — jadi {{count}} daripada {{total}} ini muncul dalam satu permainan.",
+        "tonight": "Malam ini sahaja",
+        "lasting": "Kekal",
+        "text": {
+          "blackout": "Selepas rondaan anda tidak nampak siapa sebilik — hanya sama ada ada orang lain.",
+          "collapse": "Satu bilik rawak runtuh: tiada siapa boleh masuk lagi, dan sesiapa di dalam dipindahkan ke Dewan. Bukan bilik misi malam ini atau malam seterusnya.",
+          "secretDoor": "Dua bilik pepenjuru rawak disambung: anda boleh berjalan terus di antaranya.",
+          "storm": "Tiada siapa boleh bergerak semasa rondaan, dan Penjejak tidak boleh mengikut sesiapa.",
+          "insomnia": "Semua boleh berjalan hingga dua bilik semasa rondaan.",
+          "echo": "Galeri boleh menghantar dua surat tanpa nama.",
+          "fog": "Pasukan hanya boleh berjalan satu bilik ke misi, bukan dua.",
+          "calm": "Tiada apa berlaku."
+        }
       },
       "counts": {
-        "title": "Bilangan pemain",
-        "intro": "5 hingga 10 pemain. Bilangan menentukan berapa baik dan jahat, peranan yang diberi, dan saiz pasukan setiap malam:",
-        "players": "Pemain",
-        "good": "Baik",
-        "evil": "Jahat",
-        "night": "M{{n}}",
-        "votes": "Undi",
-        "star": "* Misi malam ini perlukan 2 kad Gagal untuk gagal.",
-        "table": "{{n}} pemain"
-      },
-      "countNotes": {
-        "items": [
-          "M1–M5: berapa orang pergi misi malam itu; ketua memilih tepat sebanyak itu.",
-          "Undi: persetujuan yang diperlukan supaya pasukan bertolak (lebih separuh).",
-          "Lima pasukan ditolak berturut-turut dalam satu malam, pihak jahat menang, pada sebarang bilangan.",
-          "Pemain jahat di tempat duduk terendah juga pembunuh upahan, yang meneka Peramal jika tiga misi berjaya."
-        ]
+        "lead": "{{min}} hingga {{max}} pemain. Bilangan menentukan pihak, peranan yang diberi dan pasukan setiap malam:",
+        "night": "Pasukan malam {{n}}",
+        "votes": "Undi untuk lulus",
+        "star": "* Misi malam itu perlukan dua kad Gagal untuk gagal.",
+        "dealt": "Peranan yang diberi",
+        "note": "Lima pasukan ditolak dalam satu malam dan para hantu menang, berapa pun bilangan pemain."
       }
     },
     "shelter": {
       "intro": "Musim sejuk tiba dan pekan sudah musnah. Anda berlindung dalam sebuah rumah lama dan mesti bertahan 6 hari sehingga konvoi bantuan tiba. Semua bermula di pihak yang sama — tetapi pada malam ke-2 atau ke-3, penyakit menjangkiti seorang. Sejak itu dia mahu semua kelaparan, dan tiada siapa tahu siapa.",
-      "clashes": {
-        "items": [
-          "Siang: semua di satu tempat main satu kad tertutup; kad dikocok dan dibuka. Terjangkit boleh menyelitkan Sabotaj −2 — semua nampak, tiada siapa tahu siapa.",
-          "Malam: semua secara rahsia mengawal stor, mengawal pintu atau tidur; Terjangkit pada masa sama mencuri, membuka pintu atau tidur. Bertembung dengan pengawal, dia dilihat; tidak bertembung, dia berjaya.",
-          "Pagi: hanya pengawal yang nampak Terjangkit. Bila dia bercakap, semua perlu memutuskan sama ada percaya.",
-          "Pengawal letih esoknya dan cabut 1 kad — makin ketat berkawal, makin sedikit makanan."
-        ],
-        "0": "Siang: semua di satu tempat main satu kad tertutup; kad dikocok dan dibuka. Terjangkit boleh main Berkulat −2 yang kelihatan sama seperti kulat sebenar dalam dek — tiada siapa boleh beza nasib malang dengan sabotaj."
+      "overview": {
+        "lead": "Musim sejuk. Anda terkurung di rumah lama, mencari bekalan pada siang hari dan menjaga makanan pada waktu malam, menunggu konvoi penyelamat selama {{days}} hari.",
+        "turn": "Semua bermula sebagai Mangsa Selamat — tetapi pada malam ke-2 atau ke-3 seorang daripada anda diam-diam menjadi Terjangkit dan mula melaparkan tempat perlindungan.",
+        "win": "Mangsa Selamat menang jika cukup ramai masih berdiri apabila konvoi tiba, atau jika mereka menghalau setiap Terjangkit. Terjangkit menang jika tempat perlindungan kebuluran.",
+        "length": "{{min}}–{{max}} pemain. Setiap hari anda berbincang, mencari bekalan dan berjaga."
       },
-      "roles": {
-        "title": "Peranan",
-        "intro": "Semua bermula sebagai Mangsa Selamat. Terjangkit berubah secara rahsia di pertengahan permainan.",
-        "survivor": [
-          "Matlamat: bertahan hingga bantuan pada hari 6, atau halau semua Terjangkit.",
-          "Siang mencari makanan; malam mengawal stor, mengawal pintu atau tidur.",
-          "Berkawal di tempat Terjangkit menyerang menunjukkan siapa dia."
-        ],
-        "infected": [
-          "Pada malam ke-2 atau ke-3 seorang Mangsa Selamat rawak terjangkit (6+ pemain: seorang lagi dua malam kemudian).",
-          "Matlamat: kosongkan stor, buat Mangsa Selamat rebah, atau biar terlalu sedikit yang berdiri bila bantuan tiba.",
-          "Siang hari boleh main Berkulat (sabotaj) −2, yang dibuka sebagai kulat biasa; malam hari boleh curi satu pertiga makanan stor (sekurang-kurangnya 2) atau buka pintu kepada zombi.",
-          "Dengan 5 pemain, Terjangkit boleh Menyelinap sekali: malam itu dia berjaya walaupun dikawal, tanpa dilihat.",
-          "Dua Terjangkit tidak mengenali satu sama lain."
-        ]
-      },
-      "places": {
-        "title": "Tempat & posisi",
-        "intro": "Siang hari semua secara rahsia memilih tempat, cabut 2 kad (1 jika letih atau lemah) dan main 1 tertutup. Kad dicabut secara rawak daripada dek di bawah.",
-        "always": "Setiap permainan",
-        "fivePlus": "5+ pemain",
-        "farm": "Tempat stabil: kebanyakannya makanan, tetapi ada yang kosong atau berkulat.",
-        "market": "Paling banyak makanan, tetapi banyak yang rosak dan zombi berkeliaran. Yang digigit tidak boleh keluar esoknya.",
-        "hospital": "Ubat: waktu subuh, setiap satu merawat seorang yang cedera atau lemah."
-      },
-      "posts": {
-        "title": "Tiga posisi pada waktu malam",
-        "intro": "Malam hari semua secara rahsia mengetik satu tempat dalam rumah. Terjangkit nampak tiga tempat yang sama, dengan makna lain.",
-        "store": {
-          "survivor": "Kawal stor: jika ada yang datang mencuri, anda nampak siapa. Seorang pengawal sahaja setiap posisi — yang pertama memilih; yang lain kembali tidur. Letih esok.",
-          "infected": "Curi: jika tiada pengawal, ambil satu pertiga makanan stor (sekurang-kurangnya 2) dan makan. Makin penuh stor, makin banyak dicuri."
+      "teams": {
+        "lead": "Dua pihak — tetapi pada mulanya semua di pihak yang sama.",
+        "survivors": {
+          "name": "Mangsa Selamat",
+          "tag": "Baik",
+          "text": "Semua orang, sehingga batuk kedengaran. Mereka menang jika cukup ramai Mangsa Selamat masih berdiri selepas makan malam pada malam ke-{{days}} (lihat Bilangan pemain), atau sebaik sahaja setiap Terjangkit dihalau."
         },
-        "door": {
-          "survivor": "Kawal pintu: jika ada yang datang membukanya, anda nampak siapa. Seorang pengawal sahaja setiap posisi. Letih esok.",
-          "infected": "Buka pintu: jika tiada pengawal, zombi masuk, stor kurang 1 dan seorang yang tidur cedera."
-        },
-        "sleep": {
-          "survivor": "Tidur: berehat, dan cabut 2 kad esok.",
-          "infected": "Pura-pura tidur: tidak buat apa-apa, dan tidak boleh dilihat."
+        "infected": {
+          "name": "Terjangkit",
+          "tag": "Jahat",
+          "size": "{{min}}–{{max}} sepermainan",
+          "text": "Mereka menang jika stor kehabisan makanan dan cukup ramai kelaparan (kebuluran), jika Mangsa Selamat yang berdiri tidak lebih ramai daripada Terjangkit, atau jika terlalu sedikit Mangsa Selamat apabila konvoi tiba."
         }
       },
-      "flow": {
-        "title": "Setiap hari",
-        "items": [
-          "Pagi (selepas batuk pertama): bincang tentang malam tadi, kemudian undi. Lebih separuh yang berdiri mengundi satu nama, dia dihalau dan peranannya ditunjukkan.",
-          "Siang: semua secara rahsia memilih tempat (ladang, pasar raya, dan hospital dengan 5+). Yang cedera duduk di rumah.",
-          "Kad: cabut 2, main 1 tertutup. Kad di satu tempat dikocok dan dibuka; jumlahnya masuk ke stor.",
-          "Malam: semua secara rahsia mengetik stor, pintu atau katil. Seorang pengawal sahaja setiap posisi (yang pertama memilih). Terjangkit berjaya di tempat tanpa pengawal; bertembung dengan pengawal, dia gagal dan dilihat.",
-          "Makan malam: setiap yang berdiri makan 1 dari stor. Tidak cukup? Ada yang kelaparan: satu malam lemah (esok 1 kad), dua malam berturut-turut dia rebah.",
-          "Yang rebah tidak boleh buat apa-apa selain menonton.",
-          "Pada awal malam ke-2 atau ke-3, aplikasi mengumumkan batuk. Dengan 6+, batuk kedua datang dua malam kemudian."
-        ]
+      "roles": {
+        "lead": "Semua bermula sebagai Mangsa Selamat. Terjangkit dipilih secara rahsia di tengah permainan.",
+        "survivor": {
+          "name": "Mangsa Selamat",
+          "tag": "Semua pada mulanya",
+          "text": "Pada siang hari, cari bekalan di satu tempat dan mainkan satu kad ke dalam hasil. Pada waktu malam, jaga stor atau pintu, atau tidur. Jaga di tempat Terjangkit menyerang dan anda nampak siapa."
+        },
+        "infected": {
+          "name": "Terjangkit",
+          "tag": "Berubah malam ke-2 atau ke-3",
+          "text": "Seorang Mangsa Selamat rawak berubah apabila malam tiba, dan hanya dia yang tahu. Pada siang hari anda boleh memainkan Sabotaj, yang terbuka seperti Berkulat biasa (−2). Pada waktu malam, curi dari stor atau buka pintu (lihat Tindakan)."
+        },
+        "second": "Dengan {{count}}+ pemain, Mangsa Selamat kedua berubah dua malam selepas yang pertama. Kedua-dua Terjangkit tidak saling mengenali.",
+        "sneak": "Dengan {{count}} pemain, Terjangkit boleh Menyelinap sekali: serangan malam itu berjaya walaupun dijaga, dan tiada siapa nampak siapa."
+      },
+      "play": {
+        "lead": "{{days}} hari. Setiap hari berjalan begini:",
+        "vote": {
+          "title": "Undian pagi",
+          "detail": "Mulai hari selepas batuk: bincangkan malam tadi, kemudian mengundi. Lebih separuh yang berdiri pada satu nama menghalau orang itu, dan peranannya ditunjukkan."
+        },
+        "search": {
+          "title": "Pilih tempat",
+          "detail": "Secara rahsia: ladang, pasar raya, atau hospital ({{count}}+ pemain). Yang cedera tinggal di rumah."
+        },
+        "play": {
+          "title": "Main kad",
+          "detail": "Cabut 2 kad dari tempat anda (1 jika letih atau lemah) dan mainkan 1 tertutup. Kad setiap tempat dikocok dan ditunjukkan; jumlahnya masuk ke stor."
+        },
+        "night": {
+          "title": "Pos malam",
+          "detail": "Semua diam-diam memilih stor, pintu atau katil (lihat Tindakan)."
+        },
+        "supper": {
+          "title": "Makan malam",
+          "detail": "Setiap yang berdiri makan 1 makanan. Jika tidak cukup, seseorang kelaparan: lemah esok (1 kad). Lapar dua malam berturut-turut dan dia tumbang."
+        },
+        "cough": "Batuk: apabila malam ke-2 atau ke-3 tiba, aplikasi mengumumkan seseorang telah berubah — tetapi tidak pernah siapa.",
+        "out": "Yang tumbang dan yang dihalau hanya boleh menonton. Menghalau Mangsa Selamat tidak menamatkan permainan: kurang seorang mencari bekalan, tetapi kurang satu mulut juga."
+      },
+      "actions": {
+        "lead": "Pada waktu malam semua diam-diam memilih satu daripada tiga pos. Terjangkit nampak tiga yang sama, tetapi maksudnya lain.",
+        "tired": "Letih esok",
+        "store": {
+          "survivor": "Jaga: tangkap sesiapa yang datang mencuri.",
+          "infected": "Curi: jika tiada penjaga, ambil satu pertiga isi stor (sekurang-kurangnya 2)."
+        },
+        "door": {
+          "survivor": "Jaga: tangkap sesiapa yang datang membukanya.",
+          "infected": "Buka: jika tiada penjaga, zombi masuk. Stor hilang 1 dan seorang yang tidur cedera (tinggal di rumah esok)."
+        },
+        "sleep": {
+          "survivor": "Berehat, dan cabut 2 kad esok.",
+          "infected": "Pura-pura tidur: tidak buat apa-apa, dan tiada siapa nampak anda."
+        },
+        "guard": "Satu penjaga untuk satu pos: yang pertama memilihnya; yang lain kembali tidur. Serangan yang bertemu penjaga gagal, dan penjaga nampak siapa."
+      },
+      "places": {
+        "title": "Tempat",
+        "lead": "Pada siang hari semua memilih tempat secara rahsia. Setiap tempat ada dek sendiri, dicabut secara rawak.",
+        "always": "Setiap permainan",
+        "from": "Dari {{count}} pemain",
+        "farm": "Tempat yang stabil: kebanyakannya makanan, tetapi kadang-kadang kosong atau berkulat.",
+        "market": "Makanan paling banyak, tetapi banyak yang reput, dan zombi berkeliaran.",
+        "hospital": "Kurang makanan, tetapi ada ubat: pada waktu subuh, setiap satu merawat seorang yang cedera atau lemah.",
+        "cards": "Mainkan Zombi dan anda digigit: anda tinggal di rumah esok. Berkulat mengurangkan makanan — dan Sabotaj Terjangkit kelihatan sama sepertinya."
       },
       "counts": {
-        "title": "Bilangan pemain",
-        "intro": "4 hingga 8 pemain. Bilangan menentukan jumlah Terjangkit, makanan awal dan had kemenangan:",
-        "players": "Pemain",
+        "lead": "{{min}} hingga {{max}} pemain. Bilangan menentukan Terjangkit, makanan dan keperluan setiap pihak:",
         "infected": "Terjangkit",
-        "survivors": "Selamat",
         "food": "Makanan awal",
-        "rescue": "Bantuan perlu",
-        "famine": "Kebuluran",
-        "votes": "Undi"
-      },
-      "countNotes": {
-        "items": [
-          "Bantuan perlu: Mangsa Selamat yang masih berdiri selepas makan malam ke-6.",
-          "Kebuluran: jika stor kosong dan sebanyak ini kelaparan, Terjangkit menang.",
-          "Undi: diperlukan bila semua berdiri. Ia berkurang bila ada yang rebah atau dihalau (sentiasa lebih separuh yang berdiri).",
-          "5 pemain: hospital dibuka dan Terjangkit boleh Menyelinap sekali.",
-          "6–8 pemain: 2 Terjangkit; yang kedua berubah dua malam selepas yang pertama, dan mereka tidak mengenali satu sama lain. Kedua-duanya mesti dihalau untuk menang cara itu."
-        ]
-      },
-      "winning": {
-        "title": "Kemenangan",
-        "items": [
-          "Mangsa Selamat menang: selepas makan malam ke-6, sekurang-kurangnya bilangan 'bantuan perlu' masih berdiri; atau semua Terjangkit telah dihalau.",
-          "Terjangkit menang: stor kosong dan bilangan 'kebuluran' kelaparan.",
-          "Terjangkit menang: bila-bila masa, Mangsa Selamat yang berdiri tidak lebih daripada Terjangkit yang berdiri.",
-          "Terjangkit menang: bila bantuan tiba, terlalu sedikit Mangsa Selamat berdiri.",
-          "Menghalau Mangsa Selamat tidak menamatkan permainan: kurang seorang pencari, tetapi kurang satu mulut juga."
-        ]
+        "rescue": "Perlu diselamatkan",
+        "famine": "Kebuluran pada",
+        "votes": "Undi untuk halau",
+        "hospital": "Hospital",
+        "sneak": "Menyelinap sekali",
+        "rescueNote": "Perlu diselamatkan: Mangsa Selamat yang masih berdiri selepas makan malam pada malam ke-{{days}}.",
+        "famineNote": "Kebuluran pada: jika stor kosong dan seramai ini kelaparan, Terjangkit menang.",
+        "votesNote": "Undi dikira dengan semua berdiri; bilangannya turun apabila orang tumbang atau dihalau (sentiasa lebih separuh yang berdiri)."
       }
+    },
+    "sections": {
+      "overview": "Gambaran",
+      "teams": "Pasukan",
+      "roles": "Peranan",
+      "play": "Cara bermain",
+      "actions": "Tindakan",
+      "rooms": "Bilik",
+      "events": "Peristiwa khas",
+      "counts": "Bilangan pemain"
     }
   },
   "avalon": {
@@ -815,9 +996,77 @@
       "failCards_other": "{{count}} kad gagal",
       "dismiss": "Ketik untuk teruskan"
     },
-    "tagline": "PERCAYA · PERDAYA · DEDAH"
+    "tagline": "PERCAYA · PERDAYA · DEDAH",
+    "stage": {
+      "op": "Misi {{n}} daripada {{total}}",
+      "team": "Pasukan",
+      "twoFails": "Perlu 2 kad gagal",
+      "rejected": "Ditolak",
+      "rejections": "Ditolak {{count}}/{{max}}",
+      "secret": "Sulit",
+      "continue": "Teruskan"
+    },
+    "phases": {
+      "team": "Memilih pasukan",
+      "vote": "Undian",
+      "quest": "Dalam misi",
+      "assassinate": "Tembakan Pembunuh Upahan",
+      "finished": "Kes ditutup"
+    },
+    "menu": {
+      "role": "Peranan",
+      "record": "Rekod",
+      "agents": "Ejen"
+    },
+    "intro": {
+      "hush": "Syyy…",
+      "hushHint": "Identiti anda hanya untuk mata anda.",
+      "continue": "Ketik untuk teruskan",
+      "flip": "Ketik kad untuk membalikkannya",
+      "keep": "Rahsiakan"
+    },
+    "council": {
+      "pickHint": "Pilih {{count}} untuk Misi {{n}}. Semua orang nampak pilihan anda.",
+      "picking": "{{name}} sedang memilih {{count}} untuk misi",
+      "voteHint": "Undi pasukan {{name}}: {{names}}",
+      "lastChance": "Satu lagi penolakan dan pengkhianat menang.",
+      "tally": "{{yes}} setuju, {{no}} menolak"
+    },
+    "desk": {
+      "approve": "Berjaya",
+      "seal": "Gagal",
+      "approved": "Diluluskan",
+      "accomplished": "Selesai",
+      "band": "Sulit",
+      "pick": "Ketik setem untuk memilih",
+      "holdApprove": "Tahan untuk meluluskan fail",
+      "holdSeal": "Tahan untuk mensabotaj fail",
+      "agentsOnly": "Ejen hanya boleh meluluskan fail.",
+      "molesHint": "Pengkhianat boleh mensabotajnya. Tiada siapa akan tahu siapa.",
+      "played": "{{done}} daripada {{total}} kad masuk",
+      "cast": "Kad anda sudah masuk. Menunggu pasukan…",
+      "noFails": "Tiada kad gagal"
+    },
+    "shot": {
+      "pick": "Ketik orang yang anda rasa Pengendali",
+      "hold": "Tahan untuk menamakan {{name}}",
+      "hint": "Namakan Pengendali dan pengkhianat merampas kemenangan."
+    },
+    "journal": {
+      "op": "Misi {{n}}",
+      "teams": "Pasukan dan undian",
+      "operation": "Misi",
+      "private": "Hanya anda tahu",
+      "proposal": "{{leader}} mencadangkan {{team}}",
+      "approved": "diluluskan",
+      "rejected": "ditolak",
+      "succeeded": "Berjaya",
+      "failed": "Gagal",
+      "team": "Pasukan: {{names}}"
+    }
   },
   "coup": {
+    "coins_one": "${{count}}",
     "coins_other": "${{count}}",
     "out": "Tersingkir",
     "lost": "hilang",
@@ -829,7 +1078,8 @@
     "hand": {
       "title": "Kad anda",
       "show": "Ketik untuk tunjuk kad anda",
-      "hide": "Ketik untuk sembunyi kad anda"
+      "hide": "Ketik untuk sembunyi kad anda",
+      "secret": "Hanya anda boleh lihat. Tipulah apa saja; cuma jangan tertangkap."
     },
     "roles": {
       "duke": {
@@ -892,7 +1142,8 @@
       "reveal": "Pilih kad untuk dilepaskan",
       "exchange_other": "Pilih {{count}} kad untuk disimpan",
       "losing": "{{name}} mesti melepaskan satu kad",
-      "waiting": "Menunggu {{names}}"
+      "waiting": "Menunggu {{names}}",
+      "forced": "Dengan $10 atau lebih anda mesti Tutup Kedai seseorang."
     },
     "result": {
       "none": "Permainan tamat"
@@ -910,9 +1161,127 @@
       "caught": "{{challenger}} mencabar {{claimant}} — tiada {{role}}. Tembelang pecah!",
       "proved": "{{challenger}} mencabar {{claimant}} — tetapi mereka memang ada {{role}}. {{claimant}} mengocoknya semula dan mencabut kad baharu.",
       "lose": "{{name}} kehilangan kad: {{role}}",
-      "out": "{{name}} tersingkir"
+      "out": "{{name}} tersingkir",
+      "lose_challenge": "{{name}} kalah cabaran dan membuka {{role}}",
+      "lose_coup": "Kedai {{name}} ditutup, dia membuka {{role}}",
+      "lose_assassinate": "{{name}} dibelasah dan membuka {{role}}"
     },
-    "tagline": "TIPU · CABAR · MENANG"
+    "tagline": "TIPU · CABAR · MENANG",
+    "cardText": {
+      "tax": "Ambil $3",
+      "assassinate": "Bayar $3, seorang pemain hilang kad",
+      "steal": "Ambil $2 daripada pemain",
+      "exchange": "Ambil 2, pulangkan 2",
+      "blocks": "Halang {{what}}",
+      "blockedBy": "dihalang oleh {{role}}"
+    },
+    "felt": {
+      "income": "+$1",
+      "foreignAid": "+$2",
+      "tax": "+$3",
+      "steal": "Ambil $2",
+      "exchange": "Tukar 2 kad",
+      "assassinate": "Satu kad hilang",
+      "coup": "Satu kad hilang · tak boleh dihalang",
+      "claims": "Mengaku {{role}}",
+      "blockable": "Bos boleh halang",
+      "sure": "Tiada siapa boleh halang"
+    },
+    "stage": {
+      "continue": "Teruskan",
+      "youOut": "Anda tersingkir",
+      "out": "{{name}} tersingkir",
+      "left_one": "{{count}} pemain masih bermain",
+      "left_other": "{{count}} pemain masih bermain",
+      "moving": "Meja bergerak…",
+      "feltHint": "Letak cip anda pada satu tindakan. Yang bergaris dua mengaku satu watak: menipu jika anda tiada.",
+      "pickAction": "Pilih tindakan di atas meja",
+      "swapping": "{{name}} sedang menukar kad dengan dek"
+    },
+    "deal": {
+      "title": "Dua kad anda",
+      "hint": "Rahsiakan. Hilang kedua-duanya dan anda keluar; menipulah dengan watak yang anda tiada.",
+      "go": "Ke meja"
+    },
+    "show": {
+      "title": "{{challenger}} mencabar {{claimant}}: betul {{role}}?",
+      "caught": "Tiada {{role}}! Itu tipu — {{claimant}} membuka satu kad.",
+      "proved": "{{claimant}} memang ada {{role}}! Kad itu masuk semula ke dek untuk kad baru, dan {{loser}} membuka satu kad.",
+      "titleMe": "Anda mencabar {{claimant}}: betul {{role}}?",
+      "caughtMe": "Tiada {{role}}! Tipu anda tertangkap — anda membuka satu kad.",
+      "provedMe": "{{claimant}} memang ada {{role}}! Kad itu masuk semula ke dek untuk kad baru, dan anda membuka satu kad."
+    },
+    "aim": {
+      "steal": "Ketik siapa untuk diseluk saku.",
+      "assassinate": "Ketik siapa untuk dibelasah.",
+      "coup": "Ketik kedai siapa untuk ditutup.",
+      "back": "Pilih tindakan lain",
+      "pick": "Ketik seorang pemain di pentas",
+      "hold": {
+        "steal": "Tahan untuk seluk saku {{name}}",
+        "assassinate": "Tahan untuk belasah {{name}}",
+        "coup": "Tahan untuk tutup kedai {{name}}"
+      }
+    },
+    "claim": {
+      "says": "{{name}} berkata:",
+      "iam": "Saya {{role}}",
+      "blocks": "Saya halang — saya {{role}}",
+      "plain": {
+        "foreignAid": "Pinjam $2"
+      },
+      "against": "Menentang {{action}} {{name}}",
+      "on": "ke atas {{name}}",
+      "progress": "{{done}} daripada {{total}} benarkan",
+      "progressBlock": "{{done}} daripada {{total}} tidak halang",
+      "blockAs": "Sebagai {{role}}",
+      "letGo": "Biarkan",
+      "youLet": "Anda biarkan — menunggu yang lain",
+      "holdBlock": "Halang",
+      "holdChallenge": "Cabar",
+      "watch": "Sesiapa yang ragu boleh mencabar.",
+      "watchBlock": "Yang boleh menghalang sedang berfikir.",
+      "againstMe": "Menentang {{action}} anda",
+      "saysMe": "Anda berkata:"
+    },
+    "lose": {
+      "tag": "BUKA",
+      "hint": "Pilih kad untuk dilepaskan, kemudian tahan. Kad yang tinggal kekal rahsia.",
+      "hold": "Tahan untuk buka {{role}}",
+      "coup": "{{actor}} menutup kedai {{name}}: satu kad hilang",
+      "assassinate": "{{actor}} membelasah {{name}}: satu kad hilang",
+      "challenge": "{{name}} kalah cabaran: satu kad hilang"
+    },
+    "swap": {
+      "keep": "SIMPAN",
+      "new": "BARU"
+    },
+    "den": {
+      "won": "{{name}} menguasai sarang",
+      "yourTurn": "Giliran anda",
+      "turn": "Giliran {{name}}",
+      "subtitle": "Giliran ke-{{n}} · {{left}} daripada {{total}} masih bermain"
+    },
+    "tools": {
+      "hand": "Kad anda",
+      "record": "Rekod",
+      "roles": "Watak"
+    },
+    "tags": {
+      "purse": "Wang anda",
+      "deck": "Dek"
+    },
+    "journal": {
+      "turn": "Giliran {{n}}",
+      "empty": "Belum ada apa-apa berlaku."
+    },
+    "end": {
+      "youWin": "Anda menguasai sarang",
+      "wins": "{{name}} menguasai sarang",
+      "abandoned": "Meja bersurai sebelum ada pemenang.",
+      "reason_one": "Yang terakhir berdiri selepas {{count}} giliran.",
+      "reason_other": "Yang terakhir berdiri selepas {{count}} giliran."
+    }
   },
   "manor": {
     "tagline": "Pastikan datuk tua hidup hingga subuh",
@@ -1197,7 +1566,51 @@
     "lockedKaizhai": "Pusingan ini kaizhai: 1 ialah joker, dan tiada siapa boleh panggil zhai atau 1.",
     "leopard": "Lima sama +1",
     "reroll": "Bersepah — tunjuk dan goncang semula",
-    "rerolled": "{{name}} goncang semula cawan bersepah (tunjuk {{dice}})"
+    "rerolled": "{{name}} goncang semula cawan bersepah (tunjuk {{dice}})",
+    "stage": {
+      "round": "Pusingan {{round}}",
+      "closing": "Masa tutup",
+      "dice_one": "{{count}} dadu di atas meja",
+      "dice_other": "{{count}} dadu di atas meja",
+      "yourCup": "Cawan anda",
+      "reshake": "Berselerak — goncang semula",
+      "callsTool": "Panggilan",
+      "noCalls": "Belum ada panggilan pusingan ini.",
+      "called": "{{name}} memanggil",
+      "splitBy": "{{name}} membelah panggilan {{bidder}}!",
+      "beat": "Atasi panggilan {{name}}",
+      "openMin": "Sekurang-kurangnya {{min}} — atau {{zhaiMin}} zhai",
+      "liarAs": "Tuduh tipu dengan",
+      "openCups": "Buka · 1 cawan",
+      "splitCups": "Belah · 2 cawan",
+      "callIt": "Panggil {{bid}}",
+      "holdOpen": "Tahan: Tipu!",
+      "holdSplit": "Tahan: Tipu! ×2",
+      "holdCounter": "Balas ×4",
+      "holdSplitThem": "Tahan untuk belah {{name}} · 2 cawan",
+      "liar": "Tipu!",
+      "continue": "Teruskan",
+      "counting": "Mengira dadu…",
+      "counted": "Dikira {{count}} daripada {{need}}",
+      "lie": "Tipu!",
+      "stands": "Panggilan sah!",
+      "leopard": "lima sama",
+      "out": "keluar",
+      "leftEarly": "Meja bersurai sebelum tamat.",
+      "theReveal": "Pendedahan",
+      "revealHead": {
+        "open": "{{name}} membuka panggilan {{bidder}}",
+        "split": "{{name}} membelah panggilan {{bidder}}",
+        "counter": "{{name}} membelah panggilan {{bidder}} — dibalas!"
+      },
+      "splitYou": "{{name}} membelah panggilan anda!",
+      "revealYou": {
+        "open": "{{name}} membuka panggilan anda",
+        "split": "{{name}} membelah panggilan anda",
+        "counter": "{{name}} membelah panggilan anda — anda membalas!"
+      },
+      "answerHold": "Terima: yang kalah minum 2. Tahan Balas: yang kalah minum 4."
+    }
   },
   "nightwatch": {
     "tagline": "Nyalakan pelita meterai sebelum hantu terlepas",
@@ -1517,7 +1930,8 @@
     },
     "letter": {
       "title": "SEPUCUK SURAT TANPA NAMA",
-      "unsigned": "tiada tandatangan"
+      "unsigned": "tiada tandatangan",
+      "open": "Pecahkan meterai"
     },
     "book": {
       "title": "Rekod Kapel",
@@ -1534,6 +1948,28 @@
       "teams": "Pasukan & undian",
       "mission": "Misi",
       "private": "Hanya anda tahu"
+    },
+    "rite": {
+      "pick": "Ketik sebuah tanglung untuk memilih",
+      "holdSuccess": "Tahan untuk main Berjaya",
+      "holdFail": "Tahan untuk main Gagal",
+      "played": "{{done}} daripada {{total}} kad dimainkan",
+      "approved": "Pasukan diluluskan",
+      "rejected": "Pasukan ditolak",
+      "succeeded": "Misi berjaya",
+      "failed": "Misi gagal",
+      "fails_one": "{{count}} kad gagal",
+      "fails_other": "{{count}} kad gagal",
+      "noFails": "Tiada kad gagal",
+      "missing": "Pasukan tidak sempat tiba di {{room}}",
+      "continue": "Teruskan",
+      "goodOnly": "Penjaga hanya boleh menyalakan tanglung emas.",
+      "holdName": "Tahan untuk namakan {{name}}",
+      "pickProphet": "Ketik orang yang anda rasa Peramal",
+      "openLetter": "Ketik meterai untuk buka surat malam ini",
+      "picking": "{{name}} sedang memilih {{size}} orang untuk misi",
+      "toTeam": "Teruskan",
+      "roomDone": "Kerja malam ini sudah selesai. Bila sedia, teruskan ke pasukan."
     }
   },
   "profile": {
@@ -1581,7 +2017,8 @@
       "newBadge": "Lencana baharu!",
       "unlocked": "{{n}} daripada {{total}} diperoleh",
       "noGames": "Habiskan satu permainan untuk mula merekod."
-    }
+    },
+    "style": "Gaya"
   },
   "legal": {
     "privacy": "Dasar Privasi",
@@ -1638,12 +2075,15 @@
       "common": "Biasa",
       "rare": "Jarang",
       "epic": "Epik",
-      "legendary": "Legenda"
+      "legendary": "Legenda",
+      "mythic": "Mitos"
     },
     "unlock": "Buka dengan {{price}}",
-    "notEnough": "Perlu {{count}} syiling lagi",
+    "notEnough": "Perlu {{amount}} syiling lagi",
     "locked": "Berkunci",
-    "earnWith": "Dapatkan: {{badge}}"
+    "earnWith": "Dapatkan: {{badge}}",
+    "owned": "Dimiliki",
+    "earnedSection": "Dapat dengan lencana"
   },
   "coins": {
     "earned_one": "Anda dapat {{count}} syiling!",
@@ -1820,150 +2260,182 @@
       "bronze": "Gangsa",
       "silver": "Perak",
       "gold": "Emas",
-      "legendary": "Lagenda"
+      "diamond": "Berlian"
     },
     "boardly": {
-      "firstTable": {
-        "name": "Tempat Pertama",
-        "desc": "Duduk di meja pertama anda."
-      },
-      "firstWin": {
-        "name": "Kemenangan Pertama",
-        "desc": "Menang satu permainan."
-      },
       "regular": {
         "name": "Pelanggan Tetap",
-        "desc": "Main 10 permainan."
+        "desc": "Main {{count}} permainan.",
+        "desc_other": "Main {{count}} permainan."
       },
       "streak": {
         "name": "Panas Membara",
-        "desc": "Menang 3 permainan berturut-turut."
+        "desc": "Menang {{count}} permainan berturut-turut.",
+        "desc_other": "Menang {{count}} permainan berturut-turut."
       },
       "company": {
         "name": "Teman Baik",
-        "desc": "Main bersama 5 orang berbeza."
-      },
-      "veteran": {
-        "name": "Veteran",
-        "desc": "Main 50 permainan."
+        "desc": "Main bersama {{count}} orang berbeza.",
+        "desc_other": "Main bersama {{count}} orang berbeza."
       },
       "champion": {
         "name": "Juara",
-        "desc": "Menang 25 permainan."
-      },
-      "legend": {
-        "name": "Lagenda Meja",
-        "desc": "Main 100 permainan."
+        "desc": "Menang {{count}} permainan.",
+        "desc_other": "Menang {{count}} permainan."
       }
     },
     "nightwatch": {
       "sealed": {
         "name": "Penjaga Meterai",
-        "desc": "Meterai rumah agam sebagai penjaga."
+        "desc": "Meterai rumah agam sebagai penjaga sebanyak {{count}} kali.",
+        "desc_other": "Meterai rumah agam sebagai penjaga sebanyak {{count}} kali."
       },
       "possessed": {
         "name": "Dirasuk",
-        "desc": "Menang di pihak hantu."
+        "desc": "Menang di pihak hantu sebanyak {{count}} kali.",
+        "desc_other": "Menang di pihak hantu sebanyak {{count}} kali."
       },
       "prophet": {
         "name": "Peramal Tersembunyi",
-        "desc": "Menang sebagai Peramal."
+        "desc": "Menang sebagai Peramal sebanyak {{count}} kali.",
+        "desc_other": "Menang sebagai Peramal sebanyak {{count}} kali."
       },
       "sharpEye": {
         "name": "Mata Tajam",
-        "desc": "Sebagai pembunuh upahan, cari Peramal."
+        "desc": "Sebagai pembunuh upahan, cari Peramal sebanyak {{count}} kali.",
+        "desc_other": "Sebagai pembunuh upahan, cari Peramal sebanyak {{count}} kali."
       },
       "ghostbreaker": {
         "name": "Pemburu Hantu",
-        "desc": "Menang 25 permainan Meterai Rumah Agam."
+        "desc": "Menang {{count}} permainan Meterai Rumah Agam.",
+        "desc_other": "Menang {{count}} permainan Meterai Rumah Agam."
       }
     },
     "shelter": {
       "rescued": {
         "name": "Diselamatkan",
-        "desc": "Bertahan sehingga konvoi tiba."
+        "desc": "Bertahan sehingga konvoi tiba sebanyak {{count}} kali.",
+        "desc_other": "Bertahan sehingga konvoi tiba sebanyak {{count}} kali."
       },
       "patientZero": {
         "name": "Pesakit Sifar",
-        "desc": "Menang sebagai yang Dijangkiti."
+        "desc": "Menang sebagai yang Dijangkiti sebanyak {{count}} kali.",
+        "desc_other": "Menang sebagai yang Dijangkiti sebanyak {{count}} kali."
       },
       "caught": {
         "name": "Dapat Tangkap",
-        "desc": "Halau yang Dijangkiti dan menang."
+        "desc": "Halau yang Dijangkiti dan menang sebanyak {{count}} kali.",
+        "desc_other": "Halau yang Dijangkiti dan menang sebanyak {{count}} kali."
       },
       "fullLarder": {
         "name": "Stor Penuh",
-        "desc": "Diselamatkan dengan 10 makanan atau lebih dalam stor."
+        "desc": "Diselamatkan dengan 10 makanan atau lebih dalam stor sebanyak {{count}} kali.",
+        "desc_other": "Diselamatkan dengan 10 makanan atau lebih dalam stor sebanyak {{count}} kali."
       },
       "lastWinter": {
         "name": "Musim Sejuk Terakhir",
-        "desc": "Menang 25 permainan Tempat Perlindungan."
+        "desc": "Menang {{count}} permainan Tempat Perlindungan.",
+        "desc_other": "Menang {{count}} permainan Tempat Perlindungan."
       }
     },
     "avalon": {
       "firstOp": {
         "name": "Misi Selesai",
-        "desc": "Menang sebagai ejen."
+        "desc": "Menang sebagai ejen sebanyak {{count}} kali.",
+        "desc_other": "Menang sebagai ejen sebanyak {{count}} kali."
       },
       "mole": {
         "name": "Si Tikus",
-        "desc": "Menang sebagai tikus."
+        "desc": "Menang sebagai pengkhianat sebanyak {{count}} kali.",
+        "desc_other": "Menang sebagai pengkhianat sebanyak {{count}} kali."
       },
       "hitman": {
         "name": "Pembunuh Upahan",
-        "desc": "Sebagai pembunuh upahan, kena sasaran yang betul."
+        "desc": "Sebagai Pembunuh Upahan, temui Pengendali sebanyak {{count}} kali.",
+        "desc_other": "Sebagai Pembunuh Upahan, temui Pengendali sebanyak {{count}} kali."
+      },
+      "handler": {
+        "name": "Pengendali Halimunan",
+        "desc": "Menang sebagai Pengendali sebanyak {{count}} kali.",
+        "desc_other": "Menang sebagai Pengendali sebanyak {{count}} kali."
       },
       "spymaster": {
         "name": "Ketua Pengintip",
-        "desc": "Menang 25 permainan Double Agent."
+        "desc": "Menang {{count}} permainan Double Agent.",
+        "desc_other": "Menang {{count}} permainan Double Agent."
       }
     },
     "manor": {
       "dawn": {
         "name": "Hingga Subuh",
-        "desc": "Pastikan orang tua itu hidup sehingga 6 pagi."
+        "desc": "Pastikan orang tua itu hidup sehingga 6 pagi sebanyak {{count}} kali.",
+        "desc_other": "Pastikan orang tua itu hidup sehingga 6 pagi sebanyak {{count}} kali."
       },
       "intruder": {
         "name": "Penceroboh",
-        "desc": "Menang sebagai penceroboh."
+        "desc": "Menang sebagai penceroboh sebanyak {{count}} kali.",
+        "desc_other": "Menang sebagai penceroboh sebanyak {{count}} kali."
       },
       "caught": {
         "name": "Tertangkap Basah",
-        "desc": "Tangkap penceroboh dan menang."
+        "desc": "Tangkap penceroboh dan menang sebanyak {{count}} kali.",
+        "desc_other": "Tangkap penceroboh dan menang sebanyak {{count}} kali."
       },
       "lord": {
         "name": "Tuan Rumah Agam",
-        "desc": "Menang 25 permainan Midnight Manor."
+        "desc": "Menang {{count}} permainan Midnight Manor.",
+        "desc_other": "Menang {{count}} permainan Midnight Manor."
       }
     },
     "coup": {
-      "firstWin": {
-        "name": "Buka Kedai",
-        "desc": "Menang satu permainan Hustle."
-      },
       "kingpin": {
         "name": "Taiko",
-        "desc": "Menang 10 permainan Hustle."
+        "desc": "Menang {{count}} permainan Hustle.",
+        "desc_other": "Menang {{count}} permainan Hustle."
+      },
+      "untouchable": {
+        "name": "Tak Tersentuh",
+        "desc": "Menang {{count}} permainan dengan kedua-dua kad masih tertutup.",
+        "desc_other": "Menang {{count}} permainan dengan kedua-dua kad masih tertutup."
+      },
+      "smooth": {
+        "name": "Pandai Berkata",
+        "desc": "Menang {{count}} permainan dengan menipu tanpa pernah tertangkap.",
+        "desc_other": "Menang {{count}} permainan dengan menipu tanpa pernah tertangkap."
+      },
+      "sharpEye": {
+        "name": "Mata Helang",
+        "desc": "Tangkap penipu dalam {{count}} permainan.",
+        "desc_other": "Tangkap penipu dalam {{count}} permainan."
       }
     },
     "liarsdice": {
-      "firstWin": {
-        "name": "Muka Selamba",
-        "desc": "Menang satu permainan Dadu Penipu."
-      },
       "bluffer": {
         "name": "Raja Temberang",
-        "desc": "Menang 10 permainan Dadu Penipu."
+        "desc": "Menang {{count}} permainan Dadu Penipu.",
+        "desc_other": "Menang {{count}} permainan Dadu Penipu."
+      },
+      "sober": {
+        "name": "Langsung Tak Minum",
+        "desc": "Menang Dadu Penipu tanpa minum secawan pun sebanyak {{count}} kali.",
+        "desc_other": "Menang Dadu Penipu tanpa minum secawan pun sebanyak {{count}} kali."
+      },
+      "counter": {
+        "name": "Tumbukan Balas",
+        "desc": "Menang balas belah (反劈) dalam {{count}} permainan.",
+        "desc_other": "Menang balas belah (反劈) dalam {{count}} permainan."
       }
     },
     "tictactoe": {
-      "firstWin": {
-        "name": "Tiga Sebaris",
-        "desc": "Menang satu permainan Tic-Tac-Toe."
-      },
       "master": {
         "name": "Pakar Grid",
-        "desc": "Menang 10 permainan Tic-Tac-Toe."
+        "desc": "Menang {{count}} permainan Tic-Tac-Toe.",
+        "desc_other": "Menang {{count}} permainan Tic-Tac-Toe."
+      },
+      "fork": {
+        "name": "Serampang",
+        "desc": "Menang Tic-Tac-Toe dengan dua ancaman serentak sebanyak {{count}} kali.",
+        "desc_other": "Menang Tic-Tac-Toe dengan dua ancaman serentak sebanyak {{count}} kali."
       }
     },
     "celebrate": {
@@ -1974,7 +2446,82 @@
       "nice": "Hebat!",
       "tapNext": "Ketik untuk yang seterusnya",
       "nextLevel": "Tahap seterusnya",
-      "topLevel": "Tahap tertinggi dicapai"
+      "topLevel": "Tahap tertinggi dicapai",
+      "toLevel": "{{n}} lagi ke {{level}}"
+    },
+    "hall": {
+      "title": "Lencana",
+      "showcase": "Pameran anda",
+      "hint": "Rakan melihat empat ini pada kad anda. Ketik lencana yang diperoleh untuk menukarnya.",
+      "showOff": "Tunjuk pada kad saya",
+      "takeOff": "Buang dari kad saya",
+      "emptySlot": "Pilih lencana",
+      "toTier": "{{n}}/{{goal}} ke {{tier}}",
+      "collection": "Koleksi",
+      "collectionHint": "Semua lencana, mengikut permainan. Setiap satu ada empat tahap: capai sasaran untuk naik.",
+      "levels": "Tahap dicapai",
+      "earned": "Diperoleh"
     }
+  },
+  "mascot": {
+    "tab": "Maskot",
+    "wardrobe": "Almari",
+    "close": "Tutup",
+    "tapToHop": "Ketik untuk melompat",
+    "failed": "Tidak berjaya — cuba lagi",
+    "reset": "Set semula",
+    "starter": "Asal",
+    "buy_one": "Beli {{count}} · {{price}}",
+    "buy_other": "Beli {{count}} · {{price}}",
+    "save": "Simpan gaya",
+    "lookingGood": "Nampak hebat",
+    "free": "Percuma",
+    "owned": "Dimiliki",
+    "open": "Almari",
+    "soon": "Permainan mini akan datang: main dengan maskot anda untuk dapat syiling.",
+    "hello": "Hai, {{name}}!",
+    "tabs": {
+      "skin": "Set",
+      "colour": "Warna",
+      "eyes": "Mata",
+      "mouth": "Mulut",
+      "nose": "Hidung",
+      "hat": "Topi",
+      "top": "Baju",
+      "bottom": "Seluar",
+      "shoes": "Kasut",
+      "hand": "Pegang",
+      "back": "Belakang"
+    }
+  },
+  "tictactoe": {
+    "turn": {
+      "mine": "Giliran anda",
+      "theirs": "Giliran {{name}}"
+    },
+    "plinth": {
+      "mine": "Giliran anda — letak {{mark}} anda",
+      "placing": "Meletak tanda anda…",
+      "theirs": "{{name}} sedang berfikir…"
+    },
+    "marks": {
+      "X": "pangkah",
+      "O": "bulatan"
+    },
+    "hint": "Ketik satu petak. Tiga sebaris menang — melintang, menegak atau pepenjuru.",
+    "result": {
+      "youWin": "Anda menang!",
+      "winner": "{{name}} menang!",
+      "draw": "Seri!",
+      "ended": "Permainan tamat"
+    },
+    "reason": {
+      "row": "Tiga sebaris, melintang.",
+      "column": "Tiga sebaris, menegak.",
+      "diagonal": "Tiga sebaris, dari sudut ke sudut.",
+      "full": "Kesemua sembilan petak penuh, tiada barisan.",
+      "left": "Permainan tamat sebelum papan selesai."
+    },
+    "continue": "Teruskan"
   }
 }

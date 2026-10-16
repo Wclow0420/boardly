@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+import { Canvas, Group, Image as SkImage, rect } from "@shopify/react-native-skia";
+import { LinearGradient } from "expo-linear-gradient";
+import { useState, type ReactNode } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -7,26 +9,55 @@ import {
   ScrollView,
   StyleSheet,
   View,
+  type StyleProp,
+  type ViewStyle,
 } from "react-native";
 import { useTranslation } from "react-i18next";
 
+import { bakedSvg } from "@/components/badges/bake";
+import type { Jewel } from "@/components/engraved/shapes";
 import { Emblem } from "@/components/icons";
-import { AppText, IconButton } from "@/components/ui";
-import { useTheme } from "@/theme";
+import { AppText, BezelOverlay, IconButton, useBox } from "@/components/ui";
+import { fontFamily, useTheme } from "@/theme";
+import { POPUP_RADIUS, POPUP_RIM, popupPanel } from "./popupArt";
+
+/** A game's own colours for its popups. */
+export interface PopupLook {
+  /** The sign over the top edge, top to bottom. */
+  enamel: readonly string[];
+  /** The jewel in the corner pieces. */
+  jewel?: Jewel;
+  /** The light falling on the card from the top. */
+  glow?: string;
+}
+
+const PLAIN: PopupLook = { enamel: ["#D2384A", "#9A1828", "#5A0812"], jewel: "ruby", glow: "#FFD58A" };
 
 export interface PopupProps {
   visible: boolean;
   title: string;
   onClose: () => void;
   children: ReactNode;
+  look?: PopupLook;
 }
 
 /** A card in the middle of the screen, over the board: a game's panels
  *  (map, notebook, role...) and its prompts all open in one. Shared by
- *  the games that use it (Seal the Manor, Shelter). */
-export function Popup({ visible, title, onClose, children }: PopupProps) {
+ *  the games that use it (Seal the Manor, Shelter). It wears the house
+ *  trim: the game's dark card in a gilded moulding with jewelled
+ *  corners, its title on an enamel sign over the top edge, a stud to
+ *  close it. The panel is baked once per size. */
+export function Popup({ visible, title: titleNow, onClose, children: childrenNow, look: lookNow = PLAIN }: PopupProps) {
   const { t } = useTranslation();
-  const { colors, radius, spacing } = useTheme();
+  const { spacing } = useTheme();
+  // While it fades away, it keeps what it was showing: the board has
+  // already moved on (its panel closed, the title back to the phase), and
+  // the card emptying mid-fade flashed it to a new size.
+  const [shown, setShown] = useState({ title: titleNow, children: childrenNow, look: lookNow });
+  if (visible && (shown.title !== titleNow || shown.children !== childrenNow || shown.look !== lookNow)) {
+    setShown({ title: titleNow, children: childrenNow, look: lookNow });
+  }
+  const { title, children, look } = visible ? { title: titleNow, children: childrenNow, look: lookNow } : shown;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -38,41 +69,25 @@ export function Popup({ visible, title, onClose, children }: PopupProps) {
           <Pressable
             accessibilityLabel={t("rules.close")}
             onPress={onClose}
-            style={[StyleSheet.absoluteFill, { backgroundColor: colors.overlay }]}
+            style={[StyleSheet.absoluteFill, styles.dim]}
           />
-          <View
-            style={[
-              styles.card,
-              {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-                borderRadius: radius.lg,
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.head,
-                { paddingHorizontal: spacing.xl, paddingTop: spacing.lg },
-              ]}
-            >
-              <AppText variant="title" style={styles.grow} numberOfLines={1}>
-                {title}
-              </AppText>
-              <IconButton accessibilityLabel={t("rules.close")} onPress={onClose} filled>
-                <Emblem emoji="✕" size={18} />
-              </IconButton>
+          <View style={styles.wrap}>
+            <Card look={look}>{children}</Card>
+            {/* the title on its sign, over the top edge */}
+            <View style={styles.signRow} pointerEvents="none">
+              <View style={styles.sign}>
+                <LinearGradient colors={look.enamel as [string, string, ...string[]]} style={StyleSheet.absoluteFill} />
+                <BezelOverlay r={12} t={4} />
+                <AppText style={styles.signText} numberOfLines={1}>
+                  {title}
+                </AppText>
+              </View>
             </View>
-            <ScrollView
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{
-                paddingHorizontal: spacing.xl,
-                paddingTop: spacing.md,
-                paddingBottom: spacing.xl,
-              }}
-            >
-              {children}
-            </ScrollView>
+            <IconButton accessibilityLabel={t("rules.close")} onPress={onClose} size={38} style={styles.close}>
+              <LinearGradient colors={["#5A606A", "#24282E"]} style={styles.closeFace} />
+              <BezelOverlay r={19} t={3} />
+              <Emblem emoji="✕" size={14} />
+            </IconButton>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -80,16 +95,120 @@ export function Popup({ visible, title, onClose, children }: PopupProps) {
   );
 }
 
+/** The gilt card on its own, for a popup laid out differently (the rules):
+ *  the game's dark fill behind, `children` clipped to the inside of the
+ *  frame, the gilded moulding and jewelled corners over them. */
+export function GiltCard({
+  look = PLAIN,
+  children,
+  style,
+  fill = false,
+}: {
+  look?: PopupLook;
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+  /** The inside fills a card of a set height (rather than sizing it). */
+  fill?: boolean;
+}) {
+  const { colors } = useTheme();
+  const [{ w, h }, onLayout] = useBox();
+  return (
+    <View style={[styles.card, w === 0 && { backgroundColor: colors.card }, style]} onLayout={onLayout}>
+      {w > 0 ? <Panel w={w} h={h} look={look} layer="back" /> : null}
+      <View style={[styles.inside, fill && styles.grow]}>{children}</View>
+      {w > 0 ? <Panel w={w} h={h} look={look} layer="front" /> : null}
+    </View>
+  );
+}
+
+/** The card itself. It is made anew each time the popup opens, so it
+ *  measures itself afresh (not at the size of the last popup), and it is
+ *  dark from its first frame, before the gilt panel is drawn over it. */
+function Card({ look, children }: { look: PopupLook; children: ReactNode }) {
+  return (
+    <GiltCard look={look}>
+      {/* what scrolls stays inside the frame and passes under its gold */}
+      <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
+        {children}
+      </ScrollView>
+    </GiltCard>
+  );
+}
+
+function Panel({ w, h, look, layer }: { w: number; h: number; look: PopupLook; layer: "back" | "front" }) {
+  const { colors } = useTheme();
+  const fill = [colors.card, colors.background] as const;
+  const glow = look.glow ?? PLAIN.glow!;
+  const jewel = look.jewel ?? "ruby";
+  // baked in steps of height, not once for every height its content
+  // reaches: the top of the panel is drawn down to just above the card's
+  // foot, and the panel's own foot (its corners) pinned to the card's
+  const bh = Math.ceil(h / 64) * 64;
+  const image = bakedSvg(`gamepopup|${layer}|${fill.join()}|${glow}|${jewel}`, w, bh, () =>
+    popupPanel(w, bh, fill, glow, jewel, layer),
+  );
+  const foot = Math.min(72, h / 2);
+  return (
+    // a canvas takes touches whatever it's told: the view lets them through
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+    <Canvas style={StyleSheet.absoluteFill}>
+      {image ? (
+        <>
+          <Group clip={rect(0, 0, w, h - foot)}>
+            <SkImage image={image} x={0} y={0} width={w} height={bh} />
+          </Group>
+          <Group clip={rect(0, h - foot, w, foot)}>
+            <SkImage image={image} x={0} y={h - bh} width={w} height={bh} />
+          </Group>
+        </>
+      ) : null}
+    </Canvas>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  grow: { flex: 1 },
   centre: { alignItems: "center", justifyContent: "center" },
+  grow: { flex: 1 },
+  dim: { backgroundColor: "rgba(4,5,10,0.78)" },
+  wrap: { width: "100%", maxWidth: 440, maxHeight: "86%", marginTop: 14 },
   card: {
-    width: "100%",
-    maxWidth: 440,
-    maxHeight: "88%",
-    borderWidth: 1.5,
+    flexShrink: 1,
+    borderRadius: POPUP_RADIUS,
+    shadowColor: "#000",
+    shadowOpacity: 0.6,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+  },
+  inside: {
+    flexShrink: 1,
+    margin: POPUP_RIM,
+    borderRadius: POPUP_RADIUS - POPUP_RIM,
     overflow: "hidden",
   },
-  head: { flexDirection: "row", alignItems: "center", gap: 12 },
+  body: { paddingTop: 32, paddingBottom: 20, paddingHorizontal: 16 },
+  signRow: { position: "absolute", left: 0, right: 0, top: -21, alignItems: "center" },
+  sign: {
+    minWidth: 170,
+    maxWidth: 300,
+    height: 42,
+    paddingHorizontal: 22,
+    borderRadius: 12,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  signText: {
+    fontFamily: fontFamily.bold,
+    fontSize: 17,
+    lineHeight: 22,
+    letterSpacing: 1,
+    color: "#FFF2D0",
+    textShadowColor: "rgba(0,0,0,0.85)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 2,
+  },
+  close: { position: "absolute", right: -10, top: -12 },
+  closeFace: { position: "absolute", left: 0, top: 0, right: 0, bottom: 0, borderRadius: 19 },
 });

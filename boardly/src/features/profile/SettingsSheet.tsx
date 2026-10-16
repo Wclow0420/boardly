@@ -1,4 +1,4 @@
-// The profile's settings, behind the gear: borders, language, password,
+// The profile's settings, behind the gear: language, password,
 // the legal pages, logging out and deleting the account. Picking one
 // closes this sheet and hands the choice back (some open sheets of their
 // own).
@@ -13,7 +13,6 @@ import type { ComponentType } from "react";
 import {
   BinEmblem,
   DoorEmblem,
-  FrameEmblem,
   GlobeEmblem,
   KeyEmblem,
   LockEmblem,
@@ -23,6 +22,7 @@ import {
 import { ChevronRightIcon } from "@/components/icons";
 import {
   AppText,
+  BezelOverlay,
   BottomSheetModal,
   GorhomBottomSheetModal,
   Texture,
@@ -33,7 +33,6 @@ import { TABLE, fontFamily } from "@/theme";
 import { tapHaptic } from "@/utils/haptics";
 
 export type SettingKey =
-  | "borders"
   | "language"
   | "password"
   | "privacy"
@@ -63,7 +62,6 @@ export const SettingsSheet = forwardRef<
     value?: string;
     danger?: boolean;
   }[] = [
-    { key: "borders", Emblem: FrameEmblem, label: t("profile.borders") },
     {
       key: "language",
       Emblem: GlobeEmblem,
@@ -105,16 +103,10 @@ export const SettingsSheet = forwardRef<
           >
             <LinearGradient
               colors={row.danger ? DANGER_TILE.fill : TABLE.button}
-              style={[
-                styles.row,
-                {
-                  borderColor: row.danger
-                    ? DANGER_TILE.border
-                    : TABLE.buttonBorder,
-                },
-              ]}
+              style={styles.row}
             >
-              <Texture radius={ROW_RADIUS - 2} />
+              <Texture radius={ROW_RADIUS} />
+              <BezelOverlay r={ROW_RADIUS} t={3} />
               <row.Emblem size={30} />
               <AppText numberOfLines={1} style={[styles.grow, styles.label]}>
                 {row.label}
@@ -141,11 +133,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingVertical: 11,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     borderRadius: ROW_RADIUS,
-    borderWidth: 2,
-    borderBottomWidth: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.35,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 3 },
   },
   label: { fontFamily: fontFamily.semiBold, fontSize: 14, color: "#FFFFFF" },
   value: {

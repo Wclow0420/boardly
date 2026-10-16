@@ -5,11 +5,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
-import { api } from "@/api/client";
+import { api, type GameSessionInfo, type RoomInfo } from "@/api/client";
 import { getSocket, joinRoomChannel, leaveRoomChannel } from "@/api/socket";
+import { useSession } from "@/context/SessionContext";
 
 export function useRoom(code: string) {
   const queryClient = useQueryClient();
+  const me = useSession().user?.id;
 
   const query = useQuery({
     queryKey: ["room", code],
@@ -39,19 +41,38 @@ export function useRoom(code: string) {
       queryClient.invalidateQueries({ queryKey: ["room", code] });
       queryClient.invalidateQueries({ queryKey: ["myTables"] });
     };
+    // A move: players at the table are sent their own view of the new
+    // state with it, so it goes straight in, no refetch. The table's own
+    // channel says only that it changed, for anyone watching.
+    const moved = (event?: { session?: GameSessionInfo; seated?: boolean }) => {
+      if (event?.session) {
+        const next = event.session;
+        queryClient.setQueryData(["room", code], (prev: RoomInfo | undefined) =>
+          prev && prev.session?.id === next.id && (prev.session.version ?? -1) >= (next.version ?? 0)
+            ? prev
+            : prev
+              ? { ...prev, session: next }
+              : prev,
+        );
+        return;
+      }
+      const room = queryClient.getQueryData<RoomInfo>(["room", code]);
+      if (event?.seated && room?.players.some((p) => p.userId === me)) return;
+      queryClient.invalidateQueries({ queryKey: ["room", code] });
+    };
     socket.on("room_updated", refresh);
     socket.on("game_started", refresh);
-    socket.on("game_updated", refresh);
+    socket.on("game_updated", moved);
     socket.on("room_closed", refresh);
 
     return () => {
       socket.off("room_updated", refresh);
       socket.off("game_started", refresh);
-      socket.off("game_updated", refresh);
+      socket.off("game_updated", moved);
       socket.off("room_closed", refresh);
       leaveRoomChannel(roomId);
     };
-  }, [roomId, code, queryClient]);
+  }, [roomId, code, queryClient, me]);
 
   return query;
 }

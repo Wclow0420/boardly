@@ -1,92 +1,123 @@
-import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+// Liar's Dice (大话骰) on the stage (the shared GameStage, see "A game's
+// flow on the stage" in CLAUDE.md). The dice den's back bar across the
+// top: the round, the dice on the table, a stein per player filling with
+// every cup they drink. My own dice lie in a felt tray under it. Every
+// moment is its own scene behind the curtain:
+//   table  — everyone on the stage, cups down at their feet, the call on
+//            the slate over them; anyone but the bidder may split (劈) it,
+//            holding the button while red light streams to the bidder
+//   call   — my turn: my dice, the number and the face picked on the
+//            stage, the call made on the plinth, or "Liar!" held there
+//   split  — the splitter in red light, the bidder to accept or to hold
+//            for the counter-split (反劈)
+//   reveal — every cup lifted, the dice counted toward the call, the one
+//            who drinks lit red (played once on each device)
+//   ending — the tankard, the winner crowned, the night's tally.
+
+import { useEffect, useState } from "react";
+import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { AppText, BottomSheetModal, Button, Card } from "@/components/ui";
-import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
-import { usePromptSheet } from "@/hooks/usePromptSheet";
-import { fontFamily, useTheme } from "@/theme";
+import { AppText, Button } from "@/components/ui";
+import { Journal, type JournalPage } from "@/features/game/Journal";
+import { Popup, type PopupLook } from "@/features/game/Popup";
+import { GameStage, stageText, type StageLook } from "@/features/game/stage/GameStage";
+import { ToolButton } from "@/features/game/stage/parts";
+import type { Light, Standing } from "@/features/game/stage/StageLineup";
+import { asLook } from "@/features/mascot/dress";
+import { HoldButton } from "@/games/nightwatch/lantern/HoldButton";
+import { fontFamily } from "@/theme";
 import { moveHaptic, tapHaptic } from "@/utils/haptics";
-import type { GameBoardProps, GamePlayer } from "../types";
+import type { GameBoardProps } from "../types";
+import { denLayout } from "./art";
+import { CallScene, pickZhai, type CallPick } from "./CallScene";
+import { Den } from "./Den";
+import { Ending } from "./Ending";
 import {
-  isValidBid,
-  myCount,
-  suggestedBid,
-  totalDice,
   breakZhaiMin,
   canReroll,
   canSplit,
-  isKaizhai,
-  isLeopard,
   isOut,
+  isValidBid,
+  myCount,
   openingMin,
+  suggestedBid,
   taskFor,
+  totalDice,
   type Bid,
   type LiarsDiceState,
-  type Reveal,
 } from "./logic";
+import { DiceRow, Tray } from "./pieces";
+import { RevealScene } from "./RevealScene";
+import { TableScene } from "./TableScene";
+import { useSeenReveals } from "./useSeenReveals";
 
-/** Blank space added under the table while the action sheet is up. */
-const SHEET_CLEARANCE = 330;
+/** A dice den late at night: dark wine, amber lamplight. */
+const DEN: StageLook = { sky: ["#2E1410", "#1C0C0A", "#100606"], glow: "#F2A24B", jewel: "ruby" };
+const DEN_POPUP: PopupLook = { enamel: ["#B8382A", "#7A1810", "#3A0806"], jewel: "ruby", glow: "#FFC870" };
 
-// Pip positions on a 3×3 grid (0-8), by face
-const PIPS: Record<number, number[]> = {
-  1: [4],
-  2: [0, 8],
-  3: [0, 4, 8],
-  4: [0, 2, 6, 8],
-  5: [0, 2, 4, 6, 8],
-  6: [0, 2, 3, 5, 6, 8],
-};
+type T = ReturnType<typeof useTranslation>["t"];
+type Panel = "calls" | "stop";
 
-/** One die drawn with pips. `glow` marks a die that counts for the bid. */
-function Die({
-  face,
-  size = 40,
-  glow = false,
-  dim = false,
-}: {
-  face: number;
-  size?: number;
-  glow?: boolean;
-  dim?: boolean;
-}) {
-  const { colors } = useTheme();
-  const pip = Math.max(4, size * 0.17);
-  const red = face === 1 || face === 4;
-  return (
-    <View
-      style={[
-        styles.die,
+/** What has happened, as Journal pages: the round being played (its
+ *  calls and any cups shaken again), and the round before it (how its
+ *  call was challenged and counted, everyone's dice). */
+export function liarsPages(state: LiarsDiceState, nameOf: (seat: number) => string, mySeat: number, t: T): JournalPage[] {
+  const bidText = (bid: Pick<Bid, "quantity" | "face" | "zhai">) =>
+    `${t("liarsdice.bid", { count: bid.quantity, face: bid.face })} · ${t(bid.zhai ? "liarsdice.zhai" : "liarsdice.kaizhai")}`;
+  const pages: JournalPage[] = [];
+  const r = state.reveal;
+  if (r) {
+    pages.push({
+      key: `r${r.round}`,
+      title: t("liarsdice.stage.round", { round: r.round }),
+      sections: [
         {
-          width: size,
-          height: size,
-          borderRadius: size * 0.2,
-          padding: size * 0.14,
-          backgroundColor: "#FBF7EF",
-          borderColor: glow ? colors.primary : "#D9CFBF",
-          borderWidth: glow ? 2.5 : 1,
-          opacity: dim ? 0.35 : 1,
+          key: "reveal",
+          title: `🔍 ${t("liarsdice.stage.theReveal")}`,
+          entries: [
+            {
+              text: t(`liarsdice.revealBy.${r.kind ?? "open"}`, { name: nameOf(r.challenger), bid: bidText(r.bid), bidder: nameOf(r.bid.seat) }),
+              detail: [
+                t("liarsdice.found", { count: r.found, face: r.bid.face }),
+                `${t("liarsdice.drinks", { name: nameOf(r.loser), count: r.drink })}${r.out ? ` ${t("liarsdice.drunkOut")}` : ""}`,
+              ],
+              tone: mySeat < 0 ? "neutral" : r.loser === mySeat ? "bad" : "good",
+            },
+            ...r.dice
+              .map((hand, seat) => ({ hand, seat }))
+              .filter(({ hand }) => hand.length > 0)
+              .map(({ hand, seat }) => ({
+                text: `🎲 ${nameOf(seat)}: ${[...hand].sort((a, b) => a - b).join(" ")}`,
+                detail: [`${myCount(hand, r.bid.face, r.bid.zhai)} × ${r.bid.face}`],
+              })),
+          ],
         },
-      ]}
-    >
-      {Array.from({ length: 9 }, (_, i) => (
-        <View key={i} style={styles.pipCell}>
-          {PIPS[face]?.includes(i) ? (
-            <View
-              style={{
-                width: face === 1 ? pip * 1.5 : pip,
-                height: face === 1 ? pip * 1.5 : pip,
-                borderRadius: pip,
-                backgroundColor: red ? "#D2382F" : "#2A2522",
-              }}
-            />
-          ) : null}
-        </View>
-      ))}
-    </View>
-  );
+      ],
+    });
+  }
+  if (state.phase !== "finished") {
+    pages.push({
+      key: `r${state.round}`,
+      title: t("liarsdice.stage.round", { round: state.round }),
+      sections: [
+        {
+          key: "calls",
+          title: `🎲 ${t("liarsdice.calls")}`,
+          entries: [
+            ...state.rerolls.map((x) => ({ text: `🎲 ${t("liarsdice.rerolled", { name: nameOf(x.seat), dice: x.dice.join(" ") })}` })),
+            ...state.bids.map((bid, i) => ({
+              text: `${nameOf(bid.seat)}: ${bidText(bid)}`,
+              detail: !bid.zhai && state.bids[i - 1]?.zhai ? [`🍖 ${t("liarsdice.broke")}`] : undefined,
+            })),
+          ],
+        },
+      ],
+    });
+  }
+  return pages;
 }
 
 export function LiarsDiceBoard({
@@ -95,693 +126,419 @@ export function LiarsDiceBoard({
   players,
   busy,
   finished,
+  sessionId,
   onMove,
+  stage,
 }: GameBoardProps<LiarsDiceState>) {
   const { t } = useTranslation();
-  const { colors, spacing } = useTheme();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
 
   const over = finished || state.phase === "finished";
   const task = over ? null : taskFor(state, mySeat);
-  const myTurn = task === "bid";
   const step = `${state.round}:${state.bids.length}:${state.phase}`;
-  const { ref: sheetRef, onDismiss: onSheetDismiss } = usePromptSheet(
-    task !== null,
-    step
-  );
-  const [handHidden, setHandHidden] = useState(false);
+  const allSeats = Array.from({ length: state.numPlayers }, (_, seat) => seat);
+  const out = allSeats.filter((seat) => isOut(state, seat));
+  const iAmOut = mySeat >= 0 && isOut(state, mySeat);
 
   const nameOf = (seat: number) =>
-    seat === mySeat
-      ? t("game.you")
-      : (players.find((p) => p.seat === seat)?.username ?? `#${seat + 1}`);
-  const bidText = (bid: Pick<Bid, "quantity" | "face" | "zhai">) =>
-    `${t("liarsdice.bid", { count: bid.quantity, face: bid.face })} · ${t(
-      bid.zhai ? "liarsdice.zhai" : "liarsdice.kaizhai"
-    )}`;
+    seat === mySeat ? t("game.you") : (players.find((p) => p.seat === seat)?.username ?? `#${seat + 1}`);
+  const people: Standing[] = allSeats.map((seat) => ({
+    seat,
+    name: nameOf(seat),
+    look: asLook(players.find((p) => p.seat === seat)?.mascot),
+  }));
 
-  const send = (move: Record<string, unknown>) => {
+  // each reveal plays once on the device; the first time the board
+  // opens it counts what's already happened
+  const memory = useSeenReveals(sessionId);
+  const { ready: memoryReady, revealed, mark } = memory;
+  useEffect(() => {
+    if (memoryReady && revealed === null) mark(state.reveal?.round ?? 0);
+  });
+  const reveal = state.reveal;
+  const revealing = memoryReady && revealed !== null && reveal !== null && reveal.round > revealed;
+  const [countedRound, setCountedRound] = useState<number | null>(null);
+  const counted = revealing && countedRound === reveal.round;
+
+  // the call being made on my turn, tagged with the step it's for
+  const fresh = (): CallPick & { step: string } => ({
+    step,
+    ...suggestedBid(state),
+    zhai: state.bid?.zhai ?? false,
+    liar: "open",
+  });
+  const [pick0, setPick] = useState(fresh);
+  const pick = pick0.step === step ? pick0 : fresh();
+  const choose = (change: Partial<CallPick>) => setPick({ ...pick, ...change, step });
+  const zhai = pickZhai(state, pick);
+  const valid = isValidBid(state, pick.quantity, pick.face, zhai);
+  const breakMin = breakZhaiMin(state);
+
+  // what I've just done shows at once, before the server answers
+  const [said, setSaid] = useState<{ step: string; text: string } | null>(null);
+  const saying = said?.step === step && !(stage?.error && !busy) ? said.text : null;
+  const send = (move: Record<string, unknown>, text?: string) => {
     moveHaptic();
+    if (text) setSaid({ step, text });
     onMove(move);
   };
+  const hold = useSharedValue(0);
+  useEffect(() => {
+    hold.set(0);
+  }, [step, hold]);
 
-  const iAmOut = mySeat >= 0 && isOut(state, mySeat);
-  const split = () => send({ type: "split", bids: state.bids.length });
+  const [panel, setPanel] = useState<Panel | null>(null);
+  const bidText = (bid: Pick<Bid, "quantity" | "face" | "zhai">) =>
+    `${t("liarsdice.bid", { count: bid.quantity, face: bid.face })} · ${t(bid.zhai ? "liarsdice.zhai" : "liarsdice.kaizhai")}`;
 
-  return (
-    <View style={{ gap: spacing.lg }}>
-      {/* The call on the table */}
-      <Card>
-        <AppText variant="caption" color="textMuted">
-          {t("liarsdice.round", { round: state.round, dice: totalDice(state) })}
-        </AppText>
-        {over ? (
-          <Result state={state} mySeat={mySeat} nameOf={nameOf} />
-        ) : state.bid ? (
-          <>
-            <View style={styles.bidRow}>
-              <AppText variant="h1">{state.bid.quantity}</AppText>
-              <AppText variant="h2">×</AppText>
-              <Die face={state.bid.face} size={44} />
-              {/* 斋 = 1s count only as 1s; 开斋 = 1s are wild */}
-              <View
-                style={[
-                  styles.zhaiTag,
-                  { backgroundColor: state.bid.zhai ? colors.danger : colors.primary },
-                ]}
-              >
-                <AppText
-                  variant="title"
-                  style={{ color: state.bid.zhai ? "#fff" : colors.primaryContrast }}
-                >
-                  {t(state.bid.zhai ? "liarsdice.zhai" : "liarsdice.kaizhai")}
-                </AppText>
-              </View>
-            </View>
-          </>
-        ) : (
-          <AppText variant="title" style={{ marginTop: 4 }}>
-            {t("liarsdice.opening", {
-              name: nameOf(state.turn),
-              min: openingMin(state, false),
-              zhaiMin: openingMin(state, true),
-            })}
-          </AppText>
-        )}
-        {state.phase === "split" && state.bid && state.split ? (
-          <AppText variant="bodyMedium" style={{ marginTop: spacing.sm, color: colors.danger }}>
-            {`🪓  ${t("liarsdice.splitting", {
-              name: nameOf(state.split.by),
-              bidder: nameOf(state.bid.seat),
-            })}`}
-          </AppText>
-        ) : null}
-        {!over && task === null ? (
-          <AppText variant="caption" color="textSubtle" style={{ marginTop: spacing.sm }}>
-            {`⏳  ${
-              state.phase === "split" && state.bid
-                ? t("liarsdice.waitingAnswer", { name: nameOf(state.bid.seat) })
-                : t("liarsdice.waiting", { name: nameOf(state.turn) })
-            }`}
-          </AppText>
-        ) : null}
-        {/* Anyone can split the bid, any time — not just the player up */}
-        {!myTurn && canSplit(state, mySeat) && state.bid ? (
-          <Button
-            label={`🪓  ${t("liarsdice.splitThem", { name: nameOf(state.bid.seat) })}`}
-            variant="danger"
-            style={{ marginTop: spacing.md }}
-            disabled={busy}
-            onPress={split}
-          />
-        ) : null}
-      </Card>
+  const scene: "reveal" | "ending" | "split" | "call" | "table" = revealing
+    ? "reveal"
+    : over
+      ? "ending"
+      : state.phase === "split"
+        ? "split"
+        : task === "bid"
+          ? "call"
+          : "table";
+  const waiting = over ? null : state.phase === "split" ? (state.bid?.seat ?? null) : state.turn;
+  const bidder = state.bid ? nameOf(state.bid.seat) : "";
+  const splitter = state.split ? state.split.by : null;
 
-      {/* My cup */}
-      {mySeat >= 0 && !over ? (
-        <Card onPress={iAmOut ? undefined : () => setHandHidden((v) => !v)}>
-          <AppText variant="caption" color="textMuted">
-            {iAmOut ? t("liarsdice.youreOut") : t("liarsdice.yourDice")}
-          </AppText>
-          {!iAmOut ? (
-            handHidden ? (
-              <AppText variant="title" style={{ marginTop: 6 }}>
-                {`🥤  ${t("liarsdice.showDice")}`}
-              </AppText>
-            ) : (
-              <>
-                <View style={[styles.diceRow, { marginTop: spacing.sm }]}>
-                  {state.myDice.map((face, i) => (
-                    <Die
-                      key={i}
-                      face={face}
-                      size={48}
-                      glow={
-                        state.bid !== null &&
-                        myCount([face], state.bid.face, state.bid.zhai) > 0
-                      }
-                    />
-                  ))}
-                </View>
-                <AppText variant="tiny" color="textSubtle" style={{ marginTop: 6 }}>
-                  {state.bid
-                    ? t("liarsdice.youHave", {
-                        count: myCount(state.myDice, state.bid.face, state.bid.zhai),
-                        face: state.bid.face,
-                      }) +
-                      (isLeopard(state.myDice, state.bid.face, state.bid.zhai)
-                        ? `  🐆 ${t("liarsdice.leopard")}`
-                        : "")
-                    : t("liarsdice.hideHint")}
-                </AppText>
-                {canReroll(state, mySeat) ? (
-                  <Button
-                    label={`🎲  ${t("liarsdice.reroll")}`}
-                    variant="secondary"
-                    size="sm"
-                    style={{ marginTop: spacing.sm }}
-                    disabled={busy}
-                    onPress={() => send({ type: "reroll" })}
-                  />
-                ) : null}
-              </>
-            )
-          ) : null}
-        </Card>
-      ) : null}
-
-      <Players state={state} players={players} nameOf={nameOf} />
-
-      {(state.bids.length > 0 || state.rerolls.length > 0) && !over ? (
-        <View>
-          <AppText variant="label" style={{ marginBottom: spacing.sm }}>
-            {t("liarsdice.calls")}
-          </AppText>
-          {state.rerolls.map((r, i) => (
-            <AppText key={`r${i}`} variant="caption" color="textSubtle">
-              {`🎲 ${t("liarsdice.rerolled", { name: nameOf(r.seat), dice: r.dice.join(" ") })}`}
-            </AppText>
-          ))}
-          {state.bids
-            .slice()
-            .reverse()
-            .map((bid, i, newestFirst) => {
-              const broke = !bid.zhai && newestFirst[i + 1]?.zhai === true;
-              return (
-                <AppText key={i} variant="caption" color={i === 0 ? "text" : "textSubtle"}>
-                  {`${nameOf(bid.seat)}: ${bidText(bid)}${
-                    broke ? `  🍖 ${t("liarsdice.broke")}` : ""
-                  }`}
-                </AppText>
-              );
-            })}
-        </View>
-      ) : null}
-
-      {state.reveal ? (
-        <LastReveal reveal={state.reveal} nameOf={nameOf} bidText={bidText} />
-      ) : null}
-
-      {state.mode === "endless" && !over && mySeat >= 0 ? (
-        <EndVote
-          state={state}
-          mySeat={mySeat}
-          busy={busy}
-          onVote={(vote) => send({ type: "end", vote })}
-        />
-      ) : null}
-
-      {task !== null ? <View style={{ height: SHEET_CLEARANCE }} /> : null}
-
-      <BottomSheetModal
-        ref={sheetRef}
-        onDismiss={onSheetDismiss}
-        dismissable={false}
-        backdrop={false}
-      >
-        <View
-          style={{
-            paddingHorizontal: spacing.xl,
-            paddingTop: spacing.xs,
-            paddingBottom: insets.bottom + spacing.xl,
-          }}
-        >
-          {task === "bid" ? (
-            <BidPicker
-              key={step}
-              state={state}
-              busy={busy}
-              bidText={bidText}
-              onBid={(quantity, face, zhai) => send({ type: "bid", quantity, face, zhai })}
-              onOpen={() => send({ type: "challenge" })}
-              onSplit={split}
-            />
-          ) : task === "answer" && state.bid && state.split ? (
-            <>
-              <AppText variant="title">
-                {`🪓  ${t("liarsdice.youWereSplit", {
-                  name: nameOf(state.split.by),
-                  bid: bidText(state.bid),
-                })}`}
-              </AppText>
-              <AppText variant="caption" color="textMuted" style={{ marginTop: 4 }}>
-                {t("liarsdice.answerHint")}
-              </AppText>
-              <View style={[styles.challengeRow, { marginTop: spacing.md }]}>
-                <Button
-                  label={t("liarsdice.accept")}
-                  variant="secondary"
-                  disabled={busy}
-                  onPress={() => send({ type: "respond", counter: false })}
-                  style={{ flex: 1 }}
-                />
-                <Button
-                  label={`🔥  ${t("liarsdice.counter")}`}
-                  variant="danger"
-                  disabled={busy}
-                  onPress={() => send({ type: "respond", counter: true })}
-                  style={{ flex: 1 }}
-                />
-              </View>
-            </>
-          ) : null}
-        </View>
-      </BottomSheetModal>
-    </View>
+  // ── the scenes ──
+  const tableLights: Record<number, Light> = Object.fromEntries(
+    allSeats.map((seat) => [
+      seat,
+      isOut(state, seat)
+        ? "dim"
+        : scene === "split"
+          ? seat === splitter
+            ? "red"
+            : seat === state.bid?.seat
+              ? "lit"
+              : "soft"
+          : seat === state.turn
+            ? "lit"
+            : "soft",
+    ]),
   );
-}
+  const heading =
+    scene === "split" && state.bid && splitter !== null
+      ? `🪓 ${state.bid.seat === mySeat ? t("liarsdice.stage.splitYou", { name: nameOf(splitter) }) : t("liarsdice.stage.splitBy", { name: nameOf(splitter), bidder })}`
+      : state.bid
+        ? t("liarsdice.stage.called", { name: bidder })
+        : t("liarsdice.opening", { name: nameOf(state.turn), min: openingMin(state, false), zhaiMin: openingMin(state, true) });
+  // while I hold to split (or counter), red light streams to them
+  const aim =
+    scene === "table" && canSplit(state, mySeat) && state.bid ? state.bid.seat : scene === "split" && task === "answer" ? splitter : null;
 
-function BidPicker({
-  state,
-  busy,
-  bidText,
-  onBid,
-  onOpen,
-  onSplit,
-}: {
-  state: LiarsDiceState;
-  busy: boolean;
-  bidText: (bid: Pick<Bid, "quantity" | "face" | "zhai">) => string;
-  onBid: (quantity: number, face: number, zhai: boolean) => void;
-  onOpen: () => void;
-  onSplit: () => void;
-}) {
-  const { t } = useTranslation();
-  const { colors, spacing } = useTheme();
-  const start = suggestedBid(state);
-  const [quantity, setQuantity] = useState(start.quantity);
-  const [face, setFace] = useState(start.face);
-  // A zhai round stays zhai unless the player breaks the fast (开斋)
-  const [zhaiPicked, setZhaiPicked] = useState(state.bid?.zhai ?? false);
-  // Once kaizhai, the round stays kaizhai: no zhai, no 1s
-  const kaizhai = isKaizhai(state);
-  const zhai = !kaizhai && (zhaiPicked || face === 1);
-  const breakMin = breakZhaiMin(state);
-  const breaking = breakMin !== null && !zhai;
-  const valid = isValidBid(state, quantity, face, zhai);
-  const total = totalDice(state);
+  const winners = state.winners ?? (state.winner !== null ? [state.winner] : []);
+  const title =
+    winners.length > 1
+      ? t("liarsdice.winnersTied", { names: winners.map(nameOf).join(", ") })
+      : winners.length === 0
+        ? t("liarsdice.noWinner")
+        : winners[0] === mySeat
+          ? t("liarsdice.youWin")
+          : t("liarsdice.winner", { name: nameOf(winners[0]) });
 
-  return (
-    <>
-      <AppText variant="title">
-        {state.bid
-          ? `🎲  ${t("liarsdice.yourTurn", { bid: bidText(state.bid) })}`
-          : `🎲  ${t("liarsdice.yourOpening")}`}
-      </AppText>
-
-      <View style={[styles.stepper, { marginTop: spacing.md }]}>
-        <Button
-          label="−"
-          variant="secondary"
-          size="sm"
-          disabled={busy || quantity <= 1}
-          onPress={() => {
-            tapHaptic();
-            setQuantity((q) => Math.max(1, q - 1));
-          }}
-          style={styles.stepButton}
-        />
-        <AppText variant="h1" style={styles.quantity}>
-          {quantity}
-        </AppText>
-        <Button
-          label="+"
-          variant="secondary"
-          size="sm"
-          disabled={busy || quantity >= total}
-          onPress={() => {
-            tapHaptic();
-            setQuantity((q) => Math.min(total, q + 1));
-          }}
-          style={styles.stepButton}
-        />
-        <AppText variant="h2" color="textMuted">
-          ×
-        </AppText>
-      </View>
-
-      <View style={[styles.faces, { marginTop: spacing.sm }]}>
-        {(kaizhai ? [2, 3, 4, 5, 6] : [2, 3, 4, 5, 6, 1]).map((f) => (
-          <Pressable
-            key={f}
-            accessibilityRole="button"
-            accessibilityState={{ selected: face === f }}
-            disabled={busy}
-            onPress={() => {
-              tapHaptic();
-              setFace(f);
-            }}
-            style={[
-              styles.faceButton,
-              { borderColor: face === f ? colors.primary : "transparent" },
-            ]}
-          >
-            <Die face={f} size={38} />
-          </Pressable>
-        ))}
-      </View>
-
-      {kaizhai ? (
-        <AppText variant="tiny" color="textSubtle" style={{ marginTop: spacing.sm }}>
-          {`🍖  ${t("liarsdice.lockedKaizhai")}`}
-        </AppText>
-      ) : (
-      <Pressable
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: zhai, disabled: face === 1 }}
-        disabled={busy || face === 1}
-        onPress={() => {
-          tapHaptic();
-          setZhaiPicked((v) => !v);
-        }}
-        style={[
-          styles.zhaiToggle,
-          {
-            marginTop: spacing.sm,
-            backgroundColor: zhai ? colors.primarySoft : colors.well,
-            borderColor: zhai ? colors.primary : colors.border,
-          },
-        ]}
-      >
-        <View style={{ flex: 1 }}>
-          <AppText variant="label">
-            {breaking
-              ? `🍖  ${t("liarsdice.breakZhai")}`
-              : `${t("liarsdice.zhai")} — ${t("liarsdice.zhaiName")}`}
-          </AppText>
-          <AppText variant="tiny" color="textSubtle">
-            {face === 1
-              ? t("liarsdice.zhaiOnes")
-              : breaking
-                ? t("liarsdice.breakingHint", { min: breakMin })
-                : breakMin !== null
-                  ? t("liarsdice.breakHint", { min: breakMin })
-                  : t("liarsdice.zhaiHint")}
-          </AppText>
-        </View>
-        <AppText variant="label" color={zhai ? "primary" : "textSubtle"}>
-          {zhai ? "☑" : "☐"}
-        </AppText>
-      </Pressable>
-      )}
-
-      <Button
-        label={t("liarsdice.call", { bid: bidText({ quantity, face, zhai }) })}
-        style={{ marginTop: spacing.md }}
-        disabled={!valid}
-        loading={busy}
-        onPress={() => onBid(quantity, face, zhai)}
+  const centre =
+    scene === "reveal" && reveal ? (
+      <RevealScene
+        key={reveal.round}
+        reveal={reveal}
+        nameOf={nameOf}
+        mySeat={mySeat}
+        heading={t(`liarsdice.stage.${reveal.bid.seat === mySeat ? "revealYou" : "revealHead"}.${reveal.kind ?? "open"}`, {
+          name: nameOf(reveal.challenger),
+          bidder: nameOf(reveal.bid.seat),
+        })}
+        onCounted={() => setCountedRound(reveal.round)}
       />
-      {!valid ? (
-        <AppText variant="tiny" color="textSubtle" align="center" style={{ marginTop: 4 }}>
-          {breaking
-            ? t("liarsdice.mustBreak", { min: breakMin })
-            : state.bid
-              ? t("liarsdice.mustRaise")
-              : t("liarsdice.mustOpen", { min: openingMin(state, zhai) })}
-        </AppText>
-      ) : null}
+    ) : scene === "ending" ? (
+      <Ending
+        title={title}
+        reason={winners.length === 0 ? t("liarsdice.stage.leftEarly") : t(state.mode === "endless" ? "liarsdice.fewestCups" : "liarsdice.lastStanding")}
+        winners={winners}
+        people={people}
+        cups={state.cups}
+        maxCups={state.maxCups}
+        mySeat={mySeat}
+        afterGame={stage?.afterGame}
+        paused={panel !== null}
+      />
+    ) : scene === "call" ? (
+      <View style={[StyleSheet.absoluteFill, styles.besideTools]}>
+        <CallScene state={state} pick={pick} onPick={choose} bidder={bidder} busy={busy} />
+      </View>
+    ) : (
+      <View style={[StyleSheet.absoluteFill, styles.besideTools]}>
+        <TableScene
+          people={people}
+          lights={tableLights}
+          bid={state.bid}
+          heading={heading}
+          out={out}
+          round={state.round}
+          hold={hold}
+          aim={aim}
+          paused={panel !== null}
+        />
+      </View>
+    );
 
-      {state.bid ? (
-        <View style={[styles.challengeRow, { marginTop: spacing.md }]}>
-          <Button
-            label={`🔍  ${t("liarsdice.open")}`}
-            variant="danger"
+  // ── the plinth ──
+  const liarLabel = pick.liar === "split" ? t("liarsdice.stage.holdSplit") : t("liarsdice.stage.holdOpen");
+  const bottom =
+    scene === "reveal" ? (
+      counted ? (
+        <Button
+          label={t("liarsdice.stage.continue")}
+          size="lg"
+          style={styles.main}
+          onPress={() => {
+            tapHaptic();
+            if (reveal) mark(reveal.round);
+          }}
+        />
+      ) : (
+        <AppText style={stageText.strong}>{t("liarsdice.stage.counting")}</AppText>
+      )
+    ) : scene === "ending" ? (
+      (stage?.onward ?? <AppText style={stageText.strong}>{title}</AppText>)
+    ) : saying ? (
+      <AppText style={[stageText.strong, styles.big]}>{saying}</AppText>
+    ) : scene === "call" ? (
+      <View style={styles.pair}>
+        <Button
+          label={t("liarsdice.stage.callIt", { bid: t("liarsdice.bid", { count: pick.quantity, face: pick.face }) })}
+          size="lg"
+          style={styles.half}
+          disabled={!valid}
+          loading={busy}
+          onPress={() =>
+            send({ type: "bid", quantity: pick.quantity, face: pick.face, zhai }, `🎲 ${bidText({ quantity: pick.quantity, face: pick.face, zhai })}`)
+          }
+        />
+        {state.bid ? (
+          <View style={styles.half}>
+            <HoldButton
+              key={`${step}|${pick.liar}`}
+              label={liarLabel}
+              tone="bad"
+              progress={hold}
+              disabled={busy}
+              onDone={() =>
+                pick.liar === "split"
+                  ? send({ type: "split", bids: state.bids.length }, `🪓 ${t("liarsdice.stage.liar")}`)
+                  : send({ type: "challenge" }, `🔍 ${t("liarsdice.stage.liar")}`)
+              }
+            />
+          </View>
+        ) : null}
+      </View>
+    ) : scene === "split" && task === "answer" ? (
+      <View style={styles.pair}>
+        <Button
+          label={t("liarsdice.accept")}
+          variant="secondary"
+          size="lg"
+          style={styles.half}
+          disabled={busy}
+          onPress={() => send({ type: "respond", counter: false }, t("liarsdice.accept"))}
+        />
+        <View style={styles.half}>
+          <HoldButton
+            key={`${step}|counter`}
+            label={t("liarsdice.stage.holdCounter")}
+            tone="bad"
+            progress={hold}
             disabled={busy}
-            onPress={onOpen}
-            style={{ flex: 1 }}
-          />
-          <Button
-            label={`🪓  ${t("liarsdice.split")}`}
-            variant="danger"
-            disabled={busy}
-            onPress={onSplit}
-            style={{ flex: 1 }}
+            onDone={() => send({ type: "respond", counter: true }, `🔥 ${t("liarsdice.counter")}`)}
           />
         </View>
-      ) : null}
-      {state.bid ? (
-        <AppText variant="tiny" color="textSubtle" align="center" style={{ marginTop: 4 }}>
-          {t("liarsdice.challengeHint")}
-        </AppText>
+      </View>
+    ) : scene === "table" && canSplit(state, mySeat) && state.bid ? (
+      <HoldButton
+        key={`${step}|split`}
+        label={t("liarsdice.stage.holdSplitThem", { name: bidder })}
+        tone="bad"
+        progress={hold}
+        disabled={busy}
+        onDone={() => send({ type: "split", bids: state.bids.length }, `🪓 ${t("liarsdice.stage.liar")}`)}
+      />
+    ) : (
+      <AppText style={stageText.strong} numberOfLines={2}>
+        {iAmOut
+          ? t("liarsdice.youreOut")
+          : scene === "split" && state.bid
+            ? t("liarsdice.waitingAnswer", { name: bidder })
+            : t("liarsdice.waiting", { name: nameOf(state.turn) })}
+      </AppText>
+    );
+
+  // ── the lines over the plinth ──
+  const lastReroll = state.rerolls[state.rerolls.length - 1];
+  const hint =
+    scene === "reveal" || scene === "ending" ? null : (
+      <>
+        {scene === "call" && !valid ? (
+          <AppText style={stageText.hint} numberOfLines={2}>
+            {breakMin !== null && !zhai
+              ? t("liarsdice.mustBreak", { min: breakMin })
+              : state.bid
+                ? t("liarsdice.mustRaise")
+                : t("liarsdice.mustOpen", { min: openingMin(state, zhai) })}
+          </AppText>
+        ) : scene === "call" && state.bid ? (
+          <AppText style={stageText.hint} numberOfLines={2}>
+            {t("liarsdice.challengeHint")}
+          </AppText>
+        ) : scene === "split" && task === "answer" ? (
+          <AppText style={stageText.hint} numberOfLines={2}>
+            {t("liarsdice.stage.answerHold")}
+          </AppText>
+        ) : lastReroll && scene === "table" ? (
+          <AppText style={stageText.hint} numberOfLines={2}>
+            {`🎲 ${t("liarsdice.rerolled", { name: nameOf(lastReroll.seat), dice: lastReroll.dice.join(" ") })}`}
+          </AppText>
+        ) : null}
+        {stage?.error ? (
+          <AppText style={[stageText.hint, styles.error]} numberOfLines={2}>
+            {stage.error}
+          </AppText>
+        ) : null}
+      </>
+    );
+
+  // ── under the den: my cup, and the vote to stop ──
+  const myDice = state.myDice;
+  const counting = state.bid ? myDice.map((d) => myCount([d], state.bid!.face, state.bid!.zhai) > 0) : [];
+  const under =
+    mySeat >= 0 && !over && scene !== "call" ? (
+      <View style={styles.underRow}>
+        {iAmOut ? (
+          <Tray>
+            <AppText style={styles.trayText}>{`🥴 ${t("liarsdice.drunk")}`}</AppText>
+          </Tray>
+        ) : (
+          <Tray>
+            <AppText style={styles.trayText}>{t("liarsdice.stage.yourCup")}</AppText>
+            <DiceRow faces={myDice} size={22} gap={4} tones={counting.map((c) => (c ? "lit" : "plain"))} />
+          </Tray>
+        )}
+        {canReroll(state, mySeat) ? (
+          <Pressable
+            accessibilityRole="button"
+            disabled={busy}
+            onPress={() => send({ type: "reroll" })}
+            style={({ pressed }) => [styles.reroll, pressed && styles.pressed]}
+          >
+            <Tray>
+              <AppText style={styles.trayText}>{`🎲 ${t("liarsdice.stage.reshake")}`}</AppText>
+            </Tray>
+          </Pressable>
+        ) : null}
+      </View>
+    ) : undefined;
+
+  const tools = over ? undefined : (
+    <>
+      <ToolButton emoji="📜" label={t("liarsdice.stage.callsTool")} onPress={() => setPanel("calls")} />
+      {state.mode === "endless" && mySeat >= 0 ? (
+        <ToolButton
+          emoji="🛑"
+          label={`${state.endVotes.length}/${Math.floor(state.numPlayers / 2) + 1}`}
+          badge={state.endVotes.length > 0 && !state.endVotes.includes(mySeat)}
+          onPress={() => setPanel("stop")}
+        />
       ) : null}
     </>
   );
-}
 
-function Players({
-  state,
-  players,
-  nameOf,
-}: {
-  state: LiarsDiceState;
-  players: GamePlayer[];
-  nameOf: (seat: number) => string;
-}) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-
-  return (
-    <View style={{ gap: 8 }}>
-      {players
-        .slice()
-        .sort((a, b) => a.seat - b.seat)
-        .map((player) => {
-          const seat = player.seat;
-          const out = isOut(state, seat);
-          const up =
-            state.phase === "split"
-              ? state.bid?.seat === seat
-              : state.phase !== "finished" && state.turn === seat;
-          return (
-            <View
-              key={player.userId}
-              style={[
-                styles.player,
-                {
-                  backgroundColor: colors.card,
-                  borderColor: up ? colors.primary : colors.border,
-                  opacity: out ? 0.55 : 1,
-                },
-              ]}
-            >
-              <AvatarBorder
-                name={player.username}
-                borderId={player.borderId}
-                avatarUrl={player.avatarUrl}
-                size={40}
-                ringColor={up ? colors.primary : colors.border}
-              />
-              <View style={{ flex: 1 }}>
-                <AppText style={{ fontFamily: fontFamily.semiBold, fontSize: 15 }}>
-                  {nameOf(seat)}
-                </AppText>
-                <AppText variant="tiny" color="textSubtle">
-                  {out
-                    ? `🥴  ${t("liarsdice.drunk")}`
-                    : `🎲 ×${state.diceCount[seat]}${up ? `  ·  ${t("liarsdice.thinking")}` : ""}`}
-                </AppText>
-              </View>
-              {state.maxCups === null ? (
-                <AppText variant="title">{`🍺 ×${state.cups[seat]}`}</AppText>
-              ) : (
-                <View style={{ alignItems: "flex-end" }}>
-                  <AppText style={{ fontSize: 15 }}>
-                    {Array.from({ length: state.maxCups }, (_, i) =>
-                      i < state.cups[seat] ? "🍺" : "▫️"
-                    ).join("")}
-                  </AppText>
-                  <AppText variant="tiny" color="textSubtle">
-                    {`${state.cups[seat]}/${state.maxCups}`}
-                  </AppText>
-                </View>
-              )}
-            </View>
-          );
-        })}
-    </View>
-  );
-}
-
-/** Everyone's dice from the round that just ended, and who drank. */
-function LastReveal({
-  reveal,
-  nameOf,
-  bidText,
-}: {
-  reveal: Reveal;
-  nameOf: (seat: number) => string;
-  bidText: (bid: Pick<Bid, "quantity" | "face" | "zhai">) => string;
-}) {
-  const { t } = useTranslation();
-  const { colors, spacing } = useTheme();
-  const { bid } = reveal;
-
-  return (
-    <Card>
-      <AppText variant="caption" color="textMuted">
-        {t("liarsdice.lastRound", { round: reveal.round })}
-      </AppText>
-      <AppText variant="title" style={{ marginTop: 4 }}>
-        {t(`liarsdice.revealBy.${reveal.kind ?? "open"}`, {
-          name: nameOf(reveal.challenger),
-          bid: bidText(bid),
-          bidder: nameOf(bid.seat),
-        })}
-      </AppText>
-      <AppText variant="bodyMedium" style={{ marginTop: 4, color: colors.danger }}>
-        {t("liarsdice.found", { count: reveal.found, face: bid.face })}
-        {"  →  "}
-        {t("liarsdice.drinks", { name: nameOf(reveal.loser), count: reveal.drink })}
-        {reveal.out ? `  🥴 ${t("liarsdice.drunkOut")}` : ""}
-      </AppText>
-      <View style={{ gap: 6, marginTop: spacing.sm }}>
-        {reveal.dice.map((hand, seat) =>
-          hand.length > 0 ? (
-            <View key={seat} style={styles.revealRow}>
-              <AppText variant="tiny" numberOfLines={1} style={styles.revealName}>
-                {nameOf(seat)}
-              </AppText>
-              {hand
-                .slice()
-                .sort((a, b) => a - b)
-                .map((face, i) => {
-                  const counts = myCount([face], bid.face, bid.zhai) > 0;
-                  return <Die key={i} face={face} size={26} glow={counts} dim={!counts} />;
-                })}
-              {isLeopard(hand, bid.face, bid.zhai) ? (
-                <AppText variant="tiny" color="primary" style={styles.leopard}>
-                  {`🐆 ${t("liarsdice.leopard")}`}
-                </AppText>
-              ) : null}
-            </View>
-          ) : null
-        )}
-      </View>
-    </Card>
-  );
-}
-
-/** Endless games stop when more than half the table votes to. */
-function EndVote({
-  state,
-  mySeat,
-  busy,
-  onVote,
-}: {
-  state: LiarsDiceState;
-  mySeat: number;
-  busy: boolean;
-  onVote: (vote: boolean) => void;
-}) {
-  const { t } = useTranslation();
-  const { spacing } = useTheme();
+  const L = denLayout(width, insets.top, state.numPlayers);
   const voted = state.endVotes.includes(mySeat);
-  return (
-    <Card>
-      <AppText variant="label">{`🛑  ${t("liarsdice.endTitle")}`}</AppText>
-      <AppText variant="tiny" color="textSubtle" style={{ marginTop: 2 }}>
-        {t("liarsdice.endHint", {
-          votes: state.endVotes.length,
-          needed: Math.floor(state.numPlayers / 2) + 1,
-        })}
-      </AppText>
-      <Button
-        label={voted ? t("liarsdice.endCancel") : t("liarsdice.endVote")}
-        variant="secondary"
-        size="sm"
-        style={{ marginTop: spacing.sm }}
-        disabled={busy}
-        onPress={() => onVote(!voted)}
-      />
-    </Card>
-  );
-}
 
-function Result({
-  state,
-  mySeat,
-  nameOf,
-}: {
-  state: LiarsDiceState;
-  mySeat: number;
-  nameOf: (seat: number) => string;
-}) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
   return (
-    <View style={{ alignItems: "center", marginTop: 6 }}>
-      <AppText style={{ fontSize: 44 }}>
-        {state.winner !== null || state.winners ? "🏆" : "🚪"}
-      </AppText>
-      <AppText variant="h2" align="center" style={{ color: colors.primary }}>
-        {state.winners && state.winners.length > 1
-          ? t("liarsdice.winnersTied", { names: state.winners.map(nameOf).join(", ") })
-          : state.winner === null
-            ? t("liarsdice.noWinner")
-            : state.winner === mySeat
-              ? t("liarsdice.youWin")
-              : t("liarsdice.winner", { name: nameOf(state.winner) })}
-      </AppText>
-      <AppText variant="caption" color="textMuted" align="center" style={{ marginTop: 4 }}>
-        {t(state.mode === "endless" ? "liarsdice.fewestCups" : "liarsdice.lastStanding")}
-      </AppText>
-      {state.mode === "endless" ? (
-        <AppText variant="caption" color="textSubtle" align="center" style={{ marginTop: 6 }}>
-          {state.cups
-            .map((cups, seat) => ({ cups, seat }))
-            .sort((a, b) => a.cups - b.cups)
-            .map(({ cups, seat }) => `${nameOf(seat)} 🍺${cups}`)
-            .join("   ")}
-        </AppText>
-      ) : null}
-    </View>
+    <GameStage
+      header={
+        <Den
+          width={width}
+          top={insets.top}
+          title={
+            revealing && reveal
+              ? t("liarsdice.stage.round", { round: reveal.round })
+              : over
+                ? t("liarsdice.stage.closing")
+                : t("liarsdice.stage.round", { round: state.round })
+          }
+          subtitle={
+            revealing
+              ? t("liarsdice.stage.theReveal")
+              : over
+              ? undefined
+              : `${t("liarsdice.stage.dice", { count: totalDice(state) })}${state.bid ? ` · ${t(state.bid.zhai ? "liarsdice.zhai" : "liarsdice.kaizhai")}` : ""}`
+          }
+          tally={allSeats.map((seat) => {
+            // until the reveal's count is in, the one who drinks hasn't yet
+            const cups = revealing && !counted && reveal && seat === reveal.loser ? Math.max(0, state.cups[seat] - reveal.drink) : state.cups[seat];
+            return { name: nameOf(seat), cups, out: state.maxCups !== null && cups >= state.maxCups };
+          })}
+          maxCups={state.maxCups}
+          waiting={revealing ? null : waiting}
+          paused={panel !== null}
+        />
+      }
+      headerHeight={L.h}
+      under={under}
+      sceneKey={scene === "reveal" && reveal ? `reveal-${reveal.round}` : scene}
+      centre={centre}
+      tools={tools}
+      hint={hint}
+      bottom={bottom}
+      onBack={stage?.onBack}
+      onRules={stage?.onRules}
+      away={scene === "reveal" || scene === "ending"}
+      bleed={scene === "ending"}
+      look={DEN}
+      overlays={
+        <Popup
+          look={DEN_POPUP}
+          visible={panel !== null && scene !== "reveal"}
+          title={panel === "stop" ? t("liarsdice.endTitle") : t("liarsdice.stage.callsTool")}
+          onClose={() => setPanel(null)}
+        >
+          {panel === "stop" ? (
+            <View style={styles.panel}>
+              <AppText variant="body">
+                {t("liarsdice.endHint", { votes: state.endVotes.length, needed: Math.floor(state.numPlayers / 2) + 1 })}
+              </AppText>
+              <Button
+                label={voted ? t("liarsdice.endCancel") : t("liarsdice.endVote")}
+                variant={voted ? "secondary" : "primary"}
+                disabled={busy}
+                onPress={() => send({ type: "end", vote: !voted })}
+              />
+            </View>
+          ) : (
+            <Journal pages={liarsPages(state, nameOf, mySeat, t)} emptyText={t("liarsdice.stage.noCalls")} />
+          )}
+        </Popup>
+      }
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  die: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
-    shadowOffset: { width: 0, height: 1 },
-  },
-  pipCell: {
-    width: "33.33%",
-    height: "33.33%",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bidRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 6 },
-  zhaiTag: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8 },
-  diceRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
-  stepper: { flexDirection: "row", alignItems: "center", gap: 12 },
-  stepButton: { width: 52 },
-  quantity: { minWidth: 48, textAlign: "center" },
-  faces: { flexDirection: "row", justifyContent: "space-between" },
-  faceButton: { padding: 3, borderWidth: 2.5, borderRadius: 12 },
-  zhaiToggle: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    borderWidth: 1.5,
-    borderRadius: 14,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-  challengeRow: { flexDirection: "row", gap: 10 },
-  player: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderRadius: 18,
-  },
-  revealRow: { flexDirection: "row", alignItems: "center", gap: 5 },
-  revealName: { width: 64 },
-  leopard: { fontFamily: fontFamily.semiBold, marginLeft: 4 },
+  besideTools: { right: 60 },
+  main: { alignSelf: "stretch" },
+  pair: { flexDirection: "row", gap: 10, alignSelf: "stretch", alignItems: "center" },
+  half: { flex: 1 },
+  big: { fontSize: 17, lineHeight: 22 },
+  error: { color: "#FF8A94" },
+  underRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  trayText: { fontFamily: fontFamily.semiBold, fontSize: 11, lineHeight: 14, color: "#E8F4EA" },
+  reroll: {},
+  pressed: { opacity: 0.7 },
+  panel: { gap: 12 },
 });

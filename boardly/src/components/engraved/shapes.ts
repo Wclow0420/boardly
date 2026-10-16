@@ -14,6 +14,8 @@ export const MATERIALS = {
   gold: ["#FFF2B8", "#E2B04A", "#9A6B1E", "#F0CC72"],
   silver: ["#FFFFFF", "#C9D0DA", "#7A8494", "#E4E9F0"],
   iron: ["#A8AEB8", "#5A606A", "#2A2E36", "#7A808A"],
+  bronze: ["#FCD9B0", "#C27A3E", "#6E3A16", "#E2A266"],
+  platinum: ["#FFFFFF", "#DCE7F2", "#8EA3BC", "#F0F7FF"],
   ivory: ["#FFFFFF", "#F4EEDF", "#D8CCB0"],
   wood: ["#D09A5E", "#8A5A2E", "#5A3618", "#A8743E"],
   flame: ["#FFF6C8", "#FFB23A", "#E2541A", "#FFD27A"],
@@ -28,6 +30,8 @@ export const INKS: Record<Material, { ink: string; vein: string }> = {
   gold: { ink: "#3A2408", vein: "#7A5212" },
   silver: { ink: "#1E242C", vein: "#4A5462" },
   iron: { ink: "#0E1014", vein: "#2A2E36" },
+  bronze: { ink: "#3A1E08", vein: "#7A4218" },
+  platinum: { ink: "#1E2A3A", vein: "#5A7090" },
   ivory: { ink: "#3A2408", vein: "#A08A60" },
   wood: { ink: "#2A1808", vein: "#4A2C12" },
   flame: { ink: "#5A1A04", vein: "#A0360C" },
@@ -51,6 +55,16 @@ export function shade(hex: string, amount: number) {
     .join("")}`;
 }
 
+/** Any colour as cloth, skin or hair: a soft fall of light rather than a
+ *  metal's sheen, inked a little darker than itself. */
+export function cloth(hex: string) {
+  return {
+    colors: [shade(hex, 0.32), hex, shade(hex, -0.2)],
+    ink: shade(hex, -0.72),
+    vein: shade(hex, -0.38),
+  };
+}
+
 /** Any colour as an enamel: its fill, outline and engraving. */
 export function enamel(hex: string) {
   return {
@@ -65,6 +79,8 @@ export const JEWELS = {
   ruby: ["#FF9AA6", "#D0102E", "#5A0410"],
   sapphire: ["#D8EEFF", "#2E7AE0", "#0A2A6A"],
   emerald: ["#C8FFD8", "#1E9A54", "#06401E"],
+  diamond: ["#FFFFFF", "#BFE6FF", "#4A7AB0"],
+  amber: ["#FFE7B0", "#F28B4B", "#7A2A08"],
 } as const;
 export type Jewel = keyof typeof JEWELS;
 

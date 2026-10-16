@@ -1,5 +1,13 @@
 import { Canvas, Group } from "@shopify/react-native-skia";
-import { useId, type ReactNode } from "react";
+import { Image } from "expo-image";
+import {
+  type ReactNode,
+  useContext,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+} from "react";
 import { View } from "react-native";
 import AnimatedGlow, { type GlowConfig } from "react-native-animated-glow";
 import Svg, {
@@ -10,10 +18,19 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 
-import { assetUrl } from "@/api/client";
-import { Avatar, AvatarBadges, type PresenceStatus } from "@/components/ui";
+import { assetUrl, type MascotLook } from "@/api/client";
+import {
+  Avatar,
+  AvatarBadges,
+  StageContext,
+  type PresenceStatus,
+  type Stage,
+} from "@/components/ui";
 
-import { ART, useBorderClock, type ArtBorderDrawing } from "./art";
+import { useOnScreen } from "@/hooks/useOnScreen";
+
+import { ART, useBorderClock, useMayMove, type ArtBorderDrawing } from "./art";
+import { THUMBS } from "./thumbs";
 import {
   getBorder,
   type ArtBorder,
@@ -38,6 +55,11 @@ export interface AvatarBorderProps {
   ringColor?: string;
   /** Profile picture path from the API (avatarUrl). */
   avatarUrl?: string | null;
+  /** Their mascot, shown in the circle when there is no picture. */
+  mascot?: MascotLook | null;
+  /** Drawn over the avatar and its border (a camera badge). It is only
+   *  looked at: taps go to whatever holds the avatar. */
+  children?: ReactNode;
 }
 
 // Borders are drawn in a square this many times the avatar's size, in a
@@ -47,8 +69,50 @@ const VIEW = 50 * CANVAS;
 const VIEW_BOX = `${-VIEW} ${-VIEW} ${VIEW * 2} ${VIEW * 2}`;
 
 /** An avatar wearing a profile border. It takes up only the avatar's own
- *  size in the layout: leave room around it for the border to show. */
-export function AvatarBorder({
+ *  size in the layout: leave room around it for the border to show.
+ *  Inside an <AvatarStage> it is drawn in the stage's top layer, so
+ *  nothing laid out after it covers the border. */
+export function AvatarBorder(props: AvatarBorderProps) {
+  const stage = useContext(StageContext);
+  return stage ? <StagedAvatar {...props} stage={stage} /> : <BorderedAvatar {...props} />;
+}
+
+/** Leaves a hole the avatar's size and has the stage draw it there. */
+function StagedAvatar({ stage, ...props }: AvatarBorderProps & { stage: Stage }) {
+  const key = useId();
+  const hole = useRef<View>(null);
+  const { name, size, borderId, presence, crown, ringColor, avatarUrl, mascot, children } =
+    props;
+  const element = useMemo(
+    () => (
+      <BorderedAvatar
+        name={name}
+        size={size}
+        borderId={borderId}
+        presence={presence}
+        crown={crown}
+        ringColor={ringColor}
+        avatarUrl={avatarUrl}
+        mascot={mascot}
+      >
+        {children}
+      </BorderedAvatar>
+    ),
+    [name, size, borderId, presence, crown, ringColor, avatarUrl, mascot, children],
+  );
+  useEffect(() => stage.put(key, hole, element), [stage, key, element]);
+  useEffect(() => () => stage.remove(key), [stage, key]);
+  return (
+    <View
+      ref={hole}
+      collapsable={false}
+      style={{ width: size, height: size }}
+      onLayout={() => stage.moved(key)}
+    />
+  );
+}
+
+function BorderedAvatar({
   name,
   size,
   borderId,
@@ -56,14 +120,21 @@ export function AvatarBorder({
   crown,
   ringColor,
   avatarUrl,
+  mascot,
+  children,
 }: AvatarBorderProps) {
   const border = getBorder(borderId ?? undefined);
   const imageUri = assetUrl(avatarUrl);
-  const badges = <AvatarBadges size={size} presence={presence} crown={crown} />;
+  const badges = (
+    <>
+      <AvatarBadges size={size} presence={presence} crown={crown} />
+      {children}
+    </>
+  );
 
   if (border.kind === "art" && ART[border.art]) {
     return (
-      <ArtAvatar border={border} name={name} size={size} imageUri={imageUri}>
+      <ArtAvatar border={border} name={name} size={size} imageUri={imageUri} mascot={mascot}>
         {badges}
       </ArtAvatar>
     );
@@ -71,7 +142,7 @@ export function AvatarBorder({
 
   if (border.kind === "glow") {
     return (
-      <GlowAvatar border={border} name={name} size={size} imageUri={imageUri}>
+      <GlowAvatar border={border} name={name} size={size} imageUri={imageUri} mascot={mascot}>
         {badges}
       </GlowAvatar>
     );
@@ -85,6 +156,7 @@ export function AvatarBorder({
         name={name}
         size={size}
         imageUri={imageUri}
+        mascot={mascot}
         ringColor={border.kind === "none" ? ringColor : undefined}
       />
       {badges}
@@ -201,12 +273,14 @@ function GlowAvatar({
   name,
   size,
   imageUri,
+  mascot,
   children,
 }: {
   border: GlowBorder;
   name: string;
   size: number;
   imageUri: string | null;
+  mascot?: MascotLook | null;
   children?: ReactNode;
 }) {
   const glow = scaleGlow(border.glow, size / 72);
@@ -229,6 +303,7 @@ function GlowAvatar({
               size={size}
               radius={border.roundness * size}
               imageUri={imageUri}
+              mascot={mascot}
             />
           </View>
         </AnimatedGlow>
@@ -239,8 +314,9 @@ function GlowAvatar({
 }
 
 /** Below this size an art border stands still: in a list of avatars,
- *  a dozen fires burning at once would cost more than they show. */
-const ART_MOVES_FROM = 44;
+ *  a dozen fires burning at once would cost more than they show. (At
+ *  or above it, the motion budget still caps how many move at once.) */
+const ART_MOVES_FROM = 42;
 
 /** An avatar inside an art border: the art's back layer, the avatar,
  *  then the art's front layer over the avatar's edge. */
@@ -249,16 +325,53 @@ function ArtAvatar({
   name,
   size,
   imageUri,
+  mascot,
   children,
 }: {
   border: ArtBorder;
   name: string;
   size: number;
   imageUri: string | null;
+  mascot?: MascotLook | null;
   children?: ReactNode;
 }) {
   const drawing: ArtBorderDrawing = ART[border.art];
-  const clock = useBorderClock(size < ART_MOVES_FROM);
+  const thumb = THUMBS[border.art];
+  // small and still: its two layers as pictures drawn ahead of time
+  // (scripts/border-thumbs.mjs), not the border running at full size
+  if (size < ART_MOVES_FROM && thumb)
+    return (
+      <View style={{ width: size, height: size }}>
+        {thumb.back ? <Image source={thumb.back} style={canvasStyle(size)} pointerEvents="none" /> : null}
+        <Avatar name={name} size={size} imageUri={imageUri} mascot={mascot} />
+        {thumb.front ? <Image source={thumb.front} style={canvasStyle(size)} pointerEvents="none" /> : null}
+        {children}
+      </View>
+    );
+  return <LiveArt border={border} drawing={drawing} name={name} size={size} imageUri={imageUri} mascot={mascot}>{children}</LiveArt>;
+}
+
+/** An art border drawn live: its layers on two canvases on the shared
+ *  clock. */
+function LiveArt({
+  drawing,
+  name,
+  size,
+  imageUri,
+  mascot,
+  children,
+}: {
+  border: ArtBorder;
+  drawing: ArtBorderDrawing;
+  name: string;
+  size: number;
+  imageUri: string | null;
+  mascot?: MascotLook | null;
+  children?: ReactNode;
+}) {
+  const onScreen = useOnScreen();
+  const moves = useMayMove(size, size >= ART_MOVES_FROM && onScreen);
+  const clock = useBorderClock(!moves);
   const side = size * CANVAS;
   // the art is drawn where the avatar's radius is 50, at the centre
   const place = [
@@ -277,7 +390,7 @@ function ArtAvatar({
           </Group>
         </Canvas>
       ) : null}
-      <Avatar name={name} size={size} imageUri={imageUri} />
+      <Avatar name={name} size={size} imageUri={imageUri} mascot={mascot} />
       {Front ? (
         <Canvas style={canvasStyle(size)} pointerEvents="none">
           <Group transform={place}>

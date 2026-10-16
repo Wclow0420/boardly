@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AccessibilityInfo, Animated, AppState, Easing, Pressable, StyleSheet } from "react-native";
+import { AccessibilityInfo, Animated, AppState, Easing, Pressable, StyleSheet, View } from "react-native";
 import Svg, { Circle, G, Path, Text as SvgText } from "react-native-svg";
 import {
   cancelAnimation,
@@ -30,6 +30,9 @@ import {
   Vignette,
   useIsoClock,
 } from "@/components/iso";
+import type { Look } from "@/features/mascot/dress";
+import { FEET, MascotFigure } from "@/features/mascot/MascotStage";
+import { BOX as MASCOT_BOX } from "@/features/mascot/rig";
 import { fontFamily, useTheme } from "@/theme";
 import { heavyHaptic, successHaptic, tapHaptic, tickHaptic } from "@/utils/haptics";
 import type { Arrival } from "./arrival";
@@ -118,6 +121,9 @@ export interface RoomSceneProps {
   arrival?: Arrival;
   /** They have reached their spot. */
   onArrived?: () => void;
+  /** Players drawn as their own avatar figure instead of a pawn, by
+   *  person key. */
+  mascots?: Record<string, Look>;
 }
 
 const VIEW_BOX = `0 0 ${SCENE_WIDTH} ${SCENE_HEIGHT}`;
@@ -146,6 +152,21 @@ function Shapes({ shapes }: { shapes: Shape[] }) {
   );
 }
 
+/** Where a player's mascot stands on a spot: its box in the scene's
+ *  drawing, feet on the spot, a little taller than a pawn; and the top
+ *  of its head, for its name. */
+function mascotAt(spot: [number, number]) {
+  const [bx, by] = scenePoint(spot[0], spot[1], 0);
+  const [, ty] = pawnTop(spot);
+  const s = ((by - ty) * 1.6) / 90;
+  return {
+    x: bx - FEET.x * s,
+    y: by - FEET.y * s,
+    w: MASCOT_BOX[0] * s,
+    h: MASCOT_BOX[1] * s,
+    head: by - (FEET.y - 12) * s,
+  };
+}
 /** Text with a dark halo, legible over any part of the room. */
 function Label({
   x,
@@ -242,8 +263,12 @@ export function RoomScene({
   secretDoors = NO_DOORS,
   arrival,
   onArrived,
+  mascots,
 }: RoomSceneProps) {
   const { colors } = useTheme();
+  // the server sends new copies of these arrays with every update: the
+  // scene is rebuilt only when what's in them changes
+  const walls = JSON.stringify([collapsed, lockedDoor]);
   const scene = useMemo(
     () =>
       buildScene(room, {
@@ -252,7 +277,8 @@ export function RoomScene({
         lockedDoor,
         live: true,
       }),
-    [room, colors.primary, collapsed, lockedDoor],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `walls` stands for both
+    [room, colors.primary, walls],
   );
   const { touch, motion } = scene;
 
@@ -446,6 +472,12 @@ export function RoomScene({
     .filter(({ person }) => person.kind !== "me")
     .sort((a, b) => a.spot[0] + a.spot[1] - (b.spot[0] + b.spot[1]));
   const me = standing.find(({ person }) => person.kind === "me");
+  const myMascot = me ? mascots?.[me.person.key] : undefined;
+  /** A mascot's box, as a place on the page. */
+  const mascotPlace = (spot: [number, number]) => {
+    const m = mascotAt(spot);
+    return place(m.x, m.y, m.w, m.h);
+  };
   // the way in, from the doorway to your spot, and how far that is on the page
   const mySpot = scenePoint(SPOTS[0][0], SPOTS[0][1], 0);
   const entry = arrival ? entryPoint(room, arrival.from, arrival.how) : null;
@@ -460,6 +492,20 @@ export function RoomScene({
     : [0, 0];
   const bob = 1.6 * scale;
   const stepsAt = [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1];
+  // the walk in, for your pawn or figure and its name
+  const walkOpacity = entry?.fade
+    ? walk.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0, 1, 1] })
+    : 1;
+  const walking = [
+    { translateX: walk.interpolate({ inputRange: [0, 1], outputRange: [dx, 0] }) },
+    {
+      translateY: walk.interpolate({
+        inputRange: stepsAt,
+        outputRange: stepsAt.map((t, i) => dy * (1 - t) - (i % 2 ? bob : 0)),
+      }),
+    },
+    { translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [-6, 0] }) },
+  ];
   const sealed = missionRoom === room;
   // in a blackout, all the light there is: the lantern at your own spot
   const lantern = scenePoint(SPOTS[0][0], SPOTS[0][1], 0.12);
@@ -590,18 +636,41 @@ export function RoomScene({
         ]}
       >
         <Svg viewBox={VIEW_BOX} style={StyleSheet.absoluteFill}>
-          {byDepth.map(({ person, spot }) => (
-            <Shapes
-              key={person.key}
-              shapes={
-                person.kind === "other"
-                  ? pawnShapes(spot, colors.info, PAPER)
-                  : pawnShapes(spot, SHADE, "#6C769C")
-              }
-            />
-          ))}
+          {byDepth
+            .filter(({ person }) => !mascots?.[person.key])
+            .map(({ person, spot }) => (
+              <Shapes
+                key={person.key}
+                shapes={
+                  person.kind === "other"
+                    ? pawnShapes(spot, colors.info, PAPER)
+                    : pawnShapes(spot, SHADE, "#6C769C")
+                }
+              />
+            ))}
+        </Svg>
+        {/* the others as their mascots, alive, far before near */}
+        {scale > 0
+          ? byDepth.map(({ person, spot }) => {
+              const look = mascots?.[person.key];
+              if (!look) return null;
+              return (
+                <View key={person.key} style={mascotPlace(spot)}>
+                  <MascotFigure
+                    look={look}
+                    width={mascotAt(spot).w * scale}
+                    seed={person.key}
+                    paused={resting || still}
+                  />
+                </View>
+              );
+            })
+          : null}
+        <Svg viewBox={VIEW_BOX} style={StyleSheet.absoluteFill}>
           {byDepth.map(({ person, spot }) => {
-            const [x, y] = pawnTop(spot);
+            const [x, y] = mascots?.[person.key]
+              ? [pawnTop(spot)[0], mascotAt(spot).head]
+              : pawnTop(spot);
             return (
               <Label
                 key={person.key}
@@ -631,32 +700,56 @@ export function RoomScene({
       {me ? (
         <Animated.View
           pointerEvents="none"
+          style={[StyleSheet.absoluteFill, { opacity: walkOpacity, transform: walking }]}
+        >
+          {myMascot ? null : (
+            <Svg viewBox={VIEW_BOX} style={StyleSheet.absoluteFill}>
+              <Shapes shapes={pawnShapes(me.spot, colors.primary, PAPER)} />
+            </Svg>
+          )}
+        </Animated.View>
+      ) : null}
+      {/* your own mascot on its spot, waddling a little at every step */}
+      {me && myMascot && scale > 0 ? (
+        <Animated.View
+          pointerEvents="none"
           style={[
-            StyleSheet.absoluteFill,
+            mascotPlace(me.spot),
             {
-              opacity: entry?.fade
-                ? walk.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0, 1, 1] })
-                : 1,
+              opacity: walkOpacity,
+              transformOrigin: "50% 92%",
               transform: [
-                { translateX: walk.interpolate({ inputRange: [0, 1], outputRange: [dx, 0] }) },
+                ...walking,
                 {
-                  translateY: walk.interpolate({
+                  rotate: walk.interpolate({
                     inputRange: stepsAt,
-                    outputRange: stepsAt.map((t, i) => dy * (1 - t) - (i % 2 ? bob : 0)),
+                    outputRange: stepsAt.map((_, i) =>
+                      i === 0 || i === stepsAt.length - 1 ? "0deg" : i % 2 ? "7deg" : "-7deg",
+                    ),
                   }),
-                },
-                {
-                  translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [-6, 0] }),
                 },
               ],
             },
           ]}
         >
+          <MascotFigure
+            look={myMascot}
+            width={mascotAt(me.spot).w * scale}
+            seed="me"
+            paused={resting || still}
+          />
+        </Animated.View>
+      ) : null}
+      {/* your name, over your head wherever you are on the way in */}
+      {me ? (
+        <Animated.View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, { opacity: walkOpacity, transform: walking }]}
+        >
           <Svg viewBox={VIEW_BOX} style={StyleSheet.absoluteFill}>
-            <Shapes shapes={pawnShapes(me.spot, colors.primary, PAPER)} />
             <Label
               x={pawnTop(me.spot)[0]}
-              y={pawnTop(me.spot)[1] - 2}
+              y={(myMascot ? mascotAt(me.spot).head : pawnTop(me.spot)[1]) - 2}
               text={short(me.person.label)}
               fill={colors.primary}
             />

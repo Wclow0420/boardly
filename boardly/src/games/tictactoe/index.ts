@@ -1,5 +1,6 @@
 import { BADGE_GLYPHS as G } from "@/components/badges/glyphs";
 import type { GameDefinition } from "../types";
+import { BADGE_FRAMES } from "./badgeFrames";
 import { TicTacToeBoard } from "./TicTacToeBoard";
 import type { TicTacToeState } from "./logic";
 
@@ -10,8 +11,9 @@ export const tictactoe: GameDefinition<TicTacToeState> = {
   maxPlayers: 2,
   Board: TicTacToeBoard,
   currentSeat: (state) => state.currentSeat,
+  layout: "stage",
   badges: {
-    "tictactoe.firstWin": { glyph: G.xo, loop: "pulse", face: "#2F5D8A" },
-    "tictactoe.master": { glyph: G.crown, loop: "spin", face: "#2F5D8A" },
+    "tictactoe.master": { glyph: G.crown, emoji: "👑", loop: "spin", face: "#2F5D8A" },
   },
+  badgeFrames: BADGE_FRAMES,
 };

@@ -8,12 +8,14 @@ import {
   type ReactNode,
 } from "react";
 
+import { forget } from "@/api/remember";
 import {
   api,
   setAccessToken,
   setUnauthorizedHandler,
   type AuthResult,
   type AuthUser,
+  type MascotLook,
 } from "@/api/client";
 import { connectUserSocket, disconnectUserSocket } from "@/api/socket";
 import { tokenStorage } from "@/api/tokenStorage";
@@ -32,8 +34,13 @@ interface SessionContextValue {
   updateUser: (user: AuthUser) => void;
   /** Spends coins to unlock a profile border. */
   buyBorder: (borderId: string) => Promise<void>;
+  /** Dresses the mascot: buys what isn't owned yet (all or nothing),
+   *  then wears the look. */
+  dressMascot: (look: MascotLook, buy: boolean) => Promise<void>;
   /** Changes the profile border everyone sees around this player. */
   setBorder: (borderId: string) => Promise<void>;
+  /** The badges my card shows (up to four; [] for the best four). */
+  setShowcase: (badges: string[]) => Promise<void>;
   /** Sets the profile picture (base64 JPEG/PNG/WebP), or null to remove it. */
   setAvatar: (image: string | null) => Promise<void>;
   /** Permanently deletes the account, then signs out. */
@@ -51,6 +58,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setStatus("signedOut");
     tokenStorage.clear().catch(() => {});
+    // what was kept on the phone for the last player goes with them
+    forget();
   }, []);
 
   // Bootstrap: restore tokens and validate them against /auth/me.
@@ -133,8 +142,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setUser(updated);
   }, []);
 
+  const dressMascot = useCallback(async (look: MascotLook, buy: boolean) => {
+    const { user: updated } = buy
+      ? await api.auth.buyMascot(look)
+      : await api.auth.wearMascot(look);
+    setUser(updated);
+  }, []);
+
   const setBorder = useCallback(async (borderId: string) => {
     const { user: updated } = await api.auth.setBorder(borderId);
+    setUser(updated);
+  }, []);
+
+  const setShowcase = useCallback(async (badges: string[]) => {
+    const { user: updated } = await api.auth.setShowcase(badges);
     setUser(updated);
   }, []);
 
@@ -164,7 +185,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       changePassword,
       updateUser,
       buyBorder,
+      dressMascot,
       setBorder,
+      setShowcase,
       setAvatar,
       deleteAccount,
     }),
@@ -177,7 +200,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       changePassword,
       updateUser,
       buyBorder,
+      dressMascot,
       setBorder,
+      setShowcase,
       setAvatar,
       deleteAccount,
     ]

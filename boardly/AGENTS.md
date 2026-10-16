@@ -46,6 +46,17 @@ real food count, with tappable night posts: `shelterScenes.ts`,
 - One clock per scene: `useIsoClock(paused)`. Pass `paused` when a
   popup covers the scene, the app is in the background
   (`AppState`), or reduce motion is on — the canvas then stops drawing.
+- Everything is drawn engraved automatically (gradients lit from the
+  upper left, ink outlines, a shine, grain on `GRAINED` tones); a Shape
+  can carry its own `grad`. Detailed pieces live in one library,
+  `pieces/` (import `@/components/iso/pieces`): `materials` (tones;
+  grained woods registered there once), `helpers`, `turned`, `walls`,
+  `floors`, `seating`, `tables`, `storage`, `lighting`, `decor`,
+  `paintings`, `tableware`, `outdoor`, `provisions`. Add new pieces
+  there; a room file (Seal the Manor's are one each in
+  `games/nightwatch/rooms/`) keeps only its builder. `shell(base, { panelled })`
+  gives panelled walls with a gilded rail, or plain ones. Look a game's
+  rooms over with `node scripts/room-sheet.mjs <game> <png>`.
 - Shaders share `noise.ts`. Keep `effects.tsx` and `weather.tsx` from
   importing each other (a cycle blanks the canvas with an SkSL error).
 - Also shared: `pawn`/`pawnTop`/`SPOTS` (room.ts), `IsoPicture` (a
@@ -68,16 +79,32 @@ to ~92), as a `back` layer (behind the avatar) and a `front` layer (over
 its edge; keep off its face, r < 46). Use the kit (`art/kit.tsx`: Band,
 Halo, Sparks, Glint, Flicker, polar/rnd, the iso `Fire`/`Steam`) and the
 shared clock it is handed; helpers called inside `useDerivedValue` must
-be worklets. Below 44pt a border stands still. Every new border's id
+be worklets. Below 42pt a border stands still, only six move at once
+(`MOVING_AT_ONCE`), and borders on screens you've left pause. Every
+border must hold 60 fps with four copies at 74pt
+(`boardly-dev://dev/borders?perf=1&size=74&ids=…`): bake the still
+parts once and record one picture per layer per frame, as
+`art/dragon.tsx` does (see "Borders must run at 60 fps" in the root
+CLAUDE.md). Rarity is common → rare → epic → legendary → mythic
+(10,000+ coins); the shop sorts by it. Every new border's id
 and price go in `backend/app/cosmetics.py` too (`BORDER_PRICES`, or
 `EARNED_BORDERS` for one that comes with a badge). Check them all at
-`boardly-dev://dev/borders`.
+`boardly-dev://dev/borders`. Below 42pt (the shop's tiles, friend
+lists) a border is drawn from two still pictures of its layers, not
+live: after adding or redrawing a border, run `node
+scripts/border-thumbs.mjs` and open `boardly-dev://dev/thumbs` on the
+simulator to make them. A border draws well outside its avatar, so
+anything laid out after it would cover it: inside an `<AvatarStage>`
+(`components/ui`) bordered avatars are drawn in a top layer instead.
+Scrolling `Screen`s have one; a screen with its own ScrollView puts one
+inside its scroll content (profile, lobby). Leave room round the avatar
+for the wings and flames (lobby cards: 26 above, the name 24 below).
 
 # The house drawing style
 
 How the app should look wherever something is drawn (borders, emblems,
-icons): engraved metal and ivory, like Winged Crest (`art/crest.tsx`)
-and Baroque Silver (`art/baroque.tsx`).
+icons): engraved metal and ivory, the craft every border in `art/` is
+drawn with (each border its own idea; none is the template).
 
 - Every shape is a filled path with a gradient: gold
   (`#FFF2B8 #E2B04A #9A6B1E #F0CC72`), silver
@@ -115,13 +142,77 @@ and Baroque Silver (`art/baroque.tsx`).
     `node scripts/emblem-sheet.mjs <file.ts> <out.png>`: each icon large
     and at text size. Every icon must read at about 17pt.
   - Never ship a bare emoji or a line icon as UI.
+- The app's own pieces wear the same trim (`components/ui`; shapes in
+  `engraved/trim.ts`, drawn once as still SVG): the tray's wood or felt
+  stays, the trim is engraved metal, gold for what matters and silver
+  for the second choice.
+  - `TitlePlaque`: a page's title (ivory plaque, gold scrolls, a
+    sapphire).
+  - `SectionTitle`: a section's name on an enamel tab in its colour,
+    then a gold rule; `right` holds a "See all" or a count.
+  - `Frame`: a tray in a gold moulding; `ornate` (corner scrolls) only
+    for the one card that leads a page.
+  - `Button` (enamel in gold; `secondary` in silver), `Chip`,
+    `CoinPill`, `Medallion` (a stat number on a beaded gold coin).
+  - Anything drawn by hand (a home card, a big button) gets
+    `<BezelOverlay r t metal />` after its fill and before its content.
+    No plain borders.
+- Still art baked from SVG (`bakedSvg`) goes through Skia's SVG
+  reader: a gradient fill on an `<ellipse>` comes out black there (it
+  works on `<circle>`, `<rect>` and `<path>`), so draw ovals as paths.
+  A Skia `<Canvas>` ignores `pointerEvents`: wrap one laid over
+  buttons in a `<View pointerEvents="none">`.
 - Life comes from a light `Sweep`, `Glint`s, one jewel that glows or
-  beats, and a gentle sway. Never draw faces or heads in code.
+  beats, and a gentle sway. No creature heads drawn in code. People
+  with faces are only the avatar figures (`src/features/avatar`).
+
+# The mascot (`src/features/mascot/`)
+
+Every player is the Boardly meeple, dressed. Use it wherever a game
+needs a person.
+
+- **What a look is.** A look is a skin plus a part in each slot (eyes,
+  mouth, nose, hat, top, bottom, shoes, hand, back). It's built on the
+  rig's fixed points (`rig.ts`).
+  - `dress.ts` layers a look.
+  - `asLook()` reads one from the server.
+- **Drawing it.**
+  - `MascotFigure` is the mascot alive on Skia: it breathes, blinks and
+    sways. Give it a `seed` so a room of mascots isn't in step, and
+    `paused` with the scene.
+  - `MascotPortrait` is a still head and shoulders, for circles. Every
+    `Avatar` and `AvatarBorder` shows it when there is no photo.
+- **In a game.** Players carry `mascot` (`GamePlayer`). See Seal the
+  Manor's `RoomScene` (`mascotAt`) and Shelter's `ShelterScene`.
+- **Adding or repricing an item.** Draw it in `parts/` or `skins.ts`,
+  look it over (`node scripts/emblem-sheet.mjs
+  src/features/mascot/preview.ts out.png HAT 100x130`), then run
+  `node scripts/export-mascot-catalog.mjs`. The server only accepts
+  items in `backend/app/mascot_catalog.json`.
+- **The screens.** The Mascot tab is in the middle of the bar. The
+  wardrobe (`app/wardrobe.tsx`) slides up over it. Jest stubs
+  `MascotStage` in `jest.setup.js`.
 
 # Standards for a new game
 
 What made Seal the Manor feel good; follow it unless the design says
 otherwise.
+
+**A new game is not done without** (each is explained below):
+- its badges as four-level missions on the server (`Badge(key, goals,
+  match)`, bronze → silver → gold → diamond) and `player_outcome`;
+- a `badges` entry (`{ glyph, emoji, loop }`) for every badge key and
+  its own `badgeFrames` (`src/games/<key>/badgeFrames.ts`): four
+  frames in the game's style, richer at each level, looked over with
+  `scripts/badge-sheet.mjs` and at `boardly-dev://dev/badges?game=<key>`;
+- badge names and counted asks (`desc_one`/`desc_other` with
+  `{{count}}`) in `en`, `zh` and `ms`;
+- its icons as engraved emblems (`src/games/<key>/emblems`), box art,
+  a rules page with a player-count table, a Journal for its history,
+  and a dev preview page;
+- the app's own pieces for its menus and sheets (`TitlePlaque`,
+  `SectionTitle`, `Frame`, `Button`; bordered avatars inside an
+  `AvatarStage`), never plain borders or ribbons.
 
 - **Secrecy first.** Never show anything that leaks another player's
   hidden choice — e.g. only the player's own walk into a room is
@@ -153,27 +244,49 @@ otherwise.
   - `player_outcome(state, seat)` returns the player's `side`
     ("good"/"evil" — required in any game with hidden sides), `role`,
     and `facts` (anything a badge needs: the win reason, food left…).
-  - `badges = [Badge("<key>.<name>", tier, goal, match)]`. Ship at
-    least: a bronze first win (in faction games, one per side), one or
-    two silver/gold badges for the game's signature feats (the
-    assassin finding the Prophet, being rescued with a full larder),
-    and a legendary for 25 wins. `match` gets the outcome row (`won`,
-    `side`, `role`, `facts`); use `won_as(side)` and keep wins handed
-    over by a walk-out out of it. Badges counting the same thing with
-    bigger goals are levels of one `series` ("wins": 1 → 10 → 25):
-    give them the same series and the app shows the next level up.
+  - `badges = [Badge("<key>.<name>", goals, match)]`. Every badge is a
+    mission in four levels, bronze → silver → gold → diamond, reached
+    at its four `goals` (presets in `games/base.py`: `FEAT` 1/5/15/40
+    for winning on a side, `RARE` 1/3/8/20 for a signature feat — the
+    assassin finding the Prophet, rescued with a full larder —, `WINS`
+    3/10/25/60 for all wins, `QUICK_WINS` for short games). Ship one
+    per side's win (faction games), one or two signature feats, and
+    one for all wins. `match` gets the outcome row (`won`, `side`,
+    `role`, `facts`); use `won_as(side)` and keep wins handed over by a
+    walk-out out of it. A badge-earned border names the level that
+    brings it (`EARNED_BORDERS` in `backend/app/cosmetics.py`, and
+    `earnedBy`/`earnedAt` in the app).
   App (`src/games/<key>/index.ts`): a `badges` entry for every key —
-  `{ glyph, loop }`, the emblem drawn from the game's own icon set
-  (`icons.tsx`) or `components/badges/glyphs.ts`, and how it moves
-  (`flicker`, `sway`, `spin`, `bob`, `pulse`, `tumble`; pick what
-  suits the object). Name and description under
-  `badges.<key>.<name>.{name,desc}` in all three locales. The badge
-  itself (metal rim by tier, enamel in the game's colour, halo, light
-  sweep, sparkles, the stamp when earned) is shared: never draw your
-  own. Check them all at `boardly-dev://dev/badges`.
-- **Player counts** get their own rules page: a table built from the
-  game's count tables in `logic.ts` (sides, roles, team sizes, win
-  thresholds) plus notes — see `CountsPage` in both games' `rules.tsx`.
+  `{ glyph, emoji, loop }`: `emoji` names the engraved emblem on the
+  badge's disc (any emoji `<Emblem>` draws), `glyph` the line icon
+  fallback, and how it moves (`flicker`, `sway`, `spin`, `bob`,
+  `pulse`, `tumble`; pick what suits the object). And `badgeFrames`:
+  the game's own frame for each level (`src/games/<key>/badgeFrames.ts`,
+  a `BadgeStyle` of EmblemData in a 120 box; see
+  `components/badges/frames/boardly.ts` and `frames/kit.ts`), richer
+  at each level and in the game's style; no ribbons. Look a set over
+  with `node scripts/badge-sheet.mjs <file.ts> <out.png> BADGE_FRAMES
+  <tint>`. Name and ask under `badges.<key>.<name>.{name,desc_one,
+  desc_other}` in all three locales: the ask takes `{{count}}`, the
+  goal of the level being worked towards ("Win {{count}} games of
+  Shelter"). The badge itself (the frame, the emblem, iron while
+  locked, the light sweep and glints, the four-level sheet, the stamp
+  when a level is reached) is shared: never draw your own. Check them
+  all at `boardly-dev://dev/badges` (`?game=<key>` for one style).
+  A player's card shows just four badges: the ones they pick in the
+  badge hall (`app/badges.tsx`, opened through the meeple like the
+  wardrobe; saved by `PUT /auth/me/showcase`), or their four best.
+- **How to play follows one standard** (`features/game/rules/`): each
+  page in `rulePages` names its `section` — overview (概括), teams (阵营),
+  roles (角色), play (玩法), actions (行动), rooms (房间), events (特殊事件),
+  counts (人数规则) — and the popup names it and puts it in that order
+  for every game; a game has only the sections it needs. Write the pages
+  with the shared pieces in `rules/blocks.tsx` (RuleLead, RuleSteps,
+  RuleCard, CountsTable, RuleNote…), plain words, short lines: a new
+  player must be able to play after the How to play page. The counts
+  table is built from the game's tables in `logic.ts`, never typed.
+  Check every page (and in Chinese) at `boardly-dev://dev/rules?game=<key>`;
+  `&measure=1` times the opening (under 250 ms).
 - **Game text** goes through the game's own `GameText`/`GameButton`
   (see `nightwatch/GameText.tsx`): emoji become the game's vector icons
   (`icons.tsx`) and place names take their colour. Give every room or
@@ -181,6 +294,29 @@ otherwise.
 - **Strings** in all three locales (`en`, `zh`, `ms`) under the game's
   key. Rules pages: overview, roles, then one card per room/event with
   its picture where there is one (`nightwatch/rules.tsx`).
+- **The stage.** A game with a drawn world fills the whole screen
+  (`layout: "stage"` in its GameDefinition; the game screen hands the
+  board its back button, rules, last error and the after-game content
+  in `stage`). Seal the Manor's `ManorStage` is the model: the arch
+  across the top (`features/game/stage/NightArch`), the scene in the
+  middle with the tools down its side (`ToolButton`, no boxes), the
+  main move on the `Plinth`. Every moment plays on the stage, not in a
+  popup: the letter of the night, the patrol's map, everyone on the
+  stage for the team and the vote (the leader's picks lit as they're
+  made, seals on name plates that turn green or red) and for the last
+  chance, the lanterns of the mission, the ending's seal. Give each its own `sceneKey`: the red
+  `StageCurtain` closes and opens between them (and holds the plinth's
+  move until it's shut). A decision that matters is held, not tapped
+  (`lantern/HoldButton`: fills, ticks harder in the hand, sends at the
+  end). Any moment with the players themselves uses the shared
+  `features/game/stage/StageLineup` (everyone as their mascot under a
+  lighting rig, two staggered rows past five, name plates, a crown on
+  the leader's head via `topOf(look)`); a game hands it only lights,
+  plates and who can be tapped. Results are revealed once each on the device (`useSetPieces`
+  counters), everyone seeing the same reveal; nothing on the way shows
+  whose choice was which. Preview every moment at
+  `boardly-dev://dev/manor?sample=<moment>` (the `dev` tab on the left
+  lists them and shows the fps) and keep each at 60.
 - **Box art.** Every game sits on the Games shelf and on Home's felt
   as a box (`features/games/GameBox.tsx`). Give it a `boxArt` in its
   GameDefinition — a picture `width` wide, e.g. a still of its own

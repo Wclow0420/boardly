@@ -312,10 +312,10 @@ def make_move(room_id):
         return api_error("not_in_room", "You are not in this room", 403)
 
     result = apply_move(room, session, player.seat, move)
+    payload = {"session": session.to_dict(player.seat), "result": result}
     db.session.commit()
 
-    announce_move(room, result)
-    payload = {"session": session.to_dict(player.seat), "result": result}
+    announce_move(room, result, session)
     # The game may be waiting on a bot now
     nudge(room)
     return payload

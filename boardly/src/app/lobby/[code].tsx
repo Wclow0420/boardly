@@ -15,6 +15,7 @@ import {
 } from "@/components/icons";
 import {
   AppText,
+  AvatarStage,
   Button,
   ConfirmSheet,
   EmptyState,
@@ -270,6 +271,8 @@ export default function LobbyScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.playersScroll}
         >
+        {/* bordered avatars draw over the cards round them */}
+        <AvatarStage>
         {roomQuery.isPending ? (
           <View style={styles.playersGrid}>
             {Array.from({ length: 4 }, (_, i) => (
@@ -307,6 +310,7 @@ export default function LobbyScreen() {
                     name: player.username,
                     borderId: player.borderId,
                     avatarUrl: player.avatarUrl,
+                    mascot: player.mascot,
                     isHost: player.userId === room.hostId,
                     ready: player.ready,
                     isBot: player.isBot,
@@ -325,6 +329,7 @@ export default function LobbyScreen() {
                             name: player.username,
                             borderId: player.borderId,
                             avatarUrl: player.avatarUrl,
+                            mascot: player.mascot,
                           })
                   }
                 />
@@ -340,6 +345,7 @@ export default function LobbyScreen() {
           </View>
           </>
         )}
+        </AvatarStage>
         </ScrollView>
       </View>
 

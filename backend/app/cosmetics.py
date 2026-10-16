@@ -15,11 +15,11 @@ BORDER_PRICES = {
     "shield": 250,
     "royal": 600,
     "golden-aura": 700,
-    "neon-green": 1000,
-    "ripple": 1000,
-    "vaporwave": 1200,
-    "ember": 1200,
-    "frost": 1200,
+    "neon-green": 2200,
+    "ripple": 2400,
+    "vaporwave": 3000,
+    "ember": 2800,
+    "frost": 2600,
     # art borders: illustrations drawn round the avatar
     "dice-orbit": 1500,
     "card-fan": 1500,
@@ -37,6 +37,16 @@ BORDER_PRICES = {
     "fallen-angel": 5000,
     "winged-crest": 3800,
     "baroque-silver": 3800,
+    "imperial-dragon": 12000,
+    "celestial-throne": 15000,
+    "archangel": 16000,
+    "phoenix-reborn": 18000,
+    "void-emperor": 25000,
+    "clockwork": 12000,
+    "krakens-deep": 14000,
+    "grand-board": 20000,
+    "lunar-new-year": 12000,
+    "cherry-shrine": 10000,
     "king-crown": 5000,
     "queen-crown": 5000,
     # rim borders: the effect is the ring
@@ -53,11 +63,12 @@ BORDER_PRICES = {
 }
 
 # Borders that can't be bought: each comes with a badge.
+# border -> (badge, the level of it that brings the border)
 EARNED_BORDERS = {
-    "seal-halo": "nightwatch.ghostbreaker",
-    "winter-hearth": "shelter.lastWinter",
-    "spymaster": "avalon.spymaster",
-    "table-legend": "boardly.legend",
+    "seal-halo": ("nightwatch.ghostbreaker", "gold"),
+    "winter-hearth": ("shelter.lastWinter", "gold"),
+    "spymaster": ("avalon.spymaster", "gold"),
+    "table-legend": ("boardly.regular", "diamond"),
 }
 
 BORDER_IDS = frozenset(BORDER_PRICES) | frozenset(EARNED_BORDERS)
@@ -68,5 +79,5 @@ def owns_border(user, border_id) -> bool:
         # local import: outcomes reads the games, which read the models
         from app.outcomes import has_badge
 
-        return has_badge(user.id, EARNED_BORDERS[border_id])
+        return has_badge(user.id, *EARNED_BORDERS[border_id])
     return BORDER_PRICES.get(border_id) == 0 or border_id in (user.owned_borders or [])

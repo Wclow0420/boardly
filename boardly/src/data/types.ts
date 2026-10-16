@@ -1,4 +1,4 @@
-import type { Together } from "@/api/client";
+import type { MascotLook, Together } from "@/api/client";
 import type { PresenceStatus } from "@/components/ui";
 
 export type TableStatus = "inProgress" | "waiting" | "finished" | "closed";
@@ -42,6 +42,7 @@ export interface Friend {
   /** Profile border they wear. */
   borderId?: string;
   avatarUrl?: string | null;
+  mascot?: MascotLook | null;
   relation: FriendRelation;
   /** Only known for friends. */
   presence?: PresenceStatus;
@@ -58,6 +59,7 @@ export interface LobbyPlayer {
   name: string;
   borderId?: string | null;
   avatarUrl?: string | null;
+  mascot?: MascotLook | null;
   isHost: boolean;
   ready: boolean;
   /** A bot player the server plays. */

@@ -19,8 +19,10 @@ import {
 } from "@shopify/react-native-skia";
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
+  useId,
   useMemo,
   useState,
   type ReactNode,
@@ -68,8 +70,68 @@ export function BorderClockProvider({ children }: { children: ReactNode }) {
   }, running);
   useEffect(() => tick.setActive(running), [running, tick]);
   return (
-    <ClockContext.Provider value={seconds}>{children}</ClockContext.Provider>
+    <ClockContext.Provider value={seconds}>
+      <MotionBudget>{children}</MotionBudget>
+    </ClockContext.Provider>
   );
+}
+
+// ── how many borders may move at once ───────────────────────────────
+
+/** The most art borders that move at the same time. Past that, the
+ *  smallest stand still on their resting pose (nothing is left out of
+ *  the drawing) until a bigger one leaves the screen: a lobby full of
+ *  legendary borders stays smooth. */
+export const MOVING_AT_ONCE = 6;
+
+type Budget = {
+  want: (id: string, size: number) => void;
+  drop: (id: string) => void;
+  moving: ReadonlySet<string>;
+};
+const BudgetContext = createContext<Budget | null>(null);
+
+function MotionBudget({ children }: { children: ReactNode }) {
+  // every border that would like to move, in the order they asked
+  const [wants, setWants] = useState<[string, number][]>([]);
+  const want = useCallback((id: string, size: number) => {
+    setWants((all) =>
+      all.some(([other, s]) => other === id && s === size)
+        ? all
+        : [...all.filter(([other]) => other !== id), [id, size]],
+    );
+  }, []);
+  const drop = useCallback((id: string) => {
+    setWants((all) => all.filter(([other]) => other !== id));
+  }, []);
+  // the biggest move; among equals, the first to ask
+  const moving = useMemo(
+    () =>
+      new Set(
+        wants
+          .map(([id, size], order) => ({ id, size, order }))
+          .sort((a, b) => b.size - a.size || a.order - b.order)
+          .slice(0, MOVING_AT_ONCE)
+          .map((w) => w.id),
+      ),
+    [wants],
+  );
+  const value = useMemo(() => ({ want, drop, moving }), [want, drop, moving]);
+  return <BudgetContext.Provider value={value}>{children}</BudgetContext.Provider>;
+}
+
+/** Whether a border of `size` may move now (it asks only when `wants`). */
+export function useMayMove(size: number, wants: boolean): boolean {
+  const budget = useContext(BudgetContext);
+  const id = useId();
+  useEffect(() => {
+    if (!budget || !wants) return;
+    budget.want(id, size);
+    return () => budget.drop(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [budget?.want, budget?.drop, id, size, wants]);
+  if (!wants) return false;
+  return budget ? budget.moving.has(id) : true;
 }
 
 /** The shared clock, or one that stands still (small avatars, or no

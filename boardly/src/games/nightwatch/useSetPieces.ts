@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 /** Which of the game's full-screen moments this player has already
- *  watched: the role card being dealt, and the last night whose
- *  anonymous letters were delivered. `books` is the nights on which the
+ *  watched: the role card being dealt, the last night whose anonymous
+ *  letters were delivered, and the votes and missions revealed. `books` is the nights on which the
  *  Chapel's record was opened. */
 interface Watched {
   dealt: boolean;
@@ -11,9 +11,16 @@ interface Watched {
   books: number[];
   /** The last move shown as a walk in (see arrival.ts). */
   walked: string | null;
+  /** How many team votes and mission results have been revealed with the
+   *  lanterns; null until the board has first counted them (so joining
+   *  late doesn't replay the past). */
+  votes: number | null;
+  missions: number | null;
+  /** The last night this player left their room for the team. */
+  gathered: number | null;
 }
 
-const FRESH: Watched = { dealt: false, letters: null, books: [], walked: null };
+const FRESH: Watched = { dealt: false, letters: null, books: [], walked: null, votes: null, missions: null, gathered: null };
 const keyFor = (sessionId: string) => `boardly.nightwatch.watched.${sessionId}`;
 
 /** Remembers on the device what has been watched, so each moment plays

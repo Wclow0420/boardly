@@ -1,764 +1,553 @@
-import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+// Double Agent on the stage (layout "stage"), after Seal the Manor: the
+// agency's case-file header across the top, every moment its own scene
+// in the middle behind the red curtain, the tools down the side, the
+// main move on the plinth.
+//
+//   the deal     — the role card, face down, turned over and put away
+//   the team     — everyone on the stage (StageLineup); the leader's
+//                  picks step into the light as they're made, shown to
+//                  the table at once (a quiet "pick" move)
+//   the vote     — one tap on the plinth; a seal on each name plate as
+//                  people vote, turned green or red at the reveal
+//   the operation— the dossier on the desk and two stamps (dossier/):
+//                  held to play; then the team's envelopes going in;
+//                  then the cards turned over and the verdict stamped
+//   the shot     — the Hitman holds to name the Handler on the lineup
+//   the ending   — the verdict, every card face up, play again
+
+import { useEffect, useRef, useState } from "react";
+import { Animated, StyleSheet, View } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
 
-import {
-  AppText,
-  BottomSheetModal,
-  Button,
-  Card,
-} from "@/components/ui";
-import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
-import { usePromptSheet } from "@/hooks/usePromptSheet";
-import { fontFamily, useTheme } from "@/theme";
+import { AppText, Button } from "@/components/ui";
+import { Popup, type PopupLook } from "@/features/game/Popup";
+import { StageLineup, type Light, type Plate } from "@/features/game/stage/StageLineup";
+import { ToolButton } from "@/features/game/stage/parts";
+import { asLook } from "@/features/mascot/dress";
+import { useTheme } from "@/theme";
 import { moveHaptic, tapHaptic } from "@/utils/haptics";
 import type { GameBoardProps } from "../types";
-import { AvalonReveal } from "./AvalonReveal";
+import { Desk, RevealTitle, revealDelay, type DeskView } from "./dossier/Desk";
+import type { StampKind } from "./dossier/art";
+import { Ending } from "./Ending";
 import { HoldButton } from "./HoldButton";
-import { RolePortrait } from "./RolePortrait";
 import {
   MAX_REJECTIONS,
   assassinTargets,
-  newReveals,
   pendingAction,
-  seenOf,
   sideOf,
   teamSize,
   toggleSeat,
   type AvalonState,
-  type Reveal,
-  type Role,
 } from "./logic";
+import { Agents, Record, type Names } from "./Panels";
+import { ROLE_CARD_W, RoleIntro } from "./RoleIntro";
+import { RoleCardBack, RoleCardFace } from "./RoleCard";
+import { AgencyStage, stageText } from "./stage/AgencyStage";
+import { useSetPieces } from "./useSetPieces";
+import { VoteButtons } from "./VoteButtons";
 
-/** Blank space added under the table while the action sheet is up. */
-const SHEET_CLEARANCE = 340;
+/** The agency's popups: a sea-green sign, emerald jewels. */
+const AGENCY_POPUP: PopupLook = { enamel: ["#2E7A72", "#16403F", "#0A2224"], jewel: "emerald", glow: "#FFD58A" };
 
-export function AvalonBoard({
-  state,
-  mySeat,
-  players,
-  busy,
-  finished,
-  onMove,
-}: GameBoardProps<AvalonState>) {
+/** The panels behind the buttons beside the stage. */
+const MENU = [
+  { key: "role", emoji: "🎭" },
+  { key: "record", emoji: "📜" },
+  { key: "agents", emoji: "👥" },
+] as const;
+type Panel = (typeof MENU)[number]["key"];
+
+/** What I've picked in the moment at hand. */
+type Pick = { step: string; team?: number[]; stamp?: StampKind; target?: number | null };
+
+export function AvalonBoard({ state, mySeat, players, busy, finished, sessionId, onMove, stage }: GameBoardProps<AvalonState>) {
   const { t } = useTranslation();
   const { colors, spacing } = useTheme();
-  const insets = useSafeAreaInsets();
 
-  // Seats picked while building a team / choosing the assassin's target.
-  // Tagged with the step it belongs to, so it clears itself when the
-  // game moves on.
-  const step = `${state.phase}:${state.quest}:${state.leader}:${state.rejections}`;
-  const [selection, setSelection] = useState<{ step: string; seats: number[] }>(
-    { step, seats: [] }
-  );
-  const selected = selection.step === step ? selection.seats : [];
-  // Your role stays face down until you tap it — players often share a room
-  const [roleShown, setRoleShown] = useState(false);
-
-  // Announce finished votes, finished quests and the end of the game.
-  // Starts from the state the screen opened with, so reloading mid-game
-  // doesn't replay old results.
-  const [seen, setSeen] = useState(() => seenOf(state));
-  const [reveals, setReveals] = useState<Reveal[]>([]);
-  const now = seenOf(state);
-  if (
-    now.votes !== seen.votes ||
-    now.quests !== seen.quests ||
-    now.ended !== seen.ended
-  ) {
-    setSeen(now);
-    setReveals([...reveals, ...newReveals(seen, state)]);
-  }
+  // Tagged with the step so picks clear themselves when the game moves
+  // on (a rejected team brings a new leader, hence the proposal count)
+  const step = `${state.phase}:${state.quest}:${state.history.length}`;
+  const [pick, setPick] = useState<Pick>({ step });
+  const current: Pick = pick.step === step ? pick : { step };
+  const choose = (next: Omit<Pick, "step">) => {
+    tapHaptic();
+    setPick({ ...current, ...next, step });
+  };
 
   const over = finished || state.phase === "finished";
-  const action = over ? null : pendingAction(state, mySeat);
-  const size = teamSize(state);
-  const targets = action === "assassinate" ? assassinTargets(state) : [];
+  const task = over ? null : pendingAction(state, mySeat);
+  const [panel, setPanel] = useState<Panel | null>(null);
 
   const nameOf = (seat: number) =>
-    seat === mySeat
-      ? t("game.you")
-      : (players.find((p) => p.seat === seat)?.username ?? `#${seat + 1}`);
-  const namesOf = (seats: number[]) => seats.map(nameOf).join(", ");
+    seat === mySeat ? t("game.you") : (players.find((p) => p.seat === seat)?.username ?? `#${seat + 1}`);
+  const names: Names = { nameOf, namesOf: (seats) => seats.map(nameOf).join(", ") };
+  const lookOf = (seat: number) => asLook(players.find((p) => p.seat === seat)?.mascot);
+  const allSeats = Array.from({ length: state.numPlayers }, (_, seat) => seat);
 
-  const onSelect = (seat: number) => {
+  // ── the set pieces: the deal, and each vote and operation revealed
+  // once on this device. The first time the board opens it counts
+  // what's already happened, so joining late doesn't replay the past.
+  const pieces = useSetPieces(sessionId);
+  const { ready: piecesReady, watched: seenPieces, mark: markPieces } = pieces;
+  useEffect(() => {
+    if (piecesReady && (seenPieces.votes === null || seenPieces.missions === null)) {
+      markPieces({
+        votes: seenPieces.votes ?? state.history.length,
+        missions: seenPieces.missions ?? state.questResults.length,
+      });
+    }
+  });
+  const dealing =
+    pieces.ready &&
+    !pieces.watched.dealt &&
+    !over &&
+    state.myRole !== null &&
+    state.quest === 0 &&
+    state.history.length === 0 &&
+    state.questResults.length === 0;
+  const roleButton = useRef<View>(null);
+  const [bump] = useState(() => new Animated.Value(0));
+
+  // ── the operation: my stamp, held, then brought down
+  const hold = useSharedValue(0);
+  useEffect(() => {
+    hold.set(0);
+  }, [step, hold]);
+  const [cast, setCast] = useState<{ n: number; side: StampKind } | null>(null);
+  // a played card stays in sight a moment, the stamp coming down and the
+  // mark settling, before the stage turns to the others
+  const [lingering, setLingering] = useState(false);
+  const linger = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (linger.current) clearTimeout(linger.current);
+    },
+    [],
+  );
+  const results = state.questResults.length;
+  const myCast =
+    cast && ((state.phase === "quest" && cast.n === results) || (lingering && cast.n === results - 1)) ? cast.side : null;
+  const castIt = (side: StampKind) => {
+    setCast({ n: results, side });
+    setLingering(true);
+    if (linger.current) clearTimeout(linger.current);
+    linger.current = setTimeout(() => setLingering(false), 2600);
+    onMove({ type: "quest", card: side === "approve" ? "success" : "fail" });
+  };
+  const stamping = myCast !== null && lingering;
+
+  const voteToShow =
+    pieces.ready && pieces.watched.votes !== null && state.history.length > pieces.watched.votes
+      ? state.history[state.history.length - 1]
+      : null;
+  const missionToShow =
+    !voteToShow && !stamping && pieces.ready && pieces.watched.missions !== null && results > pieces.watched.missions
+      ? state.questResults[results - 1]
+      : null;
+  const revealing = (voteToShow !== null || missionToShow !== null) && !dealing;
+  const markReveal = () => {
     tapHaptic();
-    setSelection({
-      step,
-      seats:
-        action === "assassinate"
-          ? selected.includes(seat)
-            ? []
-            : [seat]
-          : toggleSeat(selected, seat, size),
-    });
+    pieces.mark(voteToShow ? { votes: state.history.length } : { missions: results });
   };
 
-  const send = (move: Record<string, unknown>) => {
-    moveHaptic();
-    onMove(move);
+  // ── the team and the vote: everyone on the stage
+  const council = (revealing && voteToShow !== null) || (!over && !revealing && !stamping && (state.phase === "team" || state.phase === "vote"));
+  const draft = task === "propose" ? (current.team ?? state.team) : state.team;
+  const councilTeam = revealing && voteToShow ? voteToShow.team : draft;
+  const councilLights: Record<number, Light> = Object.fromEntries(
+    allSeats.map((seat) => [
+      seat,
+      revealing && voteToShow ? (voteToShow.votes[seat] ? "green" : "red") : councilTeam.includes(seat) ? "lit" : "soft",
+    ]),
+  );
+  // my vote shows the moment I cast it, before the server has answered;
+  // one that failed to send is taken back, so it can be cast again
+  const [castVote0, setCastVote] = useState<{ step: string; approve: boolean } | null>(null);
+  const castVote = castVote0?.step === step && !(stage?.error && !busy && !state.voted[mySeat]) ? castVote0 : null;
+  const iVoted = state.phase === "vote" && (state.voted[mySeat] || castVote !== null);
+  const councilPlates: Record<number, Plate> =
+    revealing && voteToShow
+      ? Object.fromEntries(allSeats.map((seat) => [seat, voteToShow.votes[seat] ? "yes" : "no"]))
+      : state.phase === "vote"
+        ? Object.fromEntries(
+            allSeats.filter((seat) => state.voted[seat] || (seat === mySeat && iVoted)).map((seat) => [seat, "voted"]),
+          )
+        : {};
+  // the leader's picks light up at once; the table is told the latest of
+  // them a moment later, in the background
+  const pickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (pickTimer.current) clearTimeout(pickTimer.current);
+    },
+    [],
+  );
+  const pickTeam = (seat: number) => {
+    const next = toggleSeat(draft, seat, teamSize(state));
+    choose({ team: next });
+    if (pickTimer.current) clearTimeout(pickTimer.current);
+    pickTimer.current = setTimeout(() => onMove({ type: "pick", team: next }, { quiet: true }), 160);
   };
 
-  // Whatever the game needs from me comes up as a sheet pinned to the
-  // bottom. It can't be swiped away — it closes when I've answered.
-  const needsMe = action !== null;
-  const { ref: sheetRef, onDismiss: onSheetDismiss } = usePromptSheet(
-    needsMe,
-    step
+  // ── the Hitman's shot: everyone on the bare stage
+  const [strike, setStrike] = useState<{ step: string; seat: number } | null>(null);
+  const struck = strike?.step === step ? strike.seat : null;
+  const lineup = !over && !revealing && !stamping && state.phase === "assassinate";
+  const target = current.target ?? null;
+  const aimed = task === "assassinate" ? target : null;
+  const candidates = assassinTargets(state);
+  const evilSeats = state.evilSeats ?? [];
+  const lineupLights: Record<number, Light> = Object.fromEntries(
+    allSeats.map((seat) => [
+      seat,
+      seat === (struck ?? aimed)
+        ? "red"
+        : evilSeats.includes(seat)
+          ? "dim"
+          : struck !== null || aimed !== null
+            ? "soft"
+            : "lit",
+    ]),
   );
+  const strikeIt = (seat: number) => {
+    setStrike({ step, seat });
+    // the shot lands before the game moves on
+    if (linger.current) clearTimeout(linger.current);
+    linger.current = setTimeout(() => onMove({ type: "assassinate", target: seat }), 1300);
+  };
 
-  /** Tappable player chips, for picking a team or the Hitman's target. */
-  const picker = (seats: number[]) => (
-    <View style={[styles.chips, { marginTop: spacing.md }]}>
-      {seats.map((seat) => {
-        const isSelected = selected.includes(seat);
-        const player = players.find((p) => p.seat === seat);
-        return (
-          <Pressable
-            key={seat}
-            accessibilityRole="button"
-            accessibilityState={{ selected: isSelected }}
-            disabled={busy}
-            onPress={() => onSelect(seat)}
-            style={[
-              styles.chip,
-              {
-                backgroundColor: isSelected ? colors.primarySoft : colors.well,
-                borderColor: isSelected ? colors.primary : colors.border,
-              },
-            ]}
-          >
-            <AvatarBorder
-              name={player?.username ?? "?"}
-              borderId={player?.borderId}
-              avatarUrl={player?.avatarUrl}
-              size={28}
-            />
-            <AppText variant="label" numberOfLines={1} style={styles.grow}>
-              {nameOf(seat)}
-            </AppText>
-            {isSelected ? (
-              <AppText variant="label" color="primary">
-                ✓
-              </AppText>
-            ) : null}
-          </Pressable>
-        );
-      })}
-    </View>
-  );
+  // ── the desk
+  const evil = state.myRole !== null && sideOf(state.myRole) === "evil";
+  const picked: StampKind | null = current.stamp ?? (task === "quest" && !evil ? "approve" : null);
+  let desk: DeskView | null = null;
+  if (revealing && missionToShow) {
+    desk = {
+      kind: "reveal",
+      key: `op-${results}`,
+      success: missionToShow.success,
+      fails: missionToShow.fails,
+      total: missionToShow.team.length,
+      mark: t("avalon.desk.accomplished"),
+    };
+  } else if (stamping || (!over && !council && task === "quest")) {
+    desk = {
+      kind: "choose",
+      labels: { approve: t("avalon.desk.approve"), seal: t("avalon.desk.seal") },
+      marks: { approve: t("avalon.desk.approved"), seal: "" },
+      locked: evil ? null : "seal",
+      picked: stamping ? myCast : picked,
+      cast: myCast,
+      onPick: (kind) => {
+        hold.set(0);
+        choose({ stamp: kind });
+      },
+    };
+  } else if (!over && !council && state.phase === "quest") {
+    desk = {
+      kind: "gather",
+      band: t("avalon.desk.band"),
+      seats: state.team.map((seat) => ({ seat, name: nameOf(seat), done: state.questPlayed.includes(seat) })),
+    };
+  }
 
-  /** The question the game is asking me — shown in the bottom sheet. */
-  const prompt =
-    action === "propose" ? (
-      <>
-        <AppText variant="title">
-          {`👑  ${t("avalon.team.pick", { count: size, quest: state.quest + 1 })}`}
-        </AppText>
-        {picker(players.map((p) => p.seat).sort((a, b) => a - b))}
-        <Button
-          label={t("avalon.team.propose", { picked: selected.length, count: size })}
-          style={{ marginTop: spacing.md }}
-          disabled={selected.length !== size}
-          loading={busy}
-          onPress={() => send({ type: "propose", team: selected })}
-        />
-      </>
-    ) : action === "vote" ? (
-      <>
-        <AppText variant="title">
-          {`🗳️  ${t("avalon.vote.title", { name: nameOf(state.leader) })}`}
-        </AppText>
-        <AppText variant="body" color="textMuted" style={{ marginTop: 4 }}>
-          {namesOf(state.team)}
-        </AppText>
-        <View style={[styles.buttons, { marginTop: spacing.md }]}>
-          <Button
-            label={t("avalon.vote.reject")}
-            variant="danger"
-            style={styles.grow}
-            disabled={busy}
-            onPress={() => send({ type: "vote", approve: false })}
-          />
-          <Button
-            label={t("avalon.vote.approve")}
-            style={styles.grow}
-            disabled={busy}
-            onPress={() => send({ type: "vote", approve: true })}
-          />
-        </View>
-      </>
-    ) : action === "quest" ? (
-      <>
-        <AppText variant="title">
-          {`🎬  ${t("avalon.quest.title", { quest: state.quest + 1 })}`}
-        </AppText>
-        <View style={[styles.buttons, { marginTop: spacing.md }]}>
-          <HoldButton
-            label={t("avalon.quest.fail")}
-            variant="danger"
-            style={styles.grow}
-            accessibilityHint={t("avalon.quest.hold")}
-            disabled={busy || !state.myRole || sideOf(state.myRole) === "good"}
-            onComplete={() => send({ type: "quest", card: "fail" })}
-          />
-          <HoldButton
-            label={t("avalon.quest.success")}
-            style={styles.grow}
-            accessibilityHint={t("avalon.quest.hold")}
-            disabled={busy}
-            onComplete={() => send({ type: "quest", card: "success" })}
-          />
-        </View>
-        <AppText variant="caption" color="textSubtle" style={{ marginTop: spacing.sm }}>
-          {`${t("avalon.quest.hold")} ${t("avalon.quest.secret")}`}
-        </AppText>
-      </>
-    ) : action === "assassinate" ? (
-      <>
-        <AppText variant="title">{`🎯  ${t("avalon.assassinate.pick")}`}</AppText>
-        <AppText variant="body" color="textMuted" style={{ marginTop: 4 }}>
-          {t("avalon.assassinate.explain")}
-        </AppText>
-        {picker(targets)}
-        <Button
-          label={t("avalon.assassinate.confirm")}
-          variant="danger"
-          style={{ marginTop: spacing.md }}
-          disabled={selected.length !== 1}
-          loading={busy}
-          onPress={() => send({ type: "assassinate", target: selected[0] })}
-        />
-      </>
+  // the header and the tags never run ahead of the stage: while a vote
+  // or an operation is still being revealed they show the table as it
+  // stood before it
+  let shown = state;
+  if (revealing && missionToShow) {
+    shown = { ...state, phase: "quest", quest: results - 1, questResults: state.questResults.slice(0, -1), winner: null };
+  } else if (revealing && voteToShow) {
+    let before = 0;
+    for (let i = state.history.length - 2; i >= 0 && !state.history[i].approved; i--) before++;
+    shown = { ...state, phase: "vote", quest: voteToShow.quest, rejections: before, winner: null };
+  }
+
+  const showing = !pieces.ready || dealing ? null : panel;
+  const paused = showing !== null || dealing;
+  const openPanel = (key: Panel) => {
+    tapHaptic();
+    setPanel(key);
+  };
+
+  // ── the lines over the plinth
+  const subtitle = [
+    t(`avalon.phases.${shown.phase}`),
+    shown.phase !== "finished" && shown.rejections > 0
+      ? t("avalon.stage.rejections", { count: shown.rejections, max: MAX_REJECTIONS })
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const leader = nameOf(state.leader);
+  const voteTitle = voteToShow
+    ? {
+        title: t(voteToShow.approved ? "avalon.reveal.approved" : "avalon.reveal.rejected"),
+        detail: t("avalon.council.tally", {
+          yes: voteToShow.votes.filter(Boolean).length,
+          no: voteToShow.votes.filter((v) => !v).length,
+        }),
+      }
+    : null;
+  const hint =
+    council && revealing && voteTitle && voteToShow ? (
+      <RevealTitle title={voteTitle.title} detail={voteTitle.detail} good={voteToShow.approved} />
+    ) : council && state.phase === "team" ? (
+      <AppText style={stageText.hint} numberOfLines={3}>
+        {task === "propose"
+          ? `👑  ${t("avalon.council.pickHint", { count: teamSize(state), n: state.quest + 1 })}`
+          : `👑  ${t("avalon.council.picking", { name: leader, count: teamSize(state) })}`}
+      </AppText>
+    ) : council ? (
+      <AppText style={stageText.hint} numberOfLines={3}>
+        {t("avalon.council.voteHint", { name: leader, names: names.namesOf(state.team) })}
+        {state.rejections === MAX_REJECTIONS - 1 ? `\n${t("avalon.council.lastChance")}` : ""}
+      </AppText>
+    ) : desk?.kind === "reveal" && missionToShow ? (
+      <RevealTitle
+        title={t(missionToShow.success ? "avalon.reveal.questSuccess" : "avalon.reveal.questFail")}
+        detail={
+          missionToShow.fails > 0 ? t("avalon.reveal.failCards", { count: missionToShow.fails }) : t("avalon.desk.noFails")
+        }
+        good={missionToShow.success}
+        delay={revealDelay(missionToShow.team.length)}
+      />
+    ) : desk?.kind === "choose" ? (
+      <AppText style={stageText.hint} numberOfLines={2}>
+        {t(evil ? "avalon.desk.molesHint" : "avalon.desk.agentsOnly")}
+      </AppText>
+    ) : desk?.kind === "gather" ? (
+      <AppText style={stageText.strong}>
+        {t("avalon.desk.played", { done: state.questPlayed.length, total: state.team.length })}
+      </AppText>
+    ) : lineup ? (
+      <AppText style={stageText.hint} numberOfLines={3}>
+        {task === "assassinate" ? t("avalon.shot.hint") : t("avalon.assassinate.explain")}
+      </AppText>
+    ) : stage?.error ? (
+      <AppText style={[stageText.hint, { color: colors.danger }]} numberOfLines={2}>
+        {stage.error}
+      </AppText>
     ) : null;
 
-  return (
-    <View style={{ gap: spacing.lg }}>
-      <QuestTrack state={state} />
-
-      {state.myRole ? (
-        <RoleCard
-          state={state}
-          shown={roleShown || over}
-          onToggle={over ? undefined : () => setRoleShown((v) => !v)}
-          namesOf={namesOf}
-        />
-      ) : null}
-
-      {/* What's happening while it isn't on me, and the final result */}
-      {over ? (
-        <Card>
-          <Result state={state} mySeat={mySeat} nameOf={nameOf} />
-        </Card>
-      ) : !needsMe ? (
-        <Card>
-          {state.phase === "team" ? (
-            <AppText variant="title">
-              {t("avalon.team.waiting", { name: nameOf(state.leader), count: size })}
-            </AppText>
-          ) : state.phase === "vote" ? (
-            <>
-              <AppText variant="title">
-                {t("avalon.vote.title", { name: nameOf(state.leader) })}
-              </AppText>
-              <AppText variant="body" color="textMuted" style={{ marginTop: 4 }}>
-                {namesOf(state.team)}
-              </AppText>
-              <AppText variant="caption" color="textSubtle" style={{ marginTop: spacing.sm }}>
-                {state.myVote !== null
-                  ? `${t(
-                      state.myVote
-                        ? "avalon.vote.youApproved"
-                        : "avalon.vote.youRejected"
-                    )} · `
-                  : ""}
-                {`⏳  ${t("avalon.vote.waiting", {
-                  done: state.voted.filter(Boolean).length,
-                  total: state.numPlayers,
-                })}`}
-              </AppText>
-            </>
-          ) : state.phase === "quest" ? (
-            <>
-              <AppText variant="title">
-                {t("avalon.quest.title", { quest: state.quest + 1 })}
-              </AppText>
-              <AppText variant="body" color="textMuted" style={{ marginTop: 4 }}>
-                {namesOf(state.team)}
-              </AppText>
-              <AppText variant="caption" color="textSubtle" style={{ marginTop: spacing.sm }}>
-                {`⏳  ${t("avalon.quest.waiting", {
-                  done: state.questPlayed.length,
-                  total: state.team.length,
-                })}`}
-              </AppText>
-            </>
-          ) : (
-            <>
-              <AppText variant="title">
-                {t("avalon.assassinate.waiting", {
-                  name: nameOf(state.assassinSeat ?? -1),
-                })}
-              </AppText>
-              <AppText variant="body" color="textMuted" style={{ marginTop: 4 }}>
-                {t("avalon.assassinate.explain")}
-              </AppText>
-            </>
-          )}
-        </Card>
-      ) : null}
-
-      {/* Players */}
-      <View style={{ gap: spacing.sm }}>
-        {players
-          .slice()
-          .sort((a, b) => a.seat - b.seat)
-          .map((player) => {
-            const seat = player.seat;
-            const role = state.roles?.[seat];
-            const known = state.known.find((k) => k.seat === seat);
-            const revealedEvil = state.evilSeats?.includes(seat) ?? false;
-            const leading =
-              !over && state.phase !== "assassinate" && state.leader === seat;
-            const onTeam =
-              state.phase === "vote" || state.phase === "quest"
-                ? state.team.includes(seat)
-                : false;
-            const acted =
-              state.phase === "vote"
-                ? state.voted[seat]
-                : state.phase === "quest"
-                  ? state.questPlayed.includes(seat)
-                  : false;
-
-            const note = role
-              ? { text: t(`avalon.roles.${role}.name`), evil: sideOf(role) === "evil" }
-              : revealedEvil
-                ? { text: t("avalon.sides.evil"), evil: true }
-                : known && roleShown
-                  ? {
-                      text: t(`avalon.known.${known.as}`),
-                      evil: known.as === "evil",
-                    }
-                  : null;
-
-            return (
-              <View
-                key={player.userId}
-                style={[
-                  styles.player,
-                  {
-                    backgroundColor: colors.card,
-                    borderColor: leading
-                      ? colors.primarySoftBorder
-                      : onTeam
-                        ? colors.info
-                        : colors.border,
-                  },
-                ]}
-              >
-                {role ? (
-                  <RolePortrait role={role} size={40} />
-                ) : (
-                  <AvatarBorder
-                    name={player.username}
-                    borderId={player.borderId}
-                    avatarUrl={player.avatarUrl}
-                    size={40}
-                    crown={leading}
-                    ringColor={leading ? colors.primary : colors.border}
-                  />
-                )}
-                <View style={styles.grow}>
-                  <AppText
-                    numberOfLines={1}
-                    style={{ fontFamily: fontFamily.semiBold, fontSize: 15 }}
-                  >
-                    {nameOf(seat)}
-                    {state.assassinTarget === seat ? "  🎯" : ""}
-                  </AppText>
-                  {note ? (
-                    <AppText
-                      variant="tiny"
-                      style={{
-                        marginTop: 2,
-                        color: note.evil ? colors.danger : colors.successStrong,
-                      }}
-                    >
-                      {note.text}
-                    </AppText>
-                  ) : null}
-                </View>
-                {onTeam ? <Tag label={t("avalon.tags.team")} tone="info" /> : null}
-                {acted ? <Tag label="✓" tone="success" /> : null}
-              </View>
-            );
-          })}
-      </View>
-
-      <History state={state} nameOf={nameOf} namesOf={namesOf} />
-
-      {/* Room to scroll the table clear of the open sheet */}
-      {needsMe ? <View style={{ height: SHEET_CLEARANCE }} /> : null}
-
-      <BottomSheetModal
-        ref={sheetRef}
-        onDismiss={onSheetDismiss}
-        dismissable={false}
-        backdrop={false}
-      >
-        <View
-          style={{
-            paddingHorizontal: spacing.xl,
-            paddingTop: spacing.xs,
-            paddingBottom: insets.bottom + spacing.xl,
-          }}
-        >
-          {prompt}
-        </View>
-      </BottomSheetModal>
-
-      {reveals[0] ? (
-        <AvalonReveal
-          key={reveals[0].id}
-          reveal={reveals[0]}
-          nameOf={nameOf}
-          namesOf={namesOf}
-          onDone={() => setReveals((queue) => queue.slice(1))}
-        />
-      ) : null}
-    </View>
-  );
-}
-
-function Tag({ label, tone }: { label: string; tone: "info" | "success" }) {
-  const { colors, radius } = useTheme();
-  const tint =
-    tone === "info"
-      ? { bg: colors.infoSoft, fg: colors.info }
-      : { bg: colors.successSoft, fg: colors.successStrong };
-  return (
-    <View
-      style={{
-        paddingVertical: 3,
-        paddingHorizontal: 9,
-        borderRadius: radius.sm,
-        backgroundColor: tint.bg,
-      }}
-    >
-      <AppText variant="tiny" style={{ fontFamily: fontFamily.semiBold, color: tint.fg }}>
-        {label}
-      </AppText>
-    </View>
-  );
-}
-
-/** Five quest markers (team size, result) plus the rejected-teams count. */
-function QuestTrack({ state }: { state: AvalonState }) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-  const running = state.phase !== "finished";
-
-  return (
-    <View>
-      <View style={styles.track}>
-        {state.questSizes.map((questSize, index) => {
-          const result = state.questResults[index];
-          const current = running && index === state.quest && !result;
-          return (
-            <View key={index} style={styles.quest}>
-              <View
-                style={[
-                  styles.questDot,
-                  {
-                    backgroundColor: result
-                      ? result.success
-                        ? colors.success
-                        : colors.danger
-                      : colors.well,
-                    borderColor: current ? colors.primary : "transparent",
-                  },
-                ]}
-              >
-                <AppText
-                  style={{
-                    fontFamily: fontFamily.bold,
-                    fontSize: 17,
-                    color: result ? colors.primaryContrast : colors.text,
-                  }}
-                >
-                  {result ? (result.success ? "✓" : "✕") : questSize}
-                </AppText>
-              </View>
-              <AppText variant="tiny" color="textSubtle" align="center">
-                {state.failsRequired[index] > 1
-                  ? t("avalon.track.twoFails")
-                  : t("avalon.track.quest", { quest: index + 1 })}
-              </AppText>
-            </View>
-          );
-        })}
-      </View>
-      <AppText
-        variant="caption"
-        align="center"
-        style={{
-          marginTop: 10,
-          color:
-            state.rejections >= MAX_REJECTIONS - 2
-              ? colors.danger
-              : colors.textSubtle,
+  // ── the move on the plinth
+  const myEnd = state.roles?.[mySeat];
+  const bottom =
+    revealing && (council || desk?.kind === "reveal") ? (
+      <Button label={t("avalon.stage.continue")} size="lg" style={styles.main} onPress={markReveal} />
+    ) : council && task === "propose" ? (
+      <Button
+        label={t("avalon.team.propose", { picked: draft.length, count: teamSize(state) })}
+        size="lg"
+        style={styles.main}
+        disabled={draft.length !== teamSize(state)}
+        loading={busy}
+        onPress={() => {
+          if (pickTimer.current) clearTimeout(pickTimer.current);
+          moveHaptic();
+          onMove({ type: "propose", team: draft });
         }}
-      >
-        {t("avalon.track.rejections", {
-          count: state.rejections,
-          max: MAX_REJECTIONS,
-        })}
+      />
+    ) : council && task === "vote" && castVote ? (
+      <AppText style={stageText.strong}>{t(castVote.approve ? "avalon.vote.youApproved" : "avalon.vote.youRejected")}</AppText>
+    ) : council && task === "vote" ? (
+      <VoteButtons
+        approve={t("avalon.vote.approve")}
+        reject={t("avalon.vote.reject")}
+        disabled={busy}
+        onVote={(approve) => {
+          setCastVote({ step, approve });
+          onMove({ type: "vote", approve });
+        }}
+      />
+    ) : council && state.phase === "vote" ? (
+      <AppText style={stageText.strong} numberOfLines={2}>
+        {`${state.myVote !== null ? `${t(state.myVote ? "avalon.vote.youApproved" : "avalon.vote.youRejected")} · ` : ""}${t(
+          "avalon.vote.waiting",
+          { done: state.voted.filter(Boolean).length, total: state.numPlayers },
+        )}`}
       </AppText>
-    </View>
-  );
-}
-
-function RoleCard({
-  state,
-  shown,
-  onToggle,
-  namesOf,
-}: {
-  state: AvalonState;
-  shown: boolean;
-  onToggle?: () => void;
-  namesOf: (seats: number[]) => string;
-}) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-  const role = state.myRole as Role;
-  const evil = sideOf(role) === "evil";
-  const knownSeats = state.known.map((k) => k.seat);
-
-  return (
-    <Card onPress={onToggle}>
-      <AppText variant="caption" color="textMuted">
-        {t("avalon.role.title")}
+    ) : council ? (
+      <AppText style={stageText.strong} numberOfLines={2}>
+        {t("avalon.team.waiting", { name: leader, count: teamSize(state) })}
       </AppText>
-      {shown ? (
-        <>
-          <View style={styles.roleHead}>
-            <RolePortrait role={role} size={72} />
-            <View style={styles.grow}>
-              <AppText
-                variant="h2"
-                style={{ color: evil ? colors.danger : colors.successStrong }}
-              >
-                {t(`avalon.roles.${role}.name`)}
-              </AppText>
-              <AppText variant="caption" color="textMuted" style={{ marginTop: 2 }}>
-                {t(`avalon.roles.${role}.desc`)}
-              </AppText>
-            </View>
-          </View>
-          {knownSeats.length > 0 ? (
-            <AppText variant="bodyMedium" style={{ marginTop: 8 }}>
-              {t(`avalon.role.knows.${role === "percival" ? "merlin" : evil ? "allies" : "evil"}`, {
-                names: namesOf(knownSeats),
-              })}
-            </AppText>
-          ) : null}
-          {onToggle ? (
-            <AppText variant="tiny" color="textSubtle" style={{ marginTop: 8 }}>
-              {t("avalon.role.hide")}
-            </AppText>
-          ) : null}
-        </>
+    ) : desk?.kind === "choose" && myCast !== null ? (
+      <AppText style={stageText.strong}>{t("avalon.desk.cast")}</AppText>
+    ) : desk?.kind === "choose" ? (
+      picked ? (
+        <HoldButton
+          key={`${step}|${picked}`}
+          label={t(picked === "approve" ? "avalon.desk.holdApprove" : "avalon.desk.holdSeal")}
+          tone={picked === "approve" ? "good" : "bad"}
+          progress={hold}
+          disabled={busy}
+          onDone={() => castIt(picked)}
+        />
       ) : (
-        <AppText variant="title" style={{ marginTop: 4 }}>
-          {t("avalon.role.reveal")}
-        </AppText>
-      )}
-    </Card>
-  );
-}
-
-function Result({
-  state,
-  mySeat,
-  nameOf,
-}: {
-  state: AvalonState;
-  mySeat: number;
-  nameOf: (seat: number) => string;
-}) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-  // A table that ended early (someone left) has no winner
-  const reason = state.winReason ?? "abandoned";
-  const myRole = state.roles?.[mySeat];
-  const iWon =
-    state.winner !== null && myRole ? sideOf(myRole) === state.winner : null;
-
-  return (
-    <View style={{ alignItems: "center" }}>
-      <AppText style={styles.resultEmoji}>
-        {state.winner === "good" ? "🕵️" : state.winner === "evil" ? "🐀" : "🚪"}
+        <AppText style={stageText.strong}>{t("avalon.desk.pick")}</AppText>
+      )
+    ) : desk?.kind === "gather" ? (
+      <AppText style={stageText.strong} numberOfLines={2}>
+        {state.team.includes(mySeat) ? t("avalon.desk.cast") : t("avalon.quest.title", { quest: state.quest + 1 })}
       </AppText>
-      <AppText
-        variant="h2"
-        align="center"
-        style={{
-          marginTop: 4,
-          color:
-            state.winner === "good"
-              ? colors.successStrong
-              : state.winner === "evil"
-                ? colors.danger
-                : colors.text,
-        }}
-      >
-        {state.winner
-          ? t(`avalon.result.${state.winner}`)
+    ) : lineup && task === "assassinate" ? (
+      struck !== null ? (
+        <AppText style={stageText.strong}>{`🎯  ${nameOf(struck)}`}</AppText>
+      ) : target !== null ? (
+        <HoldButton
+          key={`${step}|${target}`}
+          label={t("avalon.shot.hold", { name: nameOf(target) })}
+          tone="bad"
+          progress={hold}
+          disabled={busy}
+          onDone={() => strikeIt(target)}
+        />
+      ) : (
+        <AppText style={stageText.strong}>{t("avalon.shot.pick")}</AppText>
+      )
+    ) : lineup ? (
+      <AppText style={stageText.strong} numberOfLines={2}>
+        {t("avalon.assassinate.waiting", { name: nameOf(state.assassinSeat ?? -1) })}
+      </AppText>
+    ) : over && stage?.onward ? (
+      stage.onward
+    ) : over ? (
+      <AppText style={stageText.strong}>
+        {state.winner !== null && myEnd
+          ? t(sideOf(myEnd) === state.winner ? "avalon.result.youWon" : "avalon.result.youLost")
           : t("avalon.result.none")}
       </AppText>
-      <AppText variant="body" color="textMuted" align="center" style={{ marginTop: 4 }}>
-        {t(`avalon.reasons.${reason}`, {
-          name:
-            state.assassinTarget !== null ? nameOf(state.assassinTarget) : "",
-        })}
-      </AppText>
-      {iWon !== null ? (
-        <AppText variant="label" style={{ marginTop: 8 }}>
-          {t(iWon ? "avalon.result.youWon" : "avalon.result.youLost")}
-        </AppText>
-      ) : null}
-    </View>
-  );
-}
+    ) : null;
 
-/** Public record: every proposed team with how each player voted, and
- *  each quest's outcome. */
-function History({
-  state,
-  nameOf,
-  namesOf,
-}: {
-  state: AvalonState;
-  nameOf: (seat: number) => string;
-  namesOf: (seats: number[]) => string;
-}) {
-  const { t } = useTranslation();
-  const { colors, spacing } = useTheme();
-  if (state.history.length === 0) return null;
+  const tools = MENU.map(({ key, emoji }) => (
+    <Animated.View
+      key={key}
+      ref={key === "role" ? roleButton : undefined}
+      collapsable={false}
+      style={
+        key === "role"
+          ? { transform: [{ scale: bump.interpolate({ inputRange: [0, 1], outputRange: [1, 1.25] }) }] }
+          : undefined
+      }
+    >
+      <ToolButton emoji={emoji} label={t(`avalon.menu.${key}`)} onPress={() => openPanel(key)} />
+    </Animated.View>
+  ));
+
+  const ending = over && !revealing && !stamping;
+  const centre = ending ? (
+    <Ending state={state} mySeat={mySeat} nameOf={nameOf} afterGame={stage?.afterGame} paused={showing !== null} />
+  ) : desk ? (
+    <View style={[StyleSheet.absoluteFill, desk.kind !== "reveal" && styles.besideTools]}>
+      <Desk view={desk} hold={hold} paused={paused} />
+    </View>
+  ) : council ? (
+    <View style={[StyleSheet.absoluteFill, styles.besideTools]}>
+      <StageLineup
+        people={allSeats.map((seat) => ({ seat, name: nameOf(seat), look: lookOf(seat) }))}
+        lights={councilLights}
+        plates={councilPlates}
+        crown={revealing && voteToShow ? voteToShow.leader : state.leader}
+        selectable={task === "propose" && !revealing ? (draft.length >= teamSize(state) ? draft : allSeats) : []}
+        onPick={pickTeam}
+        paused={paused}
+      />
+    </View>
+  ) : lineup ? (
+    <View style={StyleSheet.absoluteFill}>
+      <StageLineup
+        people={allSeats.map((seat) => ({ seat, name: nameOf(seat), look: lookOf(seat) }))}
+        lights={lineupLights}
+        selectable={task === "assassinate" && struck === null ? candidates : []}
+        onPick={(seat) => {
+          hold.set(0);
+          choose({ target: seat });
+        }}
+        hold={hold}
+        aim={aimed}
+        struck={struck}
+        paused={paused}
+      />
+    </View>
+  ) : null;
+
+  const sceneKey = desk
+    ? desk.kind === "reveal"
+      ? `reveal-${desk.key}`
+      : desk.kind
+    : council
+      ? "council"
+      : lineup
+        ? "lineup"
+        : ending
+          ? "ending"
+          : "empty";
 
   return (
-    <View>
-      <AppText variant="label" style={{ marginBottom: spacing.sm }}>
-        {t("avalon.history.title")}
-      </AppText>
-      {state.history
-        .map((record, index) => ({ record, index }))
-        .reverse()
-        .map(({ record, index }) => {
-          // The quest result belongs to the approved proposal of that quest
-          const result = record.approved
-            ? state.questResults[record.quest]
-            : undefined;
-          const approvers = record.votes
-            .map((approve, seat) => (approve ? seat : -1))
-            .filter((seat) => seat >= 0);
-          const rejecters = record.votes
-            .map((approve, seat) => (approve ? -1 : seat))
-            .filter((seat) => seat >= 0);
-
-          return (
-            <View
-              key={index}
-              style={[styles.record, { borderBottomColor: colors.divider }]}
+    <AgencyStage
+      state={shown}
+      subtitle={subtitle}
+      sceneKey={sceneKey}
+      centre={centre}
+      tools={ending ? undefined : tools}
+      away={desk?.kind === "reveal" || lineup || ending}
+      bleed={ending}
+      hint={hint}
+      bottom={bottom}
+      onBack={stage?.onBack}
+      onRules={stage?.onRules}
+      paused={paused}
+      overlays={
+        <>
+          {state.myRole ? (
+            <RoleIntro
+              visible={dealing}
+              tone={evil ? "#F0605D" : "#5EE0A8"}
+              target={roleButton}
+              onLand={() =>
+                Animated.sequence([
+                  Animated.timing(bump, { toValue: 1, duration: 120, useNativeDriver: true }),
+                  Animated.spring(bump, { toValue: 0, friction: 4, useNativeDriver: true }),
+                ]).start()
+              }
+              onDone={() => pieces.mark({ dealt: true })}
+              back={<RoleCardBack width={ROLE_CARD_W} />}
             >
-              <AppText variant="caption">
-                {t("avalon.history.proposal", {
-                  quest: record.quest + 1,
-                  leader: nameOf(record.leader),
-                  team: namesOf(record.team),
-                })}
-              </AppText>
-              <AppText
-                variant="tiny"
-                style={{
-                  marginTop: 3,
-                  color: record.approved ? colors.successStrong : colors.danger,
-                }}
-              >
-                {t(
-                  record.approved
-                    ? "avalon.history.approved"
-                    : "avalon.history.rejected",
-                  { yes: approvers.length, no: rejecters.length }
-                )}
-                {result
-                  ? ` · ${t(
-                      result.success
-                        ? "avalon.history.succeeded"
-                        : "avalon.history.failed",
-                      { count: result.fails }
-                    )}`
-                  : ""}
-              </AppText>
-              <AppText variant="tiny" color="textSubtle" style={{ marginTop: 3 }}>
-                {`👍 ${approvers.length > 0 ? namesOf(approvers) : "—"}   👎 ${
-                  rejecters.length > 0 ? namesOf(rejecters) : "—"
-                }`}
-              </AppText>
-            </View>
-          );
-        })}
-    </View>
+              <RoleCardFace state={state} width={ROLE_CARD_W} namesOf={names.namesOf} />
+            </RoleIntro>
+          ) : null}
+          <Popup
+            look={AGENCY_POPUP}
+            visible={showing !== null}
+            title={showing ? t(`avalon.menu.${showing}`) : ""}
+            onClose={() => setPanel(null)}
+          >
+            {showing === "role" ? (
+              state.myRole ? (
+                <View style={{ alignItems: "center" }}>
+                  <RoleCardFace state={state} width={ROLE_CARD_W} namesOf={names.namesOf} />
+                </View>
+              ) : (
+                <AppText variant="body" color="textMuted">
+                  {t("common.emptyTitle")}
+                </AppText>
+              )
+            ) : showing === "record" ? (
+              <View style={{ gap: spacing.sm }}>
+                <Record state={state} names={names} />
+              </View>
+            ) : showing === "agents" ? (
+              <Agents state={state} mySeat={mySeat} players={players} names={names} />
+            ) : null}
+          </Popup>
+        </>
+      }
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  grow: { flex: 1 },
-  buttons: { flexDirection: "row", gap: 12 },
-  track: { flexDirection: "row", justifyContent: "space-between" },
-  quest: { alignItems: "center", gap: 6, flex: 1 },
-  questDot: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    borderWidth: 2.5,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  player: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderRadius: 18,
-  },
-  roleHead: { flexDirection: "row", alignItems: "center", gap: 14, marginTop: 8 },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: {
-    width: "48%",
-    flexGrow: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderWidth: 1.5,
-    borderRadius: 14,
-  },
-  check: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  resultEmoji: { fontSize: 40, lineHeight: 48 },
-  record: { paddingVertical: 8, borderBottomWidth: 1 },
+  main: { alignSelf: "stretch" },
+  besideTools: { right: 60 },
 });

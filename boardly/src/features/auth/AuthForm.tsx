@@ -8,7 +8,7 @@ import {
   AppText,
   Button,
   Frame,
-  Ribbon,
+  SectionTitle,
   Screen,
   TableBackdrop,
   TextField,
@@ -65,7 +65,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         </AppText>
       </View>
 
-      <Ribbon
+      <SectionTitle
         label={t(mode === "login" ? "auth.loginTitle" : "auth.registerTitle")}
         style={{ marginTop: spacing.xxxl }}
       />

@@ -5,6 +5,7 @@ import {
   Poppins_700Bold,
   useFonts,
 } from "@expo-google-fonts/poppins";
+import { rememberChanges, restore } from "@/api/remember";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import {
   QueryClient,
@@ -16,7 +17,7 @@ import * as Linking from "expo-linking";
 import Head from "expo-router/head";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, AppState, Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
@@ -31,6 +32,7 @@ import { WebFrame } from "@/components/ui";
 import { BorderClockProvider } from "@/features/cosmetics/art";
 import { SessionProvider, useSession } from "@/context/SessionContext";
 import { FriendsRealtime } from "@/features/friends/FriendsRealtime";
+import { MeepleTransitionProvider } from "@/features/mascot/MeepleTransition";
 import { PlayerCardProvider } from "@/features/players/PlayerCardProvider";
 import { useOtaUpdates } from "@/hooks/useOtaUpdates";
 import { LocaleProvider } from "@/i18n/LocaleContext";
@@ -56,6 +58,10 @@ const queryClient = new QueryClient({
     },
   },
 });
+// the game list, my tables and my card come back from last time at once
+// (refreshed as soon as they're shown), and are kept as they change
+const restored = restore(queryClient);
+rememberChanges(queryClient);
 
 // An invite link (/join/CODE) opened by someone who isn't signed in
 // lands on the login screen. It is remembered so they end up at the
@@ -127,6 +133,17 @@ function RootNavigator() {
               <Stack.Screen name="game/[code]" />
               <Stack.Screen name="join/[code]" />
               <Stack.Screen name="borders" />
+              {/* opened through the meeple, like the wardrobe */}
+              <Stack.Screen
+                name="badges"
+                options={{ animation: "none", gestureEnabled: false }}
+              />
+              {/* the wardrobe brings its own way in and out (MeepleReveal);
+                  only its back button closes it */}
+              <Stack.Screen
+                name="wardrobe"
+                options={{ animation: "none", gestureEnabled: false }}
+              />
             </Stack.Protected>
             <Stack.Protected guard={!signedIn}>
               <Stack.Screen name="(auth)" />
@@ -143,6 +160,10 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    restored.finally(() => setReady(true));
+  }, []);
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
@@ -157,7 +178,7 @@ export default function RootLayout() {
     }
   }, [fontsLoaded]);
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded || !ready) {
     return null;
   }
 
@@ -175,7 +196,11 @@ export default function RootLayout() {
                     <BorderClockProvider>
                       <BottomSheetModalProvider>
                         <PlayerCardProvider>
-                          <RootNavigator />
+                          {/* moving between some screens goes through the meeple,
+                              over everything (MeepleTransition) */}
+                          <MeepleTransitionProvider>
+                            <RootNavigator />
+                          </MeepleTransitionProvider>
                         </PlayerCardProvider>
                       </BottomSheetModalProvider>
                     </BorderClockProvider>

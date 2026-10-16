@@ -16,7 +16,7 @@
 
 import type { GlowConfig } from "react-native-animated-glow";
 
-export type BorderRarity = "common" | "rare" | "epic" | "legendary";
+export type BorderRarity = "common" | "rare" | "epic" | "legendary" | "mythic";
 
 interface BorderBase {
   id: string;
@@ -60,8 +60,10 @@ export interface ArtBorder extends BorderBase {
   kind: "art";
   /** Its drawing in art/ (usually the same as its id). */
   art: string;
-  /** The badge that unlocks it, for borders that can't be bought. */
+  /** The badge that unlocks it, for borders that can't be bought... */
   earnedBy?: string;
+  /** ...once it reaches this level. */
+  earnedAt?: "bronze" | "silver" | "gold" | "diamond";
 }
 
 export type ProfileBorder =
@@ -76,6 +78,7 @@ export const RARITY_COLORS: Record<BorderRarity, string> = {
   rare: "#5FA8F0",
   epic: "#C084FC",
   legendary: "#F7C948",
+  mythic: "#FF5A7A",
 };
 
 export const BORDERS: ProfileBorder[] = [
@@ -96,291 +99,76 @@ export const BORDERS: ProfileBorder[] = [
   {
     id: "octagon",
     name: "Steel Plate",
-    kind: "shape",
-    shape: "octagon",
+    kind: "art",
+    art: "steel-plate",
     rarity: "rare",
     price: 200,
-    colors: ["#C9D3DE", "#6F7F92"],
-    rim: "#2F3B4A",
-    inner: "#F1F5F9",
   },
   {
     id: "shield",
     name: "Guardian",
-    kind: "shape",
-    shape: "shield",
+    kind: "art",
+    art: "guardian",
     rarity: "rare",
     price: 250,
-    colors: ["#4C8FD6", "#234469"],
-    rim: "#0F2138",
-    inner: "#A9CFF7",
   },
   {
     id: "royal",
     name: "Royal Crown",
-    kind: "shape",
-    shape: "hexagon",
+    kind: "art",
+    art: "royal-crown",
     rarity: "epic",
     price: 600,
-    colors: ["#FFE27A", "#D99A1E"],
-    rim: "#7A4E1C",
-    inner: "#FFF6CF",
-    extra: "crown",
   },
 
-  // ── Epic / legendary: animated glows ────────────────────────────────
+  // ── Epic: animated glows ────────────────────────────────────────────
   {
     id: "golden-aura",
-    name: "Golden Aura",
-    kind: "glow",
+    name: "Sunburst",
+    kind: "art",
+    art: "sunburst",
     rarity: "epic",
     price: 700,
-    roundness: 0.5,
-    glow: {
-      outlineWidth: 5,
-      borderColor: ["#ffe65e", "white"],
-      animationSpeed: 0,
-      glowLayers: [
-        {
-          glowPlacement: "behind",
-          colors: ["#ffa200", "#ffc100"],
-          glowSize: 14,
-          opacity: 0.25,
-          coverage: 1,
-        },
-        {
-          glowPlacement: "behind",
-          colors: ["#ffcd41", "#ff5a00"],
-          glowSize: 7,
-          opacity: 1,
-          coverage: 1,
-        },
-        {
-          glowPlacement: "behind",
-          colors: ["#ffffff", "#ffffff"],
-          glowSize: 3,
-          opacity: 1,
-          coverage: 1,
-        },
-      ],
-    },
   },
   {
     id: "neon-green",
-    name: "Neon Green",
-    kind: "glow",
-    rarity: "legendary",
-    price: 1000,
-    roundness: 0.5,
-    glow: {
-      outlineWidth: 4,
-      borderColor: [
-        "rgba(225, 255, 109, 1)",
-        "rgba(14, 255, 0, 1)",
-        "rgba(251, 255, 105, 1)",
-      ],
-      animationSpeed: 3,
-      glowLayers: [
-        {
-          glowPlacement: "behind",
-          colors: ["#00ff84", "#ffff00", "#15ff00"],
-          glowSize: [10, 20, 10],
-          opacity: 0.2,
-          coverage: 1,
-        },
-        {
-          glowPlacement: "behind",
-          colors: ["#00ff84", "#ffff00", "#15ff00"],
-          glowSize: [1, 8, 1],
-          opacity: 0.3,
-          coverage: 1,
-        },
-        {
-          glowPlacement: "behind",
-          colors: ["rgba(90, 255, 0, 1)", "#ffff00", "#15ff00"],
-          glowSize: [1, 8, 1],
-          opacity: 0.3,
-          coverage: 0.75,
-        },
-        {
-          glowPlacement: "behind",
-          colors: ["#44ff00", "#00ff84", "#96ff96"],
-          glowSize: [2, 8, 2],
-          opacity: 0.5,
-          coverage: 1,
-        },
-      ],
-    },
+    name: "Emerald Grove",
+    kind: "art",
+    art: "emerald-grove",
+    rarity: "epic",
+    price: 2200,
   },
   {
     id: "ripple",
-    name: "Ripple",
-    kind: "glow",
-    rarity: "legendary",
-    price: 1000,
-    roundness: 0.5,
-    glow: {
-      outlineWidth: 4,
-      borderColor: ["rgba(245, 178, 255, 1)", "rgba(111, 113, 208, 1)"],
-      animationSpeed: 1,
-      glowLayers: [
-        {
-          glowPlacement: "behind",
-          colors: [
-            "rgba(255, 0, 192, 1)",
-            "rgba(84, 75, 211, 1)",
-            "rgba(0, 0, 0, 0)",
-          ],
-          glowSize: 10,
-          opacity: 0.4,
-          coverage: 1,
-        },
-        {
-          glowPlacement: "behind",
-          colors: [
-            "rgba(255, 125, 222, 1)",
-            "rgba(131, 159, 255, 1)",
-            "rgba(0, 0, 0, 0)",
-          ],
-          glowSize: 3,
-          opacity: 1,
-          coverage: 1,
-        },
-        {
-          glowPlacement: "behind",
-          colors: [
-            "rgba(255, 121, 221, 1)",
-            "rgba(0, 59, 255, 1)",
-            "rgba(0, 0, 0, 0)",
-          ],
-          glowSize: [1, 2, 2, 1],
-          opacity: 1,
-          coverage: 1,
-        },
-      ],
-    },
+    name: "Moonpool",
+    kind: "art",
+    art: "moonpool",
+    rarity: "epic",
+    price: 2400,
   },
   {
     id: "vaporwave",
-    name: "Vaporwave",
-    kind: "glow",
-    rarity: "legendary",
-    price: 1200,
-    // a rounded square, like the original preset
-    roundness: 0.24,
-    glow: {
-      outlineWidth: 0,
-      borderColor: "white",
-      animationSpeed: 2,
-      glowLayers: [
-        {
-          glowPlacement: "behind",
-          colors: [
-            "rgba(255, 75, 169, 1)",
-            "#01CDFE",
-            "#05ffd2",
-            "rgba(0, 0, 0, 0)",
-            "rgba(0, 0, 0, 0)",
-          ],
-          glowSize: 5,
-          opacity: 0.5,
-          coverage: 1,
-        },
-        {
-          glowPlacement: "behind",
-          colors: [
-            "rgba(255, 76, 156, 1)",
-            "#01CDFE",
-            "#05ffd2",
-            "rgba(0, 0, 0, 0)",
-            "rgba(0, 0, 0, 0)",
-          ],
-          glowSize: 10,
-          opacity: 0.5,
-          coverage: 1,
-        },
-        {
-          glowPlacement: "behind",
-          colors: ["#66d3ff", "#ff67ef"],
-          glowSize: 4,
-          opacity: 0.9,
-          speedMultiplier: 0.8,
-          coverage: 1,
-        },
-      ],
-    },
+    name: "Stained Glass",
+    kind: "art",
+    art: "stained-glass",
+    rarity: "epic",
+    price: 3000,
   },
   {
     id: "ember",
-    name: "Ember",
-    kind: "glow",
-    rarity: "legendary",
-    price: 1200,
-    roundness: 0.5,
-    glow: {
-      outlineWidth: 4,
-      borderColor: ["#FFD36B", "#FF5A1F", "#C81E1E"],
-      animationSpeed: 2.2,
-      glowLayers: [
-        {
-          glowPlacement: "behind",
-          colors: ["#FF3D00", "#FFB300", "rgba(0, 0, 0, 0)"],
-          glowSize: [4, 18, 6],
-          opacity: 0.35,
-          coverage: 1,
-        },
-        {
-          glowPlacement: "behind",
-          colors: ["#FF7A1A", "#FFE08A", "#FF2D00"],
-          glowSize: [1, 9, 2],
-          opacity: 0.7,
-          coverage: 0.8,
-        },
-        {
-          glowPlacement: "behind",
-          colors: ["#FFF3C4", "#FF8A00"],
-          glowSize: 2,
-          opacity: 1,
-          coverage: 1,
-        },
-      ],
-    },
+    name: "Brazier",
+    kind: "art",
+    art: "brazier",
+    rarity: "epic",
+    price: 2800,
   },
   {
     id: "frost",
-    name: "Frost",
-    kind: "glow",
-    rarity: "legendary",
-    price: 1200,
-    roundness: 0.5,
-    glow: {
-      outlineWidth: 4,
-      borderColor: ["#FFFFFF", "#9BE4FF", "#4B8BFF"],
-      animationSpeed: 0.8,
-      glowLayers: [
-        {
-          glowPlacement: "behind",
-          colors: ["#4B8BFF", "#B8F1FF", "rgba(0, 0, 0, 0)"],
-          glowSize: 14,
-          opacity: 0.3,
-          coverage: 1,
-        },
-        {
-          glowPlacement: "behind",
-          colors: ["#E8FBFF", "#6FC8FF", "rgba(0, 0, 0, 0)"],
-          glowSize: [2, 7, 2],
-          opacity: 0.8,
-          coverage: 1,
-        },
-        {
-          glowPlacement: "behind",
-          colors: ["#FFFFFF", "#BFEFFF"],
-          glowSize: 2,
-          opacity: 1,
-          coverage: 1,
-        },
-      ],
-    },
+    name: "Snowflake",
+    kind: "art",
+    art: "snowflake",
+    rarity: "epic",
+    price: 2600,
   },
 
   // ── Art borders: illustrations drawn and animated round the avatar ──
@@ -495,6 +283,86 @@ export const BORDERS: ProfileBorder[] = [
     art: "baroque-silver",
     rarity: "epic",
     price: 3800,
+  },
+  {
+    id: "imperial-dragon",
+    name: "Imperial Dragon",
+    kind: "art",
+    art: "imperial-dragon",
+    rarity: "mythic",
+    price: 12000,
+  },
+  {
+    id: "celestial-throne",
+    name: "Celestial Throne",
+    kind: "art",
+    art: "celestial-throne",
+    rarity: "mythic",
+    price: 15000,
+  },
+  {
+    id: "archangel",
+    name: "Archangel",
+    kind: "art",
+    art: "archangel",
+    rarity: "mythic",
+    price: 16000,
+  },
+  {
+    id: "phoenix-reborn",
+    name: "Phoenix Reborn",
+    kind: "art",
+    art: "phoenix-reborn",
+    rarity: "mythic",
+    price: 18000,
+  },
+  {
+    id: "void-emperor",
+    name: "Void Emperor",
+    kind: "art",
+    art: "void-emperor",
+    rarity: "mythic",
+    price: 25000,
+  },
+  {
+    id: "clockwork",
+    name: "Clockwork Grand Master",
+    kind: "art",
+    art: "clockwork",
+    rarity: "mythic",
+    price: 12000,
+  },
+  {
+    id: "krakens-deep",
+    name: "Kraken's Deep",
+    kind: "art",
+    art: "krakens-deep",
+    rarity: "mythic",
+    price: 14000,
+  },
+  {
+    id: "grand-board",
+    name: "The Grand Board",
+    kind: "art",
+    art: "grand-board",
+    rarity: "mythic",
+    price: 20000,
+  },
+  {
+    id: "lunar-new-year",
+    name: "Lunar New Year",
+    kind: "art",
+    art: "lunar-new-year",
+    rarity: "mythic",
+    price: 12000,
+  },
+  {
+    id: "cherry-shrine",
+    name: "Cherry Blossom Shrine",
+    kind: "art",
+    art: "cherry-shrine",
+    rarity: "mythic",
+    price: 10000,
   },
   {
     id: "winged-crest",
@@ -620,6 +488,7 @@ export const BORDERS: ProfileBorder[] = [
     rarity: "legendary",
     price: 0,
     earnedBy: "nightwatch.ghostbreaker",
+    earnedAt: "gold",
   },
   {
     id: "winter-hearth",
@@ -629,6 +498,7 @@ export const BORDERS: ProfileBorder[] = [
     rarity: "legendary",
     price: 0,
     earnedBy: "shelter.lastWinter",
+    earnedAt: "gold",
   },
   {
     id: "spymaster",
@@ -638,6 +508,7 @@ export const BORDERS: ProfileBorder[] = [
     rarity: "legendary",
     price: 0,
     earnedBy: "avalon.spymaster",
+    earnedAt: "gold",
   },
   {
     id: "table-legend",
@@ -646,7 +517,8 @@ export const BORDERS: ProfileBorder[] = [
     art: "table-legend",
     rarity: "legendary",
     price: 0,
-    earnedBy: "boardly.legend",
+    earnedBy: "boardly.regular",
+    earnedAt: "diamond",
   },
 ];
 
