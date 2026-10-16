@@ -1,31 +1,42 @@
 // The three places Shelter's survivors scavenge, each a small snowy
 // diorama on a block of frozen earth, drawn with the iso kit and the
-// cabin's pieces (pieces.ts): the farm, the market and the hospital.
+// shared pieces (components/iso/pieces): the farm, the market and the
+// hospital.
 
 import {
-  INK,
-  P,
-  WOOD,
   ball,
   box,
   cylinder,
   hoop,
+  INK,
   line,
   n,
   onX,
   onY,
+  P,
   poly,
   tone,
   withView,
+  WOOD,
   type Shape,
   type Tones,
   type V3,
   type View,
 } from "@/components/iso/kit";
 import { tint } from "@/components/iso/room";
-import { IRONWORK, barrel } from "@/components/iso/furniture";
+import {
+  barrel,
+  burlapSack,
+  fenceX,
+  fruitCrate,
+  icicles,
+  IRONWORK,
+  mound,
+  pine,
+  SNOW,
+  snowCap,
+} from "@/components/iso/pieces";
 import type { Place } from "../logic";
-import { SNOW, crate, fenceX, icicles, mound, pine, sack, snowCap } from "./pieces";
 
 export const PLACE_WIDTH = 120;
 export const PLACE_HEIGHT = 110;
@@ -286,12 +297,12 @@ function market(): Shape[] {
   shapes.push(
     ...barrel(0.78, 0.34, 0.05, 0.14),
     ...mound([0.78, 0.34, 0.14], 0.045, 0.03),
-    ...crate(0.6, 0.56, 0.015, 0.13, 0.12, 0.1, ["#C8323A", "#E0503C", "#5E8A3A"]),
-    ...crate(0.74, 0.5, 0.015, 0.11, 0.11, 0.09),
+    ...fruitCrate(0.6, 0.56, 0.015, 0.13, 0.12, 0.1, ["#C8323A", "#E0503C", "#5E8A3A"]),
+    ...fruitCrate(0.74, 0.5, 0.015, 0.11, 0.11, 0.09),
     ...snowCap(0.74, 0.5, 0.11, 0.11, 0.105, 0.016),
-    ...crate(0.755, 0.515, 0.12, 0.08, 0.08, 0.07),
+    ...fruitCrate(0.755, 0.515, 0.12, 0.08, 0.08, 0.07),
     ...snowCap(0.755, 0.515, 0.08, 0.08, 0.19, 0.016),
-    ...sack(0.56, 0.72, 0.015, 0.12),
+    ...burlapSack(0.56, 0.72, 0.015, 0.12),
     ...pine(0.12, 0.74, 0.015, 0.4, 0.09),
   );
   return shapes;

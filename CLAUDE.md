@@ -86,8 +86,8 @@ of its colour lit from the upper left, an ink outline, a line of light,
 grain on wood), and the rooms are full of detailed pieces: panelled
 cabinets with brass knobs, carved posts with iron straps, stained glass,
 gilt frames, turned candlesticks. Reuse what exists before drawing new
-(`components/iso/furniture.ts`, and the pieces each room file exports:
-`games/nightwatch/rooms/*.ts`, `games/shelter/scenes/pieces.ts`). Look
+(the shared library `components/iso/pieces/`, by kind: walls, floors,
+seating, tables, storage, lighting, decor, tableware, outdoor…). Look
 at rooms with `node scripts/room-sheet.mjs nightwatch <png> [room…]`
 (or `shelter`). A set of rooms can be redrawn by parallel agents, one
 room file each, keeping each room's working object (`prop`) in place.

@@ -12,10 +12,6 @@
 // floor (x + y > 1.3) stays clear for the pawns.
 
 import {
-  INK,
-  P,
-  WALL,
-  WOOD,
   ball,
   box,
   candle,
@@ -23,7 +19,7 @@ import {
   flame,
   flat,
   hoop,
-  inkOf,
+  INK,
   lightPool,
   line,
   live,
@@ -31,11 +27,14 @@ import {
   n,
   onX,
   onY,
+  P,
   poly,
   setInk,
   steam,
   tone,
+  WALL,
   withView,
+  WOOD,
   type Effect,
   type Pt,
   type RoomInk,
@@ -46,7 +45,6 @@ import {
 } from "@/components/iso/kit";
 import {
   BASE,
-  THICK,
   disc,
   pawn,
   pawnTop,
@@ -54,34 +52,42 @@ import {
   setExits,
   shell,
   table,
+  THICK,
   tint,
 } from "@/components/iso/room";
-import { BRASS, IRONWORK, barrel, jar, shelfX } from "@/components/iso/furniture";
-import type { Post } from "./logic";
 import {
-  CHAR,
-  EMBER,
-  END_GRAIN,
-  PINE_BOARD,
-  SNOW,
   axeOnWall,
   baguette,
+  barrel,
+  boardAcross,
+  BRASS,
+  burlapSack,
+  CHAR,
   cheese,
-  crate,
-  lantern,
+  EMBER,
+  END_GRAIN,
+  fruitCrate,
+  IRONWORK,
+  jar,
+  loaf,
   logAt,
   logPile,
-  loaf,
   mound,
-  sack,
+  PINE_BOARD,
+  shelfX,
+  SNOW,
   snowBankX,
   snowBankY,
   snowCap,
   snowshoeOnWall,
   softBox,
   stone,
+  stormLantern,
   tin,
-} from "./scenes/pieces";
+  wallCobweb,
+  wovenRug,
+} from "@/components/iso/pieces";
+import type { Post } from "./logic";
 
 export { PLACE_HEIGHT, PLACE_WIDTH, placeScene } from "./scenes/places";
 
@@ -215,38 +221,6 @@ function floorboards(): Shape[] {
   return shapes;
 }
 
-/** A woven rug on the floor before the fire, from (x0, y0) to (x1, y1):
- *  a red field with bands across it, a cream diamond in the middle, and
- *  a fringe at each end. */
-function rug(x0: number, y0: number, x1: number, y1: number): Shape[] {
-  const field = "#7A2E32";
-  const z = 0.002;
-  const ym = (y0 + y1) / 2;
-  const xm = (x0 + x1) / 2;
-  const shapes: Shape[] = [
-    tint([[x0 + 0.02, y0 + 0.02, 0], [x1 + 0.03, y0 + 0.02, 0], [x1 + 0.03, y1 + 0.01, 0], [x0 + 0.02, y1 + 0.01, 0]], INK.night, 0.25),
-    { ...flat(x0, x1, y0, y1, z, field, inkOf(field)), grad: { colors: [tone(field, 0.18), field, tone(field, -0.25)], from: P(x0, y0, 0), to: P(x1, y1, 0) } },
-  ];
-  // bands across the rug near each end
-  for (const [f, fill, wide] of [[0.08, "#C9973E", 0.03], [0.16, "#2C3A60", 0.02], [0.84, "#2C3A60", 0.02], [0.92, "#C9973E", 0.03]] as const) {
-    const x = x0 + (x1 - x0) * f;
-    shapes.push(flat(x - wide / 2, x + wide / 2, y0 + 0.01, y1 - 0.01, z, fill, tone(fill, -0.4)));
-  }
-  // the diamond, a smaller one inside it
-  const dx = (x1 - x0) * 0.24;
-  const dy = (y1 - y0) * 0.36;
-  shapes.push(
-    poly([[xm - dx, ym, z], [xm, ym - dy, z], [xm + dx, ym, z], [xm, ym + dy, z]], "#E3D3AE", "#8A6A44"),
-    poly([[xm - dx * 0.55, ym, z], [xm, ym - dy * 0.55, z], [xm + dx * 0.55, ym, z], [xm, ym + dy * 0.55, z]], "#46587E", "#1E2A44"),
-    poly([[xm - dx * 0.2, ym, z], [xm, ym - dy * 0.2, z], [xm + dx * 0.2, ym, z], [xm, ym + dy * 0.2, z]], "#C9973E", "#6A4A1E"),
-  );
-  // the fringe at each end
-  for (const [x, dir] of [[x0, -1], [x1, 1]] as const) {
-    shapes.push({ ...line(Array.from({ length: 9 }, (_, i) => y0 + 0.015 + ((y1 - y0 - 0.03) * i) / 8).flatMap((y, i) => [[x, y, z], [x + dir * (i % 2 ? 0.022 : 0.016), y + 0.004, z]] as V3[]), "#E3D3AE", 0.5), opacity: 0.9 });
-  }
-  return shapes;
-}
-
 // ── the larder ──────────────────────────────────────────────────────
 
 const RACK = { x0: 0.09, x1: 0.55, y0: 0.02, y1: 0.16, h: 0.64 };
@@ -258,9 +232,9 @@ const SHELF_SLOTS = SHELVES.length * SLOTS;
  *  left to right: sacks and apples below, tins and jars, then bread and
  *  cheese at the top. */
 const GOODS: ((x: number, y: number, z: number) => Shape[])[] = [
-  (x, y, z) => sack(x, y, z, 0.12),
-  (x, y, z) => crate(x - 0.04, y - 0.045, z, 0.08, 0.09, 0.06, ["#C8323A", "#E0503C", "#A82A30"]),
-  (x, y, z) => sack(x, y, z, 0.11, ["#FFFFFF", "#F1EADA", "#C9BC9C"], "#5A6FA8"),
+  (x, y, z) => burlapSack(x, y, z, 0.12),
+  (x, y, z) => fruitCrate(x - 0.04, y - 0.045, z, 0.08, 0.09, 0.06, ["#C8323A", "#E0503C", "#A82A30"]),
+  (x, y, z) => burlapSack(x, y, z, 0.11, ["#FFFFFF", "#F1EADA", "#C9BC9C"], "#5A6FA8"),
   (x, y, z) => [...tin(x - 0.022, y - 0.012, z, 0.021, 0.06, "#C8323A"), ...tin(x + 0.022, y + 0.016, z, 0.021, 0.06, "#3E7A56")],
   (x, y, z) => jar(x, y, z, 0.027, 0.075, "#A8283A"),
   (x, y, z) => [...tin(x, y, z, 0.024, 0.052, "#D9A95B"), ...tin(x, y, z + 0.052, 0.024, 0.052, "#5A6FA8")],
@@ -305,55 +279,16 @@ function larder(food: number): Shape[] {
     ...box(x0 - 0.012, y0 - 0.006, h, x1 - x0 + 0.024, depth + 0.012, 0.022, WOOD),
   );
   // an empty larder gathers cobwebs
-  if (food <= 0) shapes.push(...cobweb(x0 + post, SHELVES[2] + 0.19, 0.08));
+  if (food <= 0) shapes.push(...wallCobweb(x0 + post, SHELVES[2] + 0.19, 0.08));
   // more than the rack holds: sacks and a crate on the floor beside it
   const over = Math.max(0, food - SHELF_SLOTS);
-  if (over > 0) shapes.push(...sack(0.61, 0.1, 0, 0.15));
-  if (over > 4) shapes.push(...crate(0.67, 0.04, 0, 0.12, 0.12, 0.1, ["#C9973E", "#B4683C", "#D9B060"]));
-  if (over > 8) shapes.push(...sack(0.75, 0.21, 0, 0.13, ["#FFFFFF", "#F1EADA", "#C9BC9C"], "#9A3A3A"));
-  return shapes;
-}
-
-/** A cobweb in a top corner on the right wall's plane, at (x, z), `r`
- *  across: threads fanning down and to the right, joined in sagging
- *  rings. */
-function cobweb(x: number, z: number, r: number): Shape[] {
-  const at = (a: number, rr: number): V3 => [x + Math.cos(a) * rr, 0.006, z - Math.sin(a) * rr];
-  const spokes = [0, 0.4, 0.8, 1.2, 1.57];
-  const silk = "#E8EEF6";
-  const shapes: Shape[] = spokes.map((a) => ({ ...line([at(a, 0), at(a, r)], silk, 0.35), opacity: 0.6 }));
-  for (const f of [0.35, 0.65, 0.95]) {
-    shapes.push({ ...line(spokes.map((a, i) => at(a, r * f * (i % 2 ? 0.9 : 1))), silk, 0.35), opacity: 0.55 });
-  }
+  if (over > 0) shapes.push(...burlapSack(0.61, 0.1, 0, 0.15));
+  if (over > 4) shapes.push(...fruitCrate(0.67, 0.04, 0, 0.12, 0.12, 0.1, ["#C9973E", "#B4683C", "#D9B060"]));
+  if (over > 8) shapes.push(...burlapSack(0.75, 0.21, 0, 0.13, ["#FFFFFF", "#F1EADA", "#C9BC9C"], "#9A3A3A"));
   return shapes;
 }
 
 // ── the walls' furnishings ──────────────────────────────────────────
-
-/** A board nailed across a wall at x = at: from (u1, z1) to (u2, z2) in
- *  the wall's plane, `w` wide, a nail at each end. */
-function boardAcross(at: number, u1: number, z1: number, u2: number, z2: number, w: number, fill: string): Shape[] {
-  const len = Math.hypot(u2 - u1, z2 - z1);
-  const [pu, pz] = [(-(z2 - z1) / len) * (w / 2), ((u2 - u1) / len) * (w / 2)];
-  const pts: V3[] = [
-    [at, u1 + pu, z1 + pz],
-    [at, u2 + pu, z2 + pz],
-    [at, u2 - pu, z2 - pz],
-    [at, u1 - pu, z1 - pz],
-  ];
-  // its thickness, showing along the lower edge
-  const edge: V3[] = [pts[3], pts[2], [at - 0.012, pts[2][1], pts[2][2]], [at - 0.012, pts[3][1], pts[3][2]]];
-  const nail = (u: number, z: number) => ball([at + 0.002, u, z], 0.55, IRONWORK[0], IRONWORK[2]);
-  const du = (u2 - u1) / len;
-  const dz = (z2 - z1) / len;
-  return [
-    poly(edge, tone(fill, -0.35)),
-    { ...poly(pts, fill), grad: { colors: [tone(fill, 0.25), fill, tone(fill, -0.25)], from: P(...pts[0]), to: P(...pts[3]) } },
-    { ...line([[at, u1 + du * 0.02, z1 + dz * 0.02], [at, u2 - du * 0.02, z2 - dz * 0.02]], tone(fill, -0.35), 0.4), opacity: 0.6 },
-    nail(u1 + du * 0.025, z1 + dz * 0.025),
-    nail(u2 - du * 0.025, z2 - dz * 0.025),
-  ];
-}
 
 /** The front door in the left wall, boarded up and barred: what the
  *  Infected opens at night. Snow has blown in under it. */
@@ -622,7 +557,7 @@ function tableSet(accent: string): Shape[] {
     ball([x + 0.197, y + 0.1, z + 0.035], 0.8, BRASS[1], BRASS[2]),
     ball([x + 0.197, y + 0.1, z + 0.054], 0.4, "#E0503C"),
     line([[x + 0.2, y + 0.04, z + 0.065], [x + 0.17, y + 0.02, z + 0.2]], IRONWORK[0], 0.6),
-    ...lantern(x + 0.04, y + 0.155, z, 0.075, accent),
+    ...stormLantern(x + 0.04, y + 0.155, z, 0.075, accent),
     ...cylinder(x + 0.19, y + 0.15, z, 0.016, 0.028, ["#E8EEF6", "#3E7A56", "#2B5742"]),
   ];
 }
@@ -648,7 +583,7 @@ export function shelterScene(food: number, accent: string): ShelterScene {
       ...drifts(),
       ...logWalls(),
       ...floorboards(),
-      ...rug(0.5, 0.58, 0.9, 0.86),
+      ...wovenRug(0.5, 0.58, 0.9, 0.86),
       // on the walls
       ...frostedWindow(),
       ...calendar(0.925, 0.42),
@@ -699,4 +634,3 @@ export function shelterPawnTop(spot: [number, number]): Pt {
 
 /** The shelter's outline, for laying the night over it. */
 export const shelterOutline = () => withView(SCENE_VIEW, roomOutline);
-
