@@ -65,6 +65,18 @@ export const COUNTS: Record<number, [number, number, number]> = {
   8: [2, 3, 3],
 };
 
+/** Days until the rescue (mirrors the server's DAYS). */
+export const DAYS = 6;
+
+/** The places open at a table of `n` (the hospital from 5 players). */
+export const placesFor = (n: number): Place[] => (n >= 5 ? PLACES : ["farm", "market"]);
+
+/** Whether the Infected can Sneak once at a table of `n` (5 players). */
+export const canSneak = (n: number) => n === 5;
+
+/** Food in the storeroom at the start: one each. */
+export const startFood = (n: number) => n;
+
 export interface PlaceReport {
   players: number[];
   cards: Card[];

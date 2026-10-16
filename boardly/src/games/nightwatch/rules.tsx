@@ -1,329 +1,336 @@
-// Seal the Manor's "How to play" pages. The Roles and player-count
-// pages are built from the tables in logic.ts; the other pages are the plain text
-// under rules.nightwatch in the locale files.
+// Seal the Manor's "How to play", in the standard sections
+// (features/game/rules): overview, teams, roles, a night step by step,
+// the nine rooms, the night events and the player counts. Everything
+// countable (who is dealt at each table, team sizes, votes) is read
+// from logic.ts; the words are under rules.nightwatch in the locales.
 
+import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { RulesText } from "@/features/game/RulesText";
+import { IsoPicture } from "@/components/iso";
+import { AppText } from "@/components/ui";
+import {
+  CountsTable,
+  RuleCard,
+  RuleHeading,
+  RuleLead,
+  RuleNote,
+  RulePage,
+  RuleSteps,
+  RuleText,
+} from "@/features/game/rules/blocks";
 import { fontFamily, useTheme } from "@/theme";
 import type { RulesPage } from "../types";
 import {
-  ALL_ROLES,
   EVENT_EMOJI,
+  EVIL_ROLES,
+  GOOD_ROLES,
   MISSION_SIZES,
-  failsNeeded,
+  PLAYER_COUNTS,
   ROLE_EMOJI,
   ROLE_SETS,
   ROOMS,
   ROOM_COLOR,
+  ROOM_EMOJI,
   ROOM_NEEDS,
-  GOOD_ROLES,
-  EVIL_ROLES,
+  failsNeeded,
   sideOf,
   type NightEvent,
   type Role,
+  type Side,
 } from "./logic";
-import { GameText as AppText } from "./GameText";
-import { ManorPicture } from "./ManorMap";
+import { EMOJI_ICON, GameIcon } from "./icons";
+import { MANOR_HEIGHT, MANOR_WIDTH, floorPoint, manorShapes } from "./manorShapes";
 import { RoomPicture } from "./RoomPicture";
 
-const PLAYER_COUNTS = Object.keys(ROLE_SETS)
-  .map(Number)
-  .sort((a, b) => a - b);
+const R = "rules.nightwatch";
+const FEWEST = PLAYER_COUNTS[0];
+const MOST = PLAYER_COUNTS[PLAYER_COUNTS.length - 1];
+const NIGHTS = MISSION_SIZES[FEWEST].length;
+const EVENTS = Object.keys(EVENT_EMOJI) as NightEvent[];
+/** Events that change the house for the rest of the game. */
+const LASTING: NightEvent[] = ["collapse", "secretDoor"];
 
+const copiesAt = (count: number, role: Role) => ROLE_SETS[count].filter((r) => r === role).length;
 /** Smallest table that deals `copies` of this role. */
-function playersFor(role: Role, copies: number): number | undefined {
-  return PLAYER_COUNTS.find(
-    (count) => ROLE_SETS[count].filter((r) => r === role).length >= copies
-  );
+const playersFor = (role: Role, copies: number) => PLAYER_COUNTS.find((count) => copiesAt(count, role) >= copies);
+/** How many of a side sit at the smallest and the largest table. */
+const sideRange = (side: Side) => {
+  const sizes = PLAYER_COUNTS.map((count) => ROLE_SETS[count].filter((r) => sideOf(r) === side).length);
+  return { min: Math.min(...sizes), max: Math.max(...sizes) };
+};
+
+/** The game's own drawing of an emoji (as its board shows it), for a
+ *  card's picture; the shared emblem where the game has none. */
+function gameIcon(emoji: string, color: string) {
+  const name = EMOJI_ICON[emoji.replace(/\uFE0F/g, "")];
+  return name ? <GameIcon name={name} size={30} color={color} /> : undefined;
+}
+
+function useSideTint() {
+  const { colors } = useTheme();
+  return (side: Side) => (side === "evil" ? colors.danger : colors.success);
 }
 
 function OverviewPage() {
   const { t } = useTranslation();
   return (
-    <AppText variant="body" color="textMuted">
-      {t("rules.nightwatch.intro")}
-    </AppText>
+    <RulePage>
+      <RuleLead>{t(`${R}.intro`)}</RuleLead>
+      <RuleText>{t(`${R}.overview.win`)}</RuleText>
+      <RuleText>{t(`${R}.overview.secret`)}</RuleText>
+      <RuleText>{t(`${R}.overview.length`, { nights: NIGHTS, min: FEWEST, max: MOST })}</RuleText>
+    </RulePage>
+  );
+}
+
+function TeamsPage() {
+  const { t } = useTranslation();
+  const tint = useSideTint();
+  const names = (roles: Role[]) => roles.map((role) => t(`nightwatch.roles.${role}.name`)).join(t(`${R}.teams.and`));
+  return (
+    <RulePage>
+      <RuleLead>{t(`${R}.teams.lead`)}</RuleLead>
+      {(["good", "evil"] as const).map((side) => (
+        <RuleCard
+          key={side}
+          emoji={side === "good" ? "🏮" : "👻"}
+          picture={gameIcon(side === "good" ? "🏮" : "👻", tint(side))}
+          name={t(`${R}.teams.${side}.name`)}
+          tint={tint(side)}
+          tags={[t(`${R}.teams.${side}.tag`), t(`${R}.teams.size`, sideRange(side))]}
+        >
+          {t(`${R}.teams.${side}.text`, { roles: names(side === "good" ? GOOD_ROLES : EVIL_ROLES) })}
+        </RuleCard>
+      ))}
+    </RulePage>
   );
 }
 
 function RolesPage() {
   const { t } = useTranslation();
-  const { colors, spacing } = useTheme();
-
+  const tint = useSideTint();
+  const tags = (role: Role) => {
+    const one = playersFor(role, 1);
+    const two = playersFor(role, 2);
+    return [
+      one === FEWEST ? t(`${R}.roles.everyGame`) : t(`${R}.roles.from`, { count: one }),
+      ...(two !== undefined ? [t(`${R}.roles.two`, { count: two })] : []),
+    ];
+  };
   return (
-    <View style={{ gap: spacing.md }}>
-      <AppText variant="body" color="textMuted">
-        {t("rules.nightwatch.roles.intro")}
-      </AppText>
-      {ALL_ROLES.map((role) => {
-        const evil = sideOf(role) === "evil";
-        const tint = evil ? colors.danger : colors.success;
-        const one = playersFor(role, 1);
-        const two = playersFor(role, 2);
-        const inPlay = [
-          one === PLAYER_COUNTS[0]
-            ? t("rules.nightwatch.roles.everyGame")
-            : t("rules.nightwatch.roles.fromPlayers", { count: one }),
-          two !== undefined
-            ? t("rules.nightwatch.roles.twoFrom", { count: two })
-            : null,
-        ]
-          .filter(Boolean)
-          .join(" · ");
-        return (
-          <View
-            key={role}
-            style={[
-              styles.card,
-              { backgroundColor: colors.card, borderColor: tint },
-            ]}
-          >
-            <View style={styles.cardHead}>
-              <AppText style={styles.emoji}>{ROLE_EMOJI[role]}</AppText>
-              <View style={styles.grow}>
-                <AppText variant="title">
-                  {t(`nightwatch.roles.${role}.name`)}
-                </AppText>
-                <AppText
-                  variant="tiny"
-                  style={{ fontFamily: fontFamily.semiBold, color: tint }}
-                >
-                  {`${t(`nightwatch.sides.${evil ? "evil" : "good"}`)} · ${inPlay}`}
-                </AppText>
-              </View>
-            </View>
-            <AppText variant="caption">
-              {t(`nightwatch.roles.${role}.desc`)}
-            </AppText>
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
-/** The nine rooms in the order of the map, each with its picture, how
- *  many people it takes, and what it does. */
-function RoomsPage() {
-  const { t } = useTranslation();
-  const { colors, spacing } = useTheme();
-
-  return (
-    <View style={{ gap: spacing.md }}>
-      <AppText variant="body" color="textMuted">
-        {t("rules.nightwatch.rooms.intro")}
-      </AppText>
-      {ROOMS.map((id, room) => {
-        const needs = ROOM_NEEDS[id];
-        return (
-          <View
-            key={id}
-            style={[
-              styles.card,
-              styles.room,
-              { backgroundColor: colors.card, borderColor: needs ? colors.primary : colors.border },
-            ]}
-          >
-            <RoomPicture room={room} width={96} />
-            <View style={[styles.grow, styles.roomText]}>
-              <AppText variant="title" style={{ color: ROOM_COLOR[id] }}>
-                {t(`nightwatch.rooms.${id}`)}
-              </AppText>
-              {id !== "hall" ? (
-                <AppText
-                  variant="tiny"
-                  style={{
-                    fontFamily: fontFamily.semiBold,
-                    color: needs ? colors.primary : colors.textMuted,
-                  }}
-                >
-                  {t(`nightwatch.needs.${needs === 1 ? "one" : needs === 2 ? "two" : "any"}`)}
-                </AppText>
-              ) : null}
-              <AppText variant="caption">{t(`rules.nightwatch.rooms.${id}`)}</AppText>
-            </View>
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
-/** The house: the map itself, then how you move about it. */
-function MapPage() {
-  const { t } = useTranslation();
-  const { spacing } = useTheme();
-  return (
-    <View style={{ gap: spacing.md }}>
-      <ManorPicture roomName={(room) => t(`nightwatch.rooms.${ROOMS[room]}`)} />
-      <RulesText i18nKey={`rules.nightwatch.sections.${MAP_SECTION}`} />
-    </View>
-  );
-}
-
-const EVENTS = Object.keys(EVENT_EMOJI) as NightEvent[];
-
-/** The night events, one to a card. */
-function EventsPage() {
-  const { t } = useTranslation();
-  const { colors, spacing } = useTheme();
-  return (
-    <View style={{ gap: spacing.md }}>
-      <AppText variant="body" color="textMuted">
-        {t("rules.nightwatch.events.intro")}
-      </AppText>
-      {EVENTS.map((event) => (
-        <View
-          key={event}
-          style={[
-            styles.card,
-            styles.room,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <AppText style={styles.eventEmoji}>{EVENT_EMOJI[event]}</AppText>
-          <View style={[styles.grow, styles.roomText]}>
-            <AppText variant="title">{t(`nightwatch.events.${event}.name`)}</AppText>
-            <AppText variant="caption">{t(`rules.nightwatch.events.${event}`)}</AppText>
-          </View>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-/** Who plays at each table size: sides, roles, each night's team and
- *  the votes a team needs — all read from logic.ts. */
-function CountsPage() {
-  const { t } = useTranslation();
-  const { colors, spacing } = useTheme();
-  const head = [
-    t("rules.nightwatch.counts.players"),
-    t("rules.nightwatch.counts.good"),
-    t("rules.nightwatch.counts.evil"),
-    ...[1, 2, 3, 4, 5].map((n) => t("rules.nightwatch.counts.night", { n })),
-    t("rules.nightwatch.counts.votes"),
-  ];
-  // Group a table's roles as "Name ×2" in the order the Roles page uses
-  const roleList = (roles: Role[], side: Role[]) =>
-    side
-      .filter((role) => roles.includes(role))
-      .map((role) => {
-        const copies = roles.filter((r) => r === role).length;
-        // non-breaking spaces keep each icon with its name
-        return `${ROLE_EMOJI[role]}\u00A0${t(`nightwatch.roles.${role}.name`)}${copies > 1 ? `\u00A0×${copies}` : ""}`;
-      })
-      .join("  ");
-  return (
-    <View style={{ gap: spacing.md }}>
-      <AppText variant="body" color="textMuted">
-        {t("rules.nightwatch.counts.intro")}
-      </AppText>
-      <View style={[styles.table, { borderColor: colors.border }]}>
-        <View style={[styles.tr, { backgroundColor: colors.well }]}>
-          {head.map((label, i) => (
-            <AppText
-              key={i}
-              variant="tiny"
-              numberOfLines={1}
-              style={[styles.td, i === 0 && styles.first, { fontFamily: fontFamily.semiBold }]}
+    <RulePage>
+      <RuleLead>{t(`${R}.roles.lead`)}</RuleLead>
+      {(["good", "evil"] as const).map((side) => (
+        <View key={side} style={styles.group}>
+          <RuleHeading tint={tint(side)}>{t(`${R}.teams.${side}.name`)}</RuleHeading>
+          {(side === "good" ? GOOD_ROLES : EVIL_ROLES).map((role) => (
+            <RuleCard
+              key={role}
+              emoji={ROLE_EMOJI[role]}
+              picture={gameIcon(ROLE_EMOJI[role], tint(side))}
+              name={t(`nightwatch.roles.${role}.name`)}
+              tint={tint(side)}
+              tags={tags(role)}
             >
-              {label}
-            </AppText>
+              {t(`${R}.roles.${role}`)}
+            </RuleCard>
           ))}
         </View>
-        {PLAYER_COUNTS.map((n) => {
-          const roles = ROLE_SETS[n];
-          const evil = roles.filter((r) => sideOf(r) === "evil").length;
-          const cells = [
-            String(n),
-            String(n - evil),
-            String(evil),
-            ...MISSION_SIZES[n].map((size, round) => `${size}${failsNeeded(n, round) > 1 ? "*" : ""}`),
-            String(Math.floor(n / 2) + 1),
-          ];
-          return (
-            <View key={n} style={[styles.tr, { borderTopColor: colors.divider, borderTopWidth: 1 }]}>
-              {cells.map((cell, i) => (
-                <AppText
-                  key={i}
-                  variant="caption"
-                  style={[
-                    styles.td,
-                    i === 0 && styles.first,
-                    i === 1 && { color: colors.success },
-                    i === 2 && { color: colors.danger },
-                  ]}
-                >
-                  {cell}
-                </AppText>
-              ))}
-            </View>
-          );
-        })}
-      </View>
-      <AppText variant="tiny" color="textMuted">
-        {t("rules.nightwatch.counts.star")}
-      </AppText>
-      {PLAYER_COUNTS.map((n) => (
-        <View key={n} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, gap: 4 }]}>
-          <AppText variant="title">{t("rules.nightwatch.counts.table", { n })}</AppText>
-          <AppText variant="caption" style={{ color: colors.success }}>
-            {roleList(ROLE_SETS[n], GOOD_ROLES)}
-          </AppText>
-          <AppText variant="caption" style={{ color: colors.danger }}>
-            {roleList(ROLE_SETS[n], EVIL_ROLES)}
-          </AppText>
-        </View>
       ))}
-      <RulesText i18nKey="rules.nightwatch.countNotes" />
+      <RuleNote>{t(`${R}.roles.assassin`)}</RuleNote>
+      <RuleNote>{t(`${R}.roles.decoy`)}</RuleNote>
+    </RulePage>
+  );
+}
+
+const STEPS = [
+  ["announce", "📣"],
+  ["patrol", "👣"],
+  ["room", "🚪"],
+  ["talk", "✉️"],
+  ["team", "🗳️"],
+  ["mission", "🕯️"],
+] as const;
+
+function PlayPage() {
+  const { t } = useTranslation();
+  return (
+    <RulePage>
+      <RuleLead>{t(`${R}.play.lead`, { nights: NIGHTS })}</RuleLead>
+      <RuleSteps
+        steps={STEPS.map(([key, emoji]) => ({
+          emoji,
+          title: t(`${R}.play.${key}.title`),
+          detail: t(`${R}.play.${key}.detail`),
+        }))}
+      />
+      <RuleText>{t(`${R}.play.cards`)}</RuleText>
+      <RuleHeading>{`🗡️ ${t(`${R}.play.lastTitle`)}`}</RuleHeading>
+      <RuleText>{t(`${R}.play.last`)}</RuleText>
+      <RuleNote>{t(`${R}.play.rejected`)}</RuleNote>
+    </RulePage>
+  );
+}
+
+/** The empty manor, baked once like the room pictures, with each room's
+ *  name over its floor in the room's colour. */
+function ManorMapPicture() {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const [width, setWidth] = useState(0);
+  const scale = width / MANOR_WIDTH;
+  return (
+    <View onLayout={(event) => setWidth(Math.round(event.nativeEvent.layout.width))}>
+      {width > 0 ? (
+        <View style={{ width, height: MANOR_HEIGHT * scale }}>
+          <IsoPicture
+            shapes={() =>
+              manorShapes({ accent: colors.primary, collapsed: [], lockedDoor: null, secretDoors: [], tints: {} })
+            }
+            width={MANOR_WIDTH}
+            height={MANOR_HEIGHT}
+            size={width}
+            cacheKey={`manor-map|${colors.primary}`}
+          />
+          {ROOMS.map((id, room) => {
+            const [x, y] = floorPoint(room, 0.6, 0.6);
+            return (
+              <View key={id} pointerEvents="none" style={[styles.label, { left: x * scale - 60, top: y * scale - 10 }]}>
+                <AppText style={[styles.labelText, { color: ROOM_COLOR[id], borderColor: ROOM_COLOR[id] }]} numberOfLines={1}>
+                  {t(`nightwatch.rooms.${id}`)}
+                </AppText>
+              </View>
+            );
+          })}
+        </View>
+      ) : null}
     </View>
   );
 }
 
-const MAP_SECTION = 1;
-const ROOMS_SECTION = 3;
-const EVENTS_SECTION = 4;
-const PAGES: Record<number, RulesPage["Content"]> = {
-  [MAP_SECTION]: MapPage,
-  [ROOMS_SECTION]: RoomsPage,
-  [EVENTS_SECTION]: EventsPage,
-};
+/** A card's text set to the exact width it is given. Deep in the Rooms
+ *  page a plain line (the Garden's) was measured one line too wide on
+ *  iOS and cut off at the card's edge; an explicit width keeps it wrapped. */
+function FitText({ children, color }: { children: string; color: string }) {
+  const [width, setWidth] = useState<number>();
+  return (
+    <View style={styles.cardText} onLayout={(event) => setWidth(Math.floor(event.nativeEvent.layout.width))}>
+      <AppText style={[styles.small, { color }, width ? { width } : null]}>{children}</AppText>
+    </View>
+  );
+}
 
-const section = (index: number): RulesPage => ({
-  key: `section-${index}`,
-  titleKey: `rules.nightwatch.sections.${index}.title`,
-  Content:
-    PAGES[index] ??
-    function SectionPage() {
-      return <RulesText i18nKey={`rules.nightwatch.sections.${index}`} />;
-    },
-});
+function RoomsPage() {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const needs = (id: (typeof ROOMS)[number]) => {
+    if (id === "hall") return t(`${R}.rooms.needs.none`);
+    const n = ROOM_NEEDS[id];
+    return t(`${R}.rooms.needs.${n === 1 ? "one" : n === 2 ? "two" : "any"}`);
+  };
+  return (
+    <RulePage>
+      <RuleLead>{t(`${R}.rooms.lead`)}</RuleLead>
+      <ManorMapPicture />
+      <RuleText>{t(`${R}.rooms.mission`)}</RuleText>
+      <RuleText>{t(`${R}.rooms.use`)}</RuleText>
+      {ROOMS.map((id, room) => (
+        <RuleCard
+          key={id}
+          picture={<RoomPicture room={room} width={76} />}
+          name={`${ROOM_EMOJI[id]} ${t(`nightwatch.rooms.${id}`)}`}
+          tint={ROOM_COLOR[id]}
+          tags={[t(`${R}.rooms.fn.${id}`), needs(id)]}
+        >
+          <FitText color={colors.text}>{t(`${R}.rooms.text.${id}`)}</FitText>
+        </RuleCard>
+      ))}
+      <RuleNote>{t(`${R}.rooms.tip`)}</RuleNote>
+    </RulePage>
+  );
+}
 
-// Sections of rules.nightwatch.sections, in the locale files' order:
-// sides, the house (with the map), each night, room functions and night
-// events (pages of their own, one card each), ending.
-const SECTION_COUNT = 6;
+function EventsPage() {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  return (
+    <RulePage>
+      <RuleLead>{t(`${R}.events.lead`, { count: NIGHTS - 1, total: EVENTS.length })}</RuleLead>
+      {EVENTS.map((event) => (
+        <RuleCard
+          key={event}
+          emoji={EVENT_EMOJI[event]}
+          picture={gameIcon(EVENT_EMOJI[event], colors.primary)}
+          name={t(`nightwatch.events.${event}.name`)}
+          tags={[t(`${R}.events.${LASTING.includes(event) ? "lasting" : "tonight"}`)]}
+        >
+          {t(`${R}.events.text.${event}`)}
+        </RuleCard>
+      ))}
+    </RulePage>
+  );
+}
+
+function CountsPage() {
+  const { t } = useTranslation();
+  const evilAt = (count: number) => ROLE_SETS[count].filter((r) => sideOf(r) === "evil").length;
+  const nights = MISSION_SIZES[FEWEST].map((_, night) => ({
+    label: t(`${R}.counts.night`, { n: night + 1 }),
+    values: PLAYER_COUNTS.map(
+      (count) => `${MISSION_SIZES[count][night]}${failsNeeded(count, night) > 1 ? "*" : ""}`,
+    ),
+  }));
+  return (
+    <RulePage>
+      <RuleLead>{t(`${R}.counts.lead`, { min: FEWEST, max: MOST })}</RuleLead>
+      <CountsTable
+        counts={PLAYER_COUNTS}
+        rows={[
+          { label: t(`${R}.teams.good.name`), values: PLAYER_COUNTS.map((count) => count - evilAt(count)) },
+          { label: t(`${R}.teams.evil.name`), values: PLAYER_COUNTS.map(evilAt) },
+          ...nights,
+          { label: t(`${R}.counts.votes`), values: PLAYER_COUNTS.map((count) => Math.floor(count / 2) + 1) },
+        ]}
+      />
+      <RuleText>{t(`${R}.counts.star`)}</RuleText>
+      <RuleHeading>{t(`${R}.counts.dealt`)}</RuleHeading>
+      <CountsTable
+        counts={PLAYER_COUNTS}
+        rows={[...GOOD_ROLES, ...EVIL_ROLES].map((role) => ({
+          label: `${ROLE_EMOJI[role]} ${t(`nightwatch.roles.${role}.name`)}`,
+          values: PLAYER_COUNTS.map((count) => copiesAt(count, role) || "–"),
+        }))}
+      />
+      <RuleNote>{t(`${R}.counts.note`)}</RuleNote>
+    </RulePage>
+  );
+}
 
 export const NIGHTWATCH_RULES: RulesPage[] = [
-  { key: "overview", titleKey: "rules.overview", Content: OverviewPage },
-  { key: "roles", titleKey: "rules.nightwatch.roles.title", Content: RolesPage },
-  { key: "counts", titleKey: "rules.nightwatch.counts.title", Content: CountsPage },
-  ...Array.from({ length: SECTION_COUNT }, (_, index) => section(index)),
+  { key: "overview", section: "overview", Content: OverviewPage },
+  { key: "teams", section: "teams", Content: TeamsPage },
+  { key: "roles", section: "roles", Content: RolesPage },
+  { key: "play", section: "play", Content: PlayPage },
+  { key: "rooms", section: "rooms", Content: RoomsPage },
+  { key: "events", section: "events", Content: EventsPage },
+  { key: "counts", section: "counts", Content: CountsPage },
 ];
 
 const styles = StyleSheet.create({
-  grow: { flex: 1 },
-  card: { borderWidth: 1.5, borderRadius: 18, padding: 12, gap: 8 },
-  cardHead: { flexDirection: "row", alignItems: "center", gap: 12 },
-  emoji: { fontSize: 30, lineHeight: 38 },
-  eventEmoji: { fontSize: 40, lineHeight: 50, width: 56, textAlign: "center" },
-  room: { flexDirection: "row", alignItems: "center", gap: 12 },
-  roomText: { gap: 4 },
-  table: { borderWidth: 1, borderRadius: 12, overflow: "hidden" },
-  tr: { flexDirection: "row" },
-  td: { flex: 1, textAlign: "center", paddingVertical: 6 },
-  first: { flex: 1.6 },
+  group: { gap: 10 },
+  cardText: { alignSelf: "stretch" },
+  small: { fontFamily: fontFamily.regular, fontSize: 13, lineHeight: 18 },
+  label: { position: "absolute", width: 120, alignItems: "center" },
+  labelText: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 10,
+    lineHeight: 14,
+    paddingHorizontal: 6,
+    borderRadius: 7,
+    borderWidth: 0.6,
+    overflow: "hidden",
+    backgroundColor: "rgba(11,14,22,0.82)",
+  },
 });
