@@ -236,3 +236,83 @@ Every badge has four levels, and each level wears a frame
 - A big set can be drawn by parallel agents, one file each. Brief them
   with the format, these rules and the sheet script, then review every
   sheet yourself before wiring it in.
+
+# A game's flow on the stage (what Seal the Manor taught us)
+
+Every game is played on the stage, Seal the Manor (`src/games/nightwatch/`)
+is the model: read its `NightwatchBoard.tsx`, `ManorStage.tsx` and the
+pieces it uses before building another. The owner loves its flow.
+
+## The screen
+- `layout: "stage"` in the GameDefinition; the board draws the whole
+  screen with the shared `GameStage` (`features/game/stage/GameStage.tsx`):
+  the game's own **header** across the top (Seal the Manor: the
+  stained-glass arch showing the rounds; design one per game, in the
+  game's mood, drawn like a border and baked), **under** it a line of
+  tags (what's at stake now), the **middle**, **tools** down the right
+  (`ToolButton`: emblem + name, no boxes; panels open in the shared
+  `Popup`), **hint** lines over the plinth, and the main move **on the
+  plinth**. Back and rules are the corner studs.
+- Every moment is its own scene in the middle, never a popup: choosing,
+  voting, playing a card, the reveal, the ending. Give each a `sceneKey`;
+  the red curtain closes and opens between them and the plinth's move
+  changes only once it's shut. The curtain covers the whole middle,
+  under the header to the plinth.
+- Popups only for looking things up (map, notes, record, role).
+- The ending bleeds the full height (`bleed`, `StageInsets`): the result,
+  every player's role/card face up, coins and badges; Back to Home and
+  Play Again sit on the plinth (`stage.onward`).
+
+## Players on the stage
+- Anything with the players themselves (picking a team, a vote, an
+  accusation, whose turn it is) uses the shared `StageLineup`
+  (`features/game/stage/`): everyone as their own mascot under a lamp on
+  the lighting rig, two staggered rows past five, a name plate at their
+  feet, a crown on the leader's head. Hand it `lights` (full, low,
+  nearly out, red, green), `plates` (a seal once someone has acted —
+  never which way — turned green ✓ / red ✕ at a reveal), who can be
+  tapped, and `hold`/`aim`/`struck` for a dramatic choice.
+- Every game must hold up at its largest table (10 players): check each
+  scene at the biggest count.
+
+## The flow
+- Secrecy first: nothing on screen reveals a hidden choice until the
+  game reveals it; the reveal is the same for everyone.
+- A decision that matters (a mission card, naming someone) is held, not
+  tapped (`HoldButton`: fills, ticks harder in the hand, sends at the
+  end). Everyday choices (a vote, picking) are one tap.
+- What only shows something to the table (the leader's picks so far) is
+  a quiet move: `onMove(move, { quiet: true })`, debounced, never
+  blocking the board; the server shares it in the view.
+- Show my own action the moment I make it (my vote, my pick); don't wait
+  for the server's answer.
+- Results are revealed once per device (`useSetPieces` counters), each
+  with a Continue on the plinth. Moves the game makes for you are
+  explained on the stage.
+- Don't move people on by surprise: after a step that shows them
+  something (a room's result), stay until they tap Continue.
+- Haptics with every moment (`utils/haptics`), reduce motion respected.
+
+## Speed and memory (each of these cost us a lag or a crash)
+- The server sends each player their own view with the update (no
+  refetch); keep moves cheap there (no N+1, bots that owe a move at the
+  same moment move together).
+- Nothing is rebuilt on every update: memoize by content (`JSON.stringify`
+  keys for arrays the server resends), stable callbacks into memoized
+  children, `useDerivedValue` with deps, shaders through `shader()` (one
+  compile each), still art through `bakedSvg`/`bakedDrawing` (one image,
+  in the budgeted cache), a mascot through `MascotFigure` (baked per look).
+- Never hold more than the screen shows: long lists are FlashList;
+  small still borders are pictures; a canvas per item is a cost.
+- An animation must not restart when an update arrives (depend on the
+  key of what it shows, not on a new object; keep callbacks in refs).
+- Look at memory, not only fps: `footprint -p $(pgrep -f BoardlyDev)`
+  before and after a screen; a screen that adds 100+ MB is a bug.
+
+## Building it
+- A dev page with a sample of every moment (`app/dev/manor.tsx` is the
+  model: `?sample=`, a `dev` tab listing them, `&perf=1` for fps), and a
+  10-player sample of each moment with players.
+- Look at every moment on the simulator, then fix, then look again.
+- Strings in en, zh, ms; Jest must pass (stub new Skia exports in
+  `jest.setup.js`).
