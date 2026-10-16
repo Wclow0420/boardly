@@ -694,6 +694,16 @@
           "赶错好人游戏继续：少一个人搜刮，但也少一张嘴吃饭。"
         ]
       }
+    },
+    "sections": {
+      "overview": "概括",
+      "teams": "阵营",
+      "roles": "角色",
+      "play": "玩法",
+      "actions": "行动",
+      "rooms": "房间",
+      "events": "特殊事件",
+      "counts": "人数规则"
     }
   },
   "avalon": {

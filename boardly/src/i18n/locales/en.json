@@ -695,6 +695,16 @@
           "Sending out a Survivor doesn't end the game: one fewer to scavenge, but one fewer mouth too."
         ]
       }
+    },
+    "sections": {
+      "overview": "Overview",
+      "teams": "Teams",
+      "roles": "Roles",
+      "play": "How to play",
+      "actions": "Actions",
+      "rooms": "Rooms",
+      "events": "Special events",
+      "counts": "Player counts"
     }
   },
   "avalon": {

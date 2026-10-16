@@ -695,6 +695,16 @@
           "Menghalau Mangsa Selamat tidak menamatkan permainan: kurang seorang pencari, tetapi kurang satu mulut juga."
         ]
       }
+    },
+    "sections": {
+      "overview": "Gambaran",
+      "teams": "Pasukan",
+      "roles": "Peranan",
+      "play": "Cara bermain",
+      "actions": "Tindakan",
+      "rooms": "Bilik",
+      "events": "Peristiwa khas",
+      "counts": "Bilangan pemain"
     }
   },
   "avalon": {

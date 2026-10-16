@@ -3,6 +3,7 @@ import type { BadgeArt, BadgeStyle } from "@/components/badges/types";
 import type { ComponentType, ReactNode } from "react";
 import type { ImageSourcePropType } from "react-native";
 
+import type { RuleSection } from "@/features/game/rules/standard";
 import type { ColorScheme } from "@/theme";
 
 export interface GamePlayer {
@@ -74,8 +75,13 @@ export interface GameSkin {
 /** One page of a game's "How to play" popup. */
 export interface RulesPage {
   key: string;
-  /** i18n key of the page's tab title. */
-  titleKey: string;
+  /** Which of the standard sections it is (features/game/rules/standard):
+   *  that names it and sets its place among the pages. */
+  section?: RuleSection;
+  /** i18n key of a title of its own, where the standard name doesn't fit
+   *  (Shelter's places in the Rooms slot). Old pages without a section
+   *  still use this. */
+  titleKey?: string;
   Content: ComponentType;
 }
 

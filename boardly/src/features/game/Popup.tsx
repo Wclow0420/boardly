@@ -9,6 +9,8 @@ import {
   ScrollView,
   StyleSheet,
   View,
+  type StyleProp,
+  type ViewStyle,
 } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -93,27 +95,43 @@ export function Popup({ visible, title: titleNow, onClose, children: childrenNow
   );
 }
 
+/** The gilt card on its own, for a popup laid out differently (the rules):
+ *  the game's dark fill behind, `children` clipped to the inside of the
+ *  frame, the gilded moulding and jewelled corners over them. */
+export function GiltCard({
+  look = PLAIN,
+  children,
+  style,
+  fill = false,
+}: {
+  look?: PopupLook;
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+  /** The inside fills a card of a set height (rather than sizing it). */
+  fill?: boolean;
+}) {
+  const { colors } = useTheme();
+  const [{ w, h }, onLayout] = useBox();
+  return (
+    <View style={[styles.card, w === 0 && { backgroundColor: colors.card }, style]} onLayout={onLayout}>
+      {w > 0 ? <Panel w={w} h={h} look={look} layer="back" /> : null}
+      <View style={[styles.inside, fill && styles.grow]}>{children}</View>
+      {w > 0 ? <Panel w={w} h={h} look={look} layer="front" /> : null}
+    </View>
+  );
+}
+
 /** The card itself. It is made anew each time the popup opens, so it
  *  measures itself afresh (not at the size of the last popup), and it is
  *  dark from its first frame, before the gilt panel is drawn over it. */
 function Card({ look, children }: { look: PopupLook; children: ReactNode }) {
-  const { colors } = useTheme();
-  const [{ w, h }, onLayout] = useBox();
   return (
-    <View style={[styles.card, w === 0 && { backgroundColor: colors.card }]} onLayout={onLayout}>
-      {w > 0 ? <Panel w={w} h={h} look={look} layer="back" /> : null}
+    <GiltCard look={look}>
       {/* what scrolls stays inside the frame and passes under its gold */}
-      <View style={styles.inside}>
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.body}
-        >
-          {children}
-        </ScrollView>
-      </View>
-      {w > 0 ? <Panel w={w} h={h} look={look} layer="front" /> : null}
-    </View>
+      <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
+        {children}
+      </ScrollView>
+    </GiltCard>
   );
 }
 
@@ -152,6 +170,7 @@ function Panel({ w, h, look, layer }: { w: number; h: number; look: PopupLook; l
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   centre: { alignItems: "center", justifyContent: "center" },
+  grow: { flex: 1 },
   dim: { backgroundColor: "rgba(4,5,10,0.78)" },
   wrap: { width: "100%", maxWidth: 440, maxHeight: "86%", marginTop: 14 },
   card: {
