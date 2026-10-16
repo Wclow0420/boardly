@@ -12,9 +12,20 @@ building a new game:
 # How to draw for Boardly
 
 The owner chose the engraved look ("The house drawing style" in
-AGENTS.md). Winged Crest, Baroque Silver and the emblem icons are the
-reference for every drawing. This is how they were made; work the same
-way.
+AGENTS.md). The rule is the style, not any one drawing: the whole range
+of borders is the reference (Cherry Blossom Shrine, Imperial Dragon,
+Clockwork, Lunar New Year, Kraken's Deep, Celestial Throne, Phoenix,
+Winged Crest, Baroque Silver...), each its own idea in the same
+engraved craft. Don't copy one border's look onto everything.
+
+## Designing a page or a big piece: discuss first
+
+Treat a page (a screen's look, a header, a board) like a new border:
+come up with several distinct concepts first, each its own idea and
+mood (a shrine, a clockwork, a sea, a night sky...), describe them or
+show quick sketches, and agree one with the owner before building.
+Then draw it with the same craft, and give it life the borders' way
+(Skia, still parts baked once, one picture per frame).
 
 ## The craft
 

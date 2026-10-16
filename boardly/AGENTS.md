@@ -88,8 +88,8 @@ for the wings and flames (lobby cards: 26 above, the name 24 below).
 # The house drawing style
 
 How the app should look wherever something is drawn (borders, emblems,
-icons): engraved metal and ivory, like Winged Crest (`art/crest.tsx`)
-and Baroque Silver (`art/baroque.tsx`).
+icons): engraved metal and ivory, the craft every border in `art/` is
+drawn with (each border its own idea; none is the template).
 
 - Every shape is a filled path with a gradient: gold
   (`#FFF2B8 #E2B04A #9A6B1E #F0CC72`), silver
