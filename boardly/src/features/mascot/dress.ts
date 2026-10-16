@@ -7,7 +7,7 @@ import type { EmblemData } from "@/components/engraved/emblem";
 import { EYES, MOUTHS, NOSES } from "./parts/face";
 import { BACKS, HANDS, HATS } from "./parts/gear";
 import { BOTTOMS, SHOES, TOPS } from "./parts/wear";
-import { lifted, type PartDef } from "./rig";
+import { LIFT, lifted, type PartDef } from "./rig";
 import { COLOURS, SKINS } from "./skins";
 
 export { BOX } from "./rig";
@@ -88,6 +88,18 @@ export function dressLayers(look: Look): Layers {
     hat: lifted(part(look, "hat")),
     hand: lifted(part(look, "hand")),
   };
+}
+
+/** How high the figure reaches, in the box's units: the top of the head
+ *  (y 28), or of the hat when it wears one — where something set on top
+ *  of it (a leader's crown) should sit. Read off the hat's outline. */
+export function topOf(look: Look): number {
+  let top = 8;
+  for (const p of part(look, "hat")) {
+    if (!("d" in p)) continue;
+    for (const [, y] of p.d.matchAll(/-?\d+\.?\d*[ ,](-?\d+\.?\d*)/g)) top = Math.min(top, Number(y));
+  }
+  return top + LIFT;
 }
 
 /** The whole figure as one drawing, in a BOX-sized box. */

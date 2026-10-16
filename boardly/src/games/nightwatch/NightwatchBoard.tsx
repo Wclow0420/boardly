@@ -17,7 +17,7 @@ import { RoleCardBack, RoleCardFace } from "./RoleCardFace";
 import { NightMap } from "./NightMap";
 import { RoomScene, type ScenePerson } from "./RoomScene";
 import { ManorStage, stageText } from "./ManorStage";
-import { StageLineup, type Light, type Mark } from "./StageLineup";
+import { StageLineup, type Light, type Plate } from "@/features/game/stage/StageLineup";
 import { VoteButtons } from "./VoteButtons";
 import { Ending } from "./ending/Ending";
 import { Letter } from "./announce/Letter";
@@ -423,10 +423,20 @@ export function NightwatchBoard({
     (revealing && voteToShow !== null) || (!over && !revealing && (state.phase === "team" || state.phase === "vote"));
   const draft = task === "propose" ? (current.team ?? state.team) : state.team;
   const councilTeam = revealing && voteToShow ? voteToShow.team : state.phase === "team" ? draft : state.team;
+  // at the reveal each beam takes its player's vote: green or red
   const councilLights: Record<number, Light> = Object.fromEntries(
-    allSeats.map((seat) => [seat, councilTeam.includes(seat) ? "lit" : "soft"]),
+    allSeats.map((seat) => [
+      seat,
+      revealing && voteToShow
+        ? voteToShow.votes[seat]
+          ? "green"
+          : "red"
+        : councilTeam.includes(seat)
+          ? "lit"
+          : "soft",
+    ]),
   );
-  const councilMarks: Record<number, Mark> =
+  const councilPlates: Record<number, Plate> =
     revealing && voteToShow
       ? Object.fromEntries(allSeats.map((seat) => [seat, voteToShow.votes[seat] ? "yes" : "no"]))
       : state.phase === "vote"
@@ -772,7 +782,7 @@ export function NightwatchBoard({
             <StageLineup
               people={allSeats.map((seat) => ({ seat, name: nameOf(seat), look: lookOf(seat) }))}
               lights={councilLights}
-              marks={councilMarks}
+              plates={councilPlates}
               crown={revealing && voteToShow ? voteToShow.leader : state.leader}
               selectable={
                 task === "propose" && !busy ? (draft.length >= teamSize(state) ? draft : allSeats) : []
