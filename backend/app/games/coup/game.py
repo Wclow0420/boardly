@@ -46,6 +46,7 @@ import copy
 import random
 
 from app.games.base import BaseGame, GameError, Badge, FEAT, QUICK_WINS, RARE
+from app.games.coup.bot import coup as bot_policy
 
 ROLES = ["duke", "assassin", "captain", "ambassador", "contessa"]
 COPIES_PER_ROLE = 3
@@ -125,6 +126,7 @@ class Coup(BaseGame):
     tile_color = "#FFEBD6"
     category = "strategy"
     tag = "card"
+    has_bots = True
 
     badges = [
         # every win
@@ -476,6 +478,9 @@ class Coup(BaseGame):
         if state["phase"] == "finished":
             return state
         return {**state, "phase": "finished", "winner": None, "pending": None}
+
+    def bot_move(self, view, seat, rng):
+        return bot_policy(view, seat, rng)
 
     # ------------------------------------------------------------- view
 
