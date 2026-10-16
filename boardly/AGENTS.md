@@ -291,12 +291,16 @@ otherwise.
   main move on the `Plinth`. Every moment plays on the stage, not in a
   popup: the letter of the night, the patrol's map, everyone on the
   stage for the team and the vote (the leader's picks lit as they're
-  made, coins over heads that turn green or red) and for the last
+  made, seals on name plates that turn green or red) and for the last
   chance, the lanterns of the mission, the ending's seal. Give each its own `sceneKey`: the red
   `StageCurtain` closes and opens between them (and holds the plinth's
   move until it's shut). A decision that matters is held, not tapped
   (`lantern/HoldButton`: fills, ticks harder in the hand, sends at the
-  end). Results are revealed once each on the device (`useSetPieces`
+  end). Any moment with the players themselves uses the shared
+  `features/game/stage/StageLineup` (everyone as their mascot under a
+  lighting rig, two staggered rows past five, name plates, a crown on
+  the leader's head via `topOf(look)`); a game hands it only lights,
+  plates and who can be tapped. Results are revealed once each on the device (`useSetPieces`
   counters), everyone seeing the same reveal; nothing on the way shows
   whose choice was which. Preview every moment at
   `boardly-dev://dev/manor?sample=<moment>` (the `dev` tab on the left
