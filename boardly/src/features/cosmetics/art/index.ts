@@ -14,6 +14,12 @@ import { LEGENDARY_ART } from "./legendary";
 import { RADIANT_ART } from "./radiant";
 import { ABYSS_ART } from "./abyss";
 import { CURRENTS_ART } from "./currents";
+import { DRAGON_ART } from "./dragon";
+import { FESTIVAL_ART } from "./festival";
+import { GRANDBOARD_ART } from "./grandboard";
+import { HEAVENS_ART } from "./heavens";
+import { INFERNO_ART } from "./inferno";
+import { MECHANICS_ART } from "./mechanics";
 import { GARDEN_ART } from "./garden";
 import { HONOURS_ART } from "./honours";
 import { MAJESTY_ART } from "./majesty";
@@ -50,6 +56,12 @@ export const ART: Record<string, ArtBorderDrawing> = {
   ...CURRENTS_ART,
   ...RADIANCE_ART,
   ...HONOURS_ART,
+  ...DRAGON_ART,
+  ...FESTIVAL_ART,
+  ...GRANDBOARD_ART,
+  ...HEAVENS_ART,
+  ...INFERNO_ART,
+  ...MECHANICS_ART,
 };
 
 export { BorderClockProvider, useBorderClock } from "./kit";
