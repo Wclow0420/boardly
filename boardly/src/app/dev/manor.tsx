@@ -7,6 +7,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Modal, Pressable, StyleSheet, View } from "react-native";
+import { useFrameCallback, useSharedValue } from "react-native-reanimated";
+import { scheduleOnRN } from "react-native-worklets";
 
 import { AppText } from "@/components/ui";
 import { RulesSheet } from "@/features/game/RulesSheet";
@@ -112,6 +114,23 @@ const NAMES = ["You", "Ming", "Hua", "Qiang", "Mei"].map((username, seat) => ({
   mascot: LOOKS[seat],
 }));
 
+/** Frames drawn in the last second, counted on the UI thread. */
+function useFps(on: boolean) {
+  const [fps, setFps] = useState(0);
+  const frames = useSharedValue(0);
+  const since = useSharedValue(0);
+  useFrameCallback((frame) => {
+    if (!on) return;
+    frames.set(frames.get() + 1);
+    if (frame.timestamp - since.get() >= 1000) {
+      scheduleOnRN(setFps, frames.get());
+      frames.set(0);
+      since.set(frame.timestamp);
+    }
+  });
+  return fps;
+}
+
 export default function ManorPreview() {
   const skin = GAMES.nightwatch?.skin;
   return (
@@ -127,6 +146,8 @@ function ManorSamples() {
   const [sample, setSample] = useState(asked && SAMPLES[asked] ? asked : "team");
   const [rules, setRules] = useState(false);
   const [picking, setPicking] = useState(false);
+  const { perf } = useLocalSearchParams<{ perf?: string }>();
+  const fps = useFps(perf === "1");
   const router = useRouter();
   // moments after the deal: the card counts as dealt for this session
   const session = `dev-${sample}`;
@@ -163,7 +184,7 @@ function ManorSamples() {
       ) : null}
       {/* the samples, behind a small tab on the left edge */}
       <Pressable onPress={() => setPicking(true)} style={[styles.devTab, { borderColor: colors.primary }]}>
-        <AppText variant="tiny">dev</AppText>
+        <AppText variant="tiny">{perf === "1" ? `dev\n${fps}` : "dev"}</AppText>
       </Pressable>
       <Modal visible={picking} transparent animationType="fade" onRequestClose={() => setPicking(false)}>
         <Pressable style={styles.devDim} onPress={() => setPicking(false)}>

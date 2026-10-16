@@ -33,10 +33,14 @@ export function StageCurtain({
   sceneKey,
   children,
   jewel = "amber",
+  onSwap,
 }: {
   sceneKey: string;
   children: ReactNode;
   jewel?: Jewel;
+  /** The curtain is shut and the new scene is going in (so whatever
+   *  else changes with it, the main move, can change now too). */
+  onSwap?: (key: string) => void;
 }) {
   const still = useReducedMotion();
   const [{ w, h }, onLayout] = useBox();
@@ -53,6 +57,7 @@ export function StageCurtain({
     if (!changing) return;
     const swap = () => {
       setHeld({ key: sceneKey, node: null });
+      onSwap?.(sceneKey);
       // the new scene settles in behind the curtain, then it opens
       shut.set(
         withDelay(
@@ -74,7 +79,7 @@ export function StageCurtain({
         if (done) scheduleOnRN(closed);
       }),
     );
-  }, [changing, sceneKey, still, shut, drop]);
+  }, [changing, sceneKey, still, shut, drop, onSwap]);
 
   const half = w / 2 + OVERLAP;
   const left = useAnimatedStyle(() => ({

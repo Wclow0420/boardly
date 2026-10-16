@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View, type TextStyle } from "react-native";
 import { useTranslation } from "react-i18next";
 
+import { shade } from "@/components/engraved/shapes";
 import { AppText, Button, type AppTextProps, type ButtonProps } from "@/components/ui";
 import { typography, useTheme } from "@/theme";
 import { ROOMS, ROOM_COLOR } from "./logic";
@@ -21,7 +22,10 @@ const OWN_COLOR: Partial<Record<IconName, "successStrong" | "danger">> = {
  *  they appear in it: an emoji the game has an icon for becomes that
  *  icon, and a room's name is set in that room's colour — so anything
  *  on the board can be read at a glance. Everything else is AppText. */
-export function GameText({ children, ...props }: AppTextProps) {
+export function GameText({ children, paper = false, ...props }: AppTextProps & {
+  /** Written on paper: room names inked darker, to read on ivory. */
+  paper?: boolean;
+}) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   if (typeof children !== "string") return <AppText {...props}>{children}</AppText>;
@@ -56,7 +60,10 @@ export function GameText({ children, ...props }: AppTextProps) {
         }
         return piece.split(rooms).map((part, i) =>
           colorOf.has(part) ? (
-            <Text key={`${index}-${i}`} style={{ color: colorOf.get(part), fontWeight: "700" }}>
+            <Text
+              key={`${index}-${i}`}
+              style={{ color: paper ? shade(colorOf.get(part)!, -0.55) : colorOf.get(part), fontWeight: "700" }}
+            >
               {part}
             </Text>
           ) : (

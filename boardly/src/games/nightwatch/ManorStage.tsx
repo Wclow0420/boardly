@@ -7,7 +7,7 @@
 // lanterns, the last chance) takes the middle and sends the tools away.
 
 import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -123,6 +123,11 @@ export function ManorStage({
     result ? "" : `${state.missionSizes[r]}${state.failsRequired[r] > 1 ? "★" : ""}`,
   );
   const archH = archLayout(width, insets.top, state.rounds).h;
+  // the lines and the move under the stage change with the scene, once
+  // the curtain has closed on the old one
+  const [aside, setAside] = useState<{ key: string; hint: ReactNode; bottom: ReactNode }>(() => ({ key: sceneKey, hint, bottom }));
+  if (aside.key === sceneKey && (aside.hint !== hint || aside.bottom !== bottom)) setAside({ key: sceneKey, hint, bottom });
+  const settled = aside.key === sceneKey;
   const plinthH = PLINTH_H + insets.bottom;
 
   // the tags and tools slide off when a moment takes the stage
@@ -146,7 +151,9 @@ export function ManorStage({
       <Glow size={520} color="#F28B4B" style={{ top: height * 0.24, left: width * 0.5 - 260 }} />
 
       <View style={[styles.centre, { top: archH + 26, bottom: plinthH + 34 }]}>
-        <StageCurtain sceneKey={sceneKey}>{centre}</StageCurtain>
+        <StageCurtain sceneKey={sceneKey} onSwap={(key) => setAside({ key, hint: null, bottom: null })}>
+          {centre}
+        </StageCurtain>
       </View>
       {tools ? (
         <Animated.View style={[styles.tools, { top: archH + 46 }, toolsOut]} pointerEvents={away ? "none" : "box-none"}>
@@ -197,10 +204,10 @@ export function ManorStage({
 
       <View style={styles.bottom} pointerEvents="box-none">
         <View style={styles.hint} pointerEvents="box-none">
-          {hint}
+          {settled ? hint : aside.hint}
         </View>
         <Plinth width={width} height={plinthH}>
-          {bottom}
+          {settled ? bottom : aside.bottom}
         </Plinth>
       </View>
       {overlays}

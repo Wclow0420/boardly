@@ -200,10 +200,12 @@ function Stage({
         />
       ))}
       {target && struck !== null ? (
-        <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <Canvas style={StyleSheet.absoluteFill}>
           <Slash x={target.x} y={target.y - target.size * 0.75} size={target.size * 1.6} go={burst} />
           <Burst x={target.x} y={target.y - target.size * 0.7} go={burst} color="#FF2E44" size={w * 0.35} />
-        </Canvas>
+          </Canvas>
+        </View>
       ) : null}
     </>
   );

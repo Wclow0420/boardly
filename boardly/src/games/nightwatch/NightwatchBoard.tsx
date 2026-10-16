@@ -19,6 +19,9 @@ import { RoomScene, type ScenePerson } from "./RoomScene";
 import { ManorStage, stageText } from "./ManorStage";
 import { LastChance } from "./LastChance";
 import { Ending } from "./ending/Ending";
+import { Letter } from "./announce/Letter";
+import { PatrolStage, patrolReady } from "./PatrolStage";
+import { TeamTable } from "./TeamTable";
 import { HoldButton } from "./lantern/HoldButton";
 import { LanternRite, RevealTitle, type RiteView, type Side } from "./lantern/LanternRite";
 import { ToolButton } from "@/features/game/stage/parts";
@@ -34,9 +37,6 @@ import {
   ROOM_EMOJI,
   ROOM_NEEDS,
   assassinTargets,
-  canDecoy,
-  canTrack,
-  decoyRooms,
   doorLabel,
   lettersFor,
   others,
@@ -274,7 +274,13 @@ export function NightwatchBoard({
     });
 
   // the vote and the mission are played on the stage, with the lanterns
-  const onStage = task === "vote" || task === "mission" || task === "assassinate";
+  const onStage =
+    task === "vote" ||
+    task === "mission" ||
+    task === "assassinate" ||
+    task === "announce" ||
+    task === "patrol" ||
+    task === "propose";
   const taskOpen = needsMe && !onStage && (task === "room" ? touched === step : putAway !== step);
   const showing: "news" | "panel" | "book" | "task" | null =
     !pieces.ready || dealing || delivering || walking || revealing
@@ -395,6 +401,12 @@ export function NightwatchBoard({
     onMove(voting ? { type: "vote", approve: side === "good" } : { type: "mission", card: side === "good" ? "success" : "fail" });
   };
   const allSeats = Array.from({ length: state.numPlayers }, (_, seat) => seat);
+  // the night's letter, opened by breaking its seal
+  const atLetter = task === "announce" && !revealing;
+  const atPatrol = task === "patrol" && !revealing;
+  const atTable = task === "propose" && !revealing;
+  const [opened, setOpened] = useState<string | null>(null);
+  const letterOpen = opened === step;
   // the last chance: everyone on the bare stage, the assassin's blow
   const [strike, setStrike] = useState<{ step: string; seat: number } | null>(null);
   const struck = strike?.step === step ? strike.seat : null;
@@ -507,7 +519,7 @@ export function NightwatchBoard({
         onArrived={() => {
           if (arrival) pieces.mark({ walked: arrival.key });
         }}
-        paused={showing !== null || dealing || delivering || rite !== null || lineup}
+        paused={showing !== null || dealing || delivering || rite !== null || lineup || atLetter || atPatrol || atTable}
       />
     ) : (
       map
@@ -550,6 +562,32 @@ export function NightwatchBoard({
 
   const hint = rite ? (
     riteHint
+  ) : atLetter ? null : atPatrol ? (
+    <>
+      {company.map((line, i) => (
+        <AppText key={i} style={stageText.strong} numberOfLines={2}>
+          {line}
+        </AppText>
+      ))}
+      <AppText style={stageText.hint} numberOfLines={2}>
+        {t(
+          state.event === "storm"
+            ? "nightwatch.prompt.patrolStorm"
+            : state.freeMove
+              ? "nightwatch.prompt.patrolFree"
+              : state.event === "insomnia"
+                ? "nightwatch.prompt.patrolInsomnia"
+                : "nightwatch.prompt.patrolHint",
+        )}
+      </AppText>
+    </>
+  ) : atTable ? (
+    <AppText style={stageText.hint} numberOfLines={3}>
+      {`👑  ${t("nightwatch.prompt.propose", { size: teamSize(state) })} · ${t("nightwatch.prompt.proposeHint", {
+        room: names.roomName(state.missionRoom),
+        steps: state.event === "fog" ? 1 : 2,
+      })}`}
+    </AppText>
   ) : lineup && task === "assassinate" ? (
     <AppText style={stageText.hint} numberOfLines={2}>
       {t("nightwatch.prompt.assassinateHint")}
@@ -574,7 +612,47 @@ export function NightwatchBoard({
 
   const target = current.target ?? null;
   const myEnd = state.roles?.[mySeat];
-  const bottom = lineup && task === "assassinate" ? (
+  const bottom = atTable ? (
+    <Button
+      label={`${t("nightwatch.prompt.send")} (${(current.team ?? []).length}/${teamSize(state)})`}
+      size="lg"
+      style={styles.main}
+      disabled={(current.team ?? []).length !== teamSize(state)}
+      loading={busy}
+      onPress={() => send({ type: "propose", team: current.team })}
+    />
+  ) : atPatrol ? (
+    <Button
+      label={t("nightwatch.prompt.go")}
+      size="lg"
+      style={styles.main}
+      disabled={!patrolReady(current)}
+      loading={busy}
+      onPress={() =>
+        send(
+          current.follow
+            ? { type: "patrol", track: current.track }
+            : {
+                type: "patrol",
+                room: current.room,
+                ...(current.decoy && current.fake !== undefined ? { fake: current.fake } : {}),
+              },
+        )
+      }
+    />
+  ) : atLetter ? (
+    letterOpen ? (
+      <Button
+        label={t("nightwatch.prompt.ready")}
+        size="lg"
+        style={styles.main}
+        loading={busy}
+        onPress={() => send({ type: "ready", ...(current.lock ? { lock: current.lock } : {}) })}
+      />
+    ) : (
+      <AppText style={stageText.strong}>{t("nightwatch.rite.openLetter")}</AppText>
+    )
+  ) : lineup && task === "assassinate" ? (
     struck !== null ? (
       <AppText style={stageText.strong}>{`🗡️  ${names.nameOf(struck)}`}</AppText>
     ) : target !== null ? (
@@ -647,10 +725,47 @@ export function NightwatchBoard({
     ) : (
       <>
         {/* the room stays put under a moment, hidden and still */}
-        <View style={[styles.sceneBox, rite || lineup ? styles.hidden : null]}>{scene}</View>
+        <View style={[styles.sceneBox, rite || lineup || atLetter || atPatrol || atTable ? styles.hidden : null]}>{scene}</View>
         {rite ? (
           <View style={[StyleSheet.absoluteFill, rite.kind !== "reveal" && styles.besideTools]}>
             <LanternRite view={rite} hold={hold} paused={showing !== null} />
+          </View>
+        ) : atTable ? (
+          <View style={[StyleSheet.absoluteFill, styles.besideTools]}>
+            <TeamTable
+              people={allSeats.map((seat) => ({ seat, name: nameOf(seat), look: lookOf(seat) }))}
+              team={current.team ?? []}
+              size={teamSize(state)}
+              busy={busy}
+              onToggle={(seat) => choose({ team: toggleTeam(current.team ?? [], seat, teamSize(state)) })}
+              paused={showing !== null}
+            />
+          </View>
+        ) : atPatrol ? (
+          <View style={[StyleSheet.absoluteFill, styles.besideTools]}>
+            <PatrolStage
+              state={state}
+              mySeat={mySeat}
+              pick={current}
+              busy={busy}
+              players={players}
+              roomName={names.roomName}
+              nameOf={nameOf}
+              map={map}
+              onPick={choose}
+            />
+          </View>
+        ) : atLetter ? (
+          <View style={[StyleSheet.absoluteFill, styles.besideTools]}>
+            <Letter
+              state={state}
+              roomName={names.roomName}
+              open={letterOpen}
+              onOpen={() => setOpened(step)}
+              lock={current.lock ?? null}
+              onLock={(lock) => choose({ lock })}
+              busy={busy}
+            />
           </View>
         ) : lineup ? (
           <View style={StyleSheet.absoluteFill}>
@@ -682,7 +797,21 @@ export function NightwatchBoard({
       roomName={names.roomName}
       subtitle={subtitle}
       sceneKey={
-        rite ? (rite.kind === "reveal" ? `reveal-${rite.key}` : rite.kind) : lineup ? "lineup" : over ? "ending" : "room"
+        rite
+          ? rite.kind === "reveal"
+            ? `reveal-${rite.key}`
+            : rite.kind
+          : atLetter
+            ? "letter"
+            : atPatrol
+              ? "patrol"
+              : atTable
+                ? "table"
+            : lineup
+              ? "lineup"
+              : over
+                ? "ending"
+                : "room"
       }
       centre={centre}
       tools={over ? undefined : tools}
@@ -819,49 +948,7 @@ export function NightwatchBoard({
           </View>
         ) : showing === "task" ? (
           <View>
-            {task === "announce" ? (
-              <>
-                <Tonight state={state} names={names} />
-                <View style={{ height: spacing.md }} />
-                <AnnouncePrompt
-                  state={state}
-                  lock={current.lock ?? null}
-                  busy={busy}
-                  names={names}
-                  onLock={(lock) => choose({ lock })}
-                  onConfirm={() =>
-                    send({ type: "ready", ...(current.lock ? { lock: current.lock } : {}) })
-                  }
-                />
-              </>
-            ) : task === "patrol" ? (
-              <>
-                {map}
-                <View style={{ height: spacing.md }} />
-                <PatrolPrompt
-                  state={state}
-                  mySeat={mySeat}
-                  pick={current}
-                  busy={busy}
-                  names={names}
-                  players={players}
-                  onPick={choose}
-                  onConfirm={() =>
-                    send(
-                      current.follow
-                        ? { type: "patrol", track: current.track }
-                        : {
-                            type: "patrol",
-                            room: current.room,
-                            ...(current.decoy && current.fake !== undefined
-                              ? { fake: current.fake }
-                              : {}),
-                          }
-                    )
-                  }
-                />
-              </>
-            ) : task === "room" ? (
+            {task === "room" ? (
               <RoomPrompt
                 state={state}
                 mySeat={mySeat}
@@ -884,55 +971,6 @@ export function NightwatchBoard({
                   }
                 }}
               />
-            ) : task === "propose" ? (
-              <ProposePrompt
-                state={state}
-                team={current.team ?? []}
-                busy={busy}
-                names={names}
-                players={players}
-                onToggle={(seat) =>
-                  choose({ team: toggleTeam(current.team ?? [], seat, teamSize(state)) })
-                }
-                onConfirm={() => send({ type: "propose", team: current.team })}
-              />
-            ) : task === "vote" ? (
-              <VotePrompt
-                state={state}
-                busy={busy}
-                names={names}
-                onVote={(approve) => send({ type: "vote", approve })}
-              />
-            ) : task === "mission" ? (
-              <MissionPrompt
-                state={state}
-                busy={busy}
-                names={names}
-                onPlay={(card) => send({ type: "mission", card })}
-              />
-            ) : task === "assassinate" ? (
-              <>
-                <AppText variant="title">{`🗡️  ${t("nightwatch.prompt.assassinate")}`}</AppText>
-                <AppText variant="caption" color="textMuted" style={{ marginTop: 4 }}>
-                  {t("nightwatch.prompt.assassinateHint")}
-                </AppText>
-                <SeatChips
-                  seats={assassinTargets(state)}
-                  selected={current.target === null ? [] : current.target !== undefined ? [current.target] : []}
-                  players={players}
-                  names={names}
-                  busy={busy}
-                  onPress={(target) => choose({ target })}
-                />
-                <Button
-                  label={t("nightwatch.prompt.name")}
-                  variant="danger"
-                  style={{ marginTop: spacing.md }}
-                  disabled={current.target == null}
-                  loading={busy}
-                  onPress={() => send({ type: "assassinate", target: current.target })}
-                />
-              </>
             ) : null}
           </View>
         ) : null}
@@ -1013,192 +1051,6 @@ function Tonight({ state, names }: { state: NightwatchState; names: Names }) {
 }
 
 // ------------------------------------------------------------ prompts
-
-function AnnouncePrompt({
-  state,
-  lock,
-  busy,
-  names,
-  onLock,
-  onConfirm,
-}: {
-  state: NightwatchState;
-  lock: number[] | null;
-  busy: boolean;
-  names: Names;
-  onLock: (lock: number[] | null) => void;
-  onConfirm: () => void;
-}) {
-  const { t } = useTranslation();
-  const { spacing } = useTheme();
-  const canLock = state.doorOptions.length > 0;
-  const same = (a: number[] | null, b: number[]) => !!a && a[0] === b[0] && a[1] === b[1];
-
-  return (
-    <>
-      <AppText variant="title">
-        {`🏮  ${t("nightwatch.bar.night", { n: state.round + 1, total: state.rounds })}`}
-      </AppText>
-      <AppText variant="caption" color="textMuted" style={{ marginTop: 4 }}>
-        {t("nightwatch.prompt.readyHint")}
-      </AppText>
-      {canLock ? (
-        <>
-          <AppText variant="label" style={{ marginTop: spacing.md }}>
-            {`🗝️  ${t("nightwatch.prompt.lockTitle")}`}
-          </AppText>
-          <AppText variant="tiny" color="textSubtle" style={{ marginTop: 2 }}>
-            {t("nightwatch.prompt.lockHint")}
-          </AppText>
-          <View style={[styles.chips, { marginTop: spacing.sm }]}>
-            <Chip
-              label={t("nightwatch.prompt.noLock")}
-              selected={lock === null}
-              disabled={busy}
-              onPress={() => onLock(null)}
-            />
-            {state.doorOptions.map((door) => (
-              <Chip
-                key={door.join("-")}
-                label={doorLabel(door, names.roomName)}
-                selected={same(lock, door)}
-                disabled={busy}
-                onPress={() => onLock(door)}
-              />
-            ))}
-          </View>
-        </>
-      ) : null}
-      <Button
-        label={t("nightwatch.prompt.ready")}
-        style={{ marginTop: spacing.md }}
-        loading={busy}
-        onPress={onConfirm}
-      />
-    </>
-  );
-}
-
-function PatrolPrompt({
-  state,
-  mySeat,
-  pick,
-  busy,
-  names,
-  players,
-  onPick,
-  onConfirm,
-}: {
-  state: NightwatchState;
-  mySeat: number;
-  pick: Pick;
-  busy: boolean;
-  names: Names;
-  players: GamePlayer[];
-  onPick: (next: Omit<Pick, "step">) => void;
-  onConfirm: () => void;
-}) {
-  const { t } = useTranslation();
-  const { spacing } = useTheme();
-  const here = state.myRoom;
-  const hint =
-    state.event === "storm"
-      ? "nightwatch.prompt.patrolStorm"
-      : state.freeMove
-        ? "nightwatch.prompt.patrolFree"
-        : state.event === "insomnia"
-          ? "nightwatch.prompt.patrolInsomnia"
-          : "nightwatch.prompt.patrolHint";
-  const ready = pick.follow
-    ? pick.track !== undefined
-    : pick.room !== undefined && (!pick.decoy || pick.fake !== undefined);
-
-  return (
-    <>
-      <AppText variant="title">{`🚶  ${t("nightwatch.prompt.patrol")}`}</AppText>
-      <AppText variant="caption" color="textMuted" style={{ marginTop: 4 }}>
-        {t(hint)}
-      </AppText>
-
-      {canTrack(state) ? (
-        <Toggle
-          label={`👣  ${t("nightwatch.prompt.follow")}`}
-          hint={t("nightwatch.prompt.followHint", { count: state.abilityLeft })}
-          on={!!pick.follow}
-          disabled={busy}
-          onPress={() => onPick({ follow: !pick.follow })}
-        />
-      ) : null}
-
-      {pick.follow ? (
-        <SeatChips
-          seats={others(state, mySeat)}
-          selected={pick.track !== undefined ? [pick.track] : []}
-          players={players}
-          names={names}
-          busy={busy}
-          onPress={(track) => onPick({ track })}
-        />
-      ) : (
-        <View style={[styles.chips, { marginTop: spacing.md }]}>
-          {state.patrolRooms.map((room) => (
-            <Chip
-              key={room}
-              label={`${ROOM_EMOJI[ROOMS[room]]}  ${
-                room === here
-                  ? t("nightwatch.prompt.stay", { room: names.roomName(room) })
-                  : names.roomName(room)
-              }`}
-              selected={pick.room === room}
-              disabled={busy}
-              onPress={() =>
-                onPick({ room, fake: pick.fake === room ? undefined : pick.fake })
-              }
-            />
-          ))}
-        </View>
-      )}
-
-      {canDecoy(state) ? (
-        <>
-          <Toggle
-            label={`🎭  ${t("nightwatch.prompt.decoy")}`}
-            hint={t("nightwatch.prompt.decoyHint", { count: state.abilityLeft })}
-            on={!!pick.decoy}
-            disabled={busy}
-            onPress={() => onPick({ decoy: !pick.decoy })}
-          />
-          {pick.decoy ? (
-            <>
-              <AppText variant="label" style={{ marginTop: spacing.sm }}>
-                {t("nightwatch.prompt.decoyRoom")}
-              </AppText>
-              <View style={[styles.chips, { marginTop: spacing.sm }]}>
-                {decoyRooms(state, pick.room).map((room) => (
-                  <Chip
-                    key={room}
-                    label={`${ROOM_EMOJI[ROOMS[room]]}  ${names.roomName(room)}`}
-                    selected={pick.fake === room}
-                    disabled={busy}
-                    onPress={() => onPick({ fake: room })}
-                  />
-                ))}
-              </View>
-            </>
-          ) : null}
-        </>
-      ) : null}
-
-      <Button
-        label={t("nightwatch.prompt.go")}
-        style={{ marginTop: spacing.md }}
-        disabled={!ready}
-        loading={busy}
-        onPress={onConfirm}
-      />
-    </>
-  );
-}
 
 function RoomPrompt({
   state,
@@ -1295,143 +1147,6 @@ function RoomPrompt({
   );
 }
 
-function ProposePrompt({
-  state,
-  team,
-  busy,
-  names,
-  players,
-  onToggle,
-  onConfirm,
-}: {
-  state: NightwatchState;
-  team: number[];
-  busy: boolean;
-  names: Names;
-  players: GamePlayer[];
-  onToggle: (seat: number) => void;
-  onConfirm: () => void;
-}) {
-  const { t } = useTranslation();
-  const { spacing } = useTheme();
-  const size = teamSize(state);
-
-  return (
-    <>
-      <AppText variant="title">
-        {`👑  ${t("nightwatch.prompt.propose", { size })}`}
-      </AppText>
-      <AppText variant="caption" color="textMuted" style={{ marginTop: 4 }}>
-        {t("nightwatch.prompt.proposeHint", {
-          room: names.roomName(state.missionRoom),
-          steps: state.event === "fog" ? 1 : 2,
-        })}
-      </AppText>
-      <SeatChips
-        seats={Array.from({ length: state.numPlayers }, (_, s) => s)}
-        selected={team}
-        players={players}
-        names={names}
-        busy={busy}
-        onPress={onToggle}
-      />
-      <Button
-        label={`${t("nightwatch.prompt.send")} (${team.length}/${size})`}
-        style={{ marginTop: spacing.md }}
-        disabled={team.length !== size}
-        loading={busy}
-        onPress={onConfirm}
-      />
-    </>
-  );
-}
-
-function VotePrompt({
-  state,
-  busy,
-  names,
-  onVote,
-}: {
-  state: NightwatchState;
-  busy: boolean;
-  names: Names;
-  onVote: (approve: boolean) => void;
-}) {
-  const { t } = useTranslation();
-  const { spacing } = useTheme();
-
-  return (
-    <>
-      <AppText variant="title">{`🗳️  ${t("nightwatch.prompt.vote")}`}</AppText>
-      <AppText variant="body" style={{ marginTop: 4 }}>
-        {t("nightwatch.team.team", { names: names.namesOf(state.team) })}
-      </AppText>
-      <AppText variant="caption" color="textMuted" style={{ marginTop: 2 }}>
-        {t("nightwatch.team.leader", { name: names.nameOf(state.leader ?? -1) })}
-      </AppText>
-      <View style={[styles.row, { gap: spacing.sm, marginTop: spacing.md }]}>
-        <Button
-          label={`👍  ${t("nightwatch.prompt.approve")}`}
-          style={styles.grow}
-          loading={busy}
-          onPress={() => onVote(true)}
-        />
-        <Button
-          label={`👎  ${t("nightwatch.prompt.reject")}`}
-          variant="danger"
-          style={styles.grow}
-          disabled={busy}
-          onPress={() => onVote(false)}
-        />
-      </View>
-    </>
-  );
-}
-
-function MissionPrompt({
-  state,
-  busy,
-  names,
-  onPlay,
-}: {
-  state: NightwatchState;
-  busy: boolean;
-  names: Names;
-  onPlay: (card: "success" | "fail") => void;
-}) {
-  const { t } = useTranslation();
-  const { spacing } = useTheme();
-  const evil = state.myRole !== null && sideOf(state.myRole) === "evil";
-
-  return (
-    <>
-      <AppText variant="title">
-        {`🎯  ${t("nightwatch.prompt.mission", { room: names.roomName(state.missionRoom) })}`}
-      </AppText>
-      <AppText variant="caption" color="textMuted" style={{ marginTop: 4 }}>
-        {t(evil ? "nightwatch.prompt.missionHintEvil" : "nightwatch.prompt.missionHint")}
-      </AppText>
-      <View style={[styles.row, { gap: spacing.sm, marginTop: spacing.md }]}>
-        <Button
-          label={`🏮  ${t("nightwatch.prompt.success")}`}
-          style={styles.grow}
-          loading={busy}
-          onPress={() => onPlay("success")}
-        />
-        {evil ? (
-          <Button
-            label={`👻  ${t("nightwatch.prompt.fail")}`}
-            variant="danger"
-            style={styles.grow}
-            disabled={busy}
-            onPress={() => onPlay("fail")}
-          />
-        ) : null}
-      </View>
-    </>
-  );
-}
-
 function SeatChips({
   seats,
   selected,
@@ -1486,44 +1201,6 @@ function SeatChips({
         );
       })}
     </View>
-  );
-}
-
-function Chip({
-  label,
-  selected,
-  disabled,
-  onPress,
-}: {
-  label: string;
-  selected: boolean;
-  disabled?: boolean;
-  onPress: () => void;
-}) {
-  const { colors } = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      disabled={disabled}
-      onPress={onPress}
-      style={[
-        styles.chip,
-        {
-          backgroundColor: selected ? colors.primarySoft : colors.well,
-          borderColor: selected ? colors.primary : colors.border,
-        },
-      ]}
-    >
-      <AppText variant="label" numberOfLines={1} style={styles.grow}>
-        {label}
-      </AppText>
-      {selected ? (
-        <AppText variant="label" color="primary">
-          ✓
-        </AppText>
-      ) : null}
-    </Pressable>
   );
 }
 

@@ -9,7 +9,7 @@ import { NightwatchBoard } from "../NightwatchBoard";
 
 jest.mock("@gorhom/bottom-sheet", () => { const { TextInput, View } = jest.requireActual("react-native"); return { BottomSheetTextInput: TextInput, BottomSheetModal: View, BottomSheetView: View, BottomSheetScrollView: View, BottomSheetBackdrop: View, BottomSheetModalProvider: View }; });
 jest.mock("@/features/cosmetics/AvatarBorder", () => ({ AvatarBorder: ({ children }: any) => children ?? null }));
-jest.mock("@/utils/haptics", () => ({ moveHaptic: jest.fn(), tapHaptic: jest.fn(), successHaptic: jest.fn(), heavyHaptic: jest.fn(), tickHaptic: jest.fn() }));
+jest.mock("@/utils/haptics", () => ({ moveHaptic: jest.fn(), tapHaptic: jest.fn(), successHaptic: jest.fn(), heavyHaptic: jest.fn(), tickHaptic: jest.fn(), errorHaptic: jest.fn() }));
 // Set pieces (the hush, the role card, walking in) run on real
 // animations and timers, and popups wait for them. On fake timers they
 // advance with the test (waitFor steps the clock), not with how busy the
@@ -36,11 +36,14 @@ it("walks announce → patrol → room → news and every panel", async () => {
   await fireEvent.press(screen.getByLabelText("Tap to continue"));
   await fireEvent.press(screen.getByLabelText("Tap the card to turn it over"));
   await fireEvent.press(screen.getByText("Keep it secret"));
+  // the night's letter waits on the stage, sealed
+  await waitFor(() => expect(screen.getByLabelText("Break the seal")).toBeTruthy(), { timeout: 4000 });
+  await fireEvent.press(screen.getByLabelText("Break the seal"));
   await waitFor(() => expect(screen.getByText("I'm ready")).toBeTruthy(), { timeout: 4000 });
 
   const patrol = { ...base, phase: "patrol", ready: [false, false, false, false, false] };
   await view.rerender(board(patrol));
-  expect(screen.getByText(/Where do you patrol/)).toBeTruthy();
+  await waitFor(() => expect(screen.getByText(/Stay, or walk to a room next door/)).toBeTruthy(), { timeout: 4000 });
 
   const note = { round: 0, kind: "patrol", room: 0, seen: [2], company: true, fake: null, tracked: null, blocked: null };
   const room = { ...base, phase: "room", myRoom: 0, myFn: "belltower", ready: [false, false, false, false, false], log: [note] };
@@ -109,5 +112,5 @@ it("says why I'm in another room after going on a mission", async () => {
   const result = { round: 0, room: 6, team: [0, 1], missing: [], fails: 0, success: true };
   const next = { ...base, round: 1, phase: "patrol", myRoom: 6, missionRoom: 2, results: [result], ready: [false, false, false, false, false] };
   await render(board(next));
-  expect(screen.getByText(/You went on last night's mission/)).toBeTruthy();
+  await waitFor(() => expect(screen.getByText(/You went on last night's mission/)).toBeTruthy(), { timeout: 4000 });
 });

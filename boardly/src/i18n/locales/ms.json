@@ -1518,7 +1518,8 @@
     },
     "letter": {
       "title": "SEPUCUK SURAT TANPA NAMA",
-      "unsigned": "tiada tandatangan"
+      "unsigned": "tiada tandatangan",
+      "open": "Pecahkan meterai"
     },
     "book": {
       "title": "Rekod Kapel",
@@ -1555,7 +1556,8 @@
       "continue": "Teruskan",
       "goodOnly": "Penjaga hanya boleh menyalakan tanglung emas.",
       "holdName": "Tahan untuk namakan {{name}}",
-      "pickProphet": "Ketik orang yang anda rasa Peramal"
+      "pickProphet": "Ketik orang yang anda rasa Peramal",
+      "openLetter": "Ketik meterai untuk buka surat malam ini"
     }
   },
   "profile": {

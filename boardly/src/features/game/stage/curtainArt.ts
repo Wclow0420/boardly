@@ -94,7 +94,7 @@ function tassel(x: number, y: number, s = 1) {
   return (
     `<path d="M${x} ${y}V${f(y + k(4))}" stroke="${INK}" stroke-width="1"/>` +
     threads +
-    `<ellipse cx="${x}" cy="${f(y + k(7))}" rx="${k(4.4)}" ry="${k(4.2)}" fill="url(#gold)" stroke="${INK}" stroke-width="0.9"/>` +
+    `<circle cx="${x}" cy="${f(y + k(7))}" r="${k(4.3)}" fill="url(#gold)" stroke="${INK}" stroke-width="0.9"/>` +
     `<path d="M${f(x - k(5.6))} ${f(y + k(10.4))}H${f(x + k(5.6))}V${f(y + k(12.6))}H${f(x - k(5.6))}Z" fill="url(#gold)" stroke="${INK}" stroke-width="0.8"/>`
   );
 }

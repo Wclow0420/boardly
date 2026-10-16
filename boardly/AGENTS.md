@@ -153,6 +153,11 @@ drawn with (each border its own idea; none is the template).
   - Anything drawn by hand (a home card, a big button) gets
     `<BezelOverlay r t metal />` after its fill and before its content.
     No plain borders.
+- Still art baked from SVG (`bakedSvg`) goes through Skia's SVG
+  reader: a gradient fill on an `<ellipse>` comes out black there (it
+  works on `<circle>`, `<rect>` and `<path>`), so draw ovals as paths.
+  A Skia `<Canvas>` ignores `pointerEvents`: wrap one laid over
+  buttons in a `<View pointerEvents="none">`.
 - Life comes from a light `Sweep`, `Glint`s, one jewel that glows or
   beats, and a gentle sway. No creature heads drawn in code. People
   with faces are only the avatar figures (`src/features/avatar`).
@@ -277,6 +282,24 @@ otherwise.
 - **Strings** in all three locales (`en`, `zh`, `ms`) under the game's
   key. Rules pages: overview, roles, then one card per room/event with
   its picture where there is one (`nightwatch/rules.tsx`).
+- **The stage.** A game with a drawn world fills the whole screen
+  (`layout: "stage"` in its GameDefinition; the game screen hands the
+  board its back button, rules, last error and the after-game content
+  in `stage`). Seal the Manor's `ManorStage` is the model: the arch
+  across the top (`features/game/stage/NightArch`), the scene in the
+  middle with the tools down its side (`ToolButton`, no boxes), the
+  main move on the `Plinth`. Every moment plays on the stage, not in a
+  popup: the letter of the night, the patrol's map, the team round the
+  table, the lanterns of the vote and the mission, the last chance's
+  spotlights, the ending's seal. Give each its own `sceneKey`: the red
+  `StageCurtain` closes and opens between them (and holds the plinth's
+  move until it's shut). A decision that matters is held, not tapped
+  (`lantern/HoldButton`: fills, ticks harder in the hand, sends at the
+  end). Results are revealed once each on the device (`useSetPieces`
+  counters), everyone seeing the same reveal; nothing on the way shows
+  whose choice was which. Preview every moment at
+  `boardly-dev://dev/manor?sample=<moment>` (the `dev` tab on the left
+  lists them and shows the fps) and keep each at 60.
 - **Box art.** Every game sits on the Games shelf and on Home's felt
   as a box (`features/games/GameBox.tsx`). Give it a `boxArt` in its
   GameDefinition — a picture `width` wide, e.g. a still of its own

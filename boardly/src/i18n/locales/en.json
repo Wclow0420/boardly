@@ -1521,7 +1521,8 @@
     },
     "letter": {
       "title": "AN ANONYMOUS LETTER",
-      "unsigned": "nobody signed it"
+      "unsigned": "nobody signed it",
+      "open": "Break the seal"
     },
     "book": {
       "title": "The Chapel's record",
@@ -1558,7 +1559,8 @@
       "continue": "Continue",
       "goodOnly": "Watchers can only light the gold lantern.",
       "holdName": "Hold to name {{name}}",
-      "pickProphet": "Tap the one you think is the Prophet"
+      "pickProphet": "Tap the one you think is the Prophet",
+      "openLetter": "Tap the seal to open tonight's letter"
     }
   },
   "profile": {

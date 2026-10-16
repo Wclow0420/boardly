@@ -1513,7 +1513,8 @@
     },
     "letter": {
       "title": "一封匿名信",
-      "unsigned": "没有署名"
+      "unsigned": "没有署名",
+      "open": "揭开封蜡"
     },
     "book": {
       "title": "礼拜堂的记录",
@@ -1550,7 +1551,8 @@
       "continue": "继续",
       "goodOnly": "守夜人只能点亮金灯。",
       "holdName": "按住指认{{name}}",
-      "pickProphet": "点你认为是先知的人"
+      "pickProphet": "点你认为是先知的人",
+      "openLetter": "点封蜡，打开今晚的信"
     }
   },
   "profile": {
