@@ -48,8 +48,12 @@ export interface StageChrome {
   onRules?: () => void;
   /** The last move failed. */
   error?: string | null;
-  /** After the game: coins, badges, play again, back home. */
+  /** After the game: what was earned (coins, badges), shown under the
+   *  result. */
   afterGame?: ReactNode;
+  /** After the game: play again and back home, for the board's main
+   *  button spot (the plinth). */
+  onward?: ReactNode;
 }
 
 /** A game's own look. The game screen switches to the dark palette

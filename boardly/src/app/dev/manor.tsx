@@ -10,7 +10,7 @@ import { Modal, Pressable, StyleSheet, View } from "react-native";
 import { useFrameCallback, useSharedValue } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 
-import { AppText } from "@/components/ui";
+import { AppText, Button } from "@/components/ui";
 import { RulesSheet } from "@/features/game/RulesSheet";
 import { NightwatchBoard } from "@/games/nightwatch/NightwatchBoard";
 import type { NightwatchState } from "@/games/nightwatch/logic";
@@ -86,6 +86,7 @@ const SAMPLES: Record<string, { state: NightwatchState; deal?: boolean; reveal?:
   patrol: { state: S({ phase: "patrol", ready: [false, false, true, false, false] }) },
   room: { state: S({ phase: "room", myRoom: 5, myFn: "dining", ready: [false, false, false, false, false] }) },
   team: { state: S({ phase: "team", leader: 0 }) },
+  gather: { state: S({ phase: "team", leader: 3 }) },
   picking: { state: S({ phase: "team", leader: 3, team: [1, 3] }) },
   vote: { state: S({ phase: "vote", leader: 3, team: [0, 3] }) },
   voted: { state: S({ phase: "vote", leader: 3, team: [0, 3], voted: [true, true, false, true, false], myVote: true }) },
@@ -184,9 +185,11 @@ function ManorSamples() {
       votes: state.history.length - (reveal === "vote" ? 1 : 0),
       missions: state.results.length - (reveal === "mission" ? 1 : 0),
     };
+    // the stage samples have already left the room; "gather" hasn't
+    const gathered = sample === "gather" ? null : state.round;
     const watched = deal
-      ? { dealt: false, letters: 99, books: [], walked: "dev", ...counts }
-      : { dealt: true, letters: 99, books: [0, 1, 2], walked: "dev", ...counts };
+      ? { dealt: false, letters: 99, books: [], walked: "dev", gathered, ...counts }
+      : { dealt: true, letters: 99, books: [0, 1, 2], walked: "dev", gathered, ...counts };
     AsyncStorage.setItem(`boardly.nightwatch.watched.${session}`, JSON.stringify(watched))
       .catch(() => {})
       .finally(() => setSeeded(sample));
@@ -205,7 +208,17 @@ function ManorSamples() {
           busy={false}
           finished={false}
           onMove={() => {}}
-          stage={{ onBack: () => router.back(), onRules: () => setRules(true) }}
+          stage={{
+            onBack: () => router.back(),
+            onRules: () => setRules(true),
+            // stand-ins for the game screen's own
+            onward: (
+              <View style={{ flexDirection: "row", gap: 12, alignSelf: "stretch" }}>
+                <Button label="Back to Home" variant="secondary" style={{ flex: 1 }} onPress={() => router.back()} />
+                <Button label="Play Again" style={{ flex: 1 }} onPress={() => {}} />
+              </View>
+            ),
+          }}
         />
       ) : null}
       {/* the samples, behind a small tab on the left edge */}

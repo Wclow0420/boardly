@@ -340,6 +340,52 @@ function GameScreenBody({
     </View>
   ) : null;
 
+  // A stage game splits the after-game: what was earned under the result,
+  // the two ways on from it on the plinth.
+  const earned =
+    !inProgress && mySeat >= 0 ? (
+      <View style={{ gap: spacing.md }}>
+        <EarnedCoins sessionId={session.id} />
+        <GameOverBadges gameType={room.gameType} />
+      </View>
+    ) : null;
+  const onward = !inProgress ? (
+    <View style={{ gap: 6, alignSelf: "stretch" }}>
+      {mySeat >= 0 && rematch.isError ? (
+        <AppText variant="caption" color="danger" align="center">
+          {rematch.error instanceof ApiError
+            ? t([`errors.${rematch.error.code}`, rematch.error.message])
+            : t("common.errorTitle")}
+        </AppText>
+      ) : mySeat >= 0 && room.rematchCode ? (
+        <AppText variant="caption" color="textMuted" align="center">
+          {t("game.rematchOpen")}
+        </AppText>
+      ) : null}
+      <View style={{ flexDirection: "row", gap: spacing.md }}>
+        <Button
+          label={t("game.backHome")}
+          variant={mySeat >= 0 ? "secondary" : "primary"}
+          style={{ flex: 1 }}
+          onPress={() => router.dismissTo("/")}
+        />
+        {mySeat >= 0 ? (
+          <Button
+            label={t(room.rematchCode ? "game.joinRematch" : "game.playAgain")}
+            style={{ flex: 1 }}
+            loading={rematch.isPending}
+            onPress={() =>
+              rematch.mutate(undefined, {
+                onSuccess: (next) => router.replace(`/lobby/${next.code}`),
+                onError: (err) => redirectIfInRoom(err),
+              })
+            }
+          />
+        ) : null}
+      </View>
+    </View>
+  ) : null;
+
   // Games that fill the whole screen with their stage, header and all
   if (gameDef.layout === "stage") {
     return (
@@ -349,7 +395,8 @@ function GameScreenBody({
           onBack={handleBack}
           onRules={hasRules ? () => setRulesOpen(true) : undefined}
           error={moveError}
-          afterGame={backHome}
+          afterGame={earned}
+          onward={onward}
         />
         {hasRules ? (
           <RulesSheet

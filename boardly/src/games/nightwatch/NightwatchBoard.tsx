@@ -419,8 +419,10 @@ export function NightwatchBoard({
   // step into the light as they're made (shown to the table at once);
   // a coin over each head as they vote; at the reveal the coins turn
   // over, green or red.
-  const council =
-    (revealing && voteToShow !== null) || (!over && !revealing && (state.phase === "team" || state.phase === "vote"));
+  // after the room, everyone stays in it until they choose to go on
+  const talking = !over && !revealing && (state.phase === "team" || state.phase === "vote");
+  const waitingToGather = talking && pieces.ready && pieces.watched.gathered !== state.round;
+  const council = (revealing && voteToShow !== null) || (talking && !waitingToGather);
   const draft = task === "propose" ? (current.team ?? state.team) : state.team;
   const councilTeam = revealing && voteToShow ? voteToShow.team : state.phase === "team" ? draft : state.team;
   // at the reveal each beam takes its player's vote: green or red
@@ -610,7 +612,18 @@ export function NightwatchBoard({
       </AppText>
     );
 
-  const hint = council ? (
+  const hint = waitingToGather ? (
+    <>
+      {company.map((line, i) => (
+        <AppText key={i} style={stageText.hint} numberOfLines={2}>
+          {line}
+        </AppText>
+      ))}
+      <AppText style={stageText.strong} numberOfLines={2}>
+        {t("nightwatch.rite.roomDone")}
+      </AppText>
+    </>
+  ) : council ? (
     councilHint
   ) : rite ? (
     riteHint
@@ -741,6 +754,18 @@ export function NightwatchBoard({
     ) : (
       <AppText style={stageText.strong}>{t("nightwatch.rite.pick")}</AppText>
     )
+  ) : waitingToGather ? (
+    <Button
+      label={t("nightwatch.rite.toTeam")}
+      size="lg"
+      style={styles.main}
+      onPress={() => {
+        tapHaptic();
+        pieces.mark({ gathered: state.round });
+      }}
+    />
+  ) : over && stage?.onward ? (
+    stage.onward
   ) : over ? (
     <AppText style={stageText.strong}>
       {state.winner !== null && myEnd

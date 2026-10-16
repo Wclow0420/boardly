@@ -1558,7 +1558,9 @@
       "holdName": "Hold to name {{name}}",
       "pickProphet": "Tap the one you think is the Prophet",
       "openLetter": "Tap the seal to open tonight's letter",
-      "picking": "{{name}} is picking {{size}} for the mission"
+      "picking": "{{name}} is picking {{size}} for the mission",
+      "toTeam": "Continue",
+      "roomDone": "The night's work is done. When you're ready, go on to the team."
     }
   },
   "profile": {

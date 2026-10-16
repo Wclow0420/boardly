@@ -1550,7 +1550,9 @@
       "holdName": "按住指认{{name}}",
       "pickProphet": "点你认为是先知的人",
       "openLetter": "点封蜡，打开今晚的信",
-      "picking": "{{name}}正在挑选{{size}}人出任务"
+      "picking": "{{name}}正在挑选{{size}}人出任务",
+      "toTeam": "继续",
+      "roomDone": "今晚的事已做完。准备好了就去组队。"
     }
   },
   "profile": {

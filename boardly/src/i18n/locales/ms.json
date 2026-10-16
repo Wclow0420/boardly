@@ -1555,7 +1555,9 @@
       "holdName": "Tahan untuk namakan {{name}}",
       "pickProphet": "Ketik orang yang anda rasa Peramal",
       "openLetter": "Ketik meterai untuk buka surat malam ini",
-      "picking": "{{name}} sedang memilih {{size}} orang untuk misi"
+      "picking": "{{name}} sedang memilih {{size}} orang untuk misi",
+      "toTeam": "Teruskan",
+      "roomDone": "Kerja malam ini sudah selesai. Bila sedia, teruskan ke pasukan."
     }
   },
   "profile": {

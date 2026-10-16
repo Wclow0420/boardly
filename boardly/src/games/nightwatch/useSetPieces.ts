@@ -16,9 +16,11 @@ interface Watched {
    *  late doesn't replay the past). */
   votes: number | null;
   missions: number | null;
+  /** The last night this player left their room for the team. */
+  gathered: number | null;
 }
 
-const FRESH: Watched = { dealt: false, letters: null, books: [], walked: null, votes: null, missions: null };
+const FRESH: Watched = { dealt: false, letters: null, books: [], walked: null, votes: null, missions: null, gathered: null };
 const keyFor = (sessionId: string) => `boardly.nightwatch.watched.${sessionId}`;
 
 /** Remembers on the device what has been watched, so each moment plays
