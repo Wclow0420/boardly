@@ -3,7 +3,7 @@
 // engraved/trim.ts for the shapes). Nothing here moves, so it costs
 // nothing per frame.
 
-import { useCallback, useEffect, useId, useState } from "react";
+import { memo, useCallback, useEffect, useId, useState } from "react";
 import { LinearGradient as Fade } from "expo-linear-gradient";
 import { StyleSheet, View, type LayoutChangeEvent } from "react-native";
 import Animated, {
@@ -184,7 +184,7 @@ export function SetJewel({
 
 /** A bezel laid over a whole piece (a button, a pill, a card), sized to
  *  it: put it after the piece's fill and before its content. */
-export function BezelOverlay({
+export const BezelOverlay = memo(function BezelOverlay({
   r,
   t = 3.5,
   metal = "gold",
@@ -221,7 +221,7 @@ export function BezelOverlay({
       ) : null}
     </View>
   );
-}
+});
 
 /** How long one sweep takes to cross, of each cycle. */
 const CROSS = 0.22;

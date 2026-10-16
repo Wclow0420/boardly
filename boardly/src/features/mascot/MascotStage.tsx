@@ -5,12 +5,13 @@
 // stand still with reduced motion, or when `paused`.
 
 import { Canvas, Image, Skia, type SkImage, type SkPicture } from "@shopify/react-native-skia";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { PixelRatio, Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
   useAnimatedStyle,
-  useFrameCallback,
+  cancelAnimation,
+  withRepeat,
   useReducedMotion,
   useSharedValue,
   withSequence,
@@ -121,10 +122,19 @@ export function MascotFigure({
   const layers = useMemo(() => bakedFigure(look, scale), [key, scale]);
 
   const offset = seedOf(seed) * 10;
+  // its own time, in seconds: a steady run on the UI thread, started once
+  // (an update to the screen doesn't restart it)
   const t = useSharedValue(offset);
-  useFrameCallback((frame) => {
-    t.set(offset + frame.timeSinceFirstFrame / 1000);
-  }, !still);
+  useEffect(() => {
+    if (still) {
+      cancelAnimation(t);
+      return;
+    }
+    const from = t.get();
+    const HOUR = 3600;
+    t.set(withRepeat(withTiming(from + HOUR, { duration: HOUR * 1000, easing: Easing.linear }), -1));
+    return () => cancelAnimation(t);
+  }, [still, t]);
 
   const height = (width * BOX[1]) / BOX[0];
   // the canvas area round the box, in points, and points of the rig in it

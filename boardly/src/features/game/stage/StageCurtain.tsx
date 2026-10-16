@@ -6,7 +6,7 @@
 // open. With reduce motion on, the scene simply changes.
 
 import { Canvas, Image as SkImage } from "@shopify/react-native-skia";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
@@ -50,6 +50,11 @@ export function StageCurtain({
   if (held.key === sceneKey && held.node !== children) setHeld({ key: sceneKey, node: children });
   const changing = held.key !== sceneKey;
 
+  // the latest onSwap, without restarting the close when it changes
+  const swapRef = useRef(onSwap);
+  useEffect(() => {
+    swapRef.current = onSwap;
+  });
   const shut = useSharedValue(0);
   const drop = useSharedValue(0);
 
@@ -57,7 +62,7 @@ export function StageCurtain({
     if (!changing) return;
     const swap = () => {
       setHeld({ key: sceneKey, node: null });
-      onSwap?.(sceneKey);
+      swapRef.current?.(sceneKey);
       // the new scene settles in behind the curtain, then it opens
       shut.set(
         withDelay(
@@ -79,7 +84,7 @@ export function StageCurtain({
         if (done) scheduleOnRN(closed);
       }),
     );
-  }, [changing, sceneKey, still, shut, drop, onSwap]);
+  }, [changing, sceneKey, still, shut, drop]);
 
   const half = w / 2 + OVERLAP;
   const left = useAnimatedStyle(() => ({

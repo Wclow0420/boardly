@@ -6,7 +6,7 @@
 // with a dagger — and then what follows a game (coins, badges, play
 // again), handed in by the game screen.
 
-import { Canvas, Group, Image as SkImage, Rect, Shader, Skia } from "@shopify/react-native-skia";
+import { Canvas, Group, Image as SkImage, Rect, Shader } from "@shopify/react-native-skia";
 import { useEffect, useMemo, type ReactNode } from "react";
 import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import Animated, {
@@ -33,6 +33,7 @@ import { Burst } from "../lantern/Lantern";
 import { sideOf, type NightwatchState } from "../logic";
 import { MiniRoleCard } from "../RoleCardFace";
 import { sealArt } from "./sealArt";
+import { shader } from "@/components/iso/shaders";
 
 const STAGE_H = 230;
 const CARD = 64;
@@ -64,7 +65,7 @@ export function Ending({
   const cy = STAGE_H / 2 + 4;
   const size = 150;
   const image = bakedSvg(`manor-seal|${good ? "whole" : "broken"}`, size, size, () => sealArt(!good));
-  const aura = useMemo(() => Skia.RuntimeEffect.Make(AURA), []);
+  const aura = shader(AURA);
   const light = good ? LIGHT.seal : LIGHT.bad;
   const colors = useMemo(() => light.aura.map(rgb), [light]);
 

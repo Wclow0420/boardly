@@ -26,6 +26,7 @@ import { Shaft } from "./bursts";
 import { NOISE } from "./noise";
 import type { Effect } from "./kit";
 import { Dust } from "./weather";
+import { shader } from "./shaders";
 
 // uv.x runs -0.5..0.5 across the flame, uv.y 0..1 from its foot up
 const FIRE = `
@@ -90,7 +91,7 @@ const useOffset = (clock: SharedValue<number>, offset: number) =>
 
 function Plume({ x, y, width, height, clock, sksl }: PlumeProps & { sksl: string }) {
   const seconds = useOffset(clock, (x * 7.13 + y * 3.71) % 10);
-  const source = useMemo(() => Skia.RuntimeEffect.Make(sksl), [sksl]);
+  const source = shader(sksl);
   const uniforms = useDerivedValue(() => ({
     t: seconds.value,
     foot: [x, y],

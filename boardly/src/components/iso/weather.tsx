@@ -3,11 +3,11 @@
 // flash of lightning. Like the effects, each keeps time by the scene's
 // clock (useIsoClock) and is placed in the picture's own units.
 
-import { useMemo } from "react";
-import { RadialGradient, Rect, Shader, Skia, vec } from "@shopify/react-native-skia";
+import { RadialGradient, Rect, Shader, vec } from "@shopify/react-native-skia";
 import { useDerivedValue, type SharedValue } from "react-native-reanimated";
 
 import { NOISE } from "./noise";
+import { shader } from "./shaders";
 
 /** The part of the picture a weather fills. */
 export interface Area {
@@ -105,7 +105,7 @@ function Weather({
   sksl,
   amount,
 }: Area & { sksl: string; amount?: number }) {
-  const source = useMemo(() => Skia.RuntimeEffect.Make(sksl), [sksl]);
+  const source = shader(sksl);
   const uniforms = useDerivedValue(() => ({
     t: clock.value,
     origin: [x, y],

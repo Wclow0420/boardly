@@ -31,10 +31,11 @@ import {
   type SkPaint,
 } from "@shopify/react-native-skia";
 import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, useMemo } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
+  cancelAnimation,
   useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
@@ -50,7 +51,7 @@ import { Emblem } from "@/components/icons";
 import { NOISE } from "@/components/iso/noise";
 import { useIsoClock } from "@/components/iso";
 import { AppText, BezelOverlay, useBox } from "@/components/ui";
-import { MascotFigure } from "@/features/mascot/MascotStage";
+import { MascotFigure, lookKey } from "@/features/mascot/MascotStage";
 import { topOf, type Look } from "@/features/mascot/dress";
 import { BOX } from "@/features/mascot/rig";
 import { useOnScreen } from "@/hooks/useOnScreen";
@@ -58,6 +59,7 @@ import { fontFamily } from "@/theme";
 import { heavyHaptic } from "@/utils/haptics";
 import { Burst, Motes } from "./light";
 import { floorArt, rigArt, RIG_Y } from "./lineupArt";
+import { shader } from "@/components/iso/shaders";
 
 export interface Standing {
   seat: number;
@@ -166,7 +168,28 @@ export function StageLineup({
   );
 }
 
-type Place = Standing & { x: number; y: number; size: number; order: number; lamp: number };
+type Place = Standing & { x: number; y: number; size: number; order: number };
+
+/** Where everyone stands on a stage w × h. A big table stands in two
+ *  rows: the back one further up the boards and smaller, each of them in
+ *  a gap of the row in front. */
+function placeAll(people: Standing[], w: number, h: number): Place[] {
+  const two = people.length > 5;
+  const rows = two ? [people.slice(0, Math.ceil(people.length / 2)), people.slice(Math.ceil(people.length / 2))] : [people];
+  const across = w * 0.92;
+  return rows.flatMap((row, r) => {
+    const back = two && r === 0;
+    const size = back ? Math.min(54, across / (row.length + 1.2)) : Math.min(84, across / (row.length + 0.4));
+    const y = back ? h - 158 : h - 60;
+    return row.map((person, i) => ({
+      ...person,
+      x: w * 0.04 + (back ? ((i + 1) * across) / (row.length + 1) : ((i + 0.5) * across) / row.length),
+      y,
+      size,
+      order: r * 10 + i,
+    }));
+  });
+}
 
 function Stage({
   people,
@@ -201,30 +224,25 @@ function Stage({
   const floorH = Math.min(two ? 220 : 170, h * 0.48);
   const floorTop = h - floorH;
   const floor = bakedSvg("stage-lineup-floor", w, floorH, () => floorArt(w, floorH));
-  // a big table stands in two rows: the back one further up the boards
-  // and smaller, each of them in a gap of the row in front
-  const rows = two ? [people.slice(0, Math.ceil(people.length / 2)), people.slice(Math.ceil(people.length / 2))] : [people];
-  const across = w * 0.92;
-  const places: Place[] = rows.flatMap((row, r) => {
-    const back = two && r === 0;
-    const size = back ? Math.min(54, across / (row.length + 1.2)) : Math.min(84, across / (row.length + 0.4));
-    const y = back ? h - 158 : h - 60;
-    return row.map((person, i) => ({
-      ...person,
-      x: w * 0.04 + (back ? ((i + 1) * across) / (row.length + 1) : ((i + 0.5) * across) / row.length),
-      y,
-      size,
-      order: r * 10 + i,
-      lamp: 0,
-    }));
-  });
-  // the lamps along the rig, left to right
+  // where everyone stands, worked out again only when who's there or the
+  // stage's size changes (the board sends new objects every update)
+  const cast = people.map((p) => `${p.seat}:${p.name}:${lookKey(p.look)}`).join("|");
+  const places: Place[] = useMemo(
+    () => placeAll(people, w, h),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `cast` stands for `people`
+    [cast, w, h],
+  );
   const lamps = [...places].sort((a, b) => a.x - b.x);
-  lamps.forEach((p, i) => (p.lamp = i));
   const rig = bakedSvg(`stage-lineup-rig|${lamps.map((p) => Math.round(p.x)).join(",")}`, w, RIG_Y + 30, () =>
     rigArt(w, lamps.map((p) => p.x)),
   );
 
+  // the latest onPick, so the walkers needn't re-render when it changes
+  const pickRef = useRef(onPick);
+  useEffect(() => {
+    pickRef.current = onPick;
+  });
+  const pick = useCallback((seat: number) => pickRef.current?.(seat), []);
   const target = places.find((p) => p.seat === (struck ?? aim));
   const flow = useDerivedValue(
     () => (hold && aim !== null && struck === null ? Math.min(1, hold.value * 1.5) : 0),
@@ -248,7 +266,7 @@ function Stage({
         <Canvas style={StyleSheet.absoluteFill}>
           {floor ? <SkImage image={floor} x={0} y={floorTop} width={w} height={floorH} /> : null}
           {places.map((p) => (
-            <Beam key={p.seat} place={p} lampY={lampY} clock={clock} mode={lights[p.seat] ?? "lit"} />
+            <Beam key={p.seat} x={p.x} y={p.y} size={p.size} seat={p.seat} lampY={lampY} clock={clock} mode={lights[p.seat] ?? "lit"} />
           ))}
           <Dust places={places} lights={lights} lampY={lampY} clock={clock} />
           {rig ? <SkImage image={rig} x={0} y={0} width={w} height={RIG_Y + 30} /> : null}
@@ -280,7 +298,7 @@ function Stage({
           crowned={p.seat === crown}
           plate={plates[p.seat]}
           plateDelay={Math.max(0, turned.indexOf(p.seat)) * 200}
-          onPick={() => onPick?.(p.seat)}
+          onPick={pick}
         />
       ))}
       {target && struck !== null ? (
@@ -296,8 +314,24 @@ function Stage({
 }
 
 /** One lamp's beam and its pool on the boards. */
-function Beam({ place, lampY, clock, mode }: { place: Place; lampY: number; clock: SharedValue<number>; mode: Light }) {
-  const source = useMemo(() => Skia.RuntimeEffect.Make(BEAM), []);
+function Beam({
+  x,
+  y,
+  size,
+  seat,
+  lampY,
+  clock,
+  mode,
+}: {
+  x: number;
+  y: number;
+  size: number;
+  seat: number;
+  lampY: number;
+  clock: SharedValue<number>;
+  mode: Light;
+}) {
+  const source = shader(BEAM);
   const level = useSharedValue(LEVEL[mode]);
   const red = useSharedValue(mode === "red" ? 1 : 0);
   const green = useSharedValue(mode === "green" ? 1 : 0);
@@ -306,21 +340,24 @@ function Beam({ place, lampY, clock, mode }: { place: Place; lampY: number; cloc
     red.set(withTiming(mode === "red" ? 1 : 0, { duration: 380 }));
     green.set(withTiming(mode === "green" ? 1 : 0, { duration: 380 }));
   }, [mode, level, red, green]);
-  const half = place.size * 0.66;
-  const uniforms = useDerivedValue(() => ({
-    t: clock.value,
-    top: [place.x, lampY],
-    topHalf: 7,
-    bottomY: place.y,
-    bottomHalf: half,
-    color: TINT.lit.map((v, i) => v + (TINT.red[i] - v) * red.value + (TINT.green[i] - v) * green.value),
-    // a stage light's faint unsteadiness
-    level: level.value * (0.92 + 0.05 * Math.sin(clock.value * 5.3 + place.seat * 1.7) + 0.03 * Math.sin(clock.value * 17 + place.seat)),
-    seed: place.seat * 7.3,
-  }));
+  const half = size * 0.66;
+  const uniforms = useDerivedValue(
+    () => ({
+      t: clock.value,
+      top: [x, lampY],
+      topHalf: 7,
+      bottomY: y,
+      bottomHalf: half,
+      color: TINT.lit.map((v, i) => v + (TINT.red[i] - v) * red.value + (TINT.green[i] - v) * green.value),
+      // a stage light's faint unsteadiness
+      level: level.value * (0.92 + 0.05 * Math.sin(clock.value * 5.3 + seat * 1.7) + 0.03 * Math.sin(clock.value * 17 + seat)),
+      seed: seat * 7.3,
+    }),
+    [x, y, half, lampY, seat],
+  );
   if (!source) return null;
   return (
-    <Rect x={place.x - half * 1.2} y={lampY} width={half * 2.4} height={place.y - lampY + half * 0.4} blendMode="screen">
+    <Rect x={x - half * 1.2} y={lampY} width={half * 2.4} height={y - lampY + half * 0.4} blendMode="screen">
       <Shader source={source} uniforms={uniforms} />
     </Rect>
   );
@@ -346,6 +383,7 @@ function Dust({
     return p;
   }, []);
   const beams = places.map((p) => ({ x: p.x, y: p.y, half: p.size * 0.6, level: LEVEL[lights[p.seat] ?? "lit"], seat: p.seat }));
+  const beamsKey = JSON.stringify(beams);
   const picture = useDerivedValue(() => {
     const recorder = Skia.PictureRecorder();
     const c = recorder.beginRecording(Skia.XYWHRect(-2000, -2000, 4000, 4000));
@@ -367,7 +405,7 @@ function Dust({
       }
     }
     return recorder.finishRecordingAsPicture();
-  });
+  }, [beamsKey, lampY]);
   return <Picture picture={picture} />;
 }
 
@@ -464,7 +502,7 @@ function NamePlate({
 
 /** A mascot walking out to its place, waddling, then standing; toppling
  *  over into shadow when struck. */
-function Walker({
+const Walker = memo(function Walker({
   person,
   from,
   delay,
@@ -487,7 +525,7 @@ function Walker({
   crowned: boolean;
   plate?: Plate;
   plateDelay: number;
-  onPick: () => void;
+  onPick: (seat: number) => void;
 }) {
   const { x, y, size } = person;
   const height = (size * BOX[1]) / BOX[0];
@@ -498,8 +536,13 @@ function Walker({
   const sway = useSharedValue(0);
   useEffect(() => {
     walk.set(withDelay(delay, withTiming(1, { duration: 1300, easing: Easing.out(Easing.quad) })));
+  }, [walk, delay]);
+  // only a crown sways
+  useEffect(() => {
+    if (!crowned) return;
     sway.set(withRepeat(withSequence(withTiming(1, { duration: 1400 }), withTiming(-1, { duration: 1400 })), -1, true));
-  }, [walk, sway, delay]);
+    return () => cancelAnimation(sway);
+  }, [crowned, sway]);
   useEffect(() => {
     shade.set(withTiming(shadeOf(light), { duration: 350 }));
   }, [light, shade]);
@@ -536,7 +579,7 @@ function Walker({
         accessibilityLabel={person.name}
         accessibilityState={{ selected: light === "lit" || light === "red", disabled: !selectable }}
         disabled={!selectable}
-        onPress={onPick}
+        onPress={() => onPick(person.seat)}
         hitSlop={6}
         style={StyleSheet.absoluteFill}
       >
@@ -555,7 +598,7 @@ function Walker({
       </View>
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   walker: { position: "absolute", left: 0, top: 0 },

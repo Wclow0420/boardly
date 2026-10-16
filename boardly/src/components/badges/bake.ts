@@ -10,13 +10,23 @@ import { toSvg, toSvgBody, type EmblemData } from "@/components/engraved/emblem"
 import { emblemData } from "@/components/icons";
 import type { BadgeArt, BadgeStyle, BadgeTier } from "./types";
 
-const images = new Map<string, SkImage | null>();
+const images = new Map<string, { image: SkImage | null; bytes: number }>();
+let held = 0;
+/** How much baked art is kept, in bytes of pixels: past it the images
+ *  least recently asked for are let go (anything still on screen keeps
+ *  its own). Keeps a long evening of games from filling the memory. */
+const BUDGET = 96 * 1024 * 1024;
 
 /** `markup` (w × h) baked into an image, crisp at the screen's density;
- *  made once per `key`. */
+ *  made once per `key` and size, and kept while there's room. */
 export function bakedSvg(key: string, w: number, h: number, markup: () => string): SkImage | null {
   const k = `${key}|${Math.round(w)}x${Math.round(h)}`;
-  if (images.has(k)) return images.get(k)!;
+  const hit = images.get(k);
+  if (hit) {
+    images.delete(k);
+    images.set(k, hit);
+    return hit.image;
+  }
   const scale = Math.max(2, PixelRatio.get());
   // the markup's own size would win over the size asked for: say w × h
   const svg = Skia.SVG.MakeFromString(
@@ -31,7 +41,14 @@ export function bakedSvg(key: string, w: number, h: number, markup: () => string
     surface.flush();
     image = surface.makeImageSnapshot();
   }
-  images.set(k, image);
+  const bytes = Math.ceil(w * scale) * Math.ceil(h * scale) * 4;
+  images.set(k, { image, bytes });
+  held += bytes;
+  while (held > BUDGET && images.size > 1) {
+    const [oldest, entry] = images.entries().next().value!;
+    images.delete(oldest);
+    held -= entry.bytes;
+  }
   return image;
 }
 

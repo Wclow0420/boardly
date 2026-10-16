@@ -266,6 +266,9 @@ export function RoomScene({
   mascots,
 }: RoomSceneProps) {
   const { colors } = useTheme();
+  // the server sends new copies of these arrays with every update: the
+  // scene is rebuilt only when what's in them changes
+  const walls = JSON.stringify([collapsed, lockedDoor]);
   const scene = useMemo(
     () =>
       buildScene(room, {
@@ -274,7 +277,8 @@ export function RoomScene({
         lockedDoor,
         live: true,
       }),
-    [room, colors.primary, collapsed, lockedDoor],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `walls` stands for both
+    [room, colors.primary, walls],
   );
   const { touch, motion } = scene;
 

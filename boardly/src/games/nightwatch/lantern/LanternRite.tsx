@@ -133,10 +133,12 @@ function Choose({
     side === locked ? 0.3 : picked && picked !== side ? 0.4 : 1;
   const goodShown = useSharedValue(shownOf("good"));
   const badShown = useSharedValue(shownOf("bad"));
+  const goodTo = shownOf("good");
+  const badTo = shownOf("bad");
   useEffect(() => {
-    goodShown.set(withTiming(shownOf("good"), { duration: 350 }));
-    badShown.set(withTiming(shownOf("bad"), { duration: 350 }));
-  });
+    goodShown.set(withTiming(goodTo, { duration: 350 }));
+    badShown.set(withTiming(badTo, { duration: 350 }));
+  }, [goodTo, badTo, goodShown, badShown]);
   const goodLit = useSharedValue(locked === "good" ? 0 : 0.6);
   const badLit = useSharedValue(locked === "bad" ? 0 : 0.5);
   // full while held; once cast it settles to a steady glow
@@ -299,6 +301,10 @@ function Gather({
 }) {
   const seats = view.seats;
   const reveal = view.kind === "reveal" ? view : null;
+  // the board hands over a new object every update: what matters is
+  // whether it's a reveal, and of what
+  const revealing = reveal !== null;
+  const outcome = reveal?.result ?? null;
   const done = seats.filter((seat) => seat.done).length;
   const share = seats.length ? done / seats.length : 0;
   const s = Math.min((h - 124) / LANTERN_H, (w * 0.46) / LANTERN_W);
@@ -318,7 +324,8 @@ function Gather({
   const sealPower = useSharedValue(0);
   const resultIn = useSharedValue(0);
   const sealShown = useDerivedValue(
-    () => appear.value * (reveal ? 1 - resultIn.value : 1),
+    () => appear.value * (revealing ? 1 - resultIn.value : 1),
+    [revealing],
   );
   const resultPower = useSharedValue(0);
   const flow = useSharedValue(0);
@@ -329,7 +336,7 @@ function Gather({
 
   // each player who finishes sends a stream of light up into it
   useEffect(() => {
-    if (reveal) return;
+    if (revealing) return;
     sealLit.set(withTiming(0.3 + 0.7 * share, { duration: 700 }));
     if (done > 0) {
       flow.set(
@@ -345,11 +352,11 @@ function Gather({
         ),
       );
     }
-  }, [done, share, reveal, sealLit, flow, sealPower]);
+  }, [done, share, revealing, sealLit, flow, sealPower]);
 
   // the reveal: everything pours in, then it breaks into the result
   useEffect(() => {
-    if (!reveal) return;
+    if (!outcome) return;
     const pour = 1400;
     sealLit.set(withTiming(1, { duration: pour }));
     sealPower.set(
@@ -371,11 +378,11 @@ function Gather({
     );
     const thud = setTimeout(() => {
       heavyHaptic();
-      if (reveal.result === "good") successHaptic();
+      if (outcome === "good") successHaptic();
       else errorHaptic();
     }, pour);
     return () => clearTimeout(thud);
-  }, [reveal, sealLit, sealPower, flow, resultIn, resultPower, burst]);
+  }, [outcome, sealLit, sealPower, flow, resultIn, resultPower, burst]);
 
   const resultLit = useDerivedValue(() => resultIn.value);
   const first = candles[0];

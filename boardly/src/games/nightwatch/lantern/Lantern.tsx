@@ -12,7 +12,6 @@ import {
   RadialGradient,
   Rect,
   Shader,
-  Skia,
   vec,
 } from "@shopify/react-native-skia";
 import { useEffect, useMemo } from "react";
@@ -37,6 +36,7 @@ import {
   type LanternKind,
 } from "./art";
 import { AURA, FLAME, LIGHT, rgb } from "./fx";
+import { shader } from "@/components/iso/shaders";
 
 export { Burst, Motes } from "@/features/game/stage/light";
 
@@ -89,8 +89,8 @@ export function Lantern({
   const chain =
     drop > 0 ? bakedSvg(`lantern-chain|${kind}|${links}`, 8 * scale, (links * LINK + 2) * scale, () => chainStrip(kind, links)) : null;
   const sink = drop / scale;
-  const aura = useMemo(() => Skia.RuntimeEffect.Make(AURA), []);
-  const flame = useMemo(() => Skia.RuntimeEffect.Make(FLAME), []);
+  const aura = shader(AURA);
+  const flame = shader(FLAME);
   const colors = useMemo(
     () => ({
       flame: light.flame.map(rgb),
@@ -274,7 +274,7 @@ export function Candle({
     tint.set(withDelay(delay, withTiming(tintTo, { duration: 600 })));
   }, [tintTo, delay, tint]);
   const image = bakedSvg("manor-candle", 24, 40, () => CANDLE);
-  const flame = useMemo(() => Skia.RuntimeEffect.Make(FLAME), []);
+  const flame = shader(FLAME);
   // gold, and what it turns to as the vote shows: green or red
   const tones = useMemo(
     () => ({

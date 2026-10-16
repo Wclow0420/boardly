@@ -1,4 +1,4 @@
-import { Canvas, Image as SkImage } from "@shopify/react-native-skia";
+import { Canvas, Group, Image as SkImage, rect } from "@shopify/react-native-skia";
 import { LinearGradient } from "expo-linear-gradient";
 import type { ReactNode } from "react";
 import {
@@ -100,10 +100,24 @@ function Panel({ w, h, look }: { w: number; h: number; look: PopupLook }) {
   const fill = [colors.card, colors.background] as const;
   const glow = look.glow ?? PLAIN.glow!;
   const jewel = look.jewel ?? "ruby";
-  const image = bakedSvg(`gamepopup|${fill.join()}|${glow}|${jewel}`, w, h, () => popupPanel(w, h, fill, glow, jewel));
+  // baked in steps of height, not once for every height its content
+  // reaches: the top of the panel is drawn down to just above the card's
+  // foot, and the panel's own foot (its corners) pinned to the card's
+  const bh = Math.ceil(h / 64) * 64;
+  const image = bakedSvg(`gamepopup|${fill.join()}|${glow}|${jewel}`, w, bh, () => popupPanel(w, bh, fill, glow, jewel));
+  const foot = Math.min(72, h / 2);
   return (
     <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
-      {image ? <SkImage image={image} x={0} y={0} width={w} height={h} /> : null}
+      {image ? (
+        <>
+          <Group clip={rect(0, 0, w, h - foot)}>
+            <SkImage image={image} x={0} y={0} width={w} height={bh} />
+          </Group>
+          <Group clip={rect(0, h - foot, w, foot)}>
+            <SkImage image={image} x={0} y={h - bh} width={w} height={bh} />
+          </Group>
+        </>
+      ) : null}
     </Canvas>
   );
 }

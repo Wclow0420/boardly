@@ -289,15 +289,26 @@ export function ManorMap({
     if (tint.fill || tint.stroke) tints[room] = tint;
   });
 
-  const shapes = manorShapes({
-    accent: colors.primary,
-    collapsed: state.collapsed,
-    lockedDoor: tonight ? state.lockedDoor : null,
-    // the canvas lights them instead
-    secretDoors: [],
-    tints,
-  });
-  const trail = footprints(wayWent(state, mySeat, round), PAPER);
+  // drawn again only when what's on it changes, not on every update
+  const lockedDoor = tonight ? state.lockedDoor : null;
+  const drawn = JSON.stringify([colors.primary, state.collapsed, lockedDoor, tints]);
+  const shapes = useMemo(
+    () =>
+      manorShapes({
+        accent: colors.primary,
+        collapsed: state.collapsed,
+        lockedDoor,
+        // the canvas lights them instead
+        secretDoors: [],
+        tints,
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `drawn` stands for them all
+    [drawn],
+  );
+  const walked = wayWent(state, mySeat, round);
+  const walkedKey = JSON.stringify(walked);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `walkedKey` stands for it
+  const trail = useMemo(() => footprints(walked, PAPER), [walkedKey]);
   const passages = state.doors.map(
     ([a, b]) => [floorPoint(a, 0.5, 0.5, 0.02), floorPoint(b, 0.5, 0.5, 0.02)] as const,
   );

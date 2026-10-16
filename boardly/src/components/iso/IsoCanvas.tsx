@@ -42,13 +42,16 @@ const CanvasSize = createContext<{ width: number; height: number; scale: number 
  *  draw in the picture's units. */
 export function IsoCanvas({ width, height, style, children }: IsoCanvasProps) {
   const [scale, setScale] = useState(0);
+  // one object for as long as the size holds: the layers below bake
+  // their image once per size, not once per render
+  const size = useMemo(() => ({ width, height, scale }), [width, height, scale]);
   return (
     <View
       style={[{ width: "100%", aspectRatio: width / height }, style]}
       onLayout={(event) => setScale(event.nativeEvent.layout.width / width)}
     >
       {scale > 0 ? (
-        <CanvasSize.Provider value={{ width, height, scale }}>
+        <CanvasSize.Provider value={size}>
           <Canvas style={{ flex: 1 }}>
             <Group transform={[{ scale }]}>{children}</Group>
           </Canvas>

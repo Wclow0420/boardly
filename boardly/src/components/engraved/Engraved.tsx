@@ -2,7 +2,7 @@
 // gradient, engraved, and outlined in ink. Icons and emblems are built
 // from these (see ./icons).
 
-import { useId, type ReactNode } from "react";
+import { memo, useId, type ReactNode } from "react";
 import Svg, {
   Circle,
   Defs,
@@ -221,7 +221,7 @@ export function EmblemParts({ data, color }: { data: EmblemData; color?: string 
 
 /** An emblem written as data (see ./emblem), at `size` points; "tint"
  *  parts take `color`. */
-export function EmblemGlyph({
+export const EmblemGlyph = memo(function EmblemGlyph({
   data,
   size,
   color,
@@ -239,4 +239,4 @@ export function EmblemGlyph({
       <EmblemParts data={data} color={color} />
     </EmblemSvg>
   );
-}
+});
