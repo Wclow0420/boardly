@@ -45,6 +45,7 @@ Full state (server only — clients get `view_for`):
   "endVotes": [],                       # endless: seats voting to stop
   "rerolls": [{"seat": 1, "dice": [...]}],  # this round's 散骰 rerolls
   "reveal": null | {...},               # how the last round ended
+  "counterWins": [0, 1, 0],             # counter-splits (反劈) won, by seat
   "phase": "bidding" | "split" | "finished",
   "winner": null | seat,
   "winners": null | [seats]             # endless: fewest cups (ties)
@@ -63,7 +64,7 @@ Moves:
 
 import random
 
-from app.games.base import BaseGame, GameError, Badge, QUICK_WINS
+from app.games.base import BaseGame, GameError, Badge, QUICK_WINS, RARE
 
 DICE_EACH = 5
 KNOCKOUT_CUPS = 5
@@ -102,7 +103,20 @@ class LiarsDice(BaseGame):
     tag = "party"
 
     badges = [
+        # every win
         Badge("liarsdice.bluffer", QUICK_WINS),
+        # win without drinking a single cup
+        Badge(
+            "liarsdice.sober",
+            RARE,
+            lambda o: o.won and (o.facts or {}).get("cups") == 0,
+        ),
+        # win a counter-split (反劈), the four-cup showdown
+        Badge(
+            "liarsdice.counter",
+            RARE,
+            lambda o: (o.facts or {}).get("counterWins", 0) > 0,
+        ),
     ]
     options = {"mode": ["knockout", "endless"]}
 
@@ -133,6 +147,7 @@ class LiarsDice(BaseGame):
             "endVotes": [],
             "rerolls": [],
             "reveal": None,
+            "counterWins": [0] * num_players,
             "phase": "bidding",
             "winner": None,
             "winners": None,
@@ -258,11 +273,16 @@ class LiarsDice(BaseGame):
 
         cups = list(state["cups"])
         cups[loser] += drink
+        counter_wins = list(state.get("counterWins") or [0] * state["numPlayers"])
+        if kind == "counter":
+            # the counter-split's winner: whichever of the two didn't drink
+            counter_wins[bid["seat"] if loser == challenger else challenger] += 1
         if not self._endless(state):
             cups[loser] = min(KNOCKOUT_CUPS, cups[loser])
         state = {
             **state,
             "cups": cups,
+            "counterWins": counter_wins,
             "phase": "bidding",
             "split": None,
             "reveal": {
@@ -358,6 +378,16 @@ class LiarsDice(BaseGame):
         if state["winner"] is None:
             return {"draw": True}
         return {"winnerSeat": state["winner"]}
+
+    def player_outcome(self, state: dict, seat: int) -> dict:
+        """For the badges: cups drunk, and counter-splits won."""
+        wins = state.get("counterWins") or []
+        return {
+            "facts": {
+                "cups": state["cups"][seat],
+                "counterWins": wins[seat] if seat < len(wins) else 0,
+            }
+        }
 
     def on_abandon(self, state: dict, seat: int) -> dict:
         if state["phase"] == "finished":

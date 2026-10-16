@@ -18,10 +18,10 @@ export type RuleSection = (typeof RULE_SECTIONS)[number];
 /** Each section's emblem, on its tab and its title. */
 export const SECTION_EMBLEM: Record<RuleSection, string> = {
   overview: "📖",
-  teams: "⚔️",
+  teams: "🛡️",
   roles: "🎭",
   play: "🎲",
-  actions: "👆",
+  actions: "👋",
   rooms: "🚪",
   events: "🌙",
   counts: "👥",

@@ -1,6 +1,7 @@
 """Liar's Dice (大话骰) engine tests plus API tests for lobby options."""
 
 import random
+from types import SimpleNamespace
 
 import pytest
 
@@ -215,6 +216,40 @@ def test_knockout_five_cups_and_out_last_one_wins():
     state = open_(state, 0)                      # true: seat 0's fifth cup
     assert state["phase"] == "finished" and state["winner"] == 2
     assert game.get_result(state) == {"winnerSeat": 2}
+
+
+# ------------------------------------------------------------ badges
+
+
+def _badge(key):
+    return next(b for b in game.badges if b.key == key)
+
+
+def _row(state, seat, won):
+    return SimpleNamespace(won=won, abandoned=False, side=None, role=None,
+                           **game.player_outcome(state, seat))
+
+
+def test_badges_count_cups_and_counter_splits():
+    # seat 1 splits a true call, seat 0 counters and wins
+    state = bid(start(THREE), 0, 4, 5)  # 5s: four plus two wild 1s: true
+    state = respond(split(state, 1), 0, counter=True)
+    assert state["reveal"]["loser"] == 1 and state["counterWins"] == [1, 0, 0]
+    # a counter-split lost doesn't count for the one who split
+    state = bid({**state, "dice": THREE, "turn": 0}, 0, 7, 6)  # a lie
+    state = respond(split(state, 2), 0, counter=True)
+    assert state["reveal"]["loser"] == 0 and state["counterWins"] == [1, 0, 1]
+
+    counter, sober = _badge("liarsdice.counter"), _badge("liarsdice.sober")
+    assert counter.match(_row(state, 0, False)) and counter.match(_row(state, 2, False))
+    assert not counter.match(_row(state, 1, False))
+    # seat 2 has drunk nothing: a sober win; seat 0 has drunk four
+    assert state["cups"] == [4, 4, 0]
+    assert sober.match(_row(state, 2, True)) and not sober.match(_row(state, 2, False))
+    assert not sober.match(_row(state, 0, True))
+    # games saved before counter-splits were counted
+    old = {k: v for k, v in state.items() if k != "counterWins"}
+    assert game.player_outcome(old, 0)["facts"] == {"cups": 4, "counterWins": 0}
 
 
 def test_endless_never_knocks_anyone_out():

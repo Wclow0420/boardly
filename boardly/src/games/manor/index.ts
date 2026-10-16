@@ -3,6 +3,7 @@ import type { GameDefinition } from "../types";
 import { BADGE_FRAMES } from "./badgeFrames";
 import { ManorBoard } from "./ManorBoard";
 import { currentSeat, taskFor, type ManorState } from "./logic";
+import { MANOR_RULES } from "./rules";
 
 // Candlelit night: deep plum, warm amber highlights.
 const SKIN_COLORS = {
@@ -41,6 +42,7 @@ export const manor: GameDefinition<ManorState> = {
   name: "Midnight Manor",
   minPlayers: 4,
   maxPlayers: 8,
+  rulePages: MANOR_RULES,
   Board: ManorBoard,
   currentSeat,
   layout: "custom",

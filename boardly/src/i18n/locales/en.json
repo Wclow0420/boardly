@@ -710,6 +710,7 @@
         "lead": "The house is 3 × 3 rooms. You walk up, down, left or right — never diagonally.",
         "mission": "Each night's mission room is drawn at random (never the Hall, never twice in a row). The next one is announced a night early.",
         "use": "After the patrol, use your room. A room that needs an exact number of people works with no other number.",
+        "tip": "Plan your patrol a night ahead: the next mission room is already known, and the team can walk at most two rooms to it.",
         "needs": {
           "one": "Alone",
           "two": "Exactly 2",

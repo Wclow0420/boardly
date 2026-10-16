@@ -3,6 +3,7 @@ import type { GameDefinition } from "../types";
 import { BADGE_FRAMES } from "./badgeFrames";
 import { LiarsDiceBoard } from "./LiarsDiceBoard";
 import { currentSeat, taskFor, type LiarsDiceState } from "./logic";
+import { LIARSDICE_RULES } from "./rules";
 
 // Late-night bar: dark wood, neon red, beer gold.
 const SKIN_COLORS = {
@@ -41,6 +42,7 @@ export const liarsdice: GameDefinition<LiarsDiceState> = {
   name: "Liar's Dice",
   minPlayers: 2,
   maxPlayers: 10,
+  rulePages: LIARSDICE_RULES,
   Board: LiarsDiceBoard,
   currentSeat,
   layout: "stage",
@@ -52,6 +54,8 @@ export const liarsdice: GameDefinition<LiarsDiceState> = {
   needsMe: (state, mySeat) => taskFor(state, mySeat) !== null,
   badges: {
     "liarsdice.bluffer": { glyph: G.die, emoji: "🎲", loop: "tumble" },
+    "liarsdice.sober": { glyph: G.cup, emoji: "🥤", loop: "bob" },
+    "liarsdice.counter": { glyph: G.target, emoji: "🥊", loop: "pulse" },
   },
   badgeFrames: BADGE_FRAMES,
 };

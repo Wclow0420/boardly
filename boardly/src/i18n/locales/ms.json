@@ -710,6 +710,7 @@
         "lead": "Rumah ini 3 × 3 bilik. Anda berjalan ke atas, bawah, kiri atau kanan — tidak pepenjuru.",
         "mission": "Bilik misi setiap malam dicabut secara rawak (bukan Dewan, tidak dua kali berturut-turut). Bilik seterusnya diumumkan semalam lebih awal.",
         "use": "Selepas rondaan, guna bilik anda. Bilik yang perlukan bilangan orang tertentu tidak berfungsi dengan bilangan lain.",
+        "tip": "Rancang rondaan semalam lebih awal: bilik misi seterusnya sudah diketahui, dan pasukan hanya boleh berjalan paling jauh dua bilik ke sana.",
         "needs": {
           "one": "Bersendirian",
           "two": "Tepat 2",

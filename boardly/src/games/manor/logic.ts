@@ -147,14 +147,30 @@ export interface ManorState {
   ownerRoom: number | null;
 }
 
-export const PLAYER_COUNTS = [4, 5, 6, 7, 8];
-export const INTRUDERS_BY_COUNT: Record<number, number> = {
-  4: 1,
-  5: 2,
-  6: 2,
-  7: 3,
-  8: 3,
+/** Who is at the table at each size — mirrors ROLE_SETS in game.py. */
+export const ROLE_SETS: Record<number, Role[]> = {
+  4: ["butler", "guard", "guest", "intruder"],
+  5: ["butler", "guard", "guest", "intruder", "intruder"],
+  6: ["butler", "guard", "guest", "guest", "intruder", "intruder"],
+  7: ["butler", "guard", "guest", "guest", "intruder", "intruder", "intruder"],
+  8: ["butler", "guard", "guest", "guest", "guest", "intruder", "intruder", "intruder"],
 };
+export const PLAYER_COUNTS = Object.keys(ROLE_SETS).map(Number);
+/** How many of a role sit at a table of `players`. */
+export const roleCount = (players: number, role: Role) =>
+  ROLE_SETS[players].filter((r) => r === role).length;
+export const INTRUDERS_BY_COUNT: Record<number, number> = Object.fromEntries(
+  PLAYER_COUNTS.map((n) => [n, roleCount(n, "intruder")])
+);
+/** Rooms with a camera (they all start the night broken). */
+export const CAMERA_ROOMS = [1, 2, 3, 7, 8];
+/** Where everyone, and the old man, start the night. */
+export const HALL = 4;
+export const BEDROOM = 2;
+/** Hours in the night (10 PM to 6 AM). */
+export const HOURS = 8;
+/** Hits that kill the old man. */
+export const OWNER_HP = 2;
 
 export function sideOf(role: Role): Side {
   return role === "intruder" ? "evil" : "good";

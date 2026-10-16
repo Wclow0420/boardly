@@ -51,6 +51,21 @@ export interface LiarsDiceState {
   winners: number[] | null;
 }
 
+/** Dice in every cup. */
+export const DICE_EACH = 5;
+/** Cups that knock you out in a knockout game. */
+export const KNOCKOUT_CUPS = 5;
+/** Cups the loser drinks: open (开), split (劈), counter-split (反劈). */
+export const DRINKS = { open: 1, split: 2, counter: 4 } as const;
+/** The table sizes the game plays at. */
+export const PLAYER_COUNTS = [2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+/** Smallest first call with this many players in: above the player
+ *  count, or equal to it zhai. */
+export function openingFor(players: number, zhai: boolean): number {
+  return zhai ? players : players + 1;
+}
+
 /** 1 is the top face: 2 < 3 < 4 < 5 < 6 < 1. */
 export function faceRank(face: number): number {
   return face === 1 ? 7 : face;
@@ -109,8 +124,7 @@ export function breakZhaiMin(state: LiarsDiceState): number | null {
 
 /** Smallest opening count: above the player count, or equal to it zhai. */
 export function openingMin(state: LiarsDiceState, zhai: boolean): number {
-  const players = activeSeats(state).length;
-  return zhai ? players : players + 1;
+  return openingFor(activeSeats(state).length, zhai);
 }
 
 /** Whether (quantity, face, zhai) is a legal next bid. */
@@ -157,7 +171,6 @@ export function suggestedBid(state: LiarsDiceState): { quantity: number; face: n
   return { quantity: last.quantity, face: last.face + 1 };
 }
 
-/** How many of my dice count for a face. */
 /** How many dice in one cup count for a face. A full cup that all
  *  counts (豹子 — five of a kind, wild 1s included when kaizhai) counts
  *  one extra: two 1s + three 3s are six 3s, but only when 1s are wild. */
