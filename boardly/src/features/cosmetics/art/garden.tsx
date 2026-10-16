@@ -14,12 +14,15 @@
 // See heraldry.tsx and crest.tsx for the house style.
 
 import {
-  BlurMask,
-  ClipOp,
+  BlurStyle,
   Circle,
+  ClipOp,
   FillType,
+  FilterMode,
   Group,
+  Image,
   LinearGradient,
+  MipmapMode,
   Oval,
   Path,
   PaintStyle,
@@ -28,13 +31,17 @@ import {
   StrokeCap,
   StrokeJoin,
   TileMode,
+  rect,
   vec,
   type SkCanvas,
+  type SkImage,
   type SkPicture,
   type SkPoint,
+  type SkRect,
   type SkShader,
 } from "@shopify/react-native-skia";
 import { useMemo } from "react";
+import { PixelRatio } from "react-native";
 import { useDerivedValue } from "react-native-reanimated";
 
 import type { EmblemPart } from "@/components/engraved/emblem";
@@ -215,6 +222,83 @@ function engrave(c: SkCanvas, p: Piece) {
   }
   if (p.width > 0) c.drawPath(path, pen(p.width, p.ink));
 }
+
+// ── baked pictures ────────────────────────────────────────────────────
+// A picture of hundreds of engraved paths, each clipped for its veins,
+// costs too much to draw again every frame, four borders at a time. So
+// it's drawn into pixels once instead, a little finer than the screen
+// shows a border of up to BAKE_PT points, cut down to what it covers;
+// the pixels are what move.
+
+const BAKE_PT = 130;
+
+interface Baked {
+  image: SkImage;
+  rect: SkRect;
+}
+
+/** What a picture covers, found at one pixel a unit, with a margin. */
+function coverage(pic: SkPicture): SkRect | null {
+  const surface = Skia.Surface.Make(192, 192);
+  if (!surface) return null;
+  const c = surface.getCanvas();
+  c.translate(96, 96);
+  c.drawPicture(pic);
+  const px = surface.makeImageSnapshot().readPixels();
+  if (!px) return null;
+  let x0 = 192;
+  let y0 = 192;
+  let x1 = -1;
+  let y1 = -1;
+  for (let y = 0; y < 192; y++)
+    for (let x = 0; x < 192; x++)
+      if (px[(y * 192 + x) * 4 + 3] > 0) {
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+  if (x1 < 0) return null;
+  return rect(x0 - 98, y0 - 98, x1 - x0 + 5, y1 - y0 + 5);
+}
+
+/** Draws a picture into pixels, `fine` times the screen's density. */
+function bake(pic: SkPicture, fine = BAKE_PT / 100): Baked | null {
+  const r = coverage(pic);
+  if (!r) return null;
+  const k = PixelRatio.get() * fine;
+  const w = Math.ceil(r.width * k);
+  const h = Math.ceil(r.height * k);
+  const surface = Skia.Surface.Make(w, h);
+  if (!surface) return null;
+  const c = surface.getCanvas();
+  c.scale(k, k);
+  c.translate(-r.x, -r.y);
+  c.drawPicture(pic);
+  return {
+    image: surface.makeImageSnapshot(),
+    rect: rect(r.x, r.y, w / k, h / k),
+  };
+}
+
+function Bake({ image }: { image: () => Baked | null }) {
+  const b = useMemo(() => image(), [image]);
+  if (!b) return null;
+  return (
+    <Image
+      image={b.image}
+      rect={b.rect}
+      fit="fill"
+      sampling={{ filter: FilterMode.Linear, mipmap: MipmapMode.Linear }}
+    />
+  );
+}
+
+const recordAll = (draw: (c: SkCanvas) => void) => {
+  const recorder = Skia.PictureRecorder();
+  draw(recorder.beginRecording(Skia.XYWHRect(-96, -96, 192, 192)));
+  return recorder.finishRecordingAsPicture();
+};
 
 // ── Sakura ───────────────────────────────────────────────────────────
 
@@ -507,8 +591,56 @@ function recordSakura(): SkPicture {
   return recorder.finishRecordingAsPicture();
 }
 
-let SAKURA: SkPicture | null = null;
-const sakuraPicture = () => (SAKURA ??= recordSakura());
+let SAKURA: Baked | null | undefined;
+const sakuraImage = () =>
+  SAKURA === undefined ? (SAKURA = bake(recordSakura())) : SAKURA;
+
+/** The rose-gold ring, as Metal draws it: its metal, the grooves and
+ *  the wave cut in, a shine, inked round. */
+let RING: Baked | null | undefined;
+const sakuraRing = () => {
+  if (RING !== undefined) return RING;
+  const pic = recordAll((c) => {
+    const ring = Skia.Path.MakeFromSVGString(SAKURA_RING);
+    if (!ring) return;
+    ring.setFillType(FillType.EvenOdd);
+    c.drawPath(ring, brush(linear(-60, -70, 60, 70, ROSE)));
+    c.save();
+    c.clipPath(ring, ClipOp.Intersect, true);
+    const pattern = Skia.Path.MakeFromSVGString(SAKURA_PATTERN);
+    if (pattern) {
+      const groove = pen(0.6, "#9A5444", 0.75);
+      groove.setStrokeJoin(StrokeJoin.Miter);
+      c.drawPath(pattern, groove);
+    }
+    const shine = Skia.Path.MakeFromSVGString(
+      arcPath(56.2, -78 * DEG, -18 * DEG),
+    );
+    if (shine) {
+      const light = pen(1.2, "#FFFFFF", 0.85);
+      light.setStrokeJoin(StrokeJoin.Miter);
+      c.drawPath(shine, light);
+    }
+    c.restore();
+    const ink = pen(1.2, INK_ROSE);
+    ink.setStrokeCap(StrokeCap.Butt);
+    c.drawPath(ring, ink);
+  });
+  return (RING = bake(pic));
+};
+
+/** The warm light round the cluster, a soft blur, baked (it's smooth:
+ *  a coarse bake loses nothing). */
+let WARM: Baked | null | undefined;
+const sakuraWarmth = () => {
+  if (WARM !== undefined) return WARM;
+  const pic = recordAll((c) => {
+    const paint = brush("#FFD6C8", 0.4);
+    paint.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, 16, true));
+    c.drawCircle(-44, -42, 30, paint);
+  });
+  return (WARM = bake(pic, 0.5));
+};
 
 /** A falling petal. */
 const LOOSE_L = 6.2;
@@ -567,9 +699,7 @@ function SakuraBack({ t }: { t: Clock }) {
     <Group>
       <Halo r={84} color="#FFD0C0" opacity={glow} />
       {/* warm light round the cluster */}
-      <Circle cx={-44} cy={-42} r={30} color="#FFD6C8" opacity={0.4}>
-        <BlurMask blur={16} style="normal" />
-      </Circle>
+      <Bake image={sakuraWarmth} />
       {BACK_PETALS.map((p) => (
         <FallingPetal key={p.i} t={t} {...p} />
       ))}
@@ -578,7 +708,6 @@ function SakuraBack({ t }: { t: Clock }) {
 }
 
 function SakuraFront({ t }: { t: Clock }) {
-  const picture = useMemo(() => sakuraPicture(), []);
   const sway = useDerivedValue(() => [
     { rotate: Math.sin(t.value * 0.9) * 0.012 },
   ]);
@@ -586,20 +715,10 @@ function SakuraFront({ t }: { t: Clock }) {
   const shine = at(300, 54);
   return (
     <Group>
-      <Metal
-        d={SAKURA_RING}
-        evenOdd
-        colors={ROSE}
-        ink={INK_ROSE}
-        width={1.2}
-        vein={SAKURA_PATTERN}
-        veinColor="#9A5444"
-        veinWidth={0.6}
-        shine={arcPath(56.2, -78 * DEG, -18 * DEG)}
-      />
+      <Bake image={sakuraRing} />
       <Sweep t={t} d={SAKURA_RING} evenOdd every={4.6} />
       <Group transform={sway}>
-        <Picture picture={picture} />
+        <Bake image={sakuraImage} />
       </Group>
       {FRONT_PETALS.map((p) => (
         <FallingPetal key={p.i} t={t} {...p} />

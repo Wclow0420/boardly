@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
@@ -24,11 +25,48 @@ import {
   BORDERS,
   RARITY_COLORS,
   getBorder,
+  type BorderRarity,
   type ProfileBorder,
 } from "@/features/cosmetics/borders";
 import { useEquippedBorder } from "@/features/cosmetics/store";
 import { TABLE, fontFamily, useTheme } from "@/theme";
 import { successHaptic, tapHaptic } from "@/utils/haptics";
+
+type SectionKey = BorderRarity | "earned";
+
+/** Each rarity's card: its fill, its edge, and the line of light on it. */
+const RARITY_TILE: Record<
+  BorderRarity,
+  { fill: [string, string]; edge: string; shine: string }
+> = {
+  common: { fill: ["#5A3A22", "#3A2414"], edge: "#2E1C0F", shine: "#9A6B43" },
+  rare: { fill: ["#2C5A8E", "#16304F"], edge: "#5FA8F0", shine: "#9CCBFF" },
+  epic: { fill: ["#5E2F94", "#2C1650"], edge: "#C084FC", shine: "#E2C2FF" },
+  legendary: { fill: ["#9A6A1C", "#4A2C08"], edge: "#F7C948", shine: "#FFF0B0" },
+};
+
+/** Each section's ribbon. */
+const SECTION_RIBBON: Record<SectionKey, [string, string]> = {
+  common: TABLE.ribbonGold,
+  rare: ["#3A78C2", "#25507F"],
+  epic: ["#8A4ACF", "#5E2F94"],
+  legendary: ["#E9B334", "#B07A12"],
+  earned: ["#2E8A78", "#1C5E52"],
+};
+
+const byPrice = (a: ProfileBorder, b: ProfileBorder) => a.price - b.price;
+const earnedOnly = (border: ProfileBorder) =>
+  border.kind === "art" && border.earnedBy !== undefined;
+
+/** The shop's sections: each rarity, cheapest first, then the borders that
+ *  can only be earned. */
+const SECTIONS: { key: SectionKey; borders: ProfileBorder[] }[] = [
+  ...(["common", "rare", "epic", "legendary"] as BorderRarity[]).map((rarity) => ({
+    key: rarity as SectionKey,
+    borders: BORDERS.filter((b) => b.rarity === rarity && !earnedOnly(b)).sort(byPrice),
+  })),
+  { key: "earned", borders: BORDERS.filter(earnedOnly) },
+];
 
 /** Gallery of profile borders: preview one on your avatar and wear it. */
 export default function BordersScreen() {
@@ -173,68 +211,109 @@ export default function BordersScreen() {
         ) : null}
       </Frame>
 
-      {/* All borders */}
+      {/* All borders, by rarity; the ones earned with a badge last */}
       <Frame tone="wood" style={styles.list}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.grid}
-        >
-          {BORDERS.map((border) => {
-            const active = border.id === selectedId;
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {SECTIONS.map((section) => {
+            const borders = section.borders;
+            if (borders.length === 0) return null;
             return (
-              <Pressable
-                key={border.id}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
-                accessibilityLabel={border.name}
-                onPress={() => {
-                  tapHaptic();
-                  setFailed(false);
-                  setSelectedId(border.id);
-                }}
-                style={[
-                  styles.tile,
-                  {
-                    backgroundColor: colors.well,
-                    borderColor: active ? TABLE.yellow.fill[0] : colors.border,
-                  },
-                ]}
-              >
-                <View style={styles.tileAvatar}>
-                  <AvatarBorder
-                    name={name}
-                    size={40}
-                    borderId={border.id}
-                    avatarUrl={user?.avatarUrl}
-                    mascot={user?.mascot}
+              <View key={section.key} style={styles.section}>
+                <View style={styles.sectionHead}>
+                  <Ribbon
+                    label={
+                      section.key === "earned"
+                        ? t("borders.earnedSection")
+                        : t(`borders.rarity.${section.key}`)
+                    }
+                    colors={SECTION_RIBBON[section.key]}
+                    standalone
                   />
+                  <AppText style={styles.count}>{borders.length}</AppText>
                 </View>
-                <AppText variant="tiny" numberOfLines={1} align="center">
-                  {border.name}
-                </AppText>
-                <View
-                  style={[
-                    styles.dot,
-                    { backgroundColor: RARITY_COLORS[border.rarity] },
-                  ]}
-                />
-                {border.id === equippedId ? (
-                  <View style={styles.check}>
-                    <Emblem emoji="✓" size={14} />
-                  </View>
-                ) : null}
-                {!owns(border) ? (
-                  <View style={styles.lock}>
-                    <Emblem emoji="🔒" size={16} />
-                  </View>
-                ) : null}
-              </Pressable>
+                <View style={styles.grid}>
+                  {borders.map((border) => {
+                    const active = border.id === selectedId;
+                    const look = RARITY_TILE[border.rarity];
+                    const earnedBy =
+                      border.kind === "art" ? border.earnedBy : undefined;
+                    return (
+                      <Pressable
+                        key={border.id}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: active }}
+                        accessibilityLabel={border.name}
+                        onPress={() => {
+                          tapHaptic();
+                          setFailed(false);
+                          setSelectedId(border.id);
+                        }}
+                        style={[
+                          styles.tile,
+                          { borderColor: active ? "#FFFFFF" : look.edge },
+                          active && styles.tileOn,
+                        ]}
+                      >
+                        <LinearGradient colors={look.fill} style={styles.tileFill}>
+                          {/* a fine line of light along the top */}
+                          <View style={[styles.tileShine, { backgroundColor: look.shine }]} />
+                          <View style={styles.tileAvatar}>
+                            <AvatarBorder
+                              name={name}
+                              size={40}
+                              borderId={border.id}
+                              avatarUrl={user?.avatarUrl}
+                              mascot={user?.mascot}
+                            />
+                          </View>
+                          <AppText
+                            variant="tiny"
+                            numberOfLines={1}
+                            align="center"
+                            style={styles.tileName}
+                          >
+                            {border.name}
+                          </AppText>
+                          <View style={styles.tilePrice}>
+                            {owns(border) ? (
+                              <AppText style={styles.tileOwned}>
+                                {border.id === equippedId
+                                  ? t("borders.equipped")
+                                  : t("borders.owned")}
+                              </AppText>
+                            ) : earnedBy ? (
+                              <Emblem emoji="🏅" size={13} />
+                            ) : (
+                              <>
+                                <CoinIcon size={11} />
+                                <AppText style={styles.tileCost}>
+                                  {border.price.toLocaleString()}
+                                </AppText>
+                              </>
+                            )}
+                          </View>
+                          {border.id === equippedId ? (
+                            <View style={styles.check}>
+                              <Emblem emoji="✓" size={14} />
+                            </View>
+                          ) : null}
+                          {!owns(border) ? (
+                            <View style={styles.lock}>
+                              <Emblem emoji="🔒" size={14} />
+                            </View>
+                          ) : null}
+                        </LinearGradient>
+                      </Pressable>
+                    );
+                  })}
+                  {/* empty cells so a short last row stays left-aligned */}
+                  {Array.from({ length: (3 - (borders.length % 3)) % 3 }, (_, i) => (
+                    <View key={i} style={styles.filler} />
+                  ))}
+                </View>
+              </View>
             );
           })}
-          {/* Empty cells so a short last row stays left-aligned */}
-          {Array.from({ length: (3 - (BORDERS.length % 3)) % 3 }, (_, i) => (
-            <View key={i} style={styles.filler} />
-          ))}
         </ScrollView>
       </Frame>
     </Screen>
@@ -260,32 +339,41 @@ const styles = StyleSheet.create({
   equip: { alignSelf: "stretch", marginTop: 6 },
 
   list: { flex: 1, minHeight: 0, marginTop: 14, padding: 10 },
+  section: { marginBottom: 14 },
+  sectionHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  count: { color: TABLE.creamMuted, fontFamily: fontFamily.semiBold, fontSize: 12 },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
     rowGap: 8,
-    paddingBottom: 4,
   },
   tile: {
     width: "31.3%",
-    alignItems: "center",
-    paddingHorizontal: 4,
-    paddingBottom: 8,
     borderRadius: 14,
     borderWidth: 2,
     overflow: "hidden",
   },
+  tileOn: { borderWidth: 3 },
+  tileFill: { alignItems: "center", paddingHorizontal: 4, paddingBottom: 7 },
+  tileShine: { position: "absolute", top: 0, left: 10, right: 10, height: 1.5, opacity: 0.7 },
   filler: { width: "31.3%" },
-  tileAvatar: { paddingTop: 24, paddingBottom: 22 },
-  dot: { width: 6, height: 6, borderRadius: 3, marginTop: 4 },
-  lock: { position: "absolute", top: 4, left: 6, fontSize: 11 },
-  check: {
-    position: "absolute",
-    top: 4,
-    right: 7,
-    fontFamily: fontFamily.bold,
-    fontSize: 12,
-    color: TABLE.yellow.fill[0],
+  tileAvatar: { paddingTop: 24, paddingBottom: 20 },
+  tileName: { color: "#FFFFFF" },
+  tilePrice: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    marginTop: 2,
+    minHeight: 15,
   },
+  tileCost: { color: "#FBDD7E", fontFamily: fontFamily.bold, fontSize: 10, lineHeight: 14 },
+  tileOwned: { color: TABLE.creamMuted, fontSize: 10, lineHeight: 14 },
+  lock: { position: "absolute", top: 4, left: 5 },
+  check: { position: "absolute", top: 4, right: 6 },
 });

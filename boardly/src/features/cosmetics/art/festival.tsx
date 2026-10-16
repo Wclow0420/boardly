@@ -23,30 +23,34 @@
 
 import {
   BlurMask,
+  BlurStyle,
   Circle,
   ClipOp,
   FillType,
+  FilterMode,
   Group,
   LinearGradient,
   PaintStyle,
   Path,
+  PathOp,
   Picture,
   RadialGradient,
+  Rect,
   Skia,
   StrokeCap,
   StrokeJoin,
   TileMode,
   vec,
   type SkCanvas,
+  type SkPaint,
+  type SkPath,
   type SkPicture,
-  type SkPoint,
   type SkShader,
 } from "@shopify/react-native-skia";
 import { useMemo } from "react";
 import { useDerivedValue } from "react-native-reanimated";
 
 import { LEAF, curl, ribbon, type Pt } from "@/components/engraved/shapes";
-import { Sweep } from "./crowns";
 import {
   Flicker,
   Glint,
@@ -91,82 +95,6 @@ const wavy = (r: number, amp: number, waves: number, phase = 0) =>
       return [Math.cos(a) * rr, Math.sin(a) * rr];
     }),
   )}Z`;
-
-/** An engraved piece: filled with its metal, its veins and shine cut in,
- *  inked round. */
-function Metal({
-  d,
-  colors,
-  ink,
-  vein,
-  veinColor,
-  veinWidth = 0.8,
-  veinAlpha = 0.75,
-  shine,
-  evenOdd,
-  width = 1.4,
-  from = vec(-60, -70),
-  to = vec(60, 70),
-}: {
-  d: string;
-  colors: string[];
-  ink: string;
-  vein?: string;
-  veinColor?: string;
-  veinWidth?: number;
-  veinAlpha?: number;
-  shine?: string;
-  evenOdd?: boolean;
-  width?: number;
-  from?: SkPoint;
-  to?: SkPoint;
-}) {
-  const fill = evenOdd ? "evenOdd" : "winding";
-  const clip = useMemo(() => {
-    const path = Skia.Path.MakeFromSVGString(d);
-    if (path && evenOdd) path.setFillType(FillType.EvenOdd);
-    return path;
-  }, [d, evenOdd]);
-  return (
-    <Group>
-      <Path path={d} fillType={fill}>
-        <LinearGradient start={from} end={to} colors={colors} />
-      </Path>
-      {clip ? (
-        <Group clip={clip}>
-          {vein ? (
-            <Path
-              path={vein}
-              style="stroke"
-              strokeWidth={veinWidth}
-              strokeCap="round"
-              color={veinColor ?? ink}
-              opacity={veinAlpha}
-            />
-          ) : null}
-          {shine ? (
-            <Path
-              path={shine}
-              style="stroke"
-              strokeWidth={1.2}
-              strokeCap="round"
-              color="#FFFFFF"
-              opacity={0.85}
-            />
-          ) : null}
-        </Group>
-      ) : null}
-      <Path
-        path={d}
-        fillType={fill}
-        style="stroke"
-        strokeWidth={width}
-        strokeJoin="round"
-        color={ink}
-      />
-    </Group>
-  );
-}
 
 // ── drawing straight onto a canvas, for the recorded pictures ─────────
 
@@ -231,13 +159,36 @@ interface Piece {
   shineAlpha?: number;
 }
 
-/** Fills a piece, cuts its veins and shine in, inks it round. */
-function engrave(c: SkCanvas, p: Piece) {
+/** Strokes `lines` and keeps only what lies inside `within`, as one
+ *  shape: the same as stroking them clipped to it, without a clip to
+ *  replay every frame. */
+function cutIn(lines: SkPath, width: number, within: SkPath) {
+  const stroked = lines.copy().stroke({
+    width,
+    cap: StrokeCap.Round,
+    join: StrokeJoin.Round,
+    precision: 4,
+  });
+  return stroked ? Skia.Path.MakeFromOp(stroked, within, PathOp.Intersect) : null;
+}
+
+/** Fills a piece, cuts its veins and shine in, inks it round. `cut`
+ *  trims the veins and shine to the piece ahead of time instead of
+ *  clipping (for pieces drawn afresh every frame). */
+function engrave(c: SkCanvas, p: Piece, cut = false) {
   const path = Skia.Path.MakeFromSVGString(p.d);
   if (!path) return;
   if (p.evenOdd) path.setFillType(FillType.EvenOdd);
   c.drawPath(path, brush(p.fill));
-  if (p.vein || p.shine) {
+  if (cut) {
+    const vein = p.vein ? Skia.Path.MakeFromSVGString(p.vein) : null;
+    const veinCut = vein ? cutIn(vein, p.veinWidth ?? 0.5, path) : null;
+    if (veinCut)
+      c.drawPath(veinCut, brush(p.veinColor ?? p.ink, p.veinAlpha ?? 0.75));
+    const shine = p.shine ? Skia.Path.MakeFromSVGString(p.shine) : null;
+    const shineCut = shine ? cutIn(shine, p.shineWidth ?? 0.8, path) : null;
+    if (shineCut) c.drawPath(shineCut, brush("#FFFFFF", p.shineAlpha ?? 0.7));
+  } else if (p.vein || p.shine) {
     c.save();
     c.clipPath(path, ClipOp.Intersect, true);
     const vein = p.vein ? Skia.Path.MakeFromSVGString(p.vein) : null;
@@ -280,6 +231,121 @@ function record(draw: (c: SkCanvas) => void): SkPicture {
   const c = recorder.beginRecording(Skia.XYWHRect(-96, -96, 192, 192));
   draw(c);
   return recorder.finishRecordingAsPicture();
+}
+
+/** An engraved band, the way the live rings were drawn: filled with its
+ *  metal, its veins and shine cut in, inked round. */
+function metal(
+  c: SkCanvas,
+  {
+    d,
+    colors,
+    ink,
+    vein,
+    veinColor,
+    veinWidth = 0.8,
+    veinAlpha = 0.75,
+    shine,
+    width = 1.4,
+  }: {
+    d: string;
+    colors: string[];
+    ink: string;
+    vein?: string;
+    veinColor?: string;
+    veinWidth?: number;
+    veinAlpha?: number;
+    shine?: string;
+    width?: number;
+  },
+) {
+  const path = Skia.Path.MakeFromSVGString(d);
+  if (!path) return;
+  path.setFillType(FillType.EvenOdd);
+  c.drawPath(path, brush(linear(-60, -70, 60, 70, colors)));
+  c.save();
+  c.clipPath(path, ClipOp.Intersect, true);
+  const stroke = (lines: string, w: number, color: string, alpha: number) => {
+    const p = Skia.Path.MakeFromSVGString(lines);
+    if (!p) return;
+    const paint = pen(w, color, alpha);
+    paint.setStrokeJoin(StrokeJoin.Miter);
+    c.drawPath(p, paint);
+  };
+  if (vein) stroke(vein, veinWidth, veinColor ?? ink, veinAlpha);
+  if (shine) stroke(shine, 1.2, "#FFFFFF", 0.85);
+  c.restore();
+  const outline = pen(width, ink);
+  outline.setStrokeCap(StrokeCap.Butt);
+  c.drawPath(path, outline);
+}
+
+/** A recorded picture drawn as one textured rectangle: Skia rasterises
+ *  it once at the scale it's shown at and reuses that, so hundreds of
+ *  small engraved shapes cost one draw a frame. `x, y, w, h` must hold
+ *  everything the picture draws. */
+interface Tile {
+  paint: SkPaint;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+function tile(picture: SkPicture, x: number, y: number, w: number, h: number): Tile {
+  const paint = Skia.Paint();
+  paint.setShader(
+    picture.makeShader(
+      TileMode.Decal,
+      TileMode.Decal,
+      FilterMode.Linear,
+      Skia.Matrix().translate(x, y),
+      Skia.XYWHRect(x, y, w, h),
+    ),
+  );
+  return { paint, x, y, w, h };
+}
+function TileRect({ tile: p }: { tile: Tile }) {
+  return <Rect x={p.x} y={p.y} width={p.w} height={p.h} paint={p.paint} />;
+}
+
+/** The light that crosses the metal every few seconds (crowns' Sweep),
+ *  painted straight onto the shape rather than clipped to it. */
+function Shine({
+  t,
+  d,
+  every,
+  phase = 0,
+  evenOdd = false,
+  opacity = 1,
+}: {
+  t: Clock;
+  d: string;
+  every: number;
+  phase?: number;
+  evenOdd?: boolean;
+  opacity?: number;
+}) {
+  // the band is 24 across, tilted 0.45 rad, from well clear of one side
+  // to well clear of the other
+  const dx = 12 * Math.cos(0.45);
+  const dy = 12 * Math.sin(0.45);
+  const start = useDerivedValue(() => {
+    const p = ((t.value + phase) % every) / 1.1;
+    return vec((p < 1 ? -110 + p * 220 : 260) - dx, -dy);
+  });
+  const end = useDerivedValue(() => {
+    const p = ((t.value + phase) % every) / 1.1;
+    return vec((p < 1 ? -110 + p * 220 : 260) + dx, dy);
+  });
+  return (
+    <Path path={d} fillType={evenOdd ? "evenOdd" : "winding"} opacity={opacity}>
+      <LinearGradient
+        start={start}
+        end={end}
+        colors={["#FFFFFF00", "#FFFFFFCC", "#FFFFFF00"]}
+      />
+    </Path>
+  );
 }
 
 // ═══ Lunar New Year ══════════════════════════════════════════════════
@@ -508,8 +574,8 @@ function recordTassel() {
   });
 }
 
-let LANTERN: SkPicture | null = null;
-let TASSEL_PIC: SkPicture | null = null;
+let LANTERN: Tile | null = null;
+let TASSEL_PIC: Tile | null = null;
 
 /** The burst every 8s: how far into it we are (the clock set forward
  *  so a still border is caught between bursts). */
@@ -527,8 +593,8 @@ const burstGlow = (T: number) => {
 
 function Lantern({ t, side }: { t: Clock; side: 1 | -1 }) {
   const pictures = useMemo(() => {
-    LANTERN ??= recordLantern();
-    TASSEL_PIC ??= recordTassel();
+    LANTERN ??= tile(recordLantern(), -14, -2, 28, 38);
+    TASSEL_PIC ??= tile(recordTassel(), -6, 31, 12, 20);
     return { lantern: LANTERN, tassel: TASSEL_PIC };
   }, []);
   const i = side > 0 ? 0 : 1;
@@ -554,28 +620,24 @@ function Lantern({ t, side }: { t: Clock; side: 1 | -1 }) {
       0.3 * burstGlow(t.value),
   );
   const glow = useDerivedValue(() => 0.35 + light.value * 0.45);
-  const clip = useMemo(() => Skia.Path.MakeFromSVGString(L_BODY), []);
   return (
     <Group transform={sway}>
       <Circle cx={0} cy={L_CY} r={17} color="#FF5A2A" opacity={glow}>
         <BlurMask blur={10} style="normal" />
       </Circle>
       <Group transform={trail}>
-        <Picture picture={pictures.tassel} />
+        <TileRect tile={pictures.tassel} />
       </Group>
-      <Picture picture={pictures.lantern} />
-      {/* lit from within */}
-      {clip ? (
-        <Group clip={clip} blendMode="screen" opacity={light}>
-          <Circle cx={0} cy={L_CY + 1} r={L_RX}>
-            <RadialGradient
-              c={vec(0, L_CY + 1)}
-              r={L_RX}
-              colors={["#FFE6A0", "#FF9A3A88", "#FF5A2A00"]}
-            />
-          </Circle>
-        </Group>
-      ) : null}
+      <TileRect tile={pictures.lantern} />
+      {/* lit from within: the glow fades out before the body's edge,
+          so filling the body with it needs no clip */}
+      <Path path={L_BODY} blendMode="screen" opacity={light}>
+        <RadialGradient
+          c={vec(0, L_CY + 1)}
+          r={L_RX}
+          colors={["#FFE6A0", "#FF9A3A88", "#FF5A2A00"]}
+        />
+      </Path>
     </Group>
   );
 }
@@ -667,7 +729,7 @@ function recordMedallion() {
     c.restore();
   });
 }
-let MEDALLION: SkPicture | null = null;
+let MEDALLION: Tile | null = null;
 
 // ── the plum boughs ──
 
@@ -905,7 +967,7 @@ function recordString() {
     c.drawPath(knot, pen(0.6, INK_GOLD));
   });
 }
-let STRING_PIC: SkPicture | null = null;
+let STRING_PIC: Tile | null = null;
 
 /** How long ago cracker j on this side popped. They go off from the
  *  bottom up in the burst, and between bursts one of the lower three
@@ -927,121 +989,170 @@ const popAge = (T: number, side: number, j: number) => {
 
 const BITS = 7;
 
-/** The pops along one string: flash, sparks, smoke and paper. */
+/** Translate (x, y), rotate `rot` radians, scale (sx, sy), then
+ *  translate (0, dy): as one matrix, so a frame's picture sets each
+ *  particle down with one call instead of four. */
+const placed = (
+  x: number,
+  y: number,
+  rot: number,
+  sx: number,
+  sy: number,
+  dy = 0,
+) => {
+  "worklet";
+  const cos = Math.cos(rot);
+  const sin = Math.sin(rot);
+  return [
+    cos * sx,
+    -sin * sy,
+    x - sin * sy * dy,
+    sin * sx,
+    cos * sy,
+    y + cos * sy * dy,
+    0,
+    0,
+    1,
+  ];
+};
+
+/** A number for an SVG path built on the UI thread (to 0.001). */
+const svgNum = (v: number) => {
+  "worklet";
+  return Math.round(v * 1000) / 1000;
+};
+/** A circle as SVG path data. */
+const svgCircle = (x: number, y: number, r: number) => {
+  "worklet";
+  const n = svgNum;
+  return `M${n(x + r)} ${n(y)}A${n(r)} ${n(r)} 0 1 1 ${n(x - r)} ${n(y)}A${n(r)} ${n(r)} 0 1 1 ${n(x + r)} ${n(y)}Z`;
+};
+
+/** The pops along one string: flash, sparks, smoke and paper, all drawn
+ *  into one picture each frame (one node, one derived value). */
 function Pops({ t, side }: { t: Clock; side: number }) {
-  const glow = useDerivedValue(() => {
-    const p = Skia.Path.Make();
+  const paints = useMemo(() => {
+    const fill = (color: string, alpha = 1, blur = 0) => {
+      const paint = brush(color, alpha);
+      if (blur > 0)
+        paint.setMaskFilter(
+          Skia.MaskFilter.MakeBlur(BlurStyle.Normal, blur, true),
+        );
+      return paint;
+    };
+    const sparks = Skia.Paint();
+    sparks.setAntiAlias(true);
+    sparks.setStyle(PaintStyle.Stroke);
+    sparks.setStrokeWidth(0.75);
+    sparks.setStrokeCap(StrokeCap.Round);
+    sparks.setColor(Skia.Color("#FFE08A"));
+    return {
+      smoke: fill("#B8AAA0", 0.28, 2.4),
+      glow: fill("#FF7A2A", 0.8, 4),
+      red: fill("#D8202E"),
+      gold: fill("#F6C64A"),
+      sparks,
+      core: fill("#FFFCE8"),
+    };
+  }, []);
+  const picture = useDerivedValue(() => {
+    const T = t.value;
+    const recorder = Skia.PictureRecorder();
+    const c = recorder.beginRecording(
+      Skia.XYWHRect(LIVE_BOUNDS.x, LIVE_BOUNDS.y, LIVE_BOUNDS.w, LIVE_BOUNDS.h),
+    );
+    const ages: number[] = [];
+    let live = false;
     for (let j = 0; j < SITES.length; j++) {
-      const a = popAge(t.value, side, j);
-      if (a < 0.26) p.addCircle(SITES[j].x, SITES[j].y, 0.5 + 7 * Math.sin((Math.PI * a) / 0.26));
+      ages.push(popAge(T, side, j));
+      if (ages[j] < 1.3) live = true;
     }
-    return p;
-  });
-  const core = useDerivedValue(() => {
-    const p = Skia.Path.Make();
-    for (let j = 0; j < SITES.length; j++) {
-      const a = popAge(t.value, side, j);
-      if (a < 0.16) {
-        // a four-pointed flash
-        const s = 0.4 + 3.4 * Math.sin((Math.PI * a) / 0.16);
-        const w = s * 0.22;
+    if (live) {
+      // each shape is written out as SVG and made in one call: far
+      // cheaper than hundreds of calls into Skia a frame
+      const n = svgNum;
+      const ring = svgCircle;
+      let glowD = "";
+      let coreD = "";
+      let sparksD = "";
+      let smokeD = "";
+      let redD = "";
+      let goldD = "";
+      for (let j = 0; j < SITES.length; j++) {
+        const a = ages[j];
         const { x, y } = SITES[j];
-        p.moveTo(x, y - s);
-        p.quadTo(x + w, y - w, x + s, y);
-        p.quadTo(x + w, y + w, x, y + s);
-        p.quadTo(x - w, y + w, x - s, y);
-        p.quadTo(x - w, y - w, x, y - s);
-        p.close();
-      }
-    }
-    return p;
-  });
-  const sparks = useDerivedValue(() => {
-    const p = Skia.Path.Make();
-    for (let j = 0; j < SITES.length; j++) {
-      const a = popAge(t.value, side, j);
-      if (a < 0.45) {
-        const q = a / 0.45;
-        const reach = 3 + 15 * (1 - (1 - q) * (1 - q));
-        const len = 3.2 * (1 - q);
-        for (let k = 0; k < 8; k++) {
-          const ang = (k / 8) * TAU + rnd(j * 13 + k + side * 7) * 0.6;
-          const r0 = reach * (0.75 + rnd(j * 5 + k) * 0.35);
-          const x0 = SITES[j].x + Math.cos(ang) * r0;
-          const y0 = SITES[j].y + Math.sin(ang) * r0;
-          p.moveTo(x0, y0);
-          p.lineTo(x0 - Math.cos(ang) * len, y0 - Math.sin(ang) * len);
+        if (a < 0.26) glowD += ring(x, y, 0.5 + 7 * Math.sin((Math.PI * a) / 0.26));
+        if (a < 0.16) {
+          // a four-pointed flash
+          const s = 0.4 + 3.4 * Math.sin((Math.PI * a) / 0.16);
+          const w = s * 0.22;
+          coreD +=
+            `M${n(x)} ${n(y - s)}Q${n(x + w)} ${n(y - w)} ${n(x + s)} ${n(y)}` +
+            `Q${n(x + w)} ${n(y + w)} ${n(x)} ${n(y + s)}` +
+            `Q${n(x - w)} ${n(y + w)} ${n(x - s)} ${n(y)}` +
+            `Q${n(x - w)} ${n(y - w)} ${n(x)} ${n(y - s)}Z`;
+        }
+        if (a < 0.45) {
+          const q = a / 0.45;
+          const reach = 3 + 15 * (1 - (1 - q) * (1 - q));
+          const len = 3.2 * (1 - q);
+          for (let k = 0; k < 8; k++) {
+            const ang = (k / 8) * TAU + rnd(j * 13 + k + side * 7) * 0.6;
+            const r0 = reach * (0.75 + rnd(j * 5 + k) * 0.35);
+            const x0 = x + Math.cos(ang) * r0;
+            const y0 = y + Math.sin(ang) * r0;
+            sparksD += `M${n(x0)} ${n(y0)}L${n(x0 - Math.cos(ang) * len)} ${n(y0 - Math.sin(ang) * len)}`;
+          }
+        }
+        if (a < 1.2) {
+          const r = (1.6 + 5 * a) * (1 - (a / 1.2) ** 3);
+          smokeD += ring(x + a * 2, y - a * 9, r);
+        }
+        if (a < 1.3) {
+          for (let b = 0; b < BITS; b++) {
+            const seed = j * 31 + b * 7 + side * 3;
+            const ang = rnd(seed) * TAU;
+            const v = 16 + rnd(seed + 1) * 22;
+            const px = x + Math.cos(ang) * v * a + Math.sin(a * 11 + seed) * 1.4 * a;
+            const py = y + (Math.sin(ang) * v - 12) * a + 0.5 * 52 * a * a;
+            const isGold = b === 0;
+            const s = (isGold ? 0.9 : 1.1) * (1 - Math.max(0, (a - 0.95) / 0.35));
+            const rot = rnd(seed + 2) * 6 + a * (rnd(seed + 3) - 0.5) * 18;
+            const cx = Math.cos(rot) * s;
+            const sx = Math.sin(rot) * s;
+            // a scrap of paper, longer than it is wide
+            const d =
+              `M${n(px + cx - sx * 0.55)} ${n(py + sx + cx * 0.55)}` +
+              `L${n(px - cx - sx * 0.55)} ${n(py - sx + cx * 0.55)}` +
+              `L${n(px - cx + sx * 0.55)} ${n(py - sx - cx * 0.55)}` +
+              `L${n(px + cx + sx * 0.55)} ${n(py + sx - cx * 0.55)}Z`;
+            if (isGold) goldD += d;
+            else redD += d;
+          }
         }
       }
+      const draw = (d: string, paint: SkPaint) => {
+        if (!d) return;
+        const path = Skia.Path.MakeFromSVGString(d);
+        if (path) c.drawPath(path, paint);
+      };
+      draw(smokeD, paints.smoke);
+      draw(glowD, paints.glow);
+      draw(redD, paints.red);
+      draw(goldD, paints.gold);
+      draw(sparksD, paints.sparks);
+      draw(coreD, paints.core);
     }
-    return p;
+    return recorder.finishRecordingAsPicture();
   });
-  const smoke = useDerivedValue(() => {
-    const p = Skia.Path.Make();
-    for (let j = 0; j < SITES.length; j++) {
-      const a = popAge(t.value, side, j);
-      if (a < 1.2) {
-        const r = (1.6 + 5 * a) * (1 - (a / 1.2) ** 3);
-        p.addCircle(SITES[j].x + a * 2, SITES[j].y - a * 9, r);
-      }
-    }
-    return p;
-  });
-  const paper = (gold: boolean) => {
-    "worklet";
-    const p = Skia.Path.Make();
-    for (let j = 0; j < SITES.length; j++) {
-      const a = popAge(t.value, side, j);
-      if (a >= 1.3) continue;
-      for (let b = gold ? 0 : 1; b < (gold ? 1 : BITS); b++) {
-        const seed = j * 31 + b * 7 + side * 3;
-        const ang = rnd(seed) * TAU;
-        const v = 16 + rnd(seed + 1) * 22;
-        const x =
-          SITES[j].x +
-          Math.cos(ang) * v * a +
-          Math.sin(a * 11 + seed) * 1.4 * a;
-        const y = SITES[j].y + (Math.sin(ang) * v - 12) * a + 0.5 * 52 * a * a;
-        const s = (gold ? 0.9 : 1.1) * (1 - Math.max(0, (a - 0.95) / 0.35));
-        const rot = rnd(seed + 2) * 6 + a * (rnd(seed + 3) - 0.5) * 18;
-        const cx = Math.cos(rot) * s;
-        const sx = Math.sin(rot) * s;
-        // a scrap of paper, longer than it is wide
-        p.moveTo(x + cx - sx * 0.55, y + sx + cx * 0.55);
-        p.lineTo(x - cx - sx * 0.55, y - sx + cx * 0.55);
-        p.lineTo(x - cx + sx * 0.55, y - sx - cx * 0.55);
-        p.lineTo(x + cx + sx * 0.55, y + sx - cx * 0.55);
-        p.close();
-      }
-    }
-    return p;
-  };
-  const red = useDerivedValue(() => paper(false));
-  const gold = useDerivedValue(() => paper(true));
-  return (
-    <Group>
-      <Path path={smoke} color="#B8AAA0" opacity={0.28}>
-        <BlurMask blur={2.4} style="normal" />
-      </Path>
-      <Path path={glow} color="#FF7A2A" opacity={0.8}>
-        <BlurMask blur={4} style="normal" />
-      </Path>
-      <Path path={red} color="#D8202E" />
-      <Path path={gold} color="#F6C64A" />
-      <Path
-        path={sparks}
-        style="stroke"
-        strokeWidth={0.75}
-        strokeCap="round"
-        color="#FFE08A"
-      />
-      <Path path={core} color="#FFFCE8" />
-    </Group>
-  );
+  return <Picture picture={picture} />;
 }
 
 function FirecrackerString({ t, side }: { t: Clock; side: 1 | -1 }) {
-  const picture = useMemo(() => (STRING_PIC ??= recordString()), []);
+  const picture = useMemo(
+    () => (STRING_PIC ??= tile(recordString(), -11, -2, 22, 50)),
+    [],
+  );
   const s = side > 0 ? 0 : 1;
   const sway = useDerivedValue(() => [
     { translateX: HANG.x * side },
@@ -1051,7 +1162,7 @@ function FirecrackerString({ t, side }: { t: Clock; side: 1 | -1 }) {
   ]);
   return (
     <Group transform={sway}>
-      <Picture picture={picture} />
+      <TileRect tile={picture} />
       <Pops t={t} side={s} />
     </Group>
   );
@@ -1135,7 +1246,7 @@ function recordKnot() {
     c.restore();
   });
 }
-let KNOT: SkPicture | null = null;
+let KNOT: Tile | null = null;
 
 /** The plum boughs, the knot, recorded once. */
 function recordLunarGarden() {
@@ -1148,105 +1259,160 @@ function recordLunarGarden() {
   });
   return plums;
 }
-let LUNAR_GARDEN: SkPicture | null = null;
+let LUNAR_GARDEN: Tile | null = null;
+
+/** The ring: red lacquer between gold rims, gold clouds inlaid. */
+function recordLunarRing() {
+  return record((c) => {
+    metal(c, {
+      d: LNY_RING,
+      colors: GOLD,
+      ink: INK_GOLD,
+      width: 1.2,
+      vein: circle(60.1) + circle(51.4),
+      veinColor: VEIN_GOLD,
+      veinWidth: 0.45,
+    });
+    metal(c, {
+      d: LNY_FIELD,
+      colors: LACQUER,
+      ink: INK_GOLD,
+      width: 0.7,
+      shine: arcPath(58.2, -160 * DEG, -110 * DEG),
+    });
+    const clouds = Skia.Path.MakeFromSVGString(CLOUDS);
+    if (!clouds) return;
+    const inlay = (paint: SkPaint) => {
+      paint.setStrokeCap(StrokeCap.Round);
+      paint.setStrokeJoin(StrokeJoin.Round);
+      c.drawPath(clouds, paint);
+    };
+    inlay(pen(1.5, INK_RED, 0.8));
+    const gold = pen(0.8, GOLD[0]);
+    gold.setShader(linear(-60, -60, 60, 60, GOLD));
+    inlay(gold);
+  });
+}
+let LUNAR_RING: Tile | null = null;
 
 // ── the coins ──
 
 const COIN_R = 4.4;
 const COIN = circle(COIN_R) + "M-1.25 -1.25H1.25V1.25H-1.25Z";
 
+/** Drawn every frame, two dozen times, so kept to the fewest draws: the
+ *  veins and shine lie wholly inside the coin, so they need no clip, and
+ *  the four relief marks go down as two strokes. */
 function recordCoin() {
   return record((c) => {
-    engrave(c, {
-      d: COIN,
-      evenOdd: true,
-      fill: linear(-4, -4, 4, 4, GOLD),
-      ink: INK_GOLD,
-      width: 0.6,
-      vein: circle(3.5) + "M-2 -2H2V2H-2Z",
-      veinColor: VEIN_GOLD,
-      veinWidth: 0.4,
-      shine: arcPath(3.9, -170 * DEG, -110 * DEG),
-      shineWidth: 0.55,
-    });
+    const coin = Skia.Path.MakeFromSVGString(COIN);
+    const vein = Skia.Path.MakeFromSVGString(circle(3.5) + "M-2 -2H2V2H-2Z");
+    const shine = Skia.Path.MakeFromSVGString(
+      arcPath(3.9, -170 * DEG, -110 * DEG),
+    );
+    if (!coin || !vein || !shine) return;
+    coin.setFillType(FillType.EvenOdd);
+    c.drawPath(coin, brush(linear(-4, -4, 4, 4, GOLD)));
+    c.drawPath(vein, pen(0.4, VEIN_GOLD, 0.75));
+    c.drawPath(shine, pen(0.55, "#FFFFFF", 0.7));
+    c.drawPath(coin, pen(0.6, INK_GOLD));
     // four characters round the hole, as the old cash had: dots of relief
+    const down = Skia.Path.Make();
+    const up = Skia.Path.Make();
     for (const [x, y] of [
       [0, -2.75],
       [0, 2.75],
       [-2.75, 0],
       [2.75, 0],
     ]) {
-      c.drawLine(x - 0.35, y - 0.35, x + 0.35, y + 0.35, pen(0.5, VEIN_GOLD, 0.9));
-      c.drawLine(x - 0.35, y + 0.35, x + 0.35, y - 0.35, pen(0.5, VEIN_GOLD, 0.9));
+      down.moveTo(x - 0.35, y - 0.35).lineTo(x + 0.35, y + 0.35);
+      up.moveTo(x - 0.35, y + 0.35).lineTo(x + 0.35, y - 0.35);
     }
+    c.drawPath(down, pen(0.5, VEIN_GOLD, 0.9));
+    c.drawPath(up, pen(0.5, VEIN_GOLD, 0.9));
   });
 }
 let COIN_PIC: SkPicture | null = null;
 
-/** A coin drifting down slowly, turning over as it goes. */
-function DriftCoin({
+/** The bounds a frame's live picture is recorded in: everything the
+ *  border draws, with room to spare. */
+const LIVE_BOUNDS = { x: -200, y: -200, w: 400, h: 400 };
+
+/** Coins in flight, every one drawn into a single picture each frame
+ *  (one node, one derived value, however many coins):
+ *  - drifting: down slowly from y0 to y1, turning over as it goes;
+ *  - in the burst's shower: falling from the top, flipping fast. */
+function Coins({
   t,
-  i,
-  x0,
-  y0,
-  y1,
+  drift,
+  shower,
 }: {
   t: Clock;
-  i: number;
-  x0: number;
-  y0: number;
-  y1: number;
+  drift: { i: number; x0: number; y0: number; y1: number }[];
+  shower: { i: number; x0: number }[];
 }) {
-  const picture = useMemo(() => (COIN_PIC ??= recordCoin()), []);
-  const life = 6 + rnd(i) * 3;
-  const offset = rnd(i + 5) * life;
-  const transform = useDerivedValue(() => {
+  const coin = useMemo(() => (COIN_PIC ??= recordCoin()), []);
+  const drifting = useMemo(
+    () =>
+      drift.map(({ i, x0, y0, y1 }) => {
+        const life = 6 + rnd(i) * 3;
+        return { i, x0, y0, y1, life, offset: rnd(i + 5) * life };
+      }),
+    [drift],
+  );
+  const falling = useMemo(
+    () =>
+      shower.map(({ i, x0 }) => ({
+        i,
+        x0,
+        start: 0.35 + rnd(i + 40) * 1.2,
+        v0: 20 + rnd(i + 41) * 25,
+        drift: (rnd(i + 42) - 0.5) * 16,
+        spin: 2 + rnd(i) * 3,
+      })),
+    [shower],
+  );
+  const picture = useDerivedValue(() => {
     const T = t.value;
-    const p = ((T + offset) % life) / life;
-    return [
-      { translateX: x0 + Math.sin(p * 4 + i) * 3 },
-      { translateY: y0 + (y1 - y0) * p },
-      { rotate: Math.sin(T * 0.9 + i) * 0.6 },
-      { scaleX: Math.cos(T * 2.1 + i * 1.3) },
-      { scale: 0.85 },
-    ];
+    const recorder = Skia.PictureRecorder();
+    const c = recorder.beginRecording(
+      Skia.XYWHRect(LIVE_BOUNDS.x, LIVE_BOUNDS.y, LIVE_BOUNDS.w, LIVE_BOUNDS.h),
+    );
+    for (const k of drifting) {
+      const p = ((T + k.offset) % k.life) / k.life;
+      c.save();
+      c.concat(
+        placed(
+          k.x0 + Math.sin(p * 4 + k.i) * 3,
+          k.y0 + (k.y1 - k.y0) * p,
+          Math.sin(T * 0.9 + k.i) * 0.6,
+          Math.cos(T * 2.1 + k.i * 1.3) * 0.85,
+          0.85,
+        ),
+      );
+      c.drawPicture(coin);
+      c.restore();
+    }
+    const u = burstU(T);
+    for (const k of falling) {
+      const tau = u - k.start;
+      const y = -98 + k.v0 * tau + 0.5 * 130 * tau * tau;
+      c.save();
+      c.concat(
+        placed(
+          k.x0 + k.drift * tau,
+          tau < 0 ? -200 : y,
+          tau * k.spin,
+          Math.cos(tau * 9 + k.i),
+          1,
+        ),
+      );
+      c.drawPicture(coin);
+      c.restore();
+    }
+    return recorder.finishRecordingAsPicture();
   });
-  const opacity = useDerivedValue(() => {
-    const p = ((t.value + offset) % life) / life;
-    return Math.min(1, Math.sin(p * Math.PI) * 2.5);
-  });
-  return (
-    <Group transform={transform} opacity={opacity}>
-      <Picture picture={picture} />
-    </Group>
-  );
-}
-
-/** A coin in the burst's shower: falls from the top, flipping fast. */
-function ShowerCoin({ t, i, x0 }: { t: Clock; i: number; x0: number }) {
-  const picture = useMemo(() => (COIN_PIC ??= recordCoin()), []);
-  const start = 0.35 + rnd(i + 40) * 1.2;
-  const v0 = 20 + rnd(i + 41) * 25;
-  const drift = (rnd(i + 42) - 0.5) * 16;
-  const transform = useDerivedValue(() => {
-    const tau = burstU(t.value) - start;
-    const y = -98 + v0 * tau + 0.5 * 130 * tau * tau;
-    return [
-      { translateX: x0 + drift * tau },
-      { translateY: tau < 0 ? -200 : y },
-      { rotate: tau * (2 + rnd(i) * 3) },
-      { scaleX: Math.cos(tau * 9 + i) },
-    ];
-  });
-  const opacity = useDerivedValue(() => {
-    const tau = burstU(t.value) - start;
-    return tau > 0 && tau < 2 ? 1 : 0;
-  });
-  return (
-    <Group transform={transform} opacity={opacity}>
-      <Picture picture={picture} />
-    </Group>
-  );
+  return <Picture picture={picture} />;
 }
 
 const FRONT_DRIFT = [
@@ -1276,22 +1442,23 @@ function LunarBack({ t }: { t: Clock }) {
   return (
     <Group>
       <Halo r={86} color="#FF7A3A" opacity={glow} />
-      {BACK_DRIFT.map((c) => (
-        <DriftCoin key={c.i} t={t} {...c} />
-      ))}
-      {BACK_SHOWER.map((c) => (
-        <ShowerCoin key={c.i} t={t} {...c} />
-      ))}
+      <Coins t={t} drift={BACK_DRIFT} shower={BACK_SHOWER} />
     </Group>
   );
 }
 
 function LunarFront({ t }: { t: Clock }) {
   const pictures = useMemo(() => {
-    LUNAR_GARDEN ??= recordLunarGarden();
-    MEDALLION ??= recordMedallion();
-    KNOT ??= recordKnot();
-    return { garden: LUNAR_GARDEN, medallion: MEDALLION, knot: KNOT };
+    LUNAR_RING ??= tile(recordLunarRing(), -64, -64, 128, 128);
+    LUNAR_GARDEN ??= tile(recordLunarGarden(), -94, -18, 188, 112);
+    MEDALLION ??= tile(recordMedallion(), -82, -94, 164, 52);
+    KNOT ??= tile(recordKnot(), -17, 56, 34, 40);
+    return {
+      ring: LUNAR_RING,
+      garden: LUNAR_GARDEN,
+      medallion: MEDALLION,
+      knot: KNOT,
+    };
   }, []);
   const knotSway = useDerivedValue(() => [
     { translateY: 60 },
@@ -1300,62 +1467,21 @@ function LunarFront({ t }: { t: Clock }) {
   ]);
   return (
     <Group>
-      {/* the ring: red lacquer between gold rims, gold clouds inlaid */}
-      <Metal
-        d={LNY_RING}
-        evenOdd
-        colors={GOLD}
-        ink={INK_GOLD}
-        width={1.2}
-        vein={circle(60.1) + circle(51.4)}
-        veinColor={VEIN_GOLD}
-        veinWidth={0.45}
-      />
-      <Metal
-        d={LNY_FIELD}
-        evenOdd
-        colors={LACQUER}
-        ink={INK_GOLD}
-        width={0.7}
-        shine={arcPath(58.2, -160 * DEG, -110 * DEG)}
-      />
-      <Path
-        path={CLOUDS}
-        style="stroke"
-        strokeWidth={1.5}
-        strokeCap="round"
-        strokeJoin="round"
-        color={INK_RED}
-        opacity={0.8}
-      />
-      <Path
-        path={CLOUDS}
-        style="stroke"
-        strokeWidth={0.8}
-        strokeCap="round"
-        strokeJoin="round"
-      >
-        <LinearGradient start={vec(-60, -60)} end={vec(60, 60)} colors={GOLD} />
-      </Path>
-      <Sweep t={t} d={LNY_RING} evenOdd every={4.6} />
-      <Picture picture={pictures.garden} />
+      <TileRect tile={pictures.ring} />
+      <Shine t={t} d={LNY_RING} evenOdd every={4.6} />
+      <TileRect tile={pictures.garden} />
       <Group transform={knotSway}>
-        <Picture picture={pictures.knot} />
+        <TileRect tile={pictures.knot} />
       </Group>
       <FirecrackerString t={t} side={1} />
       <FirecrackerString t={t} side={-1} />
-      <Picture picture={pictures.medallion} />
+      <TileRect tile={pictures.medallion} />
       <Group transform={[{ translateY: MEDAL_Y }]}>
-        <Sweep t={t} d={SCALLOP} every={4.6} phase={0.5} />
+        <Shine t={t} d={SCALLOP} every={4.6} phase={0.5} />
       </Group>
       <Lantern t={t} side={1} />
       <Lantern t={t} side={-1} />
-      {FRONT_DRIFT.map((c) => (
-        <DriftCoin key={c.i} t={t} {...c} />
-      ))}
-      {FRONT_SHOWER.map((c) => (
-        <ShowerCoin key={c.i} t={t} {...c} />
-      ))}
+      <Coins t={t} drift={FRONT_DRIFT} shower={FRONT_SHOWER} />
       <Sparks
         t={t}
         count={6}
@@ -1565,7 +1691,7 @@ function recordTorii() {
     drawCrest(c, 0, PLAQUE_Y + 3.2, 3.6, linear(-4, -72, 4, -64, GOLD), INK_GOLD);
   });
 }
-let TORII: SkPicture | null = null;
+let TORII: Tile | null = null;
 
 // ── the cherry boughs over the gate's corners ──
 
@@ -1763,7 +1889,7 @@ function recordBough(b: Bough) {
       .forEach(({ bl: [x, y, L], k }) => drawBlossom(c, x, y, L, rnd(k + 7) * 72));
   });
 }
-let BOUGH_PICS: SkPicture[] | null = null;
+let BOUGH_PICS: Tile[] | null = null;
 
 /** The gust every 9s: how strong it is now (0 to 1), and how far it has
  *  carried things so far (one more for each gust). */
@@ -1787,7 +1913,11 @@ const gustTravel = (T: number) => {
 
 function SwayBough({ t, i }: { t: Clock; i: number }) {
   const pictures = useMemo(
-    () => (BOUGH_PICS ??= BOUGHS.map(recordBough)),
+    () =>
+      (BOUGH_PICS ??= [
+        tile(recordBough(BOUGHS[0]), -112, -104, 74, 82),
+        tile(recordBough(BOUGHS[1]), 54, -104, 58, 74),
+      ]),
     [],
   );
   const [px, py] = BOUGHS[i].root;
@@ -1804,7 +1934,7 @@ function SwayBough({ t, i }: { t: Clock; i: number }) {
   ]);
   return (
     <Group transform={sway}>
-      <Picture picture={pictures[i]} />
+      <TileRect tile={pictures[i]} />
     </Group>
   );
 }
@@ -1899,10 +2029,10 @@ function recordToro() {
     });
   });
 }
-let TORO: SkPicture | null = null;
+let TORO: Tile | null = null;
 
 function Toro({ t, side }: { t: Clock; side: 1 | -1 }) {
-  const picture = useMemo(() => (TORO ??= recordToro()), []);
+  const picture = useMemo(() => (TORO ??= tile(recordToro(), -14, -41, 28, 43)), []);
   const i = side > 0 ? 0 : 1;
   const light = useDerivedValue(
     () =>
@@ -1924,7 +2054,7 @@ function Toro({ t, side }: { t: Clock; side: 1 | -1 }) {
           <BlurMask blur={6} style="normal" />
         </Circle>
       </Group>
-      <Picture picture={picture} />
+      <TileRect tile={picture} />
       {clip ? (
         <Group clip={clip}>
           <Circle cx={0} cy={TORO_LIGHT_Y} r={4} opacity={light}>
@@ -2013,20 +2143,27 @@ function recordKoiBody(k: KoiKind) {
       vein: "M1.6 -2.8L-0.6 -4.2M1.6 2.8L-0.6 4.2",
       veinWidth: 0.25,
       veinAlpha: 0.4,
-    });
+    }, true);
     const body = Skia.Path.MakeFromSVGString(KOI_BODY);
     if (!body) return;
     c.drawPath(body, brush(linear(0, -2.8, 0, 2.8, k.body)));
-    c.save();
-    c.clipPath(body, ClipOp.Intersect, true);
+    // the patches and lines trimmed to the body ahead of time: the koi
+    // are drawn every frame, so they keep no clips
     for (const p of k.patches) {
       const patch = Skia.Path.MakeFromSVGString(p.d);
-      if (patch) c.drawPath(patch, brush(p.color));
+      const inside = patch
+        ? Skia.Path.MakeFromOp(patch, body, PathOp.Intersect)
+        : null;
+      if (inside) c.drawPath(inside, brush(p.color));
     }
     // the light along its back, the line of its spine
-    c.drawLine(4.6, -1.2, -3.6, -1, pen(0.6, "#FFFFFF", 0.55));
-    c.drawLine(5, 0, -4.6, 0, pen(0.3, k.ink, 0.35));
-    c.restore();
+    const lineIn = (d: string, w: number, color: string, alpha: number) => {
+      const l = Skia.Path.MakeFromSVGString(d);
+      const inside = l ? cutIn(l, w, body) : null;
+      if (inside) c.drawPath(inside, brush(color, alpha));
+    };
+    lineIn("M4.6 -1.2L-3.6 -1", 0.6, "#FFFFFF", 0.55);
+    lineIn("M5 0L-4.6 0", 0.3, k.ink, 0.35);
     c.drawPath(body, pen(0.5, k.ink));
   });
 }
@@ -2041,7 +2178,7 @@ function recordKoiTail(k: KoiKind) {
       vein: "M-6 0L-9.2 -2.4M-6 0L-9.2 2.4M-6 0L-8.6 0",
       veinWidth: 0.25,
       veinAlpha: 0.45,
-    });
+    }, true);
   });
 }
 let KOI_PICS: { body: SkPicture; tail: SkPicture }[] | null = null;
@@ -2144,12 +2281,19 @@ function recordPondRim() {
     });
   });
 }
-let POND_RIM_PIC: SkPicture | null = null;
+let POND_RIM_PIC: Tile | null = null;
 
 function Pond({ t }: { t: Clock }) {
-  const rim = useMemo(() => (POND_RIM_PIC ??= recordPondRim()), []);
-  const clip = useMemo(() => Skia.Path.MakeFromSVGString(POND_WATER), []);
-  if (!clip) return null;
+  const rim = useMemo(
+    () => (POND_RIM_PIC ??= tile(recordPondRim(), -47, 54, 94, 40)),
+    [],
+  );
+  // the water's edge as an oval, which Skia clips to without a mask
+  const clip = useMemo(() => {
+    const path = Skia.Path.Make();
+    path.addOval(Skia.XYWHRect(POND_X - 39.8, POND_Y - 12.4, 79.6, 24.8));
+    return path;
+  }, []);
   return (
     <Group>
       <Group clip={clip}>
@@ -2176,7 +2320,7 @@ function Pond({ t }: { t: Clock }) {
           <Ripple key={i} t={t} i={i} />
         ))}
       </Group>
-      <Picture picture={rim} />
+      <TileRect tile={rim} />
     </Group>
   );
 }
@@ -2186,86 +2330,118 @@ function Pond({ t }: { t: Clock }) {
 const LOOSE_L = 6;
 const LOOSE = petal(LOOSE_L);
 
-function PetalShape() {
-  return (
-    <Group>
-      <Path path={LOOSE}>
-        <LinearGradient
-          start={vec(0, 0)}
-          end={vec(0, -LOOSE_L)}
-          colors={["#F06A98", "#FFC8DA", "#FFFFFF"]}
-        />
-      </Path>
-      <Path path={LOOSE} style="stroke" strokeWidth={0.5} color={INK_PETAL} />
-    </Group>
-  );
-}
-
-/** A petal circling the gate, in and out, turning over; the gust
- *  whirls it on. */
-function OrbitPetal({
+/** Loose petals, every one drawn into a single picture each frame (one
+ *  node, one derived value, however many petals):
+ *  - orbiting: circling the gate, in and out, turning over; the gust
+ *    whirls them on;
+ *  - in the gust: in from the lower right, up over the gate and down the
+ *    far side. */
+function Petals({
   t,
-  i,
-  R,
-  swing,
+  orbit,
+  gusting = [],
 }: {
   t: Clock;
-  i: number;
-  R: number;
-  swing: number;
+  orbit: { i: number; R: number; swing: number }[];
+  gusting?: number[];
 }) {
-  const a0 = rnd(i) * TAU;
-  const w = 0.16 + rnd(i + 1) * 0.12;
-  const size = 0.8 + rnd(i + 2) * 0.35;
-  const transform = useDerivedValue(() => {
+  const shape = useMemo(() => {
+    const path = Skia.Path.MakeFromSVGString(LOOSE);
+    const fill = brush(
+      linear(0, 0, 0, -LOOSE_L, ["#F06A98", "#FFC8DA", "#FFFFFF"]),
+    );
+    const ink = Skia.Paint();
+    ink.setAntiAlias(true);
+    ink.setStyle(PaintStyle.Stroke);
+    ink.setStrokeWidth(0.5);
+    ink.setColor(Skia.Color(INK_PETAL));
+    return { path, fill, ink };
+  }, []);
+  const circling = useMemo(
+    () =>
+      orbit.map(({ i, R, swing }) => ({
+        i,
+        R,
+        swing,
+        a0: rnd(i) * TAU,
+        w: 0.16 + rnd(i + 1) * 0.12,
+        size: 0.8 + rnd(i + 2) * 0.35,
+        sway: 0.4 + rnd(i + 3) * 0.3,
+        spin: 0.8 + rnd(i + 4),
+      })),
+    [orbit],
+  );
+  const blown = useMemo(
+    () =>
+      gusting.map((i) => ({
+        i,
+        delay: (i - 60) * 0.055,
+        lift: (rnd(i + 80) - 0.5) * 16,
+      })),
+    [gusting],
+  );
+  const picture = useDerivedValue(() => {
     const T = t.value;
-    const a = a0 + w * T + 2.4 * gustTravel(T);
-    const r = R + swing * Math.sin(T * (0.4 + rnd(i + 3) * 0.3) + i * 1.3) + 5 * gust(T);
-    return [
-      { translateX: Math.cos(a) * r },
-      { translateY: Math.sin(a) * r + Math.sin(T * 0.8 + i) * 3 },
-      { rotate: a + T * (0.8 + rnd(i + 4)) + i },
-      { scaleX: Math.cos(T * 2.6 + i * 1.7) * size },
-      { scaleY: size },
-      { translateY: LOOSE_L / 2 },
-    ];
+    const recorder = Skia.PictureRecorder();
+    const c = recorder.beginRecording(
+      Skia.XYWHRect(LIVE_BOUNDS.x, LIVE_BOUNDS.y, LIVE_BOUNDS.w, LIVE_BOUNDS.h),
+    );
+    const { path, fill, ink } = shape;
+    if (path) {
+      let alphaNow = -1;
+      const draw = (
+        x: number,
+        y: number,
+        rot: number,
+        sx: number,
+        sy: number,
+        alpha: number,
+      ) => {
+        c.save();
+        c.concat(placed(x, y, rot, sx, sy, LOOSE_L / 2));
+        if (alpha !== alphaNow) {
+          fill.setAlphaf(alpha);
+          ink.setAlphaf(alpha);
+          alphaNow = alpha;
+        }
+        c.drawPath(path, fill);
+        c.drawPath(path, ink);
+        c.restore();
+      };
+      const g = gust(T);
+      const travel = gustTravel(T);
+      for (const k of circling) {
+        const a = k.a0 + k.w * T + 2.4 * travel;
+        const r = k.R + k.swing * Math.sin(T * k.sway + k.i * 1.3) + 5 * g;
+        draw(
+          Math.cos(a) * r,
+          Math.sin(a) * r + Math.sin(T * 0.8 + k.i) * 3,
+          a + T * k.spin + k.i,
+          Math.cos(T * 2.6 + k.i * 1.7) * k.size,
+          k.size,
+          1,
+        );
+      }
+      const u = (T + 4) % GUST;
+      for (const k of blown) {
+        const q = (u - k.delay) / 1.9;
+        if (!(q > 0 && q < 1)) continue;
+        const pp = Math.min(1, Math.max(0, q));
+        const a = 0.55 - pp * 4.3 + k.i * 0.03;
+        const r = 90 - 16 * Math.sin(pp * Math.PI) + k.lift;
+        draw(
+          Math.cos(a) * r,
+          Math.sin(a) * r,
+          a * 2 + k.i,
+          Math.cos(u * 7 + k.i) * 1.15,
+          1.15,
+          Math.sin(q * Math.PI) ** 0.6,
+        );
+      }
+    }
+    return recorder.finishRecordingAsPicture();
   });
-  return (
-    <Group transform={transform}>
-      <PetalShape />
-    </Group>
-  );
-}
-
-/** A petal of the gust: in from the lower right, up over the gate and
- *  down the far side. */
-function GustPetal({ t, i }: { t: Clock; i: number }) {
-  const delay = (i - 60) * 0.055;
-  const lift = (rnd(i + 80) - 0.5) * 16;
-  const transform = useDerivedValue(() => {
-    const u = (t.value + 4) % GUST;
-    const p = Math.min(1, Math.max(0, (u - delay) / 1.9));
-    const a = 0.55 - p * 4.3 + i * 0.03;
-    const r = 90 - 16 * Math.sin(p * Math.PI) + lift;
-    return [
-      { translateX: Math.cos(a) * r },
-      { translateY: Math.sin(a) * r },
-      { rotate: a * 2 + i },
-      { scaleX: Math.cos(u * 7 + i) * 1.15 },
-      { scaleY: 1.15 },
-      { translateY: LOOSE_L / 2 },
-    ];
-  });
-  const opacity = useDerivedValue(() => {
-    const u = (t.value + 4) % GUST;
-    const p = (u - delay) / 1.9;
-    return p > 0 && p < 1 ? Math.sin(p * Math.PI) ** 0.6 : 0;
-  });
-  return (
-    <Group transform={transform} opacity={opacity}>
-      <PetalShape />
-    </Group>
-  );
+  return <Picture picture={picture} />;
 }
 
 const FRONT_ORBIT = Array.from({ length: 20 }, (_, k) => ({
@@ -2281,20 +2457,19 @@ const BACK_ORBIT = Array.from({ length: 8 }, (_, k) => ({
 const GUST_PETALS = Array.from({ length: 22 }, (_, k) => k + 60);
 
 function ShrineBack({ t }: { t: Clock }) {
-  const torii = useMemo(() => (TORII ??= recordTorii()), []);
+  const torii = useMemo(
+    () => (TORII ??= tile(recordTorii(), -96, -96, 192, 172)),
+    [],
+  );
   const glow = useDerivedValue(
     () => 0.14 + 0.04 * Math.sin(t.value * 1.1) + 0.08 * gust(t.value),
   );
   return (
     <Group>
       <Halo r={86} color="#FFC8D4" opacity={glow} />
-      {BACK_ORBIT.map((p) => (
-        <OrbitPetal key={p.i} t={t} {...p} />
-      ))}
-      <Picture picture={torii} />
-      <Group opacity={0.45}>
-        <Sweep t={t} d={TORII_RED} every={5.2} phase={1.2} />
-      </Group>
+      <Petals t={t} orbit={BACK_ORBIT} />
+      <TileRect tile={torii} />
+      <Shine t={t} d={TORII_RED} every={5.2} phase={1.2} opacity={0.45} />
       <Pond t={t} />
       <Toro t={t} side={1} />
       <Toro t={t} side={-1} />
@@ -2304,9 +2479,19 @@ function ShrineBack({ t }: { t: Clock }) {
   );
 }
 
-/** The ring's sakura inlays, recorded once. */
-function recordInlays() {
+/** The rose-gold ring and its sakura inlays, recorded once. */
+function recordShrineRing() {
   return record((c) => {
+    metal(c, {
+      d: SHRINE_RING,
+      colors: ROSE,
+      ink: INK_ROSE,
+      width: 1.2,
+      vein: SHRINE_PATTERN,
+      veinColor: "#9A5444",
+      veinWidth: 0.6,
+      shine: arcPath(57, -150 * DEG, -100 * DEG),
+    });
     for (const [x, y] of INLAYS)
       drawCrest(
         c,
@@ -2318,32 +2503,19 @@ function recordInlays() {
       );
   });
 }
-let INLAY_PIC: SkPicture | null = null;
+let SHRINE_RING_PIC: Tile | null = null;
 
 function ShrineFront({ t }: { t: Clock }) {
-  const inlays = useMemo(() => (INLAY_PIC ??= recordInlays()), []);
+  const ring = useMemo(
+    () => (SHRINE_RING_PIC ??= tile(recordShrineRing(), -61, -61, 122, 122)),
+    [],
+  );
   const shine = at(300, 55.4);
   return (
     <Group>
-      <Metal
-        d={SHRINE_RING}
-        evenOdd
-        colors={ROSE}
-        ink={INK_ROSE}
-        width={1.2}
-        vein={SHRINE_PATTERN}
-        veinColor="#9A5444"
-        veinWidth={0.6}
-        shine={arcPath(57, -150 * DEG, -100 * DEG)}
-      />
-      <Picture picture={inlays} />
-      <Sweep t={t} d={SHRINE_RING} evenOdd every={4.6} />
-      {FRONT_ORBIT.map((p) => (
-        <OrbitPetal key={p.i} t={t} {...p} />
-      ))}
-      {GUST_PETALS.map((i) => (
-        <GustPetal key={i} t={t} i={i} />
-      ))}
+      <TileRect tile={ring} />
+      <Shine t={t} d={SHRINE_RING} evenOdd every={4.6} />
+      <Petals t={t} orbit={FRONT_ORBIT} gusting={GUST_PETALS} />
       <Glint t={t} x={shine[0]} y={shine[1]} size={4.5} phase={0.8} />
       <Glint t={t} x={0} y={PLAQUE_Y + 3.2} size={4.5} phase={2.4} speed={1} />
       <Glint t={t} x={INLAYS[3][0]} y={INLAYS[3][1]} size={3.5} phase={4} speed={0.9} />

@@ -19,11 +19,15 @@
 
 import {
   BlurMask,
+  BlurStyle,
   Circle,
   ClipOp,
   FillType,
+  FilterMode,
   Group,
+  Image,
   LinearGradient,
+  MipmapMode,
   Paint,
   PaintStyle,
   Path,
@@ -37,11 +41,14 @@ import {
   rect,
   vec,
   type SkCanvas,
+  type SkImage,
   type SkPath,
   type SkPicture,
+  type SkRect,
   type SkShader,
 } from "@shopify/react-native-skia";
 import { useMemo, type ComponentProps, type ReactNode } from "react";
+import { PixelRatio } from "react-native";
 import { useDerivedValue, type DerivedValue } from "react-native-reanimated";
 
 import {
@@ -222,18 +229,95 @@ function Still({ picture }: { picture: () => SkPicture }) {
   return <Picture picture={pic} />;
 }
 
-/** A recorded picture that moves with the clock. */
-function Moving({
-  picture,
+// ── baked pictures ────────────────────────────────────────────────────
+// A picture of hundreds of engraved paths, each clipped for its veins,
+// costs too much to draw again every frame, four borders at a time. So
+// it's drawn into pixels once instead, a little finer than the screen
+// shows a border of up to BAKE_PT points, cut down to what it covers;
+// the pixels are what move and fade. (An image takes a group's opacity
+// itself, so a fading single picture needs no layer either.)
+
+const BAKE_PT = 130;
+
+interface Baked {
+  image: SkImage;
+  rect: SkRect;
+}
+
+/** What a picture covers, found at one pixel a unit, with a margin. */
+function coverage(pic: SkPicture): SkRect | null {
+  const surface = Skia.Surface.Make(192, 192);
+  if (!surface) return null;
+  const c = surface.getCanvas();
+  c.translate(96, 96);
+  c.drawPicture(pic);
+  const px = surface.makeImageSnapshot().readPixels();
+  if (!px) return null;
+  let x0 = 192;
+  let y0 = 192;
+  let x1 = -1;
+  let y1 = -1;
+  for (let y = 0; y < 192; y++)
+    for (let x = 0; x < 192; x++)
+      if (px[(y * 192 + x) * 4 + 3] > 0) {
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+  if (x1 < 0) return null;
+  return rect(x0 - 98, y0 - 98, x1 - x0 + 5, y1 - y0 + 5);
+}
+
+/** Draws a picture into pixels, `fine` times the screen's density. */
+function bake(pic: SkPicture, fine = BAKE_PT / 100): Baked | null {
+  const r = coverage(pic);
+  if (!r) return null;
+  const k = PixelRatio.get() * fine;
+  const w = Math.ceil(r.width * k);
+  const h = Math.ceil(r.height * k);
+  const surface = Skia.Surface.Make(w, h);
+  if (!surface) return null;
+  const c = surface.getCanvas();
+  c.scale(k, k);
+  c.translate(-r.x, -r.y);
+  c.drawPicture(pic);
+  return {
+    image: surface.makeImageSnapshot(),
+    rect: rect(r.x, r.y, w / k, h / k),
+  };
+}
+
+/** A picture, baked the first time it's drawn. */
+function baked(draw: (c: SkCanvas) => void, fine?: number) {
+  let b: Baked | null | undefined;
+  return () => (b === undefined ? (b = bake(record(draw), fine)) : b);
+}
+
+function Bake({ image }: { image: () => Baked | null }) {
+  const b = useMemo(() => image(), [image]);
+  if (!b) return null;
+  return (
+    <Image
+      image={b.image}
+      rect={b.rect}
+      fit="fill"
+      sampling={{ filter: FilterMode.Linear, mipmap: MipmapMode.Linear }}
+    />
+  );
+}
+
+/** A baked picture that moves with the clock. */
+function MovingBake({
+  image,
   transform,
 }: {
-  picture: () => SkPicture;
+  image: () => Baked | null;
   transform?: ComponentProps<typeof Group>["transform"];
 }) {
-  const pic = useMemo(() => picture(), [picture]);
   return (
     <Group transform={transform}>
-      <Picture picture={pic} />
+      <Bake image={image} />
     </Group>
   );
 }
@@ -536,11 +620,14 @@ const drawRow = (c: SkCanvas, k: number, tone: Tone) => {
   for (let i = row.plumes.length - 1; i >= 0; i--)
     drawFeather(c, row.plumes[i], row, tone);
 };
-const ROW_PICS = ([0, 1, 2, 3] as const).map((k) => ({
-  flame: once((c) => drawRow(c, k, "flame")),
-  ash: once((c) => drawRow(c, k, "ash")),
-}));
-const WING_HOT = once((c) => {
+const ROW_FLAME = ([0, 1, 2, 3] as const).map((k) =>
+  baked((c) => drawRow(c, k, "flame")),
+);
+/** The ash rows all crumble as one, so they're baked as one. */
+const WING_ASH = baked((c) => {
+  for (let k = 0; k < WING_ROWS.length; k++) drawRow(c, k, "ash");
+});
+const WING_HOT = baked((c) => {
   for (let k = 0; k < WING_ROWS.length; k++) drawRow(c, k, "hot");
 });
 
@@ -620,21 +707,19 @@ function RebornWing({ t, side }: { t: Clock; side: 1 | -1 }) {
   return (
     <Group transform={wing}>
       <Sksl sksl={WING_FIRE} uniforms={fire} x={-20} y={-100} w={124} h={140} />
-      <Fade opacity={ash}>
+      <Group opacity={ash}>
         <Group transform={crumble}>
-          {ROW_PICS.map((pics, k) => (
-            <Still key={k} picture={pics.ash} />
-          ))}
+          <Bake image={WING_ASH} />
         </Group>
-      </Fade>
+      </Group>
       <Fade opacity={shown}>
-        {ROW_PICS.map((pics, k) => (
-          <WingRow key={k} t={t} k={k} picture={pics.flame} />
+        {ROW_FLAME.map((image, k) => (
+          <WingRow key={k} t={t} k={k} image={image} />
         ))}
       </Fade>
-      <Fade opacity={hot}>
-        <Still picture={WING_HOT} />
-      </Fade>
+      <Group opacity={hot}>
+        <Bake image={WING_HOT} />
+      </Group>
       <Shown when={shown}>
         {PRIMARIES.filter((_, i) => i % 2 === 1).map((p, i) => (
           <TipFlame key={i} t={t} p={p} phase={i * 1.7 + side} />
@@ -649,11 +734,11 @@ function RebornWing({ t, side }: { t: Clock; side: 1 | -1 }) {
 function WingRow({
   t,
   k,
-  picture,
+  image,
 }: {
   t: Clock;
   k: number;
-  picture: () => SkPicture;
+  image: () => Baked | null;
 }) {
   const grow = useDerivedValue(() => {
     const u = phPhase(t.value);
@@ -662,16 +747,26 @@ function WingRow({
     const s = 0.12 + 0.88 * (1 - (1 - a) ** 3);
     return [{ rotate: (1 - a) * 0.3 }, { scale: s }];
   });
-  return <Moving picture={picture} transform={grow} />;
+  return <MovingBake image={image} transform={grow} />;
 }
+
+const TIP = (() => {
+  const s = 7;
+  const w = s * 0.42;
+  return `M0 ${-s}C${w} ${-s * 0.45} ${w * 1.15} ${-s * 0.05} 0 0C${-w * 1.15} ${-s * 0.05} ${-w} ${-s * 0.45} 0 ${-s}z`;
+})();
+/** The tongue's soft glow: a blur, baked once rather than blurred
+ *  afresh for every tongue every frame (finer, as the tongues grow). */
+const TIP_GLOW = baked((c) => {
+  const glow = toPath(TIP);
+  if (!glow) return;
+  const paint = brush("#FF8A2A", 0.55);
+  paint.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, 2.4, true));
+  c.drawPath(glow, paint);
+}, 2.6);
 
 /** A tongue of flame licking off a primary's tip. */
 function TipFlame({ t, p, phase }: { t: Clock; p: Plume; phase: number }) {
-  const d = useMemo(() => {
-    const s = 7;
-    const w = s * 0.42;
-    return `M0 ${-s}C${w} ${-s * 0.45} ${w * 1.15} ${-s * 0.05} 0 0C${-w * 1.15} ${-s * 0.05} ${-w} ${-s * 0.45} 0 ${-s}z`;
-  }, []);
   const transform = useDerivedValue(() => {
     const k =
       1 +
@@ -688,12 +783,10 @@ function TipFlame({ t, p, phase }: { t: Clock; p: Plume; phase: number }) {
   const opacity = useDerivedValue(() => phAlive(phPhase(t.value), 0));
   return (
     <Group transform={transform} opacity={opacity}>
-      <Path path={d} color="#FF8A2A" opacity={0.55}>
-        <BlurMask blur={2.4} style="normal" />
-      </Path>
-      <Path path={d} color="#FFB347" />
+      <Bake image={TIP_GLOW} />
+      <Path path={TIP} color="#FFB347" />
       <Path
-        path={d}
+        path={TIP}
         color="#FFF3C4"
         transform={[{ translateY: -0.3 }, { scale: 0.5 }]}
       />
@@ -826,16 +919,22 @@ const drawTailHalf = (c: SkCanvas, tone: Tone) => {
     if (TAIL[k].eye) drawTailPlume(c, TAIL[k], tone);
   }
 };
-const TAIL_PICS = {
-  flame: once((c) => drawTailHalf(c, "flame")),
-  ash: once((c) => drawTailHalf(c, "ash")),
-  hot: once((c) => drawTailHalf(c, "hot")),
-};
-const TAIL_MID = {
-  flame: once((c) => drawTailPlume(c, TAIL[0], "flame")),
-  ash: once((c) => drawTailPlume(c, TAIL[0], "ash")),
-  hot: once((c) => drawTailPlume(c, TAIL[0], "hot")),
-};
+const TAIL_HALF = baked((c) => drawTailHalf(c, "flame"));
+const TAIL_MID = baked((c) => drawTailPlume(c, TAIL[0], "flame"));
+/** The whole tail in one (the right half, its mirror, the middle plume),
+ *  for the ash and the white heat, which don't fan. */
+const wholeTail = (tone: Tone) =>
+  baked((c) => {
+    const half = record((h) => drawTailHalf(h, tone));
+    c.drawPicture(half);
+    c.save();
+    c.scale(-1, 1);
+    c.drawPicture(half);
+    c.restore();
+    drawTailPlume(c, TAIL[0], tone);
+  });
+const TAIL_ASH = wholeTail("ash");
+const TAIL_HOT = wholeTail("hot");
 
 /** One part of the tail (the right half, the left, or the middle
  *  plume): the halves fan open and shut a little in time with the wings,
@@ -843,11 +942,11 @@ const TAIL_MID = {
 function TailFan({
   t,
   side,
-  picture,
+  image,
 }: {
   t: Clock;
   side: 1 | -1 | 0;
-  picture: () => SkPicture;
+  image: () => Baked | null;
 }) {
   const fanned = useDerivedValue(() => {
     const u = phPhase(t.value);
@@ -860,10 +959,8 @@ function TailFan({
       { scaleY: s },
     ];
   });
-  return <Moving picture={picture} transform={fanned} />;
+  return <MovingBake image={image} transform={fanned} />;
 }
-
-const MIRROR = [{ scaleX: -1 }];
 
 function Tail({ t }: { t: Clock }) {
   const shown = useDerivedValue(() => phShown(phPhase(t.value)));
@@ -876,27 +973,19 @@ function Tail({ t }: { t: Clock }) {
   const hot = useDerivedValue(() => phBurst(phPhase(t.value)) ** 1.5 * 0.9);
   return (
     <Group>
-      <Fade opacity={ash}>
+      <Group opacity={ash}>
         <Group transform={crumble}>
-          <Still picture={TAIL_PICS.ash} />
-          <Group transform={MIRROR}>
-            <Still picture={TAIL_PICS.ash} />
-          </Group>
-          <Still picture={TAIL_MID.ash} />
+          <Bake image={TAIL_ASH} />
         </Group>
-      </Fade>
+      </Group>
       <Fade opacity={shown}>
-        <TailFan t={t} side={1} picture={TAIL_PICS.flame} />
-        <TailFan t={t} side={-1} picture={TAIL_PICS.flame} />
-        <TailFan t={t} side={0} picture={TAIL_MID.flame} />
+        <TailFan t={t} side={1} image={TAIL_HALF} />
+        <TailFan t={t} side={-1} image={TAIL_HALF} />
+        <TailFan t={t} side={0} image={TAIL_MID} />
       </Fade>
-      <Fade opacity={hot}>
-        <Still picture={TAIL_PICS.hot} />
-        <Group transform={MIRROR}>
-          <Still picture={TAIL_PICS.hot} />
-        </Group>
-        <Still picture={TAIL_MID.hot} />
-      </Fade>
+      <Group opacity={hot}>
+        <Bake image={TAIL_HOT} />
+      </Group>
     </Group>
   );
 }
@@ -955,11 +1044,11 @@ const drawRimFeathers = (c: SkCanvas, tone: Tone) => {
   }
 };
 const RIM_PICS = {
-  flame: once((c) => drawRimFeathers(c, "flame")),
-  ash: once((c) => drawRimFeathers(c, "ash")),
-  hot: once((c) => drawRimFeathers(c, "hot")),
+  flame: baked((c) => drawRimFeathers(c, "flame")),
+  ash: baked((c) => drawRimFeathers(c, "ash")),
+  hot: baked((c) => drawRimFeathers(c, "hot")),
 };
-const RIM_WIRES = once((c) => {
+const RIM_WIRES = baked((c) => {
   engrave(c, {
     d: RIM_OUT,
     evenOdd: true,
@@ -1032,7 +1121,7 @@ const HEART_SCROLLS = [
 ];
 const RUBY_Y = 56.5;
 
-const heartSetting = once((c) => {
+const heartSetting = baked((c) => {
   c.save();
   c.translate(0, HEART_Y + 7);
   for (const s of HEART_SCROLLS)
@@ -1253,18 +1342,18 @@ function RebornFront({ t }: { t: Clock }) {
   });
   return (
     <Group>
-      <Still picture={RIM_PICS.flame} />
-      <Fade opacity={ash}>
-        <Still picture={RIM_PICS.ash} />
-      </Fade>
-      <Still picture={RIM_WIRES} />
-      <Fade opacity={hot}>
-        <Still picture={RIM_PICS.hot} />
-      </Fade>
+      <Bake image={RIM_PICS.flame} />
+      <Group opacity={ash}>
+        <Bake image={RIM_PICS.ash} />
+      </Group>
+      <Bake image={RIM_WIRES} />
+      <Group opacity={hot}>
+        <Bake image={RIM_PICS.hot} />
+      </Group>
       <Sweep t={t} d={RIM_OUT} evenOdd every={5} phase={1.2} />
       <Sksl sksl={REBORN_RIM} uniforms={rim} x={-76} y={-76} w={152} h={152} />
       <CrestFire t={t} />
-      <Still picture={heartSetting} />
+      <Bake image={heartSetting} />
       <Heart t={t} />
       <Glint t={t} x={-1.5} y={HEART_Y - 3} size={5} phase={0.4} speed={1} />
       <Glint t={t} x={-1} y={RUBY_Y - 1.5} size={4} phase={2.2} speed={1.1} />

@@ -64,5 +64,5 @@ export const ART: Record<string, ArtBorderDrawing> = {
   ...MECHANICS_ART,
 };
 
-export { BorderClockProvider, useBorderClock } from "./kit";
+export { BorderClockProvider, useBorderClock, useMayMove } from "./kit";
 export type { ArtBorderDrawing } from "./kit";

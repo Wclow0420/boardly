@@ -1644,7 +1644,9 @@
     "unlock": "Buka dengan {{price}}",
     "notEnough": "Perlu {{count}} syiling lagi",
     "locked": "Berkunci",
-    "earnWith": "Dapatkan: {{badge}}"
+    "earnWith": "Dapatkan: {{badge}}",
+    "owned": "Dimiliki",
+    "earnedSection": "Dapat dengan lencana"
   },
   "coins": {
     "earned_one": "Anda dapat {{count}} syiling!",

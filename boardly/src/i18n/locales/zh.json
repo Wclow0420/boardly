@@ -1639,7 +1639,9 @@
     "unlock": "{{price}} 金币解锁",
     "notEnough": "还差 {{count}} 金币",
     "locked": "未解锁",
-    "earnWith": "获得徽章解锁：{{badge}}"
+    "earnWith": "获得徽章解锁：{{badge}}",
+    "owned": "已拥有",
+    "earnedSection": "徽章获得"
   },
   "coins": {
     "earned_one": "你获得了 {{count}} 金币！",

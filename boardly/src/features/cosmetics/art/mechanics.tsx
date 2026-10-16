@@ -21,43 +21,39 @@
 // See crest.tsx, baroque.tsx and heraldry.tsx for the house style.
 
 import {
-  BlurMask,
+  BlendMode,
   BlurStyle,
-  Circle,
   ClipOp,
   FillType,
-  Group,
-  LinearGradient,
-  Oval,
+  FilterMode,
+  MipmapMode,
   PaintStyle,
-  Path,
+  PathOp,
   Picture,
-  RadialGradient,
-  Rect,
   Skia,
   StrokeCap,
   StrokeJoin,
   TileMode,
   vec,
   type SkCanvas,
+  type SkColor,
+  type SkImage,
+  type SkPaint,
+  type SkPath,
   type SkPicture,
+  type SkRect,
   type SkShader,
-  type Transforms3d,
 } from "@shopify/react-native-skia";
 import { useMemo } from "react";
-import { useDerivedValue, type DerivedValue } from "react-native-reanimated";
+import { useDerivedValue } from "react-native-reanimated";
 
 import { NOISE } from "@/components/iso/noise";
-import { Gem, Sweep } from "./crowns";
 import {
-  Glint,
-  Halo,
   TAU,
   rnd,
   type ArtBorderDrawing,
   type Clock,
 } from "./kit";
-import { Fx } from "./rimfx";
 
 type Pt = [number, number];
 
@@ -181,8 +177,91 @@ interface Piece {
   shine?: string;
   shineWidth?: number;
   shineAlpha?: number;
-  /** Drawn inside the piece after its veins (a strip, a shade). */
+  /** Drawn over the fill before its veins; must already lie inside the
+   *  piece (a baked strip or shade). */
   inside?: (c: SkCanvas) => void;
+}
+
+// Cutting veins, strips and shades to a piece's outline. They used to be
+// clipped as they were drawn, but a clip (and a blur) inside a picture
+// that turns is worked out again on every frame; so the cut is made once,
+// when the picture is recorded, with path ops, and blurred shadows are
+// baked into images.
+
+/** `d`, cut to the inside of `shape`. */
+const cut = (d: SkPath | null, shape: SkPath) =>
+  d ? Skia.Path.MakeFromOp(d, shape, PathOp.Intersect) : null;
+
+/** A round-capped line's outline, as a filled shape. */
+const stroked = (d: string | SkPath, width: number) => {
+  const p = typeof d === "string" ? path(d) : d.copy();
+  return p ? p.stroke({ width, cap: StrokeCap.Round, join: StrokeJoin.Round }) : null;
+};
+
+/** Fills `d` where it lies inside `shape`. */
+function fillIn(c: SkCanvas, shape: SkPath, d: SkPath | null, paint: SkPaint) {
+  const p = cut(d, shape);
+  if (p) c.drawPath(p, paint);
+}
+
+/** Strokes `d` where its stroke lies inside `shape`. */
+function strokeIn(
+  c: SkCanvas,
+  shape: SkPath,
+  d: string | SkPath,
+  width: number,
+  color: string,
+  alpha: number,
+) {
+  fillIn(c, shape, stroked(d, width), brush(color, alpha));
+}
+
+/** Pixels per unit the baked images are drawn at (2.2 at 74pt, 2.9 at
+ *  96pt): soft shadows stay soft at any size up to about 130pt. */
+const BAKE = 4;
+
+/** Draws `draw` once into an image covering (x, y, w, h), and returns
+ *  something that draws it there again. */
+function bake(
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  draw: (c: SkCanvas) => void,
+) {
+  const W = Math.ceil(w * BAKE);
+  const H = Math.ceil(h * BAKE);
+  const surface = Skia.Surface.Make(W, H);
+  if (!surface) return () => {};
+  const sc = surface.getCanvas();
+  sc.scale(BAKE, BAKE);
+  sc.translate(-x, -y);
+  draw(sc);
+  const image = surface.makeImageSnapshot();
+  const src = Skia.XYWHRect(0, 0, W, H);
+  const dst = Skia.XYWHRect(x, y, W / BAKE, H / BAKE);
+  const paint = Skia.Paint();
+  paint.setAntiAlias(true);
+  return (c: SkCanvas) =>
+    c.drawImageRectOptions(image, src, dst, FilterMode.Linear, MipmapMode.Linear, paint);
+}
+
+/** A blurred shadow of `shape`, offset by (dx, dy), baked. */
+function shadowOf(
+  c: SkCanvas,
+  shape: SkPath,
+  dx: number,
+  dy: number,
+  color: string,
+  alpha: number,
+  blur: number,
+) {
+  const b = shape.computeTightBounds();
+  const pad = blur * 3 + 1;
+  bake(b.x + dx - pad, b.y + dy - pad, b.width + pad * 2, b.height + pad * 2, (sc) => {
+    sc.translate(dx, dy);
+    sc.drawPath(shape, brush(color, alpha, blur));
+  })(c);
 }
 
 /** Fills a piece, cuts its veins and shine in, inks it round. */
@@ -190,24 +269,11 @@ function engrave(c: SkCanvas, p: Piece) {
   const shape = path(p.d, p.evenOdd);
   if (!shape) return;
   c.drawPath(shape, brush(p.fill));
-  if (p.vein || p.shine || p.inside) {
-    c.save();
-    c.clipPath(shape, ClipOp.Intersect, true);
-    p.inside?.(c);
-    const vein = p.vein ? path(p.vein) : null;
-    if (vein)
-      c.drawPath(
-        vein,
-        pen(p.veinWidth ?? 0.6, p.veinColor ?? p.ink, p.veinAlpha ?? 0.75),
-      );
-    const shine = p.shine ? path(p.shine) : null;
-    if (shine)
-      c.drawPath(
-        shine,
-        pen(p.shineWidth ?? 0.9, "#FFFFFF", p.shineAlpha ?? 0.8),
-      );
-    c.restore();
-  }
+  p.inside?.(c);
+  if (p.vein)
+    strokeIn(c, shape, p.vein, p.veinWidth ?? 0.6, p.veinColor ?? p.ink, p.veinAlpha ?? 0.75);
+  if (p.shine)
+    strokeIn(c, shape, p.shine, p.shineWidth ?? 0.9, "#FFFFFF", p.shineAlpha ?? 0.8);
   if (p.width > 0) c.drawPath(shape, pen(p.width, p.ink));
 }
 
@@ -222,11 +288,6 @@ function record(draw: (c: SkCanvas) => void): SkPicture {
 function once(draw: (c: SkCanvas) => void) {
   let pic: SkPicture | null = null;
   return () => (pic ??= record(draw));
-}
-
-/** A clip path made once per component. */
-function useClip(d: string, evenOdd = false) {
-  return useMemo(() => path(d, evenOdd), [d, evenOdd]);
 }
 
 /** Lands with a little overshoot, 0 → 1. */
@@ -248,6 +309,169 @@ function bearing(c: SkCanvas, x: number, y: number, r: number) {
   );
   c.drawCircle(x, y, r, pen(0.4, "#3A0408"));
   c.drawCircle(x - r * 0.35, y - r * 0.38, r * 0.3, brush("#FFFFFF", 0.85));
+}
+
+// ── each layer as one picture a frame ─────────────────────────────────
+//
+// Every moving part of a layer is drawn by one worklet into one picture
+// per frame (the fixed parts are pictures recorded once, drawn whole), so
+// a layer is one node and one derived value however many parts move.
+// The steps below match what the kit's Glint, Halo and Sweep draw.
+
+/** Made the first time it's asked for (Jest has no Skia at load time). */
+function lazy<T>(make: () => T) {
+  let v: T | null = null;
+  return () => (v ??= make());
+}
+
+const TO_DEG = 180 / Math.PI;
+/** What a frame's picture covers: the whole canvas. */
+const frameRect = lazy(() => Skia.XYWHRect(-100, -100, 200, 200));
+
+interface GlintAt {
+  x: number;
+  y: number;
+  star: SkPath;
+  phase: number;
+  speed: number;
+}
+
+/** A four-pointed glint (the kit's Glint). */
+function glintAt(
+  x: number,
+  y: number,
+  size: number,
+  phase = 0,
+  speed = 1.2,
+): GlintAt {
+  const w = size * 0.2;
+  const star =
+    path(
+      `M0 ${-size}Q${w} ${-w} ${size} 0Q${w} ${w} 0 ${size}Q${-w} ${w} ${-size} 0Q${-w} ${-w} 0 ${-size}z`,
+    ) ?? Skia.Path.Make();
+  return { x, y, star, phase, speed };
+}
+
+function drawGlint(c: SkCanvas, g: GlintAt, white: SkPaint, t: number) {
+  "worklet";
+  const p = Math.max(0, Math.sin(t * g.speed + g.phase));
+  if (p <= 0) return;
+  const s = 0.15 + p ** 5;
+  c.save();
+  c.translate(g.x, g.y);
+  c.scale(s, s);
+  white.setAlphaf(p ** 3);
+  c.drawPath(g.star, white);
+  c.restore();
+}
+
+interface SweepAt {
+  clip: SkPath;
+  every: number;
+  phase: number;
+}
+
+/** A light sweeping over metal (crowns' Sweep). */
+function sweepAt(d: string, every: number, phase = 0, evenOdd = true): SweepAt {
+  return { clip: path(d, evenOdd) ?? Skia.Path.Make(), every, phase };
+}
+
+function drawSweep(
+  c: SkCanvas,
+  s: SweepAt,
+  band: SkPaint,
+  colors: SkColor[],
+  t: number,
+) {
+  "worklet";
+  const p = ((t + s.phase) % s.every) / 1.1;
+  // the rest of the time it waits well off the canvas
+  if (p >= 1) return;
+  // the band of light clipped to the metal is the metal filled with the
+  // band's gradient (no clip to mask every frame)
+  const m = Skia.Matrix();
+  m.translate(-110 + p * 220, 0);
+  m.rotate(0.45);
+  band.setShader(
+    Skia.Shader.MakeLinearGradient(
+      Skia.Point(-12, 0),
+      Skia.Point(12, 0),
+      colors,
+      null,
+      TileMode.Clamp,
+      m,
+    ),
+  );
+  c.drawPath(s.clip, band);
+}
+
+/** The paints and fixed shapes every layer shares. */
+const common = lazy(() => {
+  const band = Skia.Paint();
+  band.setAntiAlias(true);
+  return {
+    band,
+    bandColors: ["#FFFFFF00", "#FFFFFFCC", "#FFFFFF00"].map((k) => Skia.Color(k)),
+    white: brush("#FFFFFF"),
+    plain: brush("#FFFFFF"),
+  };
+});
+
+/** The kit's Halo: a soft glow behind everything. */
+function haloPaint(r: number, color: string) {
+  return brush(radial(0, 0, r, [color, `${color}00`], [0.55, 1]));
+}
+
+/** A part drawn whole: its picture, and the same picture baked into an
+ *  image, which a moving border draws instead: one quad a frame rather
+ *  than hundreds of strokes, gradients and suckers replayed. Baked at
+ *  SHEET_K pixels a unit, it is drawn at or a little under that from
+ *  130pt down to 74pt and looks the same. A border that stands still
+ *  (too small to move) draws the picture itself, crisp at any size. */
+interface Sheet {
+  pic: SkPicture;
+  img: SkImage | null;
+  src: SkRect;
+  dst: SkRect;
+}
+
+const SHEET_K = 4;
+const BAKED = new WeakMap<SkPicture, Sheet>();
+
+function sheet(pic: SkPicture, [x, y, w, h]: [number, number, number, number]): Sheet {
+  const none = { pic, img: null, src: frameRect(), dst: frameRect() };
+  const done = BAKED.get(pic);
+  if (done) return done;
+  const W = Math.ceil(w * SHEET_K);
+  const H = Math.ceil(h * SHEET_K);
+  const surface = Skia.Surface.Make(W, H);
+  if (!surface) return none;
+  const c = surface.getCanvas();
+  c.scale(SHEET_K, SHEET_K);
+  c.translate(-x, -y);
+  c.drawPicture(pic);
+  const out = {
+    pic,
+    img: surface.makeImageSnapshot(),
+    src: Skia.XYWHRect(0, 0, W, H),
+    dst: Skia.XYWHRect(x, y, W / SHEET_K, H / SHEET_K),
+  };
+  BAKED.set(pic, out);
+  return out;
+}
+
+function drawSheet(c: SkCanvas, s: Sheet, paint: SkPaint, baked: boolean) {
+  "worklet";
+  if (baked && s.img)
+    c.drawImageRectOptions(s.img, s.src, s.dst, FilterMode.Linear, MipmapMode.None, paint);
+  else c.drawPicture(s.pic);
+}
+
+/** A blurred glow or shadow, drawn every frame (circles blur cheaply). */
+function glowPaint(color: string, blur: number, style = BlurStyle.Normal) {
+  const paint = brush(color);
+  paint.setMaskFilter(Skia.MaskFilter.MakeBlur(style, blur, true));
+  return paint;
 }
 
 // ══ Clockwork Grand Master ═══════════════════════════════════════════
@@ -408,12 +632,7 @@ function drawGear(c: SkCanvas, g: Gear) {
   // its shadow on whatever is behind
   const body = teeth(g.n, g.r) + openings(g);
   const shadow = path(body, true);
-  if (shadow) {
-    c.save();
-    c.translate(0.8, 1.3);
-    c.drawPath(shadow, brush("#1A0E02", 0.35, 0.8));
-    c.restore();
-  }
+  if (shadow) shadowOf(c, shadow, 0.8, 1.3, "#1A0E02", 0.35, 0.8);
   engrave(c, {
     d: body,
     evenOdd: true,
@@ -482,21 +701,6 @@ const chime = (t: number) => {
   return Math.min(1.2, g);
 };
 
-function GearPiece({ t, k }: { t: Clock; k: number }) {
-  const g = GEARS[k];
-  const pic = useMemo(() => gearPicture(k), [k]);
-  const transform = useDerivedValue(() => [
-    { translateX: g.x },
-    { translateY: g.y },
-    { rotate: g.phase + (g.spin * travel(t.value)) / g.r },
-  ]);
-  return (
-    <Group transform={transform}>
-      <Picture picture={pic} />
-    </Group>
-  );
-}
-
 /** What stays still over the wheels: the light on each rim, and the
  *  jewels in the hubs. */
 const gearLights = once((c) => {
@@ -542,12 +746,7 @@ const ESCAPE_BODY =
 
 const escapePicture = once((c) => {
   const body = path(ESCAPE_BODY, true);
-  if (body) {
-    c.save();
-    c.translate(0.6, 1);
-    c.drawPath(body, brush("#1A0E02", 0.35, 0.6));
-    c.restore();
-  }
+  if (body) shadowOf(c, body, 0.6, 1, "#1A0E02", 0.35, 0.6);
   engrave(c, {
     d: ESCAPE_BODY,
     evenOdd: true,
@@ -638,12 +837,7 @@ const BOB_RAYS = spokes(16, 1.8, BOB_R - 1.1, 0, BOB_Y);
 const pendulumPicture = once((c) => {
   // shadows of the rods and bob
   const shade = path(LYRE + disc(BOB_R, 0, BOB_Y));
-  if (shade) {
-    c.save();
-    c.translate(0.7, 1.2);
-    c.drawPath(shade, brush("#1A0E02", 0.3, 0.7));
-    c.restore();
-  }
+  if (shade) shadowOf(c, shade, 0.7, 1.2, "#1A0E02", 0.3, 0.7);
   engrave(c, {
     d: LYRE,
     fill: linear(-14, 0, 14, 28, GOLD),
@@ -679,30 +873,6 @@ const pendulumPicture = once((c) => {
   });
   bearing(c, 0, BOB_Y, 1.3);
 });
-
-function Escapement({ t }: { t: Clock }) {
-  const wheel = useMemo(() => escapePicture(), []);
-  const lyre = useMemo(() => pendulumPicture(), []);
-  const turn = useDerivedValue(() => [
-    { translateX: ESC.x },
-    { translateY: ESC.y },
-    { rotate: (beats(t.value) + 3 * strikes(t.value)) * (TAU / (2 * ESC.n)) },
-  ]);
-  const swing = useDerivedValue(() => [
-    { translateY: PIVOT_Y },
-    { rotate: 0.11 * Math.sin((Math.PI * t.value) / BEAT) },
-  ]);
-  return (
-    <Group>
-      <Group transform={turn}>
-        <Picture picture={wheel} />
-      </Group>
-      <Group transform={swing}>
-        <Picture picture={lyre} />
-      </Group>
-    </Group>
-  );
-}
 
 // The ring: a silver chapter ring in a reeded brass bezel.
 const CH_IN = 49.5;
@@ -827,187 +997,213 @@ const MINUTE_HAND =
 const HOUR_HAND =
   "M0 -7.2L1.7 -4.8L0.62 -3.8L0.75 1.9L-0.75 1.9L-0.62 -3.8L-1.7 -4.8Z";
 
-function Hand({
-  t,
-  d,
-  hour,
-}: {
-  t: Clock;
-  d: string;
-  hour: boolean;
-}) {
-  const transform = useDerivedValue(() => {
-    const a = hour
-      ? (t.value / STRIKE) * (TAU / 12) + (10 * TAU) / 12
-      : (beats(t.value) * TAU * BEAT) / STRIKE;
-    return [{ translateX: DX }, { translateY: DY }, { rotate: a }];
+/** A hand, recorded pointing up from the dial's centre: its shadow, its
+ *  blued steel, its ink. */
+const handPicture = (d: string) =>
+  record((c) => {
+    const hand = path(d);
+    if (!hand) return;
+    c.save();
+    c.translate(0.4, 0.7);
+    c.drawPath(hand, brush("#000000", 0.3));
+    c.restore();
+    c.drawPath(hand, brush(radial(-1, -6, 11, BLUED)));
+    const ink = pen(0.4, INK_BLUE);
+    ink.setStrokeCap(StrokeCap.Butt);
+    c.drawPath(hand, ink);
   });
-  return (
-    <Group transform={transform}>
-      <Path path={d} color="#000000" opacity={0.3} transform={[{ translateX: 0.4 }, { translateY: 0.7 }]} />
-      <Path path={d}>
-        <RadialGradient c={vec(-1, -6)} r={11} colors={BLUED} />
-      </Path>
-      <Path path={d} style="stroke" strokeWidth={0.4} strokeJoin="round" color={INK_BLUE} />
-    </Group>
-  );
-}
 
-function Dial({ t }: { t: Clock }) {
-  const dial = useMemo(() => dialPicture(), []);
-  const moon = useMemo(() => moonPicture(), []);
-  const frame = useMemo(() => windowFrame(), []);
-  const porthole = useClip(MOON_WINDOW);
-  // the dial shivers as the bell rings
-  const shiver = useDerivedValue(() => {
-    const c = t.value % STRIKE;
-    let s = 0;
-    for (let k = 0; k < 3; k++) {
-      const p = c - k * 0.55;
-      if (p >= 0) s += Math.sin(p * 46) * Math.exp(-p * 6);
-    }
-    return [
-      { translateX: DX },
-      { translateY: DY },
-      { rotate: 0.035 * s },
-      { translateX: -DX },
-      { translateY: -DY },
-    ];
-  });
-  const glow = useDerivedValue(() => 0.18 + 0.7 * chime(t.value));
-  const phase = useDerivedValue(() => [
-    { translateX: 0 },
-    { translateY: MOON_Y },
-    { rotate: (t.value * TAU) / 48 + 0.4 },
-  ]);
-  return (
-    <Group>
-      <Circle cx={DX} cy={DY} r={24} opacity={glow} blendMode="screen">
-        <RadialGradient
-          c={vec(DX, DY)}
-          r={24}
-          colors={["#FFE9A8", "#FFC94A88", "#FFB02000"]}
-          positions={[0.45, 0.7, 1]}
-        />
-      </Circle>
-      <Group transform={shiver}>
-        <Picture picture={dial} />
-        {porthole ? (
-          <Group clip={porthole}>
-            <Group transform={phase}>
-              <Picture picture={moon} />
-            </Group>
-          </Group>
-        ) : null}
-        <Picture picture={frame} />
-        <Hand t={t} d={HOUR_HAND} hour />
-        <Hand t={t} d={MINUTE_HAND} hour={false} />
-        <Circle cx={DX} cy={DY} r={1.6} color="#E2B04A" />
-        <Circle cx={DX} cy={DY} r={1.6} style="stroke" strokeWidth={0.4} color={INK_GOLD} />
-        <Circle cx={DX} cy={DY} r={0.8} color="#D0102E" />
-        <Sweep t={t} d={BEZEL_D} evenOdd every={5.2} phase={0.9} />
-      </Group>
-      <Glint t={t} x={DX} y={DY} size={4.5} phase={0.4} speed={1} />
-    </Group>
-  );
-}
+/** The back's parts and paints, made once: each wheel's picture (and
+ *  image) with where it sits and how it turns. */
+const clockScene = lazy(() => ({
+  ...common(),
+  halo: haloPaint(92, "#FFD98A"),
+  ripple: (() => {
+    const paint = glowPaint("#FFD86A", 1, BlurStyle.Solid);
+    paint.setStyle(PaintStyle.Stroke);
+    paint.setStrokeWidth(1.6);
+    return paint;
+  })(),
+  gears: GEARS.map((g, k) => ({
+    x: g.x,
+    y: g.y,
+    r: g.r,
+    spin: g.spin,
+    phase: g.phase,
+    pic: sheet(gearPicture(k), [-g.r - 6, -g.r - 6, 2 * g.r + 12, 2 * g.r + 12]),
+  })),
+  lights: sheet(gearLights(), [-92, -92, 184, 184]),
+  metal: sweepAt(GEAR_METAL, 5.2),
+  escape: sheet(escapePicture(), [-14, -14, 28, 28]),
+  lyre: sheet(pendulumPicture(), [-21, -4, 42, 44]),
+  glints: [
+    glintAt(GEARS[1].x, GEARS[1].y, 4, 1.1),
+    glintAt(GEARS[7].x, GEARS[7].y, 4, 2.6),
+    glintAt(GEARS[3].x, GEARS[3].y, 3.5, 4.2),
+    glintAt(GEARS[9].x, GEARS[9].y, 3.5, 5.3),
+  ],
+}));
 
-/** Rings of sound going out from the dial at each stroke. */
-function Ripple({ t, k }: { t: Clock; k: number }) {
-  const r = useDerivedValue(() => {
-    const s = (t.value % STRIKE) - k * 0.55;
-    return s < 0 ? 0 : 17 + s * 22;
-  });
-  const opacity = useDerivedValue(() => {
-    const s = (t.value % STRIKE) - k * 0.55;
-    return s < 0 || s > 1.2 ? 0 : 0.7 * (1 - s / 1.2);
-  });
-  return (
-    <Circle
-      cx={DX}
-      cy={DY}
-      r={r}
-      style="stroke"
-      strokeWidth={1.6}
-      color="#FFD86A"
-      opacity={opacity}
-    >
-      <BlurMask blur={1} style="solid" />
-    </Circle>
-  );
-}
+/** The ring's shadow on the picture's edge, and the ring. */
+const ringFront = once((c) => {
+  const shadow = glowPaint("#000000", 1.4);
+  shadow.setStyle(PaintStyle.Stroke);
+  shadow.setStrokeWidth(2.2);
+  shadow.setAlphaf(0.35);
+  c.drawCircle(0.6, 1, CH_IN, shadow);
+  c.drawPicture(ringPicture());
+});
 
-/** The strike's light running round the chapter ring, both ways from
- *  twelve down to six. */
-function RingRun({ t, s }: { t: Clock; s: 1 | -1 }) {
-  const transform = useDerivedValue(() => {
-    const p = Math.min(1, (t.value % STRIKE) / 0.9);
-    const a = -Math.PI / 2 + s * p * Math.PI;
-    return [
-      { translateX: Math.cos(a) * 52.5 },
-      { translateY: Math.sin(a) * 52.5 },
-    ];
-  });
-  const opacity = useDerivedValue(() => {
-    const p = (t.value % STRIKE) / 0.9;
-    return p > 1 ? 0 : Math.sin(p * Math.PI) * 0.95;
-  });
-  return (
-    <Group transform={transform} opacity={opacity} blendMode="screen">
-      <Circle cx={0} cy={0} r={5} color="#FFE08A">
-        <BlurMask blur={3} style="normal" />
-      </Circle>
-      <Circle cx={0} cy={0} r={1.6} color="#FFFFFF" />
-    </Group>
-  );
-}
+/** The arbor over the hands. */
+const pinPicture = once((c) => {
+  c.drawCircle(DX, DY, 1.6, brush("#E2B04A"));
+  const ink = pen(0.4, INK_GOLD);
+  ink.setStrokeCap(StrokeCap.Butt);
+  c.drawCircle(DX, DY, 1.6, ink);
+  c.drawCircle(DX, DY, 0.8, brush("#D0102E"));
+});
+
+const clockFrontScene = lazy(() => {
+  const screen = (paint: SkPaint) => {
+    paint.setBlendMode(BlendMode.Screen);
+    return paint;
+  };
+  return {
+    ...common(),
+    ring: sheet(ringFront(), [-62, -62, 124, 124]),
+    run: screen(glowPaint("#FFE08A", 3)),
+    runDot: screen(brush("#FFFFFF")),
+    ringSweep: sweepAt(RING_D, 5.2, 0.6),
+    glow: screen(
+      brush(
+        radial(DX, DY, 24, ["#FFE9A8", "#FFC94A88", "#FFB02000"], [0.45, 0.7, 1]),
+      ),
+    ),
+    dial: sheet(dialPicture(), [DX - 22, DY - 22, 44, 44]),
+    moon: moonPicture(),
+    porthole: path(MOON_WINDOW) ?? Skia.Path.Make(),
+    frame: windowFrame(),
+    hour: handPicture(HOUR_HAND),
+    minute: handPicture(MINUTE_HAND),
+    pin: pinPicture(),
+    bezel: sweepAt(BEZEL_D, 5.2, 0.9),
+    glint: glintAt(DX, DY, 4.5, 0.4, 1),
+  };
+});
 
 function ClockBack({ t }: { t: Clock }) {
-  const lights = useMemo(() => gearLights(), []);
-  const glow = useDerivedValue(() => 0.3 + 0.25 * chime(t.value));
-  return (
-    <Group>
-      <Halo r={92} color="#FFD98A" opacity={glow} />
-      {[0, 1, 2].map((k) => (
-        <Ripple key={k} t={t} k={k} />
-      ))}
-      {GEARS.map((_, k) => (
-        <GearPiece key={k} t={t} k={k} />
-      ))}
-      <Picture picture={lights} />
-      <Sweep t={t} d={GEAR_METAL} evenOdd every={5.2} />
-      <Escapement t={t} />
-      <Glint t={t} x={GEARS[1].x} y={GEARS[1].y} size={4} phase={1.1} />
-      <Glint t={t} x={GEARS[7].x} y={GEARS[7].y} size={4} phase={2.6} />
-      <Glint t={t} x={GEARS[3].x} y={GEARS[3].y} size={3.5} phase={4.2} />
-      <Glint t={t} x={GEARS[9].x} y={GEARS[9].y} size={3.5} phase={5.3} />
-    </Group>
-  );
+  const start = useStart(t);
+  const S = useMemo(() => clockScene(), []);
+  const recorder = useMemo(() => Skia.PictureRecorder(), []);
+  const bounds = useMemo(() => frameRect(), []);
+  const picture = useDerivedValue(() => {
+    const v = t.value;
+    const baked = v !== start;
+    const c = recorder.beginRecording(bounds);
+    S.halo.setAlphaf(0.3 + 0.25 * chime(v));
+    c.drawCircle(0, 0, 92, S.halo);
+    // rings of sound going out from the dial at each stroke
+    for (let k = 0; k < 3; k++) {
+      const s = (v % STRIKE) - k * 0.55;
+      if (s < 0 || s > 1.2) continue;
+      S.ripple.setAlphaf(0.7 * (1 - s / 1.2));
+      c.drawCircle(DX, DY, 17 + s * 22, S.ripple);
+    }
+    const run = travel(v);
+    for (const g of S.gears) {
+      c.save();
+      c.translate(g.x, g.y);
+      c.rotate((g.phase + (g.spin * run) / g.r) * TO_DEG, 0, 0);
+      drawSheet(c, g.pic, S.plain, baked);
+      c.restore();
+    }
+    drawSheet(c, S.lights, S.plain, baked);
+    drawSweep(c, S.metal, S.band, S.bandColors, v);
+    // the escapement: the wheel ticks round, the pendulum swings
+    c.save();
+    c.translate(ESC.x, ESC.y);
+    c.rotate((beats(v) + 3 * strikes(v)) * (TAU / (2 * ESC.n)) * TO_DEG, 0, 0);
+    drawSheet(c, S.escape, S.plain, baked);
+    c.restore();
+    c.save();
+    c.translate(0, PIVOT_Y);
+    c.rotate(0.11 * Math.sin((Math.PI * v) / BEAT) * TO_DEG, 0, 0);
+    drawSheet(c, S.lyre, S.plain, baked);
+    c.restore();
+    for (const g of S.glints) drawGlint(c, g, S.white, v);
+    return recorder.finishRecordingAsPicture();
+  });
+  return <Picture picture={picture} />;
 }
 
 function ClockFront({ t }: { t: Clock }) {
-  const picture = useMemo(() => ringPicture(), []);
-  return (
-    <Group>
-      {/* the ring's shadow on the picture's edge */}
-      <Circle
-        cx={0.6}
-        cy={1}
-        r={CH_IN}
-        style="stroke"
-        strokeWidth={2.2}
-        color="#000000"
-        opacity={0.35}
-      >
-        <BlurMask blur={1.4} style="normal" />
-      </Circle>
-      <Picture picture={picture} />
-      <RingRun t={t} s={1} />
-      <RingRun t={t} s={-1} />
-      <Sweep t={t} d={RING_D} evenOdd every={5.2} phase={0.6} />
-      <Dial t={t} />
-    </Group>
-  );
+  const start = useStart(t);
+  const S = useMemo(() => clockFrontScene(), []);
+  const recorder = useMemo(() => Skia.PictureRecorder(), []);
+  const bounds = useMemo(() => frameRect(), []);
+  const picture = useDerivedValue(() => {
+    const v = t.value;
+    const baked = v !== start;
+    const c = recorder.beginRecording(bounds);
+    drawSheet(c, S.ring, S.plain, baked);
+    // the strike's light running round the chapter ring, both ways from
+    // twelve down to six
+    const p = (v % STRIKE) / 0.9;
+    if (p <= 1) {
+      const o = Math.sin(p * Math.PI) * 0.95;
+      if (o > 0) {
+        S.run.setAlphaf(o);
+        S.runDot.setAlphaf(o);
+        for (const s of [1, -1]) {
+          const a = -Math.PI / 2 + s * p * Math.PI;
+          c.save();
+          c.translate(Math.cos(a) * 52.5, Math.sin(a) * 52.5);
+          c.drawCircle(0, 0, 5, S.run);
+          c.drawCircle(0, 0, 1.6, S.runDot);
+          c.restore();
+        }
+      }
+    }
+    drawSweep(c, S.ringSweep, S.band, S.bandColors, v);
+    // the dial glows as the bell rings
+    S.glow.setAlphaf(0.18 + 0.7 * chime(v));
+    c.drawCircle(DX, DY, 24, S.glow);
+    // and shivers
+    const cy = v % STRIKE;
+    let sh = 0;
+    for (let k = 0; k < 3; k++) {
+      const q = cy - k * 0.55;
+      if (q >= 0) sh += Math.sin(q * 46) * Math.exp(-q * 6);
+    }
+    c.save();
+    c.translate(DX, DY);
+    c.rotate(0.035 * sh * TO_DEG, 0, 0);
+    c.translate(-DX, -DY);
+    drawSheet(c, S.dial, S.plain, baked);
+    c.save();
+    c.clipPath(S.porthole, ClipOp.Intersect, true);
+    c.translate(0, MOON_Y);
+    c.rotate(((v * TAU) / 48 + 0.4) * TO_DEG, 0, 0);
+    c.drawPicture(S.moon);
+    c.restore();
+    c.drawPicture(S.frame);
+    c.save();
+    c.translate(DX, DY);
+    c.rotate(((v / STRIKE) * (TAU / 12) + (10 * TAU) / 12) * TO_DEG, 0, 0);
+    c.drawPicture(S.hour);
+    c.restore();
+    c.save();
+    c.translate(DX, DY);
+    c.rotate(((beats(v) * TAU * BEAT) / STRIKE) * TO_DEG, 0, 0);
+    c.drawPicture(S.minute);
+    c.restore();
+    c.drawPicture(S.pin);
+    drawSweep(c, S.bezel, S.band, S.bandColors, v);
+    c.restore();
+    drawGlint(c, S.glint, S.white, v);
+    return recorder.finishRecordingAsPicture();
+  });
+  return <Picture picture={picture} />;
 }
 
 // ══ Kraken's Deep ════════════════════════════════════════════════════
@@ -1219,16 +1415,12 @@ function drawArm(
   const shape = path(d);
   if (!shape) return;
   // its shadow
-  c.save();
-  c.translate(1, 1.6);
-  c.drawPath(shape, brush("#06100E", 0.4, 1.2));
-  c.restore();
+  shadowOf(c, shape, 1, 1.6, "#06100E", 0.4, 1.2);
   c.drawPath(shape, brush(linear(-60, -70, 60, 70, BRONZE)));
-  c.save();
-  c.clipPath(shape, ClipOp.Intersect, true);
+  // everything from here to the outline is cut to the arm
   // the arm's roundness: shade under its far edge
   const back = path(poly([...e.along(-side * 1.1), ...e.along(-side * 0.62).reverse()]));
-  if (back) c.drawPath(back, brush("#3A1A04", 0.3));
+  fillIn(c, shape, back, brush("#3A1A04", 0.3));
   // the underside; on a coil it shows across the elbow, where the arm
   // turns as it comes round the ring's edge, and then only at its side
   const inner = (s: number) =>
@@ -1243,11 +1435,12 @@ function drawArm(
   if (under) {
     if (opts.peek) {
       // the elbow's round end
-      c.drawCircle(a.p[0][0], a.p[0][1], a.w[0] / 2 + 0.6, brush(linear(-50, -60, 50, 60, TEAL)));
+      const end = Skia.Path.Make();
+      end.addCircle(a.p[0][0], a.p[0][1], a.w[0] / 2 + 0.6);
+      fillIn(c, shape, end, brush(linear(-50, -60, 50, 60, TEAL)));
     }
-    c.drawPath(under, brush(linear(-50, -60, 50, 60, TEAL)));
-    const edge = path(line(e.along(inner)));
-    if (edge) c.drawPath(edge, pen(0.5, INK_TEAL, 0.8));
+    fillIn(c, shape, under, brush(linear(-50, -60, 50, 60, TEAL)));
+    strokeIn(c, shape, line(e.along(inner)), 0.5, INK_TEAL, 0.8);
   }
   // suckers along it, smaller toward the tip
   let run = 0;
@@ -1270,9 +1463,25 @@ function drawArm(
     const x = x1 - ty * o;
     const y = y1 + tx * o;
     const r = Math.max(0.65, w * (elbow ? 0.17 : opts.peek ? 0.15 : 0.13));
-    c.drawCircle(x, y, r, brush(radial(x - r * 0.3, y - r * 0.3, r * 1.4, ["#F6FFFB", "#BFE6DC", "#6AA89C"])));
-    c.drawCircle(x, y, r * 0.45, brush("#24605A"));
-    c.drawCircle(x, y, r, pen(0.35, INK_TEAL, 0.9));
+    const cup = brush(radial(x - r * 0.3, y - r * 0.3, r * 1.4, ["#F6FFFB", "#BFE6DC", "#6AA89C"]));
+    // most lie well inside the arm and are drawn as they are; one that
+    // reaches its edge is cut to it
+    const clear = Array.from({ length: 16 }, (_, j) => (j / 16) * TAU).every((ang) =>
+      shape.contains(x + Math.cos(ang) * (r + 0.25), y + Math.sin(ang) * (r + 0.25)),
+    );
+    if (clear) {
+      c.drawCircle(x, y, r, cup);
+      c.drawCircle(x, y, r * 0.45, brush("#24605A"));
+      c.drawCircle(x, y, r, pen(0.35, INK_TEAL, 0.9));
+    } else {
+      const rim = Skia.Path.Make();
+      rim.addCircle(x, y, r);
+      const mouth = Skia.Path.Make();
+      mouth.addCircle(x, y, r * 0.45);
+      fillIn(c, shape, rim, cup);
+      fillIn(c, shape, mouth, brush("#24605A"));
+      strokeIn(c, shape, rim, 0.35, INK_TEAL, 0.9);
+    }
   }
   // grooves round the bronze, and a groove along it
   let grooves = "";
@@ -1292,19 +1501,18 @@ function drawArm(
     const q = p(mid);
     grooves += `M${fp(p(-side))}Q${f(q[0] + tx * 0.9)} ${f(q[1] + ty * 0.9)} ${fp(p(end))}`;
   }
-  const g = path(grooves + line(e.along(-side * 0.42, 0.04, 0.9)));
-  if (g) c.drawPath(g, pen(0.45, VEIN_BRONZE, 0.7));
-  const shine = path(line(e.along(-side * 0.66, 0.1, 0.62)));
-  if (shine) c.drawPath(shine, pen(0.8, "#FFFFFF", 0.6));
+  strokeIn(c, shape, grooves + line(e.along(-side * 0.42, 0.04, 0.9)), 0.45, VEIN_BRONZE, 0.7);
+  strokeIn(c, shape, line(e.along(-side * 0.66, 0.1, 0.62)), 0.8, "#FFFFFF", 0.6);
   // turning away under the ring's edges
   if (opts.shade) {
     const stops =
       opts.shade === "coil"
         ? { cs: ["#00000000", "#000000A0", "#00000000", "#00000000", "#00000070", "#00000070"], at: [0, 47.6 / 68, 52 / 68, 60 / 68, 66 / 68, 1] }
         : { cs: ["#00000000", "#000000A0", "#00000000", "#00000000"], at: [0, 47.6 / 68, 52 / 68, 1] };
-    c.drawCircle(0, 0, 68, brush(radial(0, 0, 68, stops.cs, stops.at)));
+    const deep = Skia.Path.Make();
+    deep.addCircle(0, 0, 68);
+    fillIn(c, shape, deep, brush(radial(0, 0, 68, stops.cs, stops.at)));
   }
-  c.restore();
   c.drawPath(shape, pen(0.9, INK_BRONZE));
 }
 
@@ -1315,6 +1523,28 @@ const ARM_PICS = TENTACLES.map((tn) => ({
   }),
   tip: once((c) => drawArm(c, tn.tip, tn.side, { capEnd: true })),
 }));
+
+/** Both arms' rise out of the deep, fading in toward the hoard: drawn
+ *  straight down to y 78, and only the strip below that through a layer
+ *  (once the whole canvas went through one, every frame). */
+const FADE_Y = 78;
+const risingPicture = once((c) => {
+  const bases = ARM_PICS.map((a) => a.base());
+  c.save();
+  c.clipRect(Skia.XYWHRect(-200, -200, 400, 200 + FADE_Y), ClipOp.Intersect, false);
+  for (const p of bases) c.drawPicture(p);
+  c.restore();
+  c.save();
+  c.clipRect(Skia.XYWHRect(-96, FADE_Y, 192, 100 - FADE_Y), ClipOp.Intersect, false);
+  c.saveLayer();
+  for (const p of bases) c.drawPicture(p);
+  const fade = Skia.Paint();
+  fade.setShader(linear(0, 78, 0, 93, ["#000000", "#00000000"]));
+  fade.setBlendMode(BlendMode.DstIn);
+  c.drawRect(Skia.XYWHRect(-96, 70, 192, 30), fade);
+  c.restore();
+  c.restore();
+});
 
 /** The arms' grip: a slow breath, and the squeeze. */
 const squeeze = (t: number) => {
@@ -1329,34 +1559,6 @@ const shudder = (t: number) => {
   const c = t % KRAKEN;
   return c > 2 ? 0 : Math.sin(c * 52) * Math.exp(-c * 4.2);
 };
-const gripTransform = (t: number) => {
-  "worklet";
-  const s = 1 - 0.04 * squeeze(t) + 0.005 * Math.sin(t * 1.1);
-  return [{ rotate: 0.045 * shudder(t) }, { scale: s }];
-};
-
-function Tip({ t, k }: { t: Clock; k: number }) {
-  const tn = TENTACLES[k];
-  const pic = useMemo(() => ARM_PICS[k].tip(), [k]);
-  const transform = useDerivedValue(() => {
-    const sway =
-      0.07 * Math.sin(t.value * 0.9 + k * 2.1) +
-      0.025 * Math.sin(t.value * 2.3 + k) +
-      tn.side * 0.12 * squeeze(t.value);
-    return [
-      { translateX: tn.root[0] },
-      { translateY: tn.root[1] },
-      { rotate: sway },
-      { translateX: -tn.root[0] },
-      { translateY: -tn.root[1] },
-    ];
-  });
-  return (
-    <Group transform={transform}>
-      <Picture picture={pic} />
-    </Group>
-  );
-}
 
 // The sunken wheel: eight turned handles past a wooden rim.
 const HANDLE = (() => {
@@ -1430,24 +1632,6 @@ const wheelPicture = once((c) => {
     c.drawCircle(x, y, 1.5, pen(0.45, INK_BRONZE));
   }
 });
-
-function ShipsWheel({ t }: { t: Clock }) {
-  const pic = useMemo(() => wheelPicture(), []);
-  const transform = useDerivedValue(() => [
-    {
-      rotate:
-        0.12 +
-        0.07 * Math.sin(t.value * 0.45) +
-        0.03 * Math.sin(t.value * 0.23 + 1) +
-        0.05 * squeeze(t.value),
-    },
-  ]);
-  return (
-    <Group transform={transform}>
-      <Picture picture={pic} />
-    </Group>
-  );
-}
 
 /** Dark water swirling round the lower half, its currents catching the
  *  light; faint rays fall from above. `flash`: the squeeze stirs it. */
@@ -1580,10 +1764,7 @@ function drawBarnacle(c: SkCanvas, a: number, r: number, s: number, i: number) {
   });
   const shell = path(poly(pts));
   if (!shell) return;
-  c.save();
-  c.translate(0.4, 0.7);
-  c.drawPath(shell, brush("#0E0A04", 0.45, 0.5));
-  c.restore();
+  shadowOf(c, shell, 0.4, 0.7, "#0E0A04", 0.45, 0.5);
   c.drawPath(shell, brush(radial(x - s * 0.4, y - s * 0.5, s * 1.8, ["#F4F0E6", "#C9C1AE", "#7A7262"])));
   const plates = path(pts.map((p) => `M${f(x)} ${f(y)}L${fp(p)}`).join(""));
   if (plates) c.drawPath(plates, pen(0.3, "#5A5446", 0.8));
@@ -1606,14 +1787,16 @@ const krakenRingPicture = once((c) => {
     veinWidth: 0.55,
     shine: arc(55, 196 * DEG, 246 * DEG),
     // verdigris, thickest low down where the water lies
-    inside: (cv) => {
+    inside: bake(-K_OUT - 1, -K_OUT - 1, K_OUT * 2 + 2, K_OUT * 2 + 2, (cv) => {
+      const band = path(K_RING, true);
+      if (band) cv.clipPath(band, ClipOp.Intersect, true);
       for (let i = 0; i < 16; i++) {
         const a = (i / 16) * TAU + rnd(i + 5) * 0.3;
         const low = 0.5 + 0.5 * Math.sin(a);
         const [x, y] = pol(a, 54 + (rnd(i + 8) - 0.5) * 6);
         cv.drawCircle(x, y, 2.6 + rnd(i + 11) * 3, brush("#3FB0A0", 0.25 + 0.4 * low, 1.6));
       }
-    },
+    }),
   });
   BARNACLES.forEach(([a, r, s], i) => drawBarnacle(c, a, r, s, i + 1));
   // the aquamarine's bronze collet at the crown
@@ -1628,202 +1811,360 @@ const krakenRingPicture = once((c) => {
   });
 });
 
-/** A bubble rising: born low at the side, wobbling up, gone before the top. */
-function Bubble({ t, i }: { t: Clock; i: number }) {
+/** Bubbles rising: born low at the side, wobbling up, gone before the
+ *  top. */
+const BUBBLES = Array.from({ length: 10 }, (_, i) => {
   const s = i % 2 ? 1 : -1;
   const life = 3.4 + rnd(i + 21) * 2.2;
-  const x0 = s * (63 + rnd(i + 23) * 18);
-  const y0 = 64 - rnd(i + 25) * 26;
-  const size = 0.9 + rnd(i + 27) * 1.3;
-  const transform = useDerivedValue<Transforms3d>(() => {
-    const p = ((t.value + rnd(i + 29) * life) % life) / life;
-    return [
-      { translateX: x0 + Math.sin(p * 10 + i) * 2 },
-      { translateY: y0 - p * (y0 + 80) },
-      { scale: 0.7 + p * 0.5 },
-    ];
-  });
-  const opacity = useDerivedValue(() => {
-    const p = ((t.value + rnd(i + 29) * life) % life) / life;
-    return Math.min(1, p * 6) * (1 - p) * 0.9;
-  });
-  return <BubbleBody transform={transform} opacity={opacity} size={size} />;
-}
-
-function BubbleBody({
-  transform,
-  opacity,
-  size,
-}: {
-  transform: DerivedValue<Transforms3d>;
-  opacity: DerivedValue<number>;
-  size: number;
-}) {
-  return (
-    <Group transform={transform} opacity={opacity}>
-      <Circle cx={0} cy={0} r={size} color="#7ADCD0" opacity={0.22} />
-      <Circle cx={0} cy={0} r={size} style="stroke" strokeWidth={0.6} color="#DFFFF8" />
-      <Circle cx={-size * 0.35} cy={-size * 0.35} r={size * 0.3} color="#FFFFFF" />
-    </Group>
-  );
-}
+  return {
+    i,
+    life,
+    x0: s * (63 + rnd(i + 23) * 18),
+    y0: 64 - rnd(i + 25) * 26,
+    size: 0.9 + rnd(i + 27) * 1.3,
+    lead: rnd(i + 29) * life,
+  };
+});
 
 /** The burst when the arms squeeze: bubbles thrown up off both sides. */
-function BurstBubble({ t, i }: { t: Clock; i: number }) {
-  const s = i % 2 ? 1 : -1;
+const BURST = Array.from({ length: 20 }, (_, i) => {
   const a = (8 + rnd(i + 81) * 32) * DEG;
   const [sx, sy] = pol(a, 61 + rnd(i + 83) * 6);
-  const vy = 55 + rnd(i + 85) * 45;
-  const vx = 8 + rnd(i + 87) * 18;
-  const delay = rnd(i + 89) * 0.25;
-  const size = 1 + rnd(i + 91) * 1.9;
-  const transform = useDerivedValue<Transforms3d>(() => {
-    const c = (t.value % KRAKEN) - delay;
-    const p = Math.max(0, c);
-    return [
-      { translateX: s * (sx + vx * p) + Math.sin(p * 14 + i) * 1.2 },
-      { translateY: sy - vy * p + 14 * p * p },
-      { scale: 0.6 + p * 0.5 },
-    ];
-  });
-  const opacity = useDerivedValue(() => {
-    const c = (t.value % KRAKEN) - delay;
-    return c < 0 || c > 1.5 ? 0 : Math.min(1, c * 8) * (1 - c / 1.5);
-  });
-  return <BubbleBody transform={transform} opacity={opacity} size={size} />;
+  return {
+    i,
+    s: i % 2 ? 1 : -1,
+    sx,
+    sy,
+    vy: 55 + rnd(i + 85) * 45,
+    vx: 8 + rnd(i + 87) * 18,
+    delay: rnd(i + 89) * 0.25,
+    size: 1 + rnd(i + 91) * 1.9,
+  };
+});
+
+interface BubblePaints {
+  water: SkPaint;
+  film: SkPaint;
+  white: SkPaint;
 }
 
-/** A coin flipped off the hoard by the squeeze, landing back on its edge. */
-function FlipCoin({ t }: { t: Clock }) {
-  const transform = useDerivedValue(() => {
-    const c = (t.value % KRAKEN) - 0.15;
-    const p = Math.min(1, Math.max(0, c / 1.1));
-    const x = 4 + 26 * p;
-    const y = 74 + 12 * p - 88 * p * (1 - p);
-    const spin = Math.cos(p * TAU * 2.5);
-    return [
-      { translateX: x },
-      { translateY: y },
-      { rotate: -0.3 + p * 0.6 },
-      { scaleY: Math.max(0.08, Math.abs(spin)) },
-    ];
-  });
-  const opacity = useDerivedValue(() => {
-    const c = (t.value % KRAKEN) - 0.15;
-    return c < 0 || c > 1.3 ? 0 : c > 1.1 ? 1 - (c - 1.1) / 0.2 : 1;
-  });
-  return (
-    <Group transform={transform} opacity={opacity}>
-      <Oval x={-5.2} y={-5.2} width={10.4} height={10.4} color="#8A5A14" />
-      <Oval x={-4.7} y={-4.7} width={9.4} height={9.4}>
-        <RadialGradient c={vec(-1.4, -1.6)} r={6} colors={["#FFF4C0", "#E8B84A", "#A8741E"]} />
-      </Oval>
-      <Circle cx={0} cy={0} r={3.3} style="stroke" strokeWidth={0.5} color={VEIN_GOLD} />
-      <Circle cx={0} cy={0} r={5.2} style="stroke" strokeWidth={0.7} color={INK_GOLD} />
-    </Group>
-  );
+/** One bubble at (x, y), scaled, faded to `o`. */
+function drawBubble(
+  c: SkCanvas,
+  P: BubblePaints,
+  x: number,
+  y: number,
+  scale: number,
+  size: number,
+  o: number,
+) {
+  "worklet";
+  if (o <= 0) return;
+  c.save();
+  c.translate(x, y);
+  c.scale(scale, scale);
+  P.water.setAlphaf(0.22 * o);
+  c.drawCircle(0, 0, size, P.water);
+  P.film.setAlphaf(o);
+  c.drawCircle(0, 0, size, P.film);
+  P.white.setAlphaf(o);
+  c.drawCircle(-size * 0.35, -size * 0.35, size * 0.3, P.white);
+  c.restore();
 }
 
-function KrakenBack({ t }: { t: Clock }) {
-  const pics = useMemo(() => ARM_PICS.map((a) => a.base()), []);
-  const hoard = useMemo(() => hoardPicture(), []);
-  const grip = useDerivedValue(() => gripTransform(t.value));
-  const stir = useDerivedValue(() => squeeze(t.value));
-  return (
-    <Group>
-      <Halo r={92} color="#5AD8C8" opacity={0.22} />
-      <ShipsWheel t={t} />
-      <Fx sksl={DEEP} t={t} flash={stir} extent={96} />
-      {/* the ring's shadow, falling outward on what lies behind */}
-      <Circle cx={1} cy={1.6} r={61.5} style="stroke" strokeWidth={3} color="#000000" opacity={0.3}>
-        <BlurMask blur={2} style="normal" />
-      </Circle>
-      <Group transform={grip}>
-        {/* the arms rise out of the deep, fading in */}
-        <Group layer>
-          {pics.map((p, k) => (
-            <Picture key={k} picture={p} />
-          ))}
-          <Rect x={-96} y={70} width={192} height={30} blendMode="dstIn">
-            <LinearGradient
-              start={vec(0, 78)}
-              end={vec(0, 93)}
-              colors={["#000000", "#00000000"]}
-            />
-          </Rect>
-        </Group>
-        {TENTACLES.map((_, k) => (
-          <Tip key={k} t={t} k={k} />
-        ))}
-      </Group>
-      <Picture picture={hoard} />
-      <Glint t={t} x={PEARLS[0][0] - 0.8} y={PEARLS[0][1] - 0.9} size={3.4} phase={0.8} />
-      <Glint t={t} x={-8} y={84} size={3.4} phase={2.7} />
-      <Glint t={t} x={18} y={77} size={3} phase={4.4} />
-    </Group>
-  );
+/** The water, working out nothing outside the band it can colour
+ *  (r 44–95), nor its currents above the middle, where they are never
+ *  seen. */
+const DEEP_FAST = DEEP.replace(
+  `  if (r < 44.0 || r > 98.0) return half4(0.0);
+  float low = smoothstep(0.0, 58.0, xy.y);`,
+  `  if (r < 44.0 || r > 95.0) return half4(0.0);
+  float low = smoothstep(0.0, 58.0, xy.y);
+  if (low <= 0.0) {
+    float ray0 = pow(0.5 + 0.5 * sin(xy.x * 0.16 + xy.y * 0.07 + 1.6 * sin(t * 0.25)), 6.0)
+      * smoothstep(52.0, 64.0, r) * (1.0 - smoothstep(78.0, 92.0, r)) * 0.16;
+    return half4(vec3(0.62, 0.95, 0.9) * ray0, ray0);
+  }`,
+);
+
+/** The halo and the dark water's glow, behind everything. */
+const krakenHalo = once((c) => {
+  const halo = haloPaint(92, "#5AD8C8");
+  halo.setAlphaf(0.22);
+  c.drawCircle(0, 0, 92, halo);
+});
+
+/** The ring's shadow, falling outward on what lies behind. */
+const ringShadow = once((c) => {
+  const shadow = glowPaint("#000000", 2);
+  shadow.setStyle(PaintStyle.Stroke);
+  shadow.setStrokeWidth(3);
+  shadow.setAlphaf(0.3);
+  c.drawCircle(1, 1.6, 61.5, shadow);
+});
+
+/** Where an arm's drawing lies (its shadow too), cut to `box`. */
+function armBox(
+  arms: Arm[],
+  box: [number, number, number, number] = [-96, -96, 96, 96],
+): [number, number, number, number] {
+  let [x0, y0, x1, y1] = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const a of arms)
+    a.p.forEach(([x, y], k) => {
+      const r = a.w[k] / 2 + 8;
+      x0 = Math.min(x0, x - r);
+      y0 = Math.min(y0, y - r);
+      x1 = Math.max(x1, x + r);
+      y1 = Math.max(y1, y + r);
+    });
+  x0 = Math.max(x0, box[0]);
+  y0 = Math.max(y0, box[1]);
+  x1 = Math.min(x1, box[2]);
+  y1 = Math.min(y1, box[3]);
+  return [x0, y0, x1 - x0, y1 - y0];
 }
+
+const deepEffect = lazy(() => Skia.RuntimeEffect.Make(DEEP_FAST));
+
+const krakenScene = () => {
+  const deep = Skia.Paint();
+  deep.setAntiAlias(true);
+  return {
+    ...common(),
+    halo: krakenHalo(),
+    wheel: sheet(wheelPicture(), [-91, -91, 182, 182]),
+    effect: deepEffect(),
+    deep,
+    // over the art's square, as the rims' Fx draws it (a ring-shaped path
+    // here would be masked on the CPU every frame)
+    water: Skia.XYWHRect(-96, -96, 192, 192),
+    shadow: ringShadow(),
+    rising: sheet(
+      risingPicture(),
+      armBox(TENTACLES.map((tn) => tn.base), [-96, -96, 96, 100]),
+    ),
+    tips: TENTACLES.map((tn, k) => ({
+      x: tn.root[0],
+      y: tn.root[1],
+      side: tn.side,
+      pic: sheet(ARM_PICS[k].tip(), armBox([tn.tip])),
+    })),
+    hoard: sheet(hoardPicture(), [-50, 58, 100, 42]),
+    glints: [
+      glintAt(PEARLS[0][0] - 0.8, PEARLS[0][1] - 0.9, 3.4, 0.8),
+      glintAt(-8, 84, 3.4, 2.7),
+      glintAt(18, 77, 3, 4.4),
+    ],
+  };
+};
+
+/** The aquamarine: its dark setting, the stone, a highlight. */
+const gemPicture = once((c) => {
+  const [x, y, w, h] = [0, -55, 7.6, 9];
+  c.drawOval(Skia.XYWHRect(x - w / 2 - 1, y - h / 2 - 1, w + 2, h + 2), brush("#5A3A08"));
+  c.drawOval(
+    Skia.XYWHRect(x - w / 2, y - h / 2, w, h),
+    brush(radial(x - w * 0.2, y - h * 0.25, Math.max(w, h), AQUA)),
+  );
+  c.drawOval(Skia.XYWHRect(x - w * 0.28, y - h * 0.32, w * 0.3, h * 0.22), brush("#FFFFFFCC"));
+});
+
+/** The ring's shadow on the picture's edge. */
+const innerShadow = once((c) => {
+  const shadow = glowPaint("#000000", 1.4);
+  shadow.setStyle(PaintStyle.Stroke);
+  shadow.setStrokeWidth(2.2);
+  shadow.setAlphaf(0.35);
+  c.drawCircle(0.6, 1, K_IN, shadow);
+});
 
 /** The arms' front parts: where they cross over the ring. */
 const OVER = ring(95, 47.6);
 const BASE_OVER = disc(63) + disc(47.6, 0, 0, true);
 
-function KrakenFront({ t }: { t: Clock }) {
-  const ringPic = useMemo(() => krakenRingPicture(), []);
-  const bases = useMemo(() => ARM_PICS.map((a) => a.base()), []);
-  const coils = useMemo(() => ARM_PICS.map((a) => a.coils()), []);
-  const over = useClip(OVER, true);
-  const baseOver = useClip(BASE_OVER);
-  const shake = useDerivedValue(() => {
-    const s = shudder(t.value);
-    return [
-      { translateX: 1.4 * s },
-      { translateY: 0.5 * Math.sin(t.value * 61) * Math.abs(s) },
-      { rotate: 0.045 * s },
-    ];
+const krakenFrontScene = () => {
+  const glow = glowPaint("#5FF0DC", 4);
+  glow.setBlendMode(BlendMode.Screen);
+  const film = brush("#DFFFF8");
+  film.setStyle(PaintStyle.Stroke);
+  film.setStrokeWidth(0.6);
+  const stroke = (width: number, color: string) => {
+    const paint = brush(color);
+    paint.setStyle(PaintStyle.Stroke);
+    paint.setStrokeWidth(width);
+    return paint;
+  };
+  return {
+    ...common(),
+    shadow: innerShadow(),
+    ring: sheet(krakenRingPicture(), [-63, -63, 126, 126]),
+    ringSweep: sweepAt(K_RING, 5.6, 0.4),
+    glow,
+    gem: gemPicture(),
+    over: path(OVER, true) ?? Skia.Path.Make(),
+    baseOver: path(BASE_OVER) ?? Skia.Path.Make(),
+    bases: ARM_PICS.map((a, k) =>
+      sheet(a.base(), armBox([TENTACLES[k].base], [-72, -72, 72, 72])),
+    ),
+    coils: ARM_PICS.map((a, k) => sheet(a.coils(), armBox(TENTACLES[k].coils))),
+    bubble: { water: brush("#7ADCD0"), film, white: brush("#FFFFFF") },
+    coin: {
+      edge: brush("#8A5A14"),
+      edgeRect: Skia.XYWHRect(-5.2, -5.2, 10.4, 10.4),
+      face: brush(radial(-1.4, -1.6, 6, ["#FFF4C0", "#E8B84A", "#A8741E"])),
+      faceRect: Skia.XYWHRect(-4.7, -4.7, 9.4, 9.4),
+      groove: stroke(0.5, VEIN_GOLD),
+      ink: stroke(0.7, INK_GOLD),
+    },
+    glints: [glintAt(0, -55, 5, 0.3, 1), glintAt(-50, -30, 3.5, 2.2, 0.9)],
+  };
+};
+
+/** The clock as this border was first shown: a border too small to move
+ *  is handed one that stands still there, so it draws its pictures
+ *  rather than the baked images. (The shared clock's context doesn't
+ *  reach inside the canvas, so it's told apart by moving.) */
+function useStart(t: Clock) {
+  return useMemo(() => t.value, [t]);
+}
+
+function KrakenBack({ t }: { t: Clock }) {
+  const start = useStart(t);
+  const S = useMemo(() => krakenScene(), []);
+  const recorder = useMemo(() => Skia.PictureRecorder(), []);
+  const bounds = useMemo(() => frameRect(), []);
+  const picture = useDerivedValue(() => {
+    const v = t.value;
+    const baked = v !== start;
+    const sq = squeeze(v);
+    const c = recorder.beginRecording(bounds);
+    c.drawPicture(S.halo);
+    // the sunken wheel rocks
+    c.save();
+    c.rotate(
+      (0.12 + 0.07 * Math.sin(v * 0.45) + 0.03 * Math.sin(v * 0.23 + 1) + 0.05 * sq) *
+        TO_DEG,
+      0,
+      0,
+    );
+    drawSheet(c, S.wheel, S.plain, baked);
+    c.restore();
+    if (S.effect) {
+      S.deep.setShader(S.effect.makeShader([v, sq]));
+      c.drawRect(S.water, S.deep);
+    }
+    c.drawPicture(S.shadow);
+    // the arms' grip
+    c.save();
+    c.rotate(0.045 * shudder(v) * TO_DEG, 0, 0);
+    const g = 1 - 0.04 * sq + 0.005 * Math.sin(v * 1.1);
+    c.scale(g, g);
+    drawSheet(c, S.rising, S.plain, baked);
+    for (let k = 0; k < S.tips.length; k++) {
+      const tip = S.tips[k];
+      const sway =
+        0.07 * Math.sin(v * 0.9 + k * 2.1) +
+        0.025 * Math.sin(v * 2.3 + k) +
+        tip.side * 0.12 * sq;
+      c.save();
+      c.translate(tip.x, tip.y);
+      c.rotate(sway * TO_DEG, 0, 0);
+      c.translate(-tip.x, -tip.y);
+      drawSheet(c, tip.pic, S.plain, baked);
+      c.restore();
+    }
+    c.restore();
+    drawSheet(c, S.hoard, S.plain, baked);
+    for (const gl of S.glints) drawGlint(c, gl, S.white, v);
+    return recorder.finishRecordingAsPicture();
   });
-  const grip = useDerivedValue(() => gripTransform(t.value));
-  const glow = useDerivedValue(() => 0.45 + 0.3 * Math.sin(t.value * 1.6) + 0.4 * squeeze(t.value));
-  return (
-    <Group>
-      <Circle cx={0.6} cy={1} r={K_IN} style="stroke" strokeWidth={2.2} color="#000000" opacity={0.35}>
-        <BlurMask blur={1.4} style="normal" />
-      </Circle>
-      <Group transform={shake}>
-        <Picture picture={ringPic} />
-        <Sweep t={t} d={K_RING} evenOdd every={5.6} phase={0.4} />
-        <Circle cx={0} cy={-55} r={7} color="#5FF0DC" opacity={glow} blendMode="screen">
-          <BlurMask blur={4} style="normal" />
-        </Circle>
-        <Gem x={0} y={-55} w={7.6} h={9} colors={AQUA} />
-      </Group>
-      {over ? (
-        <Group clip={over}>
-          <Group transform={grip}>
-            {baseOver ? (
-              <Group clip={baseOver}>
-                {bases.map((p, k) => (
-                  <Picture key={k} picture={p} />
-                ))}
-              </Group>
-            ) : null}
-            {coils.map((p, k) => (
-              <Picture key={k} picture={p} />
-            ))}
-          </Group>
-        </Group>
-      ) : null}
-      {Array.from({ length: 10 }, (_, i) => (
-        <Bubble key={i} t={t} i={i} />
-      ))}
-      {Array.from({ length: 20 }, (_, i) => (
-        <BurstBubble key={i} t={t} i={i} />
-      ))}
-      <FlipCoin t={t} />
-      <Glint t={t} x={0} y={-55} size={5} phase={0.3} speed={1} />
-      <Glint t={t} x={-50} y={-30} size={3.5} phase={2.2} speed={0.9} />
-    </Group>
-  );
+  return <Picture picture={picture} />;
+}
+
+function KrakenFront({ t }: { t: Clock }) {
+  const start = useStart(t);
+  const S = useMemo(() => krakenFrontScene(), []);
+  const recorder = useMemo(() => Skia.PictureRecorder(), []);
+  const bounds = useMemo(() => frameRect(), []);
+  const picture = useDerivedValue(() => {
+    const v = t.value;
+    const baked = v !== start;
+    const sq = squeeze(v);
+    const sh = shudder(v);
+    const c = recorder.beginRecording(bounds);
+    c.drawPicture(S.shadow);
+    // the ring shudders when the arms squeeze
+    c.save();
+    c.translate(1.4 * sh, 0.5 * Math.sin(v * 61) * Math.abs(sh));
+    c.rotate(0.045 * sh * TO_DEG, 0, 0);
+    drawSheet(c, S.ring, S.plain, baked);
+    drawSweep(c, S.ringSweep, S.band, S.bandColors, v);
+    S.glow.setAlphaf(0.45 + 0.3 * Math.sin(v * 1.6) + 0.4 * sq);
+    c.drawCircle(0, -55, 7, S.glow);
+    c.drawPicture(S.gem);
+    c.restore();
+    // the arms where they cross over the ring
+    c.save();
+    c.clipPath(S.over, ClipOp.Intersect, true);
+    c.rotate(0.045 * sh * TO_DEG, 0, 0);
+    const g = 1 - 0.04 * sq + 0.005 * Math.sin(v * 1.1);
+    c.scale(g, g);
+    c.save();
+    c.clipPath(S.baseOver, ClipOp.Intersect, true);
+    for (const p of S.bases) drawSheet(c, p, S.plain, baked);
+    c.restore();
+    for (const p of S.coils) drawSheet(c, p, S.plain, baked);
+    c.restore();
+    for (const b of BUBBLES) {
+      const p = ((v + b.lead) % b.life) / b.life;
+      drawBubble(
+        c,
+        S.bubble,
+        b.x0 + Math.sin(p * 10 + b.i) * 2,
+        b.y0 - p * (b.y0 + 80),
+        0.7 + p * 0.5,
+        b.size,
+        Math.min(1, p * 6) * (1 - p) * 0.9,
+      );
+    }
+    const k9 = v % KRAKEN;
+    for (const b of BURST) {
+      const q = k9 - b.delay;
+      if (q < 0 || q > 1.5) continue;
+      drawBubble(
+        c,
+        S.bubble,
+        b.s * (b.sx + b.vx * q) + Math.sin(q * 14 + b.i) * 1.2,
+        b.sy - b.vy * q + 14 * q * q,
+        0.6 + q * 0.5,
+        b.size,
+        Math.min(1, q * 8) * (1 - q / 1.5),
+      );
+    }
+    // a coin flipped off the hoard, landing back on its edge
+    const cc = k9 - 0.15;
+    if (cc >= 0 && cc <= 1.3) {
+      const o = cc > 1.1 ? 1 - (cc - 1.1) / 0.2 : 1;
+      const p = Math.min(1, cc / 1.1);
+      const C = S.coin;
+      c.save();
+      c.translate(4 + 26 * p, 74 + 12 * p - 88 * p * (1 - p));
+      c.rotate((-0.3 + p * 0.6) * TO_DEG, 0, 0);
+      c.scale(1, Math.max(0.08, Math.abs(Math.cos(p * TAU * 2.5))));
+      C.edge.setAlphaf(o);
+      c.drawOval(C.edgeRect, C.edge);
+      C.face.setAlphaf(o);
+      c.drawOval(C.faceRect, C.face);
+      C.groove.setAlphaf(o);
+      c.drawCircle(0, 0, 3.3, C.groove);
+      C.ink.setAlphaf(o);
+      c.drawCircle(0, 0, 5.2, C.ink);
+      c.restore();
+    }
+    for (const gl of S.glints) drawGlint(c, gl, S.white, v);
+    return recorder.finishRecordingAsPicture();
+  });
+  return <Picture picture={picture} />;
 }
 
 export const MECHANICS_ART: Record<string, ArtBorderDrawing> = {

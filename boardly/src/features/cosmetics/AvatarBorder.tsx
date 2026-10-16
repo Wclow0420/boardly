@@ -1,5 +1,11 @@
 import { Canvas, Group } from "@shopify/react-native-skia";
-import { useId, type ReactNode } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useContext,
+  useId,
+  useSyncExternalStore,
+} from "react";
 import { View } from "react-native";
 import AnimatedGlow, { type GlowConfig } from "react-native-animated-glow";
 import Svg, {
@@ -13,7 +19,9 @@ import Svg, {
 import { assetUrl, type MascotLook } from "@/api/client";
 import { Avatar, AvatarBadges, type PresenceStatus } from "@/components/ui";
 
-import { ART, useBorderClock, type ArtBorderDrawing } from "./art";
+import { NavigationContext } from "expo-router/react-navigation";
+
+import { ART, useBorderClock, useMayMove, type ArtBorderDrawing } from "./art";
 import {
   getBorder,
   type ArtBorder,
@@ -245,9 +253,31 @@ function GlowAvatar({
   );
 }
 
+/** Whether the screen this sits on is the one showing. Screens under
+ *  another (the profile under the shop, a tab not open) keep their
+ *  avatars mounted; their borders needn't move. Outside any screen (a
+ *  sheet over everything) it counts as showing. */
+function useOnScreen() {
+  const navigation = useContext(NavigationContext);
+  const subscribe = useCallback(
+    (changed: () => void) => {
+      if (!navigation) return () => {};
+      const off = [
+        navigation.addListener("focus", changed),
+        navigation.addListener("blur", changed),
+      ];
+      return () => off.forEach((stop) => stop());
+    },
+    [navigation],
+  );
+  const focused = () => navigation?.isFocused() ?? true;
+  return useSyncExternalStore(subscribe, focused, focused);
+}
+
 /** Below this size an art border stands still: in a list of avatars,
- *  a dozen fires burning at once would cost more than they show. */
-const ART_MOVES_FROM = 44;
+ *  a dozen fires burning at once would cost more than they show. (At
+ *  or above it, the motion budget still caps how many move at once.) */
+const ART_MOVES_FROM = 42;
 
 /** An avatar inside an art border: the art's back layer, the avatar,
  *  then the art's front layer over the avatar's edge. */
@@ -267,7 +297,9 @@ function ArtAvatar({
   children?: ReactNode;
 }) {
   const drawing: ArtBorderDrawing = ART[border.art];
-  const clock = useBorderClock(size < ART_MOVES_FROM);
+  const onScreen = useOnScreen();
+  const moves = useMayMove(size, size >= ART_MOVES_FROM && onScreen);
+  const clock = useBorderClock(!moves);
   const side = size * CANVAS;
   // the art is drawn where the avatar's radius is 50, at the centre
   const place = [

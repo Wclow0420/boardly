@@ -1647,7 +1647,9 @@
     "unlock": "Unlock for {{price}}",
     "notEnough": "You need {{count}} more coins",
     "locked": "Locked",
-    "earnWith": "Earn it: {{badge}}"
+    "earnWith": "Earn it: {{badge}}",
+    "owned": "Owned",
+    "earnedSection": "Earned with a badge"
   },
   "coins": {
     "earned_one": "You earned {{count}} coin!",

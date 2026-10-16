@@ -19,28 +19,28 @@
 //     seconds all six wings sweep open together in a burst of light.
 
 import {
-  BlurMask,
+  BlendMode,
   BlurStyle,
-  Circle,
   ClipOp,
   FillType,
-  Group,
-  LinearGradient,
   PaintStyle,
-  Path,
   Picture,
-  RadialGradient,
   Skia,
   StrokeCap,
   StrokeJoin,
   TileMode,
   vec,
   type SkCanvas,
+  type SkImage,
+  type SkPaint,
+  type SkPath,
   type SkPicture,
+  type SkRect,
   type SkShader,
 } from "@shopify/react-native-skia";
 import { useMemo } from "react";
-import { useDerivedValue, type SharedValue } from "react-native-reanimated";
+import { PixelRatio } from "react-native";
+import { useDerivedValue } from "react-native-reanimated";
 
 import {
   FEATHER,
@@ -50,18 +50,14 @@ import {
   type Pt,
 } from "@/components/engraved/shapes";
 
-import { Gem, Sweep } from "./crowns";
 import {
-  Glint,
-  Halo,
-  Sparks,
   TAU,
   polar,
   rnd,
   type ArtBorderDrawing,
   type Clock,
 } from "./kit";
-import { Fx, RAYS } from "./rimfx";
+import { RAYS } from "./rimfx";
 
 const GOLD = ["#FFF2B8", "#E2B04A", "#9A6B1E", "#F0CC72"];
 const IVORY = ["#FFFFFF", "#F4EEDF", "#D8CCB0"];
@@ -242,10 +238,200 @@ function record(draw: (c: SkCanvas) => void): SkPicture {
   return recorder.finishRecordingAsPicture();
 }
 
-/** Recorded once, on first use (never at import: Jest has no Skia). */
-function lazy(make: () => SkPicture) {
-  let pic: SkPicture | null = null;
-  return () => (pic ??= make());
+/** Made once, on first use (never at import: Jest has no Skia). */
+function lazy<T>(make: () => T) {
+  let made: T | undefined;
+  return () => (made ??= make());
+}
+
+// ── how it is drawn each frame ────────────────────────────────────────
+// Every frame Skia redraws each canvas, so the borders are drawn cheaply:
+// whatever stands still (or only moves as a whole: a wing, a curtain, a
+// tassel) is baked once into an image, blurs and all, and each layer is
+// one picture recorded per frame from a single derived value, which
+// places those images and draws the few live shapes (glows, motes,
+// glints, the light sweeping the gold) with the same numbers as ever.
+
+/** Pixels per art unit the still parts are baked at: a little finer
+ *  than a 100pt avatar shows them, so they stay crisp up to ~130pt. */
+const bakeScale = () => Math.max(2, PixelRatio.get()) * 1.2;
+
+/** A drawing baked into an image, and the rect (in art units) it fills. */
+interface Baked {
+  image: SkImage;
+  src: SkRect;
+  dst: SkRect;
+}
+
+/** Bakes `draw` over the art rect x, y, w, h. Soft things (blurred light)
+ *  can take a coarser `scale`. */
+function bake(
+  draw: (c: SkCanvas) => void,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  scale = bakeScale(),
+): Baked | null {
+  const W = Math.ceil(w * scale);
+  const H = Math.ceil(h * scale);
+  const surface = Skia.Surface.Make(W, H);
+  if (!surface) return null;
+  const c = surface.getCanvas();
+  c.scale(scale, scale);
+  c.translate(-x, -y);
+  draw(c);
+  surface.flush();
+  return {
+    image: surface.makeImageSnapshot(),
+    src: Skia.XYWHRect(0, 0, W, H),
+    dst: Skia.XYWHRect(x, y, W / scale, H / scale),
+  };
+}
+
+/** Draws a baked image where it belongs (cubic, so it scales cleanly). */
+const put = (c: SkCanvas, b: Baked | null, paint: SkPaint) => {
+  "worklet";
+  if (b) c.drawImageRectCubic(b.image, b.src, b.dst, 1 / 3, 1 / 3, paint);
+};
+
+/** `paint` (opaque) set to alpha `a`, clamped as Skia's opacity is. A
+ *  picture keeps a copy of each paint it draws with, so one paint can be
+ *  reused at many alphas; never pass one that is also drawn unfaded. */
+const faded = (paint: SkPaint, a: number) => {
+  "worklet";
+  paint.setAlphaf(Math.min(1, Math.max(0, a)));
+  return paint;
+};
+
+/** A copy of a layer's parts with paints of its own (they are set per
+ *  frame), sharing the baked images and paths. */
+function own<T>(v: T): T {
+  if (Array.isArray(v)) return v.map(own) as T;
+  if (!v || typeof v !== "object" || v instanceof Float32Array) return v;
+  const name = (v as { __typename__?: string }).__typename__;
+  if (name === "Paint") return (v as unknown as SkPaint).copy() as T;
+  if (name) return v;
+  return Object.fromEntries(
+    Object.entries(v).map(([k, x]) => [k, own(x)]),
+  ) as T;
+}
+
+const DEG_W = 180 / Math.PI;
+
+/** A plain fill (or, with `blur`, a soft one) for the live shapes. */
+function fill(color: string, blur = 0, screen = false) {
+  const paint = brush(color, Skia.Color(color)[3], blur);
+  if (screen) paint.setBlendMode(BlendMode.Screen);
+  return paint;
+}
+
+/** Starts a frame's picture. */
+const begin = () => {
+  "worklet";
+  const recorder = Skia.PictureRecorder();
+  const c = recorder.beginRecording(Skia.XYWHRect(-100, -100, 200, 200));
+  return { recorder, c };
+};
+
+/** The shared light sweeping a gold shape: a soft white band, tilted,
+ *  crossing the canvas once every `every` seconds (as Sweep in crowns),
+ *  drawn as the shape filled with a moving gradient. */
+const SWEEP_COLORS = () =>
+  ["#FFFFFF00", "#FFFFFFCC", "#FFFFFF00"].map((col) => Skia.Color(col));
+const sweep = (
+  c: SkCanvas,
+  path: SkPath | null,
+  colors: Float32Array[],
+  t: number,
+  every: number,
+  phase: number,
+) => {
+  "worklet";
+  const p = ((t + phase) % every) / 1.1;
+  if (!path || p >= 1) return;
+  const x = -110 + p * 220;
+  const dx = Math.cos(0.45) * 12;
+  const dy = Math.sin(0.45) * 12;
+  const paint = Skia.Paint();
+  paint.setAntiAlias(true);
+  paint.setShader(
+    Skia.Shader.MakeLinearGradient(
+      Skia.Point(x - dx, -dy),
+      Skia.Point(x + dx, dy),
+      colors,
+      null,
+      TileMode.Clamp,
+    ),
+  );
+  c.drawPath(path, paint);
+};
+
+/** A four-pointed glint that flares and fades (as Glint in kit). */
+interface GlintSpec {
+  x: number;
+  y: number;
+  path: SkPath;
+  phase: number;
+  speed: number;
+}
+const glintPath = (size: number) => {
+  const w = size * 0.2;
+  return toPath(
+    `M0 ${-size}Q${w} ${-w} ${size} 0Q${w} ${w} 0 ${size}Q${-w} ${w} ${-size} 0Q${-w} ${-w} 0 ${-size}z`,
+  )!;
+};
+const glint = (
+  x: number,
+  y: number,
+  size: number,
+  phase: number,
+  speed: number,
+): GlintSpec => ({ x, y, path: glintPath(size), phase, speed });
+const drawGlints = (
+  c: SkCanvas,
+  glints: GlintSpec[],
+  white: SkPaint,
+  t: number,
+) => {
+  "worklet";
+  for (const g of glints) {
+    const s = Math.max(0, Math.sin(t * g.speed + g.phase));
+    if (s <= 0) continue;
+    c.save();
+    c.translate(g.x, g.y);
+    const k = 0.15 + s ** 5;
+    c.scale(k, k);
+    c.drawPath(g.path, faded(white, s ** 3));
+    c.restore();
+  }
+};
+
+/** A soft glow behind everything (as Halo in kit). */
+const halo = (r: number, color: string) =>
+  brush(radial(0, 0, r, [color, `${color}00`], [0.55, 1]));
+
+/** A faceted gem (as Gem in crowns): body, darker lower half, highlight. */
+function gem(
+  c: SkCanvas,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  colors: [string, string, string],
+) {
+  c.drawOval(
+    Skia.XYWHRect(x - w / 2 - 1, y - h / 2 - 1, w + 2, h + 2),
+    brush("#5A3A08"),
+  );
+  c.drawOval(
+    Skia.XYWHRect(x - w / 2, y - h / 2, w, h),
+    brush(radial(x - w * 0.2, y - h * 0.25, Math.max(w, h), colors)),
+  );
+  c.drawOval(
+    Skia.XYWHRect(x - w * 0.28, y - h * 0.32, w * 0.3, h * 0.22),
+    brush("#FFFFFF", 0xcc / 255),
+  );
 }
 
 /** A small domed stud: a bead, a pearl, a finial's ball. */
@@ -334,34 +520,6 @@ const tasselPicture = lazy(() =>
     });
   }),
 );
-
-/** A tassel swinging from (x, y). */
-function Tassel({
-  t,
-  x,
-  y,
-  phase,
-  scale = 1,
-}: {
-  t: Clock;
-  x: number;
-  y: number;
-  phase: number;
-  scale?: number;
-}) {
-  const pic = useMemo(() => tasselPicture(), []);
-  const swing = useDerivedValue(() => [
-    { translateX: x },
-    { translateY: y },
-    { rotate: Math.sin(t.value * 1.7 + phase) * 0.12 },
-    { scale },
-  ]);
-  return (
-    <Group transform={swing}>
-      <Picture picture={pic} />
-    </Group>
-  );
-}
 
 // ══ Celestial Throne ═════════════════════════════════════════════════
 
@@ -899,237 +1057,278 @@ const CROWN_RY = 3.8;
 const CROWN_STARS = 9;
 const CROWN_STAR = star(4, 1.7);
 
-function CrownStar({
-  t,
-  k,
-  flare,
-}: {
-  t: Clock;
-  k: number;
-  flare: SharedValue<number>;
-}) {
-  const transform = useDerivedValue(() => {
-    const a = (k / CROWN_STARS) * TAU + t.value * 0.32;
-    const depth = (Math.sin(a) + 1) / 2;
-    const s = (0.55 + 0.45 * depth) * (1 + flare.value * 0.8);
-    return [
-      { translateX: CROWN_C.x + Math.cos(a) * CROWN_RX },
-      { translateY: CROWN_C.y + Math.sin(a) * CROWN_RY },
-      { rotate: Math.cos(a) * 0.3 },
-      { scale: s },
-    ];
-  });
-  const opacity = useDerivedValue(() => {
-    const a = (k / CROWN_STARS) * TAU + t.value * 0.32;
-    const twinkle = 0.85 + 0.15 * Math.sin(t.value * 3.1 + k * 1.7);
-    return (0.5 + (0.5 * (Math.sin(a) + 1)) / 2) * twinkle;
-  });
-  const glow = useDerivedValue(() => 0.45 + flare.value * 0.55);
-  return (
-    <Group transform={transform} opacity={opacity}>
-      <Circle cx={0} cy={0} r={6} color="#FFE9A0" opacity={glow}>
-        <BlurMask blur={3} style="normal" />
-      </Circle>
-      <Path path={CROWN_STAR}>
-        <LinearGradient
-          start={vec(-3, -3)}
-          end={vec(3, 3)}
-          colors={["#FFFBE0", "#F0C450", "#B07A1E"]}
-        />
-      </Path>
-      <Path path={CROWN_STAR} style="stroke" strokeWidth={0.8} color={INK} />
-    </Group>
-  );
-}
-
-function StarCrown({ t, flare }: { t: Clock; flare: SharedValue<number> }) {
-  return (
-    <Group>
-      {/* the circlet the stars ride on */}
-      <Path
-        path={ellipse(CROWN_C.x, CROWN_C.y, CROWN_RX, CROWN_RY)}
-        style="stroke"
-        strokeWidth={0.9}
-        color="#F6D274"
-        opacity={0.55}
-      />
-      {Array.from({ length: CROWN_STARS }, (_, k) => (
-        <CrownStar key={k} t={t} k={k} flare={flare} />
-      ))}
-    </Group>
-  );
-}
-
 const THRONE_EVERY = 8;
 const THRONE_AT = 3;
 const THRONE_LEN = 3.2;
 /** The light pouring from the canopy, widening down over the seat. */
 const SHAFT = "M-13 -76L13 -76L70 74L-70 74Z";
-
-function ThroneBack({ t }: { t: Clock }) {
-  const curtains = useMemo(() => curtainPicture(), []);
-  const valance = useMemo(() => valancePicture(), []);
-  const back = useMemo(() => backPicture(), []);
-  const throne = useMemo(() => thronePicture(), []);
-  const pour = useDerivedValue(() =>
-    moment(t.value, THRONE_EVERY, THRONE_LEN, THRONE_AT),
-  );
-  const glow = useDerivedValue(
-    () => 0.3 + 0.08 * Math.sin(t.value * 1.2) + pour.value * 0.35,
-  );
-  const shaft = useDerivedValue(() => 0.05 + pour.value * 0.85);
-  // the curtains stir, hinged at the valance
-  const stirR = useDerivedValue(() => [
-    { rotate: Math.sin(t.value * 0.9) * 0.012 },
-  ]);
-  const stirL = useDerivedValue(() => [
-    { rotate: Math.sin(t.value * 0.9 + 1.3) * 0.012 },
-  ]);
-  return (
-    <Group>
-      <Halo r={94} color="#FFE6A0" opacity={glow} />
-      <Group transform={stirR} origin={vec(60, -82)}>
-        <Group clip={{ x: 0, y: -100, width: 100, height: 200 }}>
-          <Picture picture={curtains} />
-        </Group>
-      </Group>
-      <Group transform={stirL} origin={vec(-60, -82)}>
-        <Group clip={{ x: -100, y: -100, width: 100, height: 200 }}>
-          <Picture picture={curtains} />
-        </Group>
-      </Group>
-      <Group blendMode="screen" opacity={shaft}>
-        <Path path={SHAFT}>
-          <LinearGradient
-            start={vec(0, -76)}
-            end={vec(0, 74)}
-            colors={["#FFF8DCFF", "#FFEFB8AA", "#FFE6A000"]}
-          />
-          <BlurMask blur={6} style="normal" />
-        </Path>
-      </Group>
-      <Picture picture={back} />
-      <Picture picture={valance} />
-      <Picture picture={throne} />
-      <Sweep t={t} d={THRONE_GOLD} every={4.8} />
-      <Sweep t={t} d={CORNICE_BAND} every={4.8} phase={0.4} />
-      {VAL_JOINTS.slice(1, -1).map((j, k) => (
-        <Tassel key={k} t={t} x={j.x} y={j.y} phase={k * 0.8} scale={0.62} />
-      ))}
-      <Tassel t={t} x={TIE[0] + 4} y={TIE[1] + 2} phase={0.4} />
-      <Tassel t={t} x={-TIE[0] - 4} y={TIE[1] + 2} phase={2.1} />
-    </Group>
-  );
-}
-
 /** The beam in front: from under the valance, widening down. */
 const BEAM = "M-18 -66L18 -66L72 70L-72 70Z";
 
-/** A fleck of gold dust drifting down the beam beside the picture. */
-function Dust({ t, k }: { t: Clock; k: number }) {
-  const side = k % 2 ? 1 : -1;
-  const x0 = side * (49 + rnd(k + 21) * 13);
-  const start = rnd(k + 31) * 0.4;
-  const transform = useDerivedValue(() => {
-    const p =
-      (((t.value - THRONE_AT) % THRONE_EVERY) + THRONE_EVERY) % THRONE_EVERY;
-    const u = (p / THRONE_LEN + start) % 1;
-    return [
-      { translateX: x0 + Math.sin(u * 7 + k) * 2.5 },
-      { translateY: -58 + u * 118 },
-    ];
-  });
-  const size = 0.8 + rnd(k + 41) * 0.7;
-  return (
-    <Group transform={transform}>
-      <Circle cx={0} cy={0} r={size * 2.4} color="#FFE6A0" opacity={0.6}>
-        <BlurMask blur={size * 1.4} style="normal" />
-      </Circle>
-      <Circle cx={0} cy={0} r={size} color="#FFFBE8" />
-    </Group>
-  );
+/** A soft shape (gradient or colour, blurred), for baking. */
+function soft(d: string, fill: SkShader | string, blur: number) {
+  return (c: SkCanvas) => {
+    const path = toPath(d);
+    if (path) c.drawPath(path, brush(fill, 1, blur));
+  };
 }
 
+const throneBackParts = lazy(() => {
+  const curtains = curtainPicture();
+  // each curtain on its own, to stir about its own hinge
+  const curtain = (x: number) =>
+    bake(
+      (c) => {
+        c.clipRect(Skia.XYWHRect(x, -100, 100, 200), ClipOp.Intersect, true);
+        c.drawPicture(curtains);
+      },
+      x < 0 ? -96 : 0,
+      -92,
+      96,
+      170,
+    );
+  const screen = Skia.Paint();
+  screen.setBlendMode(BlendMode.Screen);
+  const joints = VAL_JOINTS.slice(1, -1).map((j, k) => ({
+    x: j.x,
+    y: j.y,
+    phase: k * 0.8,
+    scale: 0.62,
+  }));
+  return {
+    plain: Skia.Paint(),
+    screen,
+    halo: halo(94, "#FFE6A0"),
+    curtainR: curtain(0),
+    curtainL: curtain(-100),
+    shaft: bake(
+      soft(
+        SHAFT,
+        linear(0, -76, 0, 74, ["#FFF8DCFF", "#FFEFB8AA", "#FFE6A000"]),
+        6,
+      ),
+      -92,
+      -96,
+      184,
+      192,
+      2,
+    ),
+    // the throne back, the valance over it, then the throne
+    throne: bake(
+      (c) => {
+        c.drawPicture(backPicture());
+        c.drawPicture(valancePicture());
+        c.drawPicture(thronePicture());
+      },
+      -96,
+      -94,
+      192,
+      172,
+    ),
+    tassel: bake((c) => c.drawPicture(tasselPicture()), -7, -2, 14, 25),
+    tassels: [
+      ...joints,
+      { x: TIE[0] + 4, y: TIE[1] + 2, phase: 0.4, scale: 1 },
+      { x: -TIE[0] - 4, y: TIE[1] + 2, phase: 2.1, scale: 1 },
+    ],
+    gold: toPath(THRONE_GOLD),
+    cornice: toPath(CORNICE_BAND),
+    sweepColors: SWEEP_COLORS(),
+  };
+});
+
+function ThroneBack({ t }: { t: Clock }) {
+  const P = useMemo(() => own(throneBackParts()), []);
+  const picture = useDerivedValue(() => {
+    const T = t.value;
+    const pour = moment(T, THRONE_EVERY, THRONE_LEN, THRONE_AT);
+    const { recorder, c } = begin();
+    c.drawCircle(
+      0,
+      0,
+      94,
+      faded(P.halo, 0.3 + 0.08 * Math.sin(T * 1.2) + pour * 0.35),
+    );
+    // the curtains stir, hinged at the valance
+    c.save();
+    c.translate(60, -82);
+    c.rotate(Math.sin(T * 0.9) * 0.012 * DEG_W, 0, 0);
+    c.translate(-60, 82);
+    put(c, P.curtainR, P.plain);
+    c.restore();
+    c.save();
+    c.translate(-60, -82);
+    c.rotate(Math.sin(T * 0.9 + 1.3) * 0.012 * DEG_W, 0, 0);
+    c.translate(60, 82);
+    put(c, P.curtainL, P.plain);
+    c.restore();
+    put(c, P.shaft, faded(P.screen, 0.05 + pour * 0.85));
+    put(c, P.throne, P.plain);
+    sweep(c, P.gold, P.sweepColors, T, 4.8, 0);
+    sweep(c, P.cornice, P.sweepColors, T, 4.8, 0.4);
+    // the tassels swing
+    for (const s of P.tassels) {
+      c.save();
+      c.translate(s.x, s.y);
+      c.rotate(Math.sin(T * 1.7 + s.phase) * 0.12 * DEG_W, 0, 0);
+      c.scale(s.scale, s.scale);
+      put(c, P.tassel, P.plain);
+      c.restore();
+    }
+    return recorder.finishRecordingAsPicture();
+  });
+  return <Picture picture={picture} />;
+}
+
+const throneFrontParts = lazy(() => {
+  const screen = Skia.Paint();
+  screen.setBlendMode(BlendMode.Screen);
+  // the light on the ring's gold
+  const band = pen(TR_OUT - TR_IN, "#FFFFFF");
+  band.setShader(linear(0, -62, 0, 40, ["#FFF8DCAA", "#FFF0C000"]));
+  band.setBlendMode(BlendMode.Screen);
+  // the crown's stars: inked with sharp points
+  const starInk = Skia.Paint();
+  starInk.setAntiAlias(true);
+  starInk.setStyle(PaintStyle.Stroke);
+  starInk.setStrokeWidth(0.8);
+  starInk.setColor(Skia.Color(INK));
+  return {
+    plain: Skia.Paint(),
+    screen,
+    white: fill("#FFFFFF"),
+    ring: bake(
+      (c) => {
+        // the ring's shade on the picture's edge
+        const shade = pen(2.2, "#000000", 0.35);
+        shade.setMaskFilter(
+          Skia.MaskFilter.MakeBlur(BlurStyle.Normal, 1.4, true),
+        );
+        c.drawCircle(0.6, 1, TR_IN, shade);
+        c.drawPicture(throneRingPicture());
+      },
+      -66,
+      -66,
+      132,
+      136,
+    ),
+    ringPath: toPath(THRONE_RING, true),
+    sweepColors: SWEEP_COLORS(),
+    face: Skia.RRectXY(Skia.XYWHRect(-47, -47, 94, 94), 47, 47),
+    beam: bake(
+      soft(
+        BEAM,
+        linear(0, -66, 0, 70, ["#FFF8DCAA", "#FFF0C044", "#FFE6A000"]),
+        4,
+      ),
+      -88,
+      -82,
+      176,
+      168,
+      2,
+    ),
+    band,
+    glowEllipse: bake(
+      soft(ellipse(0, -66, 36, 6), "#FFF4C8", 5),
+      -54,
+      -90,
+      108,
+      48,
+      2,
+    ),
+    dust: Array.from({ length: 12 }, (_, k) => {
+      const size = 0.8 + rnd(k + 41) * 0.7;
+      return {
+        k,
+        x0: (k % 2 ? 1 : -1) * (49 + rnd(k + 21) * 13),
+        start: rnd(k + 31) * 0.4,
+        size,
+        glow: fill("#FFE6A0", size * 1.4, true),
+      };
+    }),
+    dustCore: fill("#FFFBE8", 0, true),
+    rubyGlow: fill("#FF3A5A", 5),
+    // the ruby, and the circlet the stars ride on
+    still: record((c) => {
+      gem(c, CREST.x, CREST.y, 7.4, 9.6, RUBY);
+      c.drawPath(
+        toPath(ellipse(CROWN_C.x, CROWN_C.y, CROWN_RX, CROWN_RY))!,
+        pen(0.9, "#F6D274", 0.55),
+      );
+    }),
+    star: toPath(CROWN_STAR)!,
+    starGlow: fill("#FFE9A0", 3),
+    starFill: brush(linear(-3, -3, 3, 3, ["#FFFBE0", "#F0C450", "#B07A1E"])),
+    starInk,
+    glints: [
+      glint(CREST.x - 1, CREST.y - 2, 5.5, 0.4, 1),
+      glint(-66, -76, 4.5, 1.6, 1.1),
+      glint(66, -76, 4, 3.4, 0.95),
+      glint(-79, 58, 4, 2.5, 1.05),
+      glint(0, 58, 3.5, 4.6, 0.9),
+    ],
+  };
+});
+
 function ThroneFront({ t }: { t: Clock }) {
-  const ring = useMemo(() => throneRingPicture(), []);
-  const pour = useDerivedValue(() =>
-    moment(t.value, THRONE_EVERY, THRONE_LEN, THRONE_AT),
-  );
-  const ruby = useDerivedValue(
-    () => 0.4 + 0.3 * Math.sin(t.value * 1.6) + pour.value * 0.3,
-  );
-  const lit = useDerivedValue(() => pour.value * 0.9);
-  const offFace = useMemo(
-    () => toPath(`M-96 -96H96V96H-96Z${circle(47)}`, true),
-    [],
-  );
-  return (
-    <Group>
-      {/* the ring's shade on the picture's edge */}
-      <Circle
-        cx={0.6}
-        cy={1}
-        r={TR_IN}
-        style="stroke"
-        strokeWidth={2.2}
-        color="#000000"
-        opacity={0.35}
-      >
-        <BlurMask blur={1.4} style="normal" />
-      </Circle>
-      <Picture picture={ring} />
-      <Sweep t={t} d={THRONE_RING} evenOdd every={4.8} phase={0.2} />
-      {/* the light pouring from the canopy over the throne, round the
-          face, and the gold dust falling in it */}
-      <Group blendMode="screen" opacity={lit} clip={offFace ?? undefined}>
-        <Path path={BEAM}>
-          <LinearGradient
-            start={vec(0, -66)}
-            end={vec(0, 70)}
-            colors={["#FFF8DCAA", "#FFF0C044", "#FFE6A000"]}
-          />
-          <BlurMask blur={4} style="normal" />
-        </Path>
-        <Circle
-          cx={0}
-          cy={0}
-          r={(TR_IN + TR_OUT) / 2}
-          style="stroke"
-          strokeWidth={TR_OUT - TR_IN}
-        >
-          <LinearGradient
-            start={vec(0, -62)}
-            end={vec(0, 40)}
-            colors={["#FFF8DCAA", "#FFF0C000"]}
-          />
-        </Circle>
-        <Path path={ellipse(0, -66, 36, 6)} color="#FFF4C8">
-          <BlurMask blur={5} style="normal" />
-        </Path>
-        {Array.from({ length: 12 }, (_, k) => (
-          <Dust key={k} t={t} k={k} />
-        ))}
-      </Group>
-      {/* the crest's ruby */}
-      <Circle cx={CREST.x} cy={CREST.y} r={8} color="#FF3A5A" opacity={ruby}>
-        <BlurMask blur={5} style="normal" />
-      </Circle>
-      <Gem x={CREST.x} y={CREST.y} w={7.4} h={9.6} colors={RUBY} />
-      <StarCrown t={t} flare={pour} />
-      <Glint
-        t={t}
-        x={CREST.x - 1}
-        y={CREST.y - 2}
-        size={5.5}
-        phase={0.4}
-        speed={1}
-      />
-      <Glint t={t} x={-66} y={-76} size={4.5} phase={1.6} speed={1.1} />
-      <Glint t={t} x={66} y={-76} size={4} phase={3.4} speed={0.95} />
-      <Glint t={t} x={-79} y={58} size={4} phase={2.5} speed={1.05} />
-      <Glint t={t} x={0} y={58} size={3.5} phase={4.6} speed={0.9} />
-    </Group>
-  );
+  const P = useMemo(() => own(throneFrontParts()), []);
+  const picture = useDerivedValue(() => {
+    const T = t.value;
+    const pour = moment(T, THRONE_EVERY, THRONE_LEN, THRONE_AT);
+    const { recorder, c } = begin();
+    put(c, P.ring, P.plain);
+    sweep(c, P.ringPath, P.sweepColors, T, 4.8, 0.2);
+    // the light pouring from the canopy over the throne, round the
+    // face, and the gold dust falling in it
+    const lit = pour * 0.9;
+    if (lit > 0) {
+      c.save();
+      c.clipRRect(P.face, ClipOp.Difference, true);
+      put(c, P.beam, faded(P.screen, lit));
+      c.drawCircle(0, 0, (TR_IN + TR_OUT) / 2, faded(P.band, lit));
+      put(c, P.glowEllipse, faded(P.screen, lit));
+      const p =
+        (((T - THRONE_AT) % THRONE_EVERY) + THRONE_EVERY) % THRONE_EVERY;
+      for (const d of P.dust) {
+        const u = (p / THRONE_LEN + d.start) % 1;
+        const x = d.x0 + Math.sin(u * 7 + d.k) * 2.5;
+        const y = -58 + u * 118;
+        c.drawCircle(x, y, d.size * 2.4, faded(d.glow, lit * 0.6));
+        c.drawCircle(x, y, d.size, faded(P.dustCore, lit));
+      }
+      c.restore();
+    }
+    // the crest's ruby
+    c.drawCircle(
+      CREST.x,
+      CREST.y,
+      8,
+      faded(P.rubyGlow, 0.4 + 0.3 * Math.sin(T * 1.6) + pour * 0.3),
+    );
+    c.drawPicture(P.still);
+    // the crown of stars turning over the crest
+    for (let k = 0; k < CROWN_STARS; k++) {
+      const a = (k / CROWN_STARS) * TAU + T * 0.32;
+      const depth = (Math.sin(a) + 1) / 2;
+      const s = (0.55 + 0.45 * depth) * (1 + pour * 0.8);
+      const op =
+        (0.5 + 0.5 * depth) * (0.85 + 0.15 * Math.sin(T * 3.1 + k * 1.7));
+      c.save();
+      c.translate(
+        CROWN_C.x + Math.cos(a) * CROWN_RX,
+        CROWN_C.y + Math.sin(a) * CROWN_RY,
+      );
+      c.rotate(Math.cos(a) * 0.3 * DEG_W, 0, 0);
+      c.scale(s, s);
+      c.drawCircle(0, 0, 6, faded(P.starGlow, op * (0.45 + pour * 0.55)));
+      c.drawPath(P.star, faded(P.starFill, op));
+      c.drawPath(P.star, faded(P.starInk, op));
+      c.restore();
+    }
+    drawGlints(c, P.glints, P.white, T);
+    return recorder.finishRecordingAsPicture();
+  });
+  return <Picture picture={picture} />;
 }
 
 // ══ Archangel ════════════════════════════════════════════════════════
@@ -1248,52 +1447,34 @@ function recordRow(wing: WingSpec, row: Row, arm: boolean): SkPicture {
     });
   });
 }
-let ROW_PICS: SkPicture[][] | null = null;
-const rowPictures = () =>
-  (ROW_PICS ??= WINGS.map((w) =>
-    w.rows.map((r, k) => recordRow(w, r, k === w.rows.length - 1)),
-  ));
-
+/** A row's extent about the shoulder, room left for shades and ink. */
+function rowBounds(wing: WingSpec, row: Row, arm: boolean) {
+  const xs: number[] = [];
+  const ys: number[] = [];
+  for (let k = 0; k < row.n; k++) {
+    const f = row.n === 1 ? 0 : k / (row.n - 1);
+    const dir = (row.from + (row.to - row.from) * f) * DEG;
+    const base = { x: wing.arm.x * f, y: wing.arm.y * f };
+    const tip = polar(dir, row.len(f) + row.w * 0.3);
+    xs.push(base.x, base.x + tip.x);
+    ys.push(base.y, base.y + tip.y);
+  }
+  let m = row.w * 1.2 + 5;
+  if (arm) {
+    xs.push(0, wing.arm.x * 1.06);
+    ys.push(0, wing.arm.y * 1.06);
+    m = Math.max(m, 8);
+  }
+  const x0 = Math.min(...xs) - m;
+  const y0 = Math.min(...ys) - m;
+  return [x0, y0, Math.max(...xs) + m - x0, Math.max(...ys) + m - y0] as const;
+}
 /** How far each row turns as the wing opens: the long feathers most. */
 const ROW_REACH = [1, 0.7, 0.45];
 
 const ANGEL_EVERY = 9;
 const ANGEL_AT = 4;
 const ANGEL_LEN = 3.2;
-
-function WingRow({
-  t,
-  i,
-  r,
-  side,
-  picture,
-}: {
-  t: Clock;
-  i: number;
-  r: number;
-  side: 1 | -1;
-  picture: SkPicture;
-}) {
-  const wing = WINGS[i];
-  const transform = useDerivedValue(() => {
-    // a slow wave passes down the pairs, upper to lower
-    const wave = Math.sin(t.value * 0.85 - i * 1.05 + (side < 0 ? 0.25 : 0));
-    const burst = moment(t.value, ANGEL_EVERY, ANGEL_LEN, ANGEL_AT);
-    const turn = ROW_REACH[r] * (wing.open * wave * 0.09 - burst * 0.3);
-    return [
-      { scaleX: side },
-      { translateX: wing.root.x },
-      { translateY: wing.root.y },
-      { rotate: turn },
-      { scale: 1 + burst * 0.07 },
-    ];
-  });
-  return (
-    <Group transform={transform}>
-      <Picture picture={picture} />
-    </Group>
-  );
-}
 
 /** Soft clouds behind (the right half): between the wings and under
  *  the ring, gaps between for the rays. Each a few puffs. */
@@ -1365,57 +1546,94 @@ const BEAMS = Array.from({ length: 24 }, (_, k) => {
   return `M${f2(base.x + across.x)} ${f2(base.y + across.y)}L${pt(tip)}L${f2(base.x - across.x)} ${f2(base.y - across.y)}Z`;
 }).join("");
 
-function AngelBack({ t }: { t: Clock }) {
-  const rows = useMemo(() => rowPictures(), []);
-  const clouds = useMemo(() => cloudPicture(), []);
-  const burst = useDerivedValue(() =>
-    moment(t.value, ANGEL_EVERY, ANGEL_LEN, ANGEL_AT),
+const angelBackParts = lazy(() => {
+  const beams = brush(
+    radial(0, 0, 94, ["#FFFFFF", "#FFF4C8", "#FFE08A00"], [0.6, 0.8, 1]),
   );
-  const glow = useDerivedValue(
-    () => 0.42 + 0.12 * Math.sin(t.value * 1.1) + burst.value * 0.3,
+  beams.setBlendMode(BlendMode.Screen);
+  // each row of each wing, baked about its shoulder
+  const rowImages = WINGS.map((w) =>
+    w.rows.map((r, k) => {
+      const arm = k === w.rows.length - 1;
+      const pic = recordRow(w, r, arm);
+      const [x, y, width, height] = rowBounds(w, r, arm);
+      return bake((c) => c.drawPicture(pic), x, y, width, height);
+    }),
   );
-  const beams = useDerivedValue(
-    () => 0.45 + 0.2 * Math.sin(t.value * 0.7) + burst.value * 0.35,
-  );
-  const turn = useDerivedValue(() => [{ rotate: t.value * 0.05 }]);
-  const drift = useDerivedValue(() => [
-    { rotate: Math.sin(t.value * 0.25) * 0.04 },
-  ]);
   // back to front: the lower pair, the upper, then the great middle pair
-  const order = [2, 0, 1];
-  return (
-    <Group>
-      <Halo r={94} color="#FFF1C8" opacity={glow} />
-      <Fx sksl={RAYS} t={t} />
-      <Group transform={turn} opacity={beams} blendMode="screen">
-        <Path path={BEAMS}>
-          <RadialGradient
-            c={vec(0, 0)}
-            r={94}
-            colors={["#FFFFFF", "#FFF4C8", "#FFE08A00"]}
-            positions={[0.6, 0.8, 1]}
-          />
-        </Path>
-      </Group>
-      <Group transform={drift}>
-        <Picture picture={clouds} />
-      </Group>
-      {order.map((i) =>
-        ([-1, 1] as const).map((side) =>
-          rows[i].map((pic, r) => (
-            <WingRow
-              key={`${i}-${side}-${r}`}
-              t={t}
-              i={i}
-              r={r}
-              side={side}
-              picture={pic}
-            />
-          )),
-        ),
-      )}
-    </Group>
+  const wings = [2, 0, 1].flatMap((i) =>
+    ([-1, 1] as const).flatMap((side) =>
+      rowImages[i].map((image, r) => ({
+        i,
+        side,
+        image,
+        root: WINGS[i].root,
+        open: WINGS[i].open,
+        reach: ROW_REACH[r],
+      })),
+    ),
   );
+  return {
+    plain: Skia.Paint(),
+    halo: halo(94, "#FFF1C8"),
+    rays: Skia.RuntimeEffect.Make(RAYS),
+    // the rays shine only on this ring: no work for the rest
+    raysRing: toPath(band(92.5, 49.5), true),
+    beamsPath: toPath(BEAMS),
+    beams,
+    clouds: bake((c) => c.drawPicture(cloudPicture()), -96, -64, 192, 160),
+    wings,
+  };
+});
+
+function AngelBack({ t }: { t: Clock }) {
+  const P = useMemo(() => own(angelBackParts()), []);
+  const picture = useDerivedValue(() => {
+    const T = t.value;
+    const burst = moment(T, ANGEL_EVERY, ANGEL_LEN, ANGEL_AT);
+    const { recorder, c } = begin();
+    c.drawCircle(
+      0,
+      0,
+      94,
+      faded(P.halo, 0.42 + 0.12 * Math.sin(T * 1.1) + burst * 0.3),
+    );
+    if (P.rays && P.raysRing) {
+      const rays = Skia.Paint();
+      rays.setAntiAlias(true);
+      rays.setShader(P.rays.makeShader([T, 0]));
+      c.drawPath(P.raysRing, rays);
+    }
+    if (P.beamsPath) {
+      c.save();
+      c.rotate(T * 0.05 * DEG_W, 0, 0);
+      c.drawPath(
+        P.beamsPath,
+        faded(P.beams, 0.45 + 0.2 * Math.sin(T * 0.7) + burst * 0.35),
+      );
+      c.restore();
+    }
+    c.save();
+    c.rotate(Math.sin(T * 0.25) * 0.04 * DEG_W, 0, 0);
+    put(c, P.clouds, P.plain);
+    c.restore();
+    // a slow wave passes down the pairs, upper to lower; every nine
+    // seconds all sweep open together
+    const grow = 1 + burst * 0.07;
+    for (const w of P.wings) {
+      const wave = Math.sin(T * 0.85 - w.i * 1.05 + (w.side < 0 ? 0.25 : 0));
+      const turn = w.reach * (w.open * wave * 0.09 - burst * 0.3);
+      c.save();
+      c.scale(w.side, 1);
+      c.translate(w.root.x, w.root.y);
+      c.rotate(turn * DEG_W, 0, 0);
+      c.scale(grow, grow);
+      put(c, w.image, P.plain);
+      c.restore();
+    }
+    return recorder.finishRecordingAsPicture();
+  });
+  return <Picture picture={picture} />;
 }
 
 // The ring: a gold band, a wreath of small ivory feathers laid round it
@@ -1516,161 +1734,203 @@ const blaze = (long: boolean) =>
 const BLAZE_LONG = blaze(true);
 const BLAZE_SHORT = blaze(false);
 
-function BlazingHalo({ t, burst }: { t: Clock; burst: SharedValue<number> }) {
-  const pic = useMemo(() => haloPicture(), []);
-  const bob = useDerivedValue(() => [
-    { translateY: HALO_Y + Math.sin(t.value * 1.2) * 1.4 },
-  ]);
-  const longFlare = useDerivedValue(() => [
-    { scale: 1 + 0.07 * Math.sin(t.value * 3.3) + burst.value * 0.16 },
-  ]);
-  const shortFlare = useDerivedValue(() => [
-    { scale: 1 + 0.08 * Math.sin(t.value * 3.3 + 2.2) + burst.value * 0.22 },
-  ]);
-  const glow = useDerivedValue(
-    () => 0.6 + 0.25 * Math.sin(t.value * 1.7) + burst.value * 0.4,
-  );
-  return (
-    <Group transform={bob}>
-      <Path
-        path={ellipse(0, 0, 24, 7.6)}
-        style="stroke"
-        strokeWidth={10}
-        color="#FFE48A"
-        opacity={glow}
-      >
-        <BlurMask blur={6} style="normal" />
-      </Path>
-      <Group opacity={glow}>
-        <Group transform={longFlare}>
-          <Path path={BLAZE_LONG}>
-            <RadialGradient
-              c={vec(0, 0)}
-              r={34}
-              colors={["#FFFFFF", "#FFE89A", "#F2B03ACC"]}
-            />
-          </Path>
-        </Group>
-        <Group transform={shortFlare}>
-          <Path path={BLAZE_SHORT}>
-            <RadialGradient
-              c={vec(0, 0)}
-              r={30}
-              colors={["#FFFFFF", "#FFF2C0", "#FFD06ACC"]}
-            />
-          </Path>
-        </Group>
-      </Group>
-      <Picture picture={pic} />
-      <Sweep t={t} d={HALO_RING} evenOdd every={4.6} phase={2.2} />
-    </Group>
-  );
-}
+/** The ring of light flung out as the wings open: a 6-wide band blurred
+ *  by 4, as a radial gradient (the band's blurred profile, sampled every
+ *  unit out to where it fades to nothing). */
+const PULSE_REACH = 16;
+const pulseStops = () => {
+  const erf = (x: number) => {
+    // Abramowitz and Stegun 7.1.26
+    const s = Math.sign(x);
+    const a = Math.abs(x);
+    const k = 1 / (1 + 0.3275911 * a);
+    const y =
+      1 -
+      ((((1.061405429 * k - 1.453152027) * k + 1.421413741) * k -
+        0.284496736) *
+        k +
+        0.254829592) *
+        k *
+        Math.exp(-a * a);
+    return s * y;
+  };
+  const cdf = (x: number) => 0.5 * (1 + erf(x / Math.SQRT2));
+  const ds: number[] = [];
+  const colors: Float32Array[] = [];
+  for (let d = -PULSE_REACH; d <= PULSE_REACH; d++) {
+    const col = Skia.Color("#FFF4C8");
+    col[3] = cdf((d + 3) / 4) - cdf((d - 3) / 4);
+    ds.push(d);
+    colors.push(col);
+  }
+  return { ds, colors };
+};
 
-/** A mote of light flung out from the ring when the wings sweep open. */
-function Mote({ t, k }: { t: Clock; k: number }) {
-  const a = (k / 22) * TAU + rnd(k + 5) * 0.25;
-  const reach = 26 + rnd(k + 2) * 12;
-  const transform = useDerivedValue(() => {
-    const p =
-      (((t.value - ANGEL_AT) % ANGEL_EVERY) + ANGEL_EVERY) % ANGEL_EVERY;
-    const u = Math.min(p / 2.2, 1);
-    const r = 60 + reach * (1 - (1 - u) * (1 - u));
-    return [
-      { translateX: Math.cos(a) * r },
-      { translateY: Math.sin(a) * r - u * 6 },
-    ];
-  });
-  const opacity = useDerivedValue(() => {
-    const p =
-      (((t.value - ANGEL_AT) % ANGEL_EVERY) + ANGEL_EVERY) % ANGEL_EVERY;
-    if (p > 2.2) return 0;
-    const u = p / 2.2;
-    return Math.min(1, u * 8) * (1 - u);
-  });
-  const size = 1.5 + rnd(k + 8) * 1.1;
-  return (
-    <Group transform={transform} opacity={opacity}>
-      <Circle cx={0} cy={0} r={size * 2.6} color="#FFE9A0" opacity={0.5}>
-        <BlurMask blur={size * 1.5} style="normal" />
-      </Circle>
-      <Circle cx={0} cy={0} r={size} color="#FFFBEA" />
-    </Group>
-  );
-}
+const angelFrontParts = lazy(() => {
+  const plain = Skia.Paint();
+  const blaze = (r: number, colors: string[]) =>
+    brush(radial(0, 0, r, colors));
+  return {
+    plain,
+    glow: Skia.Paint(),
+    white: fill("#FFFFFF"),
+    ring: bake(
+      (c) => {
+        // the ring's shade on the picture's edge
+        const shade = pen(2.2, "#000000", 0.3);
+        shade.setMaskFilter(
+          Skia.MaskFilter.MakeBlur(BlurStyle.Normal, 1.4, true),
+        );
+        c.drawCircle(0.6, 1, AR_IN, shade);
+        c.drawPicture(angelRingPicture());
+      },
+      -64,
+      -72,
+      128,
+      138,
+    ),
+    ringPath: toPath(ANGEL_RING, true),
+    sweepColors: SWEEP_COLORS(),
+    diamondGlow: fill("#CFEAFF", 5),
+    diamond: record((c) => gem(c, 0, -60, 8, 8, DIAMOND)),
+    // the halo: its glow, flames of light, the engraved ring
+    haloGlow: bake(
+      (c) => {
+        const glow = pen(10, "#FFE48A");
+        glow.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, 6, true));
+        c.drawPath(toPath(ellipse(0, 0, 24, 7.6))!, glow);
+      },
+      -50,
+      -34,
+      100,
+      68,
+      2,
+    ),
+    blazeLong: toPath(BLAZE_LONG)!,
+    blazeLongPaint: blaze(34, ["#FFFFFF", "#FFE89A", "#F2B03ACC"]),
+    blazeShort: toPath(BLAZE_SHORT)!,
+    blazeShortPaint: blaze(30, ["#FFFFFF", "#FFF2C0", "#FFD06ACC"]),
+    haloRing: bake((c) => c.drawPicture(haloPicture()), -26, -10, 52, 20),
+    haloPath: toPath(HALO_RING, true),
+    pulse: pulseStops(),
+    motes: Array.from({ length: 22 }, (_, k) => {
+      const size = 1.5 + rnd(k + 8) * 1.1;
+      return {
+        a: (k / 22) * TAU + rnd(k + 5) * 0.25,
+        reach: 26 + rnd(k + 2) * 12,
+        size,
+        glow: fill("#FFE9A0", size * 1.5, true),
+      };
+    }),
+    moteCore: fill("#FFFBEA", 0, true),
+    // sparks rising from the top of the ring (as Sparks in kit)
+    sparks: Array.from({ length: 6 }, (_, k) => {
+      const i = k + 91 * 100;
+      const life = 1.3 + rnd(i) * 1.2;
+      return {
+        i,
+        life,
+        offset: rnd(i + 3) * life,
+        start: polar(-Math.PI + Math.PI * rnd(i + 7), 64),
+      };
+    }),
+    sparkGlow: fill("#FFF0C0", 1.3 * 1.4, true),
+    sparkCore: fill("#FFF4D6", 0, true),
+    glints: [
+      glint(-1, -61, 6, 0.3, 1),
+      glint(-12, -83, 4.5, 1.9, 1.1),
+      glint(0, 60, 3.5, 3.7, 0.95),
+      glint(-84, -30, 4, 2.8, 1.05),
+    ],
+  };
+});
 
 function AngelFront({ t }: { t: Clock }) {
-  const ring = useMemo(() => angelRingPicture(), []);
-  const burst = useDerivedValue(() =>
-    moment(t.value, ANGEL_EVERY, ANGEL_LEN, ANGEL_AT),
-  );
-  const shine = useDerivedValue(
-    () => 0.5 + 0.35 * Math.sin(t.value * 2) + burst.value * 0.3,
-  );
-  // a ring of light flung out as the wings open
-  const since = useDerivedValue(
-    () => (((t.value - ANGEL_AT) % ANGEL_EVERY) + ANGEL_EVERY) % ANGEL_EVERY,
-  );
-  const pulseR = useDerivedValue(
-    () => 60 + Math.min(since.value / 1.6, 1) * 32,
-  );
-  const pulse = useDerivedValue(() => {
-    const u = since.value / 1.6;
-    return u > 1 ? 0 : Math.min(1, u * 6) * (1 - u) * 0.9;
+  const P = useMemo(() => own(angelFrontParts()), []);
+  const picture = useDerivedValue(() => {
+    const T = t.value;
+    const burst = moment(T, ANGEL_EVERY, ANGEL_LEN, ANGEL_AT);
+    const { recorder, c } = begin();
+    put(c, P.ring, P.plain);
+    sweep(c, P.ringPath, P.sweepColors, T, 4.6, 0);
+    // the diamond
+    c.drawCircle(
+      0,
+      -60,
+      8,
+      faded(P.diamondGlow, 0.5 + 0.35 * Math.sin(T * 2) + burst * 0.3),
+    );
+    c.drawPicture(P.diamond);
+    // the blazing halo, bobbing
+    c.save();
+    c.translate(0, HALO_Y + Math.sin(T * 1.2) * 1.4);
+    const glow = 0.6 + 0.25 * Math.sin(T * 1.7) + burst * 0.4;
+    put(c, P.haloGlow, faded(P.glow, glow));
+    c.save();
+    const long = 1 + 0.07 * Math.sin(T * 3.3) + burst * 0.16;
+    c.scale(long, long);
+    c.drawPath(P.blazeLong, faded(P.blazeLongPaint, glow));
+    c.restore();
+    c.save();
+    const short = 1 + 0.08 * Math.sin(T * 3.3 + 2.2) + burst * 0.22;
+    c.scale(short, short);
+    c.drawPath(P.blazeShort, faded(P.blazeShortPaint, glow));
+    c.restore();
+    put(c, P.haloRing, P.plain);
+    sweep(c, P.haloPath, P.sweepColors, T, 4.6, 2.2);
+    c.restore();
+    // a ring of light and motes flung out as the wings open
+    const since =
+      (((T - ANGEL_AT) % ANGEL_EVERY) + ANGEL_EVERY) % ANGEL_EVERY;
+    const u = since / 1.6;
+    const pulse = u > 1 ? 0 : Math.min(1, u * 6) * (1 - u) * 0.9;
+    if (pulse > 0) {
+      const R = 60 + Math.min(u, 1) * 32;
+      const out = R + PULSE_REACH;
+      const ring = Skia.Paint();
+      ring.setAntiAlias(true);
+      ring.setStyle(PaintStyle.Stroke);
+      ring.setStrokeWidth(PULSE_REACH * 2);
+      ring.setBlendMode(BlendMode.Screen);
+      ring.setShader(
+        Skia.Shader.MakeRadialGradient(
+          Skia.Point(0, 0),
+          out,
+          P.pulse.colors,
+          P.pulse.ds.map((d) => (R + d) / out),
+          TileMode.Clamp,
+        ),
+      );
+      ring.setAlphaf(Math.min(1, pulse));
+      c.drawCircle(0, 0, R, ring);
+    }
+    if (since <= 2.2) {
+      const m = since / 2.2;
+      const op = Math.min(1, m * 8) * (1 - m);
+      if (op > 0) {
+        const ease = 1 - (1 - m) * (1 - m);
+        for (const mote of P.motes) {
+          const r = 60 + mote.reach * ease;
+          const x = Math.cos(mote.a) * r;
+          const y = Math.sin(mote.a) * r - m * 6;
+          c.drawCircle(x, y, mote.size * 2.6, faded(mote.glow, op * 0.5));
+          c.drawCircle(x, y, mote.size, faded(P.moteCore, op));
+        }
+      }
+    }
+    for (const s of P.sparks) {
+      const p = ((T + s.offset) % s.life) / s.life;
+      const op = Math.sin(p * Math.PI);
+      if (op <= 0) continue;
+      const x = s.start.x + Math.sin(p * 6 + s.i) * 4;
+      const y = s.start.y - p * 20;
+      c.drawCircle(x, y, 1.3 * 2.4, faded(P.sparkGlow, op * 0.35));
+      c.drawCircle(x, y, 1.3, faded(P.sparkCore, op));
+    }
+    drawGlints(c, P.glints, P.white, T);
+    return recorder.finishRecordingAsPicture();
   });
-  return (
-    <Group>
-      <Circle
-        cx={0.6}
-        cy={1}
-        r={AR_IN}
-        style="stroke"
-        strokeWidth={2.2}
-        color="#000000"
-        opacity={0.3}
-      >
-        <BlurMask blur={1.4} style="normal" />
-      </Circle>
-      <Picture picture={ring} />
-      <Sweep t={t} d={ANGEL_RING} evenOdd every={4.6} />
-      <Circle cx={0} cy={-60} r={8} color="#CFEAFF" opacity={shine}>
-        <BlurMask blur={5} style="normal" />
-      </Circle>
-      <Gem x={0} y={-60} w={8} h={8} colors={DIAMOND} />
-      <BlazingHalo t={t} burst={burst} />
-      <Group blendMode="screen">
-        <Circle
-          cx={0}
-          cy={0}
-          r={pulseR}
-          style="stroke"
-          strokeWidth={6}
-          color="#FFF4C8"
-          opacity={pulse}
-        >
-          <BlurMask blur={4} style="normal" />
-        </Circle>
-        {Array.from({ length: 22 }, (_, k) => (
-          <Mote key={k} t={t} k={k} />
-        ))}
-      </Group>
-      <Sparks
-        t={t}
-        count={6}
-        from={-Math.PI}
-        to={0}
-        r={64}
-        rise={20}
-        color="#FFF0C0"
-        size={1.3}
-        seed={91}
-      />
-      <Glint t={t} x={-1} y={-61} size={6} phase={0.3} speed={1} />
-      <Glint t={t} x={-12} y={-83} size={4.5} phase={1.9} speed={1.1} />
-      <Glint t={t} x={0} y={60} size={3.5} phase={3.7} speed={0.95} />
-      <Glint t={t} x={-84} y={-30} size={4} phase={2.8} speed={1.05} />
-    </Group>
-  );
+  return <Picture picture={picture} />;
 }
 
 export const HEAVENS_ART: Record<string, ArtBorderDrawing> = {
