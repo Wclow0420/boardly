@@ -89,6 +89,7 @@ class Avalon(BaseGame):
     tile_color = "#EDE4FF"
     category = "faction"
     tag = "faction"
+    has_bots = True
 
     badges = [
         Badge("avalon.firstOp", FEAT, won_as("good")),
@@ -176,8 +177,8 @@ class Avalon(BaseGame):
         if (
             not isinstance(team, list)
             or len(team) != size
-            or len(set(team)) != size
             or not all(type(s) is int and 0 <= s < n for s in team)
+            or len(set(team)) != size
         ):
             raise GameError(f"Pick exactly {size} different players")
 
@@ -292,6 +293,12 @@ class Avalon(BaseGame):
         if state["roles"][target] == "merlin":
             return self._finish(state, "evil", "assassination")
         return self._finish(state, "good", "quests")
+
+    def bot_move(self, view, seat, rng):
+        # Imported here: the policy reads this module's tables
+        from app.games.avalon.bot import avalon as bot_policy
+
+        return bot_policy(view, seat, rng)
 
     @staticmethod
     def _finish(state, winner, reason):
