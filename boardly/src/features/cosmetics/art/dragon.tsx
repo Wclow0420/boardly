@@ -11,13 +11,11 @@
 // gold.
 
 import {
-  BlurMask,
-  Circle,
+  BlendMode,
+  BlurStyle,
   ClipOp,
   FillType,
-  Group,
   PaintStyle,
-  Path,
   Picture,
   Skia,
   StrokeCap,
@@ -25,21 +23,23 @@ import {
   TileMode,
   vec,
   type SkCanvas,
+  type SkImage,
+  type SkPaint,
+  type SkPath,
   type SkPicture,
+  type SkRect,
   type SkShader,
 } from "@shopify/react-native-skia";
 import { useMemo } from "react";
+import { PixelRatio } from "react-native";
 import { useDerivedValue } from "react-native-reanimated";
 
 import { curl, ribbon, type Pt } from "@/components/engraved/shapes";
 
-import { Sweep } from "./crowns";
 import {
-  Glint,
-  Halo,
-  Sparks,
   TAU,
   polar,
+  rnd,
   type ArtBorderDrawing,
   type Clock,
 } from "./kit";
@@ -1084,120 +1084,336 @@ const SWEEP_FRONT =
   );
 const EVERY = 5;
 
-// ── the layers ─────────────────────────────────────────────────────────
 
-/** A whisker, swaying from its root. */
-function Whisker({ t, side }: { t: Clock; side: 1 | -1 }) {
-  const picture = useMemo(() => whiskerPicture(), []);
-  const transform = useDerivedValue(() => {
-    const sway = Math.sin(t.value * 1.1 + (side < 0 ? 1.3 : 0)) * 0.035;
-    return [
-      { scaleX: side },
-      { translateX: WHISKER_ROOT[0] },
-      { translateY: WHISKER_ROOT[1] },
-      { rotate: sway },
-      { translateX: -WHISKER_ROOT[0] },
-      { translateY: -WHISKER_ROOT[1] },
-    ];
-  });
-  return (
-    <Group transform={transform}>
-      <Picture picture={picture} />
-    </Group>
-  );
+// ── how it is drawn each frame ────────────────────────────────────────
+// Every frame Skia redraws each canvas, so the dragon is drawn cheaply:
+// every part that stands still (the mane and horns, the ring and claws,
+// the head, the snout) or only moves as a whole (a whisker, the pearl's
+// flames) is baked once into an image, blurs and all, and each layer is
+// one picture recorded per frame from a single derived value, which
+// places those images and draws the few live things (the glows, the
+// glints, the embers, the light sweeping the gold) with the same numbers
+// as ever.
+
+/** Pixels per art unit the still parts are baked at: a little finer
+ *  than a 100pt avatar shows them, so they stay crisp up to ~130pt. */
+const bakeScale = () => Math.max(2, PixelRatio.get()) * 1.2;
+
+/** A drawing baked into an image, and the rect (in art units) it fills. */
+interface Baked {
+  image: SkImage;
+  src: SkRect;
+  dst: SkRect;
 }
+
+/** Bakes `draw` over the art rect x, y, w, h. */
+function bake(
+  draw: (c: SkCanvas) => void,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  scale = bakeScale(),
+): Baked | null {
+  const W = Math.ceil(w * scale);
+  const H = Math.ceil(h * scale);
+  const surface = Skia.Surface.Make(W, H);
+  if (!surface) return null;
+  const c = surface.getCanvas();
+  c.scale(scale, scale);
+  c.translate(-x, -y);
+  draw(c);
+  surface.flush();
+  return {
+    image: surface.makeImageSnapshot(),
+    src: Skia.XYWHRect(0, 0, W, H),
+    dst: Skia.XYWHRect(x, y, W / scale, H / scale),
+  };
+}
+
+/** Draws a baked image where it belongs (cubic, so it scales cleanly). */
+const put = (c: SkCanvas, b: Baked | null, paint: SkPaint) => {
+  "worklet";
+  if (b) c.drawImageRectCubic(b.image, b.src, b.dst, 1 / 3, 1 / 3, paint);
+};
+
+/** `paint` set to alpha `a`, clamped as Skia's opacity is. A picture
+ *  keeps a copy of each paint it draws with, so one paint can be reused
+ *  at many alphas. */
+const faded = (paint: SkPaint, a: number) => {
+  "worklet";
+  paint.setAlphaf(Math.min(1, Math.max(0, a)));
+  return paint;
+};
+
+/** A copy of a layer's parts with paints of its own (they are set per
+ *  frame), sharing the baked images and paths. */
+function own<T>(v: T): T {
+  if (Array.isArray(v)) return v.map(own) as T;
+  if (!v || typeof v !== "object" || v instanceof Float32Array) return v;
+  const name = (v as { __typename__?: string }).__typename__;
+  if (name === "Paint") return (v as unknown as SkPaint).copy() as T;
+  if (name) return v;
+  return Object.fromEntries(
+    Object.entries(v).map(([k, x]) => [k, own(x)]),
+  ) as T;
+}
+
+/** Made once, on first use (never at import: Jest has no Skia). */
+function lazy<T>(make: () => T) {
+  let made: T | undefined;
+  return () => (made ??= make());
+}
+
+const DEG_W = 180 / Math.PI;
+
+/** A plain fill; with `blur`, a soft one; with `screen`, screened. */
+function fill(color: string, blur = 0, screen = false) {
+  const paint = brush(color);
+  if (blur > 0)
+    paint.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, blur, true));
+  if (screen) paint.setBlendMode(BlendMode.Screen);
+  return paint;
+}
+
+/** Starts a frame's picture. */
+const begin = () => {
+  "worklet";
+  const recorder = Skia.PictureRecorder();
+  const c = recorder.beginRecording(Skia.XYWHRect(-96, -96, 192, 192));
+  return { recorder, c };
+};
+
+/** The light sweeping the gold (as Sweep in crowns): a soft white band,
+ *  tilted, crossing the canvas once every `every` seconds, drawn as the
+ *  shape filled with a moving gradient rather than a band clipped to it. */
+const SWEEP_COLORS = () =>
+  ["#FFFFFF00", "#FFFFFFCC", "#FFFFFF00"].map((col) => Skia.Color(col));
+const sweep = (
+  c: SkCanvas,
+  path: SkPath | null,
+  colors: Float32Array[],
+  t: number,
+  every: number,
+  phase: number,
+) => {
+  "worklet";
+  const p = ((t + phase) % every) / 1.1;
+  if (!path || p >= 1) return;
+  const x = -110 + p * 220;
+  const dx = Math.cos(0.45) * 12;
+  const dy = Math.sin(0.45) * 12;
+  const paint = Skia.Paint();
+  paint.setAntiAlias(true);
+  paint.setShader(
+    Skia.Shader.MakeLinearGradient(
+      Skia.Point(x - dx, -dy),
+      Skia.Point(x + dx, dy),
+      colors,
+      null,
+      TileMode.Clamp,
+    ),
+  );
+  c.drawPath(path, paint);
+};
+
+/** A four-pointed glint that flares and fades (as Glint in kit). */
+const glint = (
+  x: number,
+  y: number,
+  size: number,
+  phase: number,
+  speed = 1.2,
+) => {
+  const w = size * 0.2;
+  return {
+    x,
+    y,
+    phase,
+    speed,
+    path: skPath(
+      `M0 ${-size}Q${w} ${-w} ${size} 0Q${w} ${w} 0 ${size}Q${-w} ${w} ${-size} 0Q${-w} ${-w} 0 ${-size}z`,
+    )!,
+  };
+};
+
+/** The embers rising off the top of the ring (as Sparks in kit). */
+const SPARKS = {
+  count: 7,
+  from: -Math.PI * 0.95,
+  to: -Math.PI * 0.05,
+  r: 70,
+  rise: 20,
+  size: 1.2,
+  seed: 88,
+};
+
+const backParts = lazy(() => ({
+  plain: Skia.Paint(),
+  halo: brush(
+    Skia.Shader.MakeRadialGradient(
+      vec(0, 0),
+      92,
+      [Skia.Color("#FFD27A"), Skia.Color("#FFD27A00")],
+      [0.55, 1],
+      TileMode.Clamp,
+    ),
+  ),
+  back: bake((c) => c.drawPicture(backPicture()), -95, -95, 190, 147),
+  gold: skPath(SWEEP_BACK),
+  sweepColors: SWEEP_COLORS(),
+}));
 
 function DragonBack({ t }: { t: Clock }) {
-  const back = useMemo(() => backPicture(), []);
-  const glow = useDerivedValue(() => 0.34 + 0.1 * Math.sin(t.value * 1.2));
-  return (
-    <Group>
-      <Halo r={92} color="#FFD27A" opacity={glow} />
-      <Picture picture={back} />
-      <Sweep t={t} d={SWEEP_BACK} every={EVERY} />
-    </Group>
-  );
+  const P = useMemo(() => own(backParts()), []);
+  const picture = useDerivedValue(() => {
+    const T = t.value;
+    const { recorder, c } = begin();
+    c.drawCircle(0, 0, 92, faded(P.halo, 0.34 + 0.1 * Math.sin(T * 1.2)));
+    put(c, P.back, P.plain);
+    sweep(c, P.gold, P.sweepColors, T, EVERY, 0);
+    return recorder.finishRecordingAsPicture();
+  });
+  return <Picture picture={picture} />;
 }
 
+const frontParts = lazy(() => {
+  const { size } = SPARKS;
+  return {
+    plain: Skia.Paint(),
+    soft: Skia.Paint(),
+    screen: fill("#FFFFFF", 0, true),
+    white: fill("#FFFFFF"),
+    // the frame's shadow on the picture's edge, then the ring and claws
+    ring: bake(
+      (c) => {
+        const shade = pen(2.2, "#000000", 0.35);
+        shade.setMaskFilter(
+          Skia.MaskFilter.MakeBlur(BlurStyle.Normal, 1.4, true),
+        );
+        c.drawCircle(0.6, 1, RING_IN, shade);
+        c.drawPicture(ringPicture());
+      },
+      -66,
+      -66,
+      132,
+      132,
+    ),
+    ringPath: skPath(RING, true),
+    head: bake((c) => c.drawPicture(headPicture()), -38, -96, 76, 56),
+    // the fire behind the irises
+    eyeGlow: bake(
+      (c) => {
+        const eyes = skPath(EYES);
+        if (eyes) c.drawPath(eyes, fill("#FF7A10", 1.6));
+      },
+      -26,
+      -85,
+      52,
+      21,
+    ),
+    iris: skPath(IRIS),
+    irisPaint: fill("#FFE9A0", 0, true),
+    pupils: pupilPicture(),
+    whisker: bake((c) => c.drawPicture(whiskerPicture()), 13, -67, 78, 57),
+    snout: bake((c) => c.drawPicture(snoutPicture()), -24, -73, 48, 27),
+    gold: skPath(SWEEP_FRONT),
+    sweepColors: SWEEP_COLORS(),
+    pearlGlow: bake(
+      (c) => c.drawCircle(PEARL.x, PEARL.y, 12, fill("#FF7A2A", 7)),
+      -34,
+      34.5,
+      68,
+      68,
+    ),
+    flames: bake((c) => c.drawPicture(pearlFlamesPicture()), -18, 45, 36, 30),
+    pearl: pearlPicture(),
+    glints: [
+      glint(PEARL.x - 2, PEARL.y - 2, 5, 0.4),
+      glint(-46, -90, 4, 2.2, 1.1),
+      glint(44, -58, 3.5, 3.6, 0.9),
+      glint(-41, 33, 3.5, 4.8, 1),
+    ],
+    // an ember's soft glow, and its bright core
+    sparkGlow: bake(
+      (c) => c.drawCircle(0, 0, size * 2.4, fill("#FFC35A", size * 1.4)),
+      -9,
+      -9,
+      18,
+      18,
+    ),
+    sparkCore: fill("#FFF4D6", 0, true),
+    sparks: Array.from({ length: SPARKS.count }, (_, k) => {
+      const i = k + SPARKS.seed * 100;
+      const life = 1.3 + rnd(i) * 1.2;
+      const a = SPARKS.from + (SPARKS.to - SPARKS.from) * rnd(i + 7);
+      const start = polar(a, SPARKS.r);
+      return { i, life, x: start.x, y: start.y, offset: rnd(i + 3) * life };
+    }),
+  };
+});
+
 function DragonFront({ t }: { t: Clock }) {
-  const ring = useMemo(() => ringPicture(), []);
-  const head = useMemo(() => headPicture(), []);
-  const pupils = useMemo(() => pupilPicture(), []);
-  const snout = useMemo(() => snoutPicture(), []);
-  const flames = useMemo(() => pearlFlamesPicture(), []);
-  const pearl = useMemo(() => pearlPicture(), []);
-  // the eyes smoulder, slowly
-  const ember = useDerivedValue(
-    () => 0.15 + 0.55 * (0.5 + 0.5 * Math.sin(t.value * 1.3)) ** 2,
-  );
-  const flicker = useDerivedValue(() => [
-    { translateX: PEARL.x },
-    { translateY: PEARL.y },
-    { rotate: Math.sin(t.value * 1.7) * 0.06 },
-    { scale: 1 + 0.07 * Math.sin(t.value * 5.3) * Math.sin(t.value * 2.1) },
-    { translateX: -PEARL.x },
-    { translateY: -PEARL.y },
-  ]);
-  const pearlGlow = useDerivedValue(() => 0.4 + 0.25 * Math.sin(t.value * 2.3));
-  return (
-    <Group>
-      {/* the frame's shadow on the picture's edge */}
-      <Circle
-        cx={0.6}
-        cy={1}
-        r={RING_IN}
-        style="stroke"
-        strokeWidth={2.2}
-        color="#000000"
-        opacity={0.35}
-      >
-        <BlurMask blur={1.4} style="normal" />
-      </Circle>
-      <Picture picture={ring} />
-      <Sweep t={t} d={RING} evenOdd every={EVERY} phase={0.4} />
-      <Picture picture={head} />
-      {/* the eyes smoulder: a fire behind the iris, brightening */}
-      <Group opacity={ember} blendMode="screen">
-        <Path path={EYES} color="#FF7A10">
-          <BlurMask blur={1.6} style="normal" />
-        </Path>
-        <Path path={IRIS} color="#FFE9A0" />
-      </Group>
-      <Picture picture={pupils} />
-      <Whisker t={t} side={1} />
-      <Whisker t={t} side={-1} />
-      <Picture picture={snout} />
-      <Sweep t={t} d={SWEEP_FRONT} every={EVERY} />
-      {/* the flaming pearl */}
-      <Circle
-        cx={PEARL.x}
-        cy={PEARL.y}
-        r={12}
-        color="#FF7A2A"
-        opacity={pearlGlow}
-      >
-        <BlurMask blur={7} style="normal" />
-      </Circle>
-      <Group transform={flicker}>
-        <Picture picture={flames} />
-      </Group>
-      <Picture picture={pearl} />
-      <Glint t={t} x={PEARL.x - 2} y={PEARL.y - 2} size={5} phase={0.4} />
-      <Glint t={t} x={-46} y={-90} size={4} phase={2.2} speed={1.1} />
-      <Glint t={t} x={44} y={-58} size={3.5} phase={3.6} speed={0.9} />
-      <Glint t={t} x={-41} y={33} size={3.5} phase={4.8} speed={1} />
-      <Sparks
-        t={t}
-        count={7}
-        from={-Math.PI * 0.95}
-        to={-Math.PI * 0.05}
-        r={70}
-        rise={20}
-        size={1.2}
-        seed={88}
-      />
-    </Group>
-  );
+  const P = useMemo(() => own(frontParts()), []);
+  const picture = useDerivedValue(() => {
+    const T = t.value;
+    const { recorder, c } = begin();
+    put(c, P.ring, P.plain);
+    sweep(c, P.ringPath, P.sweepColors, T, EVERY, 0.4);
+    put(c, P.head, P.plain);
+    // the eyes smoulder, slowly: a fire behind the iris, brightening
+    const ember = 0.15 + 0.55 * (0.5 + 0.5 * Math.sin(T * 1.3)) ** 2;
+    put(c, P.eyeGlow, faded(P.screen, ember));
+    if (P.iris) c.drawPath(P.iris, faded(P.irisPaint, ember));
+    c.drawPicture(P.pupils);
+    // the whiskers sway from their roots
+    for (const side of [1, -1]) {
+      const sway = Math.sin(T * 1.1 + (side < 0 ? 1.3 : 0)) * 0.035;
+      c.save();
+      c.scale(side, 1);
+      c.translate(WHISKER_ROOT[0], WHISKER_ROOT[1]);
+      c.rotate(sway * DEG_W, 0, 0);
+      c.translate(-WHISKER_ROOT[0], -WHISKER_ROOT[1]);
+      put(c, P.whisker, P.plain);
+      c.restore();
+    }
+    put(c, P.snout, P.plain);
+    sweep(c, P.gold, P.sweepColors, T, EVERY, 0);
+    // the flaming pearl
+    put(c, P.pearlGlow, faded(P.soft, 0.4 + 0.25 * Math.sin(T * 2.3)));
+    c.save();
+    c.translate(PEARL.x, PEARL.y);
+    c.rotate(Math.sin(T * 1.7) * 0.06 * DEG_W, 0, 0);
+    const k = 1 + 0.07 * Math.sin(T * 5.3) * Math.sin(T * 2.1);
+    c.scale(k, k);
+    c.translate(-PEARL.x, -PEARL.y);
+    put(c, P.flames, P.plain);
+    c.restore();
+    c.drawPicture(P.pearl);
+    for (const g of P.glints) {
+      const s = Math.max(0, Math.sin(T * g.speed + g.phase));
+      if (s <= 0) continue;
+      c.save();
+      c.translate(g.x, g.y);
+      const z = 0.15 + s ** 5;
+      c.scale(z, z);
+      c.drawPath(g.path, faded(P.white, s ** 3));
+      c.restore();
+    }
+    // the embers rise and fade
+    for (const e of P.sparks) {
+      const p = ((T + e.offset) % e.life) / e.life;
+      const o = Math.sin(p * Math.PI);
+      if (o <= 0) continue;
+      c.save();
+      c.translate(e.x + Math.sin(p * 6 + e.i) * 4, e.y - p * SPARKS.rise);
+      put(c, P.sparkGlow, faded(P.screen, 0.35 * o));
+      c.drawCircle(0, 0, SPARKS.size, faded(P.sparkCore, o));
+      c.restore();
+    }
+    return recorder.finishRecordingAsPicture();
+  });
+  return <Picture picture={picture} />;
 }
 
 export const DRAGON_ART: Record<string, ArtBorderDrawing> = {

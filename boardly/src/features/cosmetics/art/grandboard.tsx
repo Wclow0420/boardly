@@ -15,19 +15,14 @@
 // garden.tsx (Meeple Parade) and tabletop.tsx for the pieces it grew from.
 
 import {
-  BlurMask,
+  BlendMode,
   BlurStyle,
-  Circle,
   ClipOp,
   FillType,
-  Group,
-  LinearGradient,
-  Oval,
+  FilterMode,
+  MipmapMode,
   PaintStyle,
-  Path,
   Picture,
-  RadialGradient,
-  Rect,
   Skia,
   StrokeCap,
   StrokeJoin,
@@ -35,11 +30,16 @@ import {
   vec,
   type Matrix4,
   type SkCanvas,
+  type SkColor,
+  type SkImage,
+  type SkPaint,
+  type SkPath,
   type SkPicture,
+  type SkRect,
   type SkShader,
 } from "@shopify/react-native-skia";
 import { useMemo } from "react";
-import { useDerivedValue, type SharedValue } from "react-native-reanimated";
+import { useDerivedValue } from "react-native-reanimated";
 
 import type { EmblemPart } from "@/components/engraved/emblem";
 import { recordEmblem } from "@/components/engraved/picture";
@@ -49,16 +49,7 @@ import { HATS } from "@/features/mascot/parts/gear";
 import { EYES, MOUTHS } from "@/features/mascot/parts/face";
 import { BOX, lifted } from "@/features/mascot/rig";
 import { COLOURS, SKINS } from "@/features/mascot/skins";
-import { Sweep } from "./crowns";
-import {
-  Glint,
-  Halo,
-  TAU,
-  polar,
-  rnd,
-  type ArtBorderDrawing,
-  type Clock,
-} from "./kit";
+import { TAU, polar, rnd, type ArtBorderDrawing, type Clock } from "./kit";
 
 const GOLD = ["#FFF2B8", "#E2B04A", "#9A6B1E", "#F0CC72"];
 const DEEP_GOLD = ["#6A4410", "#A87A2A", "#D8A848"];
@@ -324,8 +315,167 @@ function once(draw: (c: SkCanvas) => void) {
   let pic: SkPicture | null = null;
   return () => (pic ??= record(draw));
 }
-function usePicture(get: () => SkPicture) {
-  return useMemo(() => get(), [get]);
+
+// ── each layer as one picture a frame ─────────────────────────────────
+//
+// Every moving part of a layer is drawn by one worklet into one picture
+// per frame, so a layer is one node and one derived value however many
+// parts move. The fixed parts (the board, the crown, each piece, the
+// soft shadows and glows) are baked into images once, and a moving
+// border draws those: one quad each rather than hundreds of gradients,
+// clips and blurs replayed. No layer opacities: alpha goes on the paint.
+// The steps below match what the kit's Glint, Halo and the crowns'
+// Sweep draw.
+
+/** Made the first time it's asked for (Jest has no Skia at load time). */
+function lazy<T>(make: () => T) {
+  let v: T | null = null;
+  return () => (v ??= make());
+}
+
+const TO_DEG = 180 / Math.PI;
+/** What a frame's picture covers: the whole canvas. */
+const frameRect = lazy(() => Skia.XYWHRect(-100, -100, 200, 200));
+
+/** Pixels per unit the board, the crown and the glows are baked at (2.2
+ *  are shown at 74pt, 3.9 at 130pt). */
+const BAKE = 4;
+/** And the pieces, which stand at about 1.2 times their own units. */
+const PIECE_K = 5;
+
+/** A part drawn whole: its picture, and the same picture baked into an
+ *  image covering (x, y, w, h) at `k` pixels a unit, which a moving
+ *  border draws instead. A border that stands still (too small to move)
+ *  draws the picture itself, crisp at any size. */
+interface Sheet {
+  pic: SkPicture;
+  img: SkImage | null;
+  src: SkRect;
+  dst: SkRect;
+}
+
+function sheet(pic: SkPicture, x: number, y: number, w: number, h: number, k = BAKE): Sheet {
+  const W = Math.ceil(w * k);
+  const H = Math.ceil(h * k);
+  const surface = Skia.Surface.Make(W, H);
+  if (!surface) return { pic, img: null, src: frameRect(), dst: frameRect() };
+  const c = surface.getCanvas();
+  c.scale(k, k);
+  c.translate(-x, -y);
+  c.drawPicture(pic);
+  return {
+    pic,
+    img: surface.makeImageSnapshot(),
+    src: Skia.XYWHRect(0, 0, W, H),
+    dst: Skia.XYWHRect(x, y, W / k, H / k),
+  };
+}
+
+/** Draws a sheet with `paint` (its alpha and blend). `layer`: the paint
+ *  isn't plain, so the still picture goes through a layer with it, as
+ *  the group opacity it stands for did. */
+function drawSheet(c: SkCanvas, s: Sheet, paint: SkPaint, baked: boolean, layer = false) {
+  "worklet";
+  if (baked && s.img)
+    c.drawImageRectOptions(s.img, s.src, s.dst, FilterMode.Linear, MipmapMode.None, paint);
+  else if (layer) {
+    c.saveLayer(paint);
+    c.drawPicture(s.pic);
+    c.restore();
+  } else c.drawPicture(s.pic);
+}
+
+/** A soft shape (blurred by `blur`), recorded. */
+function blurred(draw: (c: SkCanvas, paint: SkPaint) => void, color: string, alpha: number, blur: number, style = BlurStyle.Normal) {
+  return record((c) => {
+    const paint = brush(color, alpha);
+    paint.setMaskFilter(Skia.MaskFilter.MakeBlur(style, blur, true));
+    draw(c, paint);
+  });
+}
+
+interface GlintAt {
+  x: number;
+  y: number;
+  star: SkPath;
+  phase: number;
+  speed: number;
+}
+
+/** A four-pointed glint (the kit's Glint). */
+function glintAt(x: number, y: number, size: number, phase = 0, speed = 1.2): GlintAt {
+  const w = size * 0.2;
+  const star =
+    Skia.Path.MakeFromSVGString(
+      `M0 ${-size}Q${w} ${-w} ${size} 0Q${w} ${w} 0 ${size}Q${-w} ${w} ${-size} 0Q${-w} ${-w} 0 ${-size}z`,
+    ) ?? Skia.Path.Make();
+  return { x, y, star, phase, speed };
+}
+
+function drawGlint(c: SkCanvas, g: GlintAt, white: SkPaint, t: number) {
+  "worklet";
+  const p = Math.max(0, Math.sin(t * g.speed + g.phase));
+  if (p <= 0) return;
+  const s = 0.15 + p ** 5;
+  c.save();
+  c.translate(g.x, g.y);
+  c.scale(s, s);
+  white.setAlphaf(p ** 3);
+  c.drawPath(g.star, white);
+  c.restore();
+}
+
+interface SweepAt {
+  clip: SkPath;
+  every: number;
+  phase: number;
+}
+
+/** A light sweeping over metal (the crowns' Sweep). */
+function sweepAt(d: string, every: number, phase: number, evenOdd: boolean): SweepAt {
+  return { clip: skPath(d, evenOdd) ?? Skia.Path.Make(), every, phase };
+}
+
+function drawSweep(c: SkCanvas, s: SweepAt, band: SkPaint, colors: SkColor[], t: number) {
+  "worklet";
+  const p = ((t + s.phase) % s.every) / 1.1;
+  // the rest of the time it waits well off the canvas
+  if (p >= 1) return;
+  // the band of light clipped to the metal is the metal filled with the
+  // band's gradient (no clip to mask every frame)
+  const m = Skia.Matrix();
+  m.translate(-110 + p * 220, 0);
+  m.rotate(0.45);
+  band.setShader(
+    Skia.Shader.MakeLinearGradient(
+      Skia.Point(-12, 0),
+      Skia.Point(12, 0),
+      colors,
+      null,
+      TileMode.Clamp,
+      m,
+    ),
+  );
+  c.drawPath(s.clip, band);
+}
+
+/** The paints every layer shares. */
+const common = lazy(() => {
+  const band = Skia.Paint();
+  band.setAntiAlias(true);
+  return {
+    band,
+    bandColors: ["#FFFFFF00", "#FFFFFFCC", "#FFFFFF00"].map((k) => Skia.Color(k)),
+    white: brush("#FFFFFF"),
+    plain: brush("#FFFFFF"),
+  };
+});
+
+/** The clock as this border was first shown: a border too small to move
+ *  is handed one that stands still there, so it draws its pictures
+ *  rather than the baked images. */
+function useStart(t: Clock) {
+  return useMemo(() => t.value, [t]);
 }
 
 // ══ The board ═════════════════════════════════════════════════════════
@@ -438,22 +588,15 @@ const boardPicture = once((c) => {
   }
 });
 
-function BoardBack({ t }: { t: Clock }) {
-  const glow = useDerivedValue(
-    () => 0.2 + 0.05 * Math.sin(t.value * 1.2) + 0.35 * flashAt(t.value),
-  );
-  return (
-    <Group>
-      <Halo r={92} color="#FFD27A" opacity={glow} />
-      {/* the board's thickness */}
-      <Group transform={[{ translateX: 1.5 }, { translateY: 2.6 }]}>
-        <Path path={TRACK} fillType="evenOdd" color="#1A0E04" opacity={0.6}>
-          <BlurMask blur={1.2} style="normal" />
-        </Path>
-      </Group>
-    </Group>
-  );
-}
+/** The board's thickness: its shadow, soft, under it. */
+const thicknessPicture = once((c) => {
+  const track = skPath(TRACK, true);
+  if (!track) return;
+  const paint = brush("#1A0E04", 0.6);
+  paint.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, 1.2, true));
+  c.translate(1.5, 2.6);
+  c.drawPath(track, paint);
+});
 
 // ══ The game: when each piece hops ════════════════════════════════════
 
@@ -539,40 +682,41 @@ const move = (T: number, i: number, home: number): Move => {
   return { a: (home + steps) * SQ, steps, lift, hop, big, squash };
 };
 
-function useMove(t: Clock, i: number) {
-  const home = HOME[i];
-  return useDerivedValue(() => move(t.value, i, home));
-}
-
 /** Stands a piece on the board: its own +x along the way it goes, -y
  *  out from the picture (up off the board). */
-function usePlace(m: SharedValue<Move>, size = 1.2) {
-  return useDerivedValue(() => {
-    const { a, lift } = m.value;
-    const p = polar(a, FEET + lift);
-    return [{ translateX: p.x }, { translateY: p.y }, { rotate: a + Math.PI / 2 }, { scale: size }];
-  });
-}
+const place = (c: SkCanvas, m: Move, size = 1.2) => {
+  "worklet";
+  const p = polar(m.a, FEET + m.lift);
+  c.translate(p.x, p.y);
+  c.rotate((m.a + Math.PI / 2) * TO_DEG, 0, 0);
+  c.scale(size, size);
+};
 
-function PieceShadow({ m, w }: { m: SharedValue<Move>; w: number }) {
-  const transform = useDerivedValue(() => {
-    const { a, lift } = m.value;
-    const p = polar(a, FEET - 0.3);
-    return [
-      { translateX: p.x },
-      { translateY: p.y },
-      { rotate: a + Math.PI / 2 },
-      { scale: Math.max(0.45, 1 - lift * 0.04) },
-    ];
-  });
-  const opacity = useDerivedValue(() => Math.max(0.12, 0.42 - m.value.lift * 0.025));
-  return (
-    <Group transform={transform} opacity={opacity}>
-      <Oval x={-w / 2} y={-1.5} width={w} height={3} color="#1A0E04">
-        <BlurMask blur={0.8} style="normal" />
-      </Oval>
-    </Group>
+/** Each piece's shadow width, in the order of the pieces. */
+const SHADOW_W = [15, 11, 13, 12, 11, 14];
+
+/** A piece's soft shadow, an oval `w` wide on its square. */
+const shadowSheet = (w: number) =>
+  sheet(
+    blurred((c, paint) => c.drawOval(Skia.XYWHRect(-w / 2, -1.5, w, 3), paint), "#1A0E04", 1, 0.8),
+    -w / 2 - 3.5,
+    -5,
+    w + 7,
+    10,
+    PIECE_K,
   );
+
+function drawShadow(c: SkCanvas, m: Move, s: Sheet, paint: SkPaint, baked: boolean) {
+  "worklet";
+  const p = polar(m.a, FEET - 0.3);
+  const k = Math.max(0.45, 1 - m.lift * 0.04);
+  c.save();
+  c.translate(p.x, p.y);
+  c.rotate((m.a + Math.PI / 2) * TO_DEG, 0, 0);
+  c.scale(k, k);
+  paint.setAlphaf(Math.max(0.12, 0.42 - m.lift * 0.025));
+  drawSheet(c, s, paint, baked, true);
+  c.restore();
 }
 
 // ── the mascot, crowned ──────────────────────────────────────────────
@@ -592,29 +736,22 @@ let MASCOT: SkPicture | null = null;
 const mascotPicture = () =>
   (MASCOT ??= recordEmblem(mascotParts(COLOURS.blue), undefined, BOX));
 
-function MascotPiece({ t, m, i }: { t: Clock; m: SharedValue<Move>; i: number }) {
-  const picture = useMemo(() => mascotPicture(), []);
-  const place = usePlace(m);
-  const body = useDerivedValue(() => {
-    const { hop, big, squash } = m.value;
-    const breathe = 1 + 0.025 * Math.sin(t.value * 2.6 + i);
-    const lean = 0.16 * Math.sin(hop * Math.PI) + 0.05 * Math.sin(t.value * 1.9 + i);
-    const twirl = big > 0 ? Math.cos(big * TAU) : 1;
-    return [
-      { rotate: lean },
-      { scaleX: MASCOT_SCALE * (1 + 0.1 * squash) * twirl },
-      { scaleY: MASCOT_SCALE * (1 - 0.13 * squash) * breathe },
-      { translateX: -50 },
-      { translateY: -FOOT_Y },
-    ];
-  });
-  return (
-    <Group transform={place}>
-      <Group transform={body}>
-        <Picture picture={picture} />
-      </Group>
-    </Group>
+function drawMascot(c: SkCanvas, m: Move, T: number, i: number, s: Sheet, paint: SkPaint, baked: boolean) {
+  "worklet";
+  const { hop, big, squash } = m;
+  const breathe = 1 + 0.025 * Math.sin(T * 2.6 + i);
+  const lean = 0.16 * Math.sin(hop * Math.PI) + 0.05 * Math.sin(T * 1.9 + i);
+  const twirl = big > 0 ? Math.cos(big * TAU) : 1;
+  c.save();
+  place(c, m);
+  c.rotate(lean * TO_DEG, 0, 0);
+  c.scale(
+    MASCOT_SCALE * (1 + 0.1 * squash) * twirl,
+    MASCOT_SCALE * (1 - 0.13 * squash) * breathe,
   );
+  c.translate(-50, -FOOT_Y);
+  drawSheet(c, s, paint, baked);
+  c.restore();
 }
 
 // ── a gold coin, spinning on its edge ────────────────────────────────
@@ -656,36 +793,39 @@ const coinFacePicture = once((c) => {
   c.restore();
 });
 
-function CoinPiece({ t, m, i }: { t: Clock; m: SharedValue<Move>; i: number }) {
-  const picture = usePicture(coinFacePicture);
-  const place = usePlace(m);
-  const spin = useDerivedValue(() => {
-    const { steps, big } = m.value;
-    return t.value * 2.2 + i + steps * Math.PI + smooth(big) * 2 * TAU;
-  });
-  const edge = useDerivedValue(() => [
-    { translateY: -COIN_R - 0.3 },
-    { translateX: -1.3 * Math.sin(spin.value) },
-    { scaleX: Math.max(0.04, Math.abs(Math.cos(spin.value))) },
-  ]);
-  const face = useDerivedValue(() => {
-    const k = Math.cos(spin.value);
-    return [
-      { translateY: -COIN_R - 0.3 },
-      { scaleX: Math.abs(k) < 0.04 ? 0.04 * Math.sign(k || 1) : k },
-    ];
-  });
-  return (
-    <Group transform={place}>
-      <Group transform={edge}>
-        <Circle cx={0} cy={0} r={COIN_R + 0.2} color={INK} />
-        <Circle cx={0} cy={0} r={COIN_R - 0.3} color="#9A6B1E" />
-      </Group>
-      <Group transform={face}>
-        <Picture picture={picture} />
-      </Group>
-    </Group>
-  );
+interface CoinPaints {
+  coinInk: SkPaint;
+  coinEdge: SkPaint;
+}
+
+function drawCoin(
+  c: SkCanvas,
+  m: Move,
+  T: number,
+  i: number,
+  s: Sheet,
+  P: CoinPaints,
+  paint: SkPaint,
+  baked: boolean,
+) {
+  "worklet";
+  const spin = T * 2.2 + i + m.steps * Math.PI + smooth(m.big) * 2 * TAU;
+  c.save();
+  place(c, m);
+  // the edge
+  c.save();
+  c.translate(0, -COIN_R - 0.3);
+  c.translate(-1.3 * Math.sin(spin), 0);
+  c.scale(Math.max(0.04, Math.abs(Math.cos(spin))), 1);
+  c.drawCircle(0, 0, COIN_R + 0.2, P.coinInk);
+  c.drawCircle(0, 0, COIN_R - 0.3, P.coinEdge);
+  c.restore();
+  // the face
+  const k = Math.cos(spin);
+  c.translate(0, -COIN_R - 0.3);
+  c.scale(Math.abs(k) < 0.04 ? 0.04 * Math.sign(k || 1) : k, 1);
+  drawSheet(c, s, paint, baked);
+  c.restore();
 }
 
 // ── the stack of coins ───────────────────────────────────────────────
@@ -718,24 +858,15 @@ const stackPicture = once((c) => {
   }
 });
 
-function StackPiece({ m }: { m: SharedValue<Move> }) {
-  const picture = usePicture(stackPicture);
-  const place = usePlace(m);
-  const body = useDerivedValue(() => {
-    const { hop, squash } = m.value;
-    return [
-      { rotate: 0.12 * Math.sin(hop * TAU) },
-      { scaleX: 1 + 0.1 * squash },
-      { scaleY: 1 - 0.14 * squash + 0.08 * Math.sin(hop * Math.PI) },
-    ];
-  });
-  return (
-    <Group transform={place}>
-      <Group transform={body}>
-        <Picture picture={picture} />
-      </Group>
-    </Group>
-  );
+function drawStack(c: SkCanvas, m: Move, s: Sheet, paint: SkPaint, baked: boolean) {
+  "worklet";
+  const { hop, squash } = m;
+  c.save();
+  place(c, m);
+  c.rotate(0.12 * Math.sin(hop * TAU) * TO_DEG, 0, 0);
+  c.scale(1 + 0.1 * squash, 1 - 0.14 * squash + 0.08 * Math.sin(hop * Math.PI));
+  drawSheet(c, s, paint, baked);
+  c.restore();
 }
 
 // ── the ebony king ───────────────────────────────────────────────────
@@ -785,24 +916,15 @@ const kingPicture = once((c) => {
   gold("M-0.75 -18.8V-20.3H-2.1V-21.7H-0.75V-23.1H0.75V-21.7H2.1V-20.3H0.75V-18.8Z");
 });
 
-function KingPiece({ m }: { m: SharedValue<Move> }) {
-  const picture = usePicture(kingPicture);
-  const place = usePlace(m, 1.05);
-  const body = useDerivedValue(() => {
-    const { hop, big, squash } = m.value;
-    return [
-      { rotate: 0.2 * Math.sin(hop * TAU) + 0.12 * Math.sin(big * TAU) },
-      { scaleX: 1 + 0.06 * squash },
-      { scaleY: 1 - 0.08 * squash },
-    ];
-  });
-  return (
-    <Group transform={place}>
-      <Group transform={body}>
-        <Picture picture={picture} />
-      </Group>
-    </Group>
-  );
+function drawKing(c: SkCanvas, m: Move, s: Sheet, paint: SkPaint, baked: boolean) {
+  "worklet";
+  const { hop, big, squash } = m;
+  c.save();
+  place(c, m, 1.05);
+  c.rotate((0.2 * Math.sin(hop * TAU) + 0.12 * Math.sin(big * TAU)) * TO_DEG, 0, 0);
+  c.scale(1 + 0.06 * squash, 1 - 0.08 * squash);
+  drawSheet(c, s, paint, baked);
+  c.restore();
 }
 
 // ── the ace, flipping as it goes ─────────────────────────────────────
@@ -878,35 +1000,16 @@ const cardBackPicture = once((c) => {
   });
 });
 
-function CardPiece({ m }: { m: SharedValue<Move> }) {
-  const face = usePicture(cardFacePicture);
-  const back = usePicture(cardBackPicture);
-  const place = usePlace(m, 1.15);
-  const turn = useDerivedValue(() => {
-    const { steps, big } = m.value;
-    return Math.cos(steps * Math.PI + smooth(big) * TAU);
-  });
-  const body = useDerivedValue(() => {
-    const k = turn.value;
-    return [
-      { rotate: 0.16 * Math.sin(m.value.hop * TAU) },
-      { scaleX: Math.abs(k) < 0.03 ? 0.03 * Math.sign(k || 1) : k },
-    ];
-  });
-  const faceUp = useDerivedValue(() => (turn.value >= 0 ? 1 : 0));
-  const backUp = useDerivedValue(() => 1 - faceUp.value);
-  return (
-    <Group transform={place}>
-      <Group transform={body}>
-        <Group opacity={faceUp}>
-          <Picture picture={face} />
-        </Group>
-        <Group opacity={backUp}>
-          <Picture picture={back} />
-        </Group>
-      </Group>
-    </Group>
-  );
+function drawCard(c: SkCanvas, m: Move, face: Sheet, back: Sheet, paint: SkPaint, baked: boolean) {
+  "worklet";
+  const k = Math.cos(m.steps * Math.PI + smooth(m.big) * TAU);
+  c.save();
+  place(c, m, 1.15);
+  c.rotate(0.16 * Math.sin(m.hop * TAU) * TO_DEG, 0, 0);
+  c.scale(Math.abs(k) < 0.03 ? 0.03 * Math.sign(k || 1) : k, 1);
+  // face up or back up, never both
+  drawSheet(c, k >= 0 ? face : back, paint, baked);
+  c.restore();
 }
 
 // ── the ivory die, tumbling over as it hops ──────────────────────────
@@ -984,95 +1087,94 @@ const FACE_SHINE = "M-0.34 -0.4H0.2M-0.4 -0.34V0.08";
 /** The light, from the top left and in front, in the world. */
 const LIGHT = [-0.45, -0.55, 0.7];
 
-interface DiePose {
-  m: M3;
-  /** The light in the die's frame. */
-  l: number[];
-}
-
-function useDiePose(m: SharedValue<Move>): SharedValue<DiePose> {
-  return useDerivedValue(() => {
-    const { a, steps, big } = m.value;
-    const k = Math.floor(steps + 1e-6);
-    const e = steps - k;
-    const j = ((k % 6) + 6) % 6;
-    const tip = AXES[j] === 2 ? rotZ((Math.PI / 2) * e) : rotX((Math.PI / 2) * e);
-    const o = (((k % PERIOD) + PERIOD) % PERIOD) * 9;
-    const rest = ORIENT.slice(o, o + 9);
-    // in the round's big jump it spins right round
-    const spin = rotY(smooth(big) * TAU);
-    const view = mul(VIEW, mul(spin, mul(tip, rest)));
-    const r = a + Math.PI / 2;
-    const c = Math.cos(r);
-    const s = Math.sin(r);
-    return {
-      m: view,
-      l: [c * LIGHT[0] + s * LIGHT[1], -s * LIGHT[0] + c * LIGHT[1], LIGHT[2]],
-    };
+/** A face of the die in its own unit square, all but its shade and
+ *  outline (which move with the light), recorded. */
+const dieFacePicture = (value: number) =>
+  record((c) => {
+    const body = skPath(FACE_BODY);
+    const face = skPath(FACE);
+    const bevel = skPath(FACE_BEVEL);
+    const shine = skPath(FACE_SHINE);
+    if (body) c.drawPath(body, brush(INK));
+    if (face) c.drawPath(face, brush(linear(-0.5, -0.5, 0.5, 0.5, IVORY)));
+    if (bevel) {
+      const p = pen(0.04, VEIN_IVORY, 0.6);
+      p.setStrokeCap(StrokeCap.Butt);
+      p.setStrokeJoin(StrokeJoin.Miter);
+      c.drawPath(bevel, p);
+    }
+    if (shine) {
+      const p = pen(0.07, "#FFFFFF");
+      p.setStrokeJoin(StrokeJoin.Miter);
+      c.drawPath(shine, p);
+    }
+    for (const [px, py] of PIPS[value]) {
+      if (value === 1) {
+        c.drawCircle(0, 0, 0.2, brush(radial(-0.06, -0.07, 0.27, RUBY)));
+        c.drawCircle(-0.06, -0.07, 0.055, brush("#FFFFFFCC"));
+      } else c.drawCircle(px * 0.26, py * 0.26, 0.11, brush("#2A1C0E"));
+    }
   });
+
+interface DieParts {
+  faces: Sheet[];
+  face: SkPath;
+  shade: SkPaint;
+  outline: SkPaint;
+  layer: SkPaint;
+  faceRect: SkRect;
 }
 
-function DieFace({ pose, face }: { pose: SharedValue<DiePose>; face: (typeof FACES)[number] }) {
-  const { n, u, v, value } = face;
-  const look = useDerivedValue(() => {
-    const { m, l } = pose.value;
-    const at = (w: number[]) => [
-      m[0] * w[0] + m[1] * w[1] + m[2] * w[2],
-      m[3] * w[0] + m[4] * w[1] + m[5] * w[2],
-      m[6] * w[0] + m[7] * w[1] + m[8] * w[2],
-    ];
+function drawDie(c: SkCanvas, mv: Move, D: DieParts, paint: SkPaint, baked: boolean) {
+  "worklet";
+  const { a, steps, big } = mv;
+  const k = Math.floor(steps + 1e-6);
+  const e = steps - k;
+  const j = ((k % 6) + 6) % 6;
+  const tip = AXES[j] === 2 ? rotZ((Math.PI / 2) * e) : rotX((Math.PI / 2) * e);
+  const o = (((k % PERIOD) + PERIOD) % PERIOD) * 9;
+  const rest = ORIENT.slice(o, o + 9);
+  // in the round's big jump it spins right round
+  const spin = rotY(smooth(big) * TAU);
+  const m = mul(VIEW, mul(spin, mul(tip, rest)));
+  const r = a + Math.PI / 2;
+  const cr = Math.cos(r);
+  const sr = Math.sin(r);
+  // the light in the die's frame
+  const l = [cr * LIGHT[0] + sr * LIGHT[1], -sr * LIGHT[0] + cr * LIGHT[1], LIGHT[2]];
+  const at = (w: number[]) => [
+    m[0] * w[0] + m[1] * w[1] + m[2] * w[2],
+    m[3] * w[0] + m[4] * w[1] + m[5] * w[2],
+    m[6] * w[0] + m[7] * w[1] + m[8] * w[2],
+  ];
+  c.save();
+  place(c, mv);
+  for (let f = 0; f < FACES.length; f++) {
+    const { n, u, v } = FACES[f];
     const N = at(n);
+    const shown = Math.min(1, Math.max(0, N[2] * 10));
+    if (shown <= 0) continue;
     const U = at(u);
     const V = at(v);
     const s = EDGE;
     const cx = N[0] * (s / 2);
     const cy = -s * 0.62 + N[1] * (s / 2);
     const lit = N[0] * l[0] + N[1] * l[1] + N[2] * l[2];
-    return {
-      matrix: [U[0] * s, V[0] * s, 0, cx, U[1] * s, V[1] * s, 0, cy, 0, 0, 1, 0, 0, 0, 0, 1] as unknown as Matrix4,
-      shown: Math.min(1, Math.max(0, N[2] * 10)),
-      shade: 0.46 * (1 - Math.max(0, lit)) ** 1.2,
-    };
-  });
-  const transform = useDerivedValue(() => [{ matrix: look.value.matrix }]);
-  const opacity = useDerivedValue(() => look.value.shown);
-  const shade = useDerivedValue(() => look.value.shade);
-  return (
-    <Group transform={transform} opacity={opacity}>
-      <Path path={FACE_BODY} color={INK} />
-      <Path path={FACE}>
-        <LinearGradient start={vec(-0.5, -0.5)} end={vec(0.5, 0.5)} colors={IVORY} />
-      </Path>
-      <Path path={FACE_BEVEL} style="stroke" strokeWidth={0.04} color={VEIN_IVORY} opacity={0.6} />
-      <Path path={FACE_SHINE} style="stroke" strokeWidth={0.07} strokeCap="round" color="#FFFFFF" />
-      {PIPS[value].map(([px, py], k) =>
-        value === 1 ? (
-          <Group key={k}>
-            <Circle cx={0} cy={0} r={0.2}>
-              <RadialGradient c={vec(-0.06, -0.07)} r={0.27} colors={RUBY} />
-            </Circle>
-            <Circle cx={-0.06} cy={-0.07} r={0.055} color="#FFFFFFCC" />
-          </Group>
-        ) : (
-          <Circle key={k} cx={px * 0.26} cy={py * 0.26} r={0.11} color="#2A1C0E" />
-        ),
-      )}
-      <Path path={FACE} color="#5A3A14" opacity={shade} />
-      <Path path={FACE} style="stroke" strokeWidth={0.085} strokeJoin="round" color={INK} />
-    </Group>
-  );
-}
-
-function DiePiece({ m }: { m: SharedValue<Move> }) {
-  const pose = useDiePose(m);
-  const place = usePlace(m);
-  return (
-    <Group transform={place}>
-      {FACES.map((face) => (
-        <DieFace key={face.value} pose={pose} face={face} />
-      ))}
-    </Group>
-  );
+    c.save();
+    c.concat([U[0] * s, V[0] * s, 0, cx, U[1] * s, V[1] * s, 0, cy, 0, 0, 1, 0, 0, 0, 0, 1] as unknown as Matrix4);
+    // a face turning edge-on fades as one piece
+    if (shown < 1) {
+      D.layer.setAlphaf(shown);
+      c.saveLayer(D.layer, D.faceRect);
+    }
+    drawSheet(c, D.faces[f], paint, baked);
+    D.shade.setAlphaf(0.46 * (1 - Math.max(0, lit)) ** 1.2);
+    c.drawPath(D.face, D.shade);
+    c.drawPath(D.face, D.outline);
+    if (shown < 1) c.restore();
+    c.restore();
+  }
+  c.restore();
 }
 
 // ══ The crown ═════════════════════════════════════════════════════════
@@ -1232,26 +1334,6 @@ const raysPicture = once((c) => {
     );
 });
 
-function CrownRays({ t }: { t: Clock }) {
-  const rays = usePicture(raysPicture);
-  const opacity = useDerivedValue(
-    () => 0.38 + 0.12 * Math.sin(t.value * 1.4) + 0.5 * flashAt(t.value),
-  );
-  const transform = useDerivedValue(() => [
-    { translateX: RAY_AT.x },
-    { translateY: RAY_AT.y },
-    { rotate: 0.05 * Math.sin(t.value * 0.5) },
-    { scale: 1 + 0.12 * flashAt(t.value) },
-    { translateX: -RAY_AT.x },
-    { translateY: -RAY_AT.y },
-  ]);
-  return (
-    <Group transform={transform} opacity={opacity}>
-      <Picture picture={rays} />
-    </Group>
-  );
-}
-
 /** The crown's flash: its gold goes white-hot, a star bursts from the
  *  medallion. */
 const BURST = (() => {
@@ -1264,30 +1346,6 @@ const BURST = (() => {
   }
   return poly(pts);
 })();
-
-function CrownFlash({ t }: { t: Clock }) {
-  const flash = useDerivedValue(() => flashAt(t.value));
-  const hot = useDerivedValue(() => flash.value * 0.55);
-  const burst = useDerivedValue(() => {
-    const f = flash.value;
-    return [
-      { translateX: MEDAL.x },
-      { translateY: MEDAL.y },
-      { rotate: (1 - f) * 0.6 },
-      { scale: 0.2 + f },
-    ];
-  });
-  return (
-    <Group>
-      <Path path={CROWN_METAL} color="#FFF8E0" opacity={hot} />
-      <Group transform={burst} opacity={flash}>
-        <Path path={BURST} color="#FFFFFF">
-          <BlurMask blur={0.6} style="solid" />
-        </Path>
-      </Group>
-    </Group>
-  );
-}
 
 // ══ Confetti ══════════════════════════════════════════════════════════
 
@@ -1324,108 +1382,198 @@ const BITS = Array.from({ length: CONFETTI }, (_, i) => {
   };
 });
 
-function ConfettiBit({ t, bit }: { t: Clock; bit: (typeof BITS)[number] }) {
-  const q = useDerivedValue(() => {
-    const c = (((t.value + PHASE) % CYCLE) + CYCLE) % CYCLE;
-    return (c - bit.start) / CONFETTI_LIFE;
-  });
-  const transform = useDerivedValue(() => {
-    const p = Math.min(1, Math.max(0, q.value));
-    const go = 1 - (1 - p) ** 2.4;
-    return [
-      { translateX: bit.x + bit.dx * go },
-      { translateY: bit.y + bit.dy * go + GRAVITY * p * p },
-      { rotate: bit.turn + p * bit.spin },
-      { scaleY: 0.25 + 0.75 * Math.abs(Math.cos(p * bit.flutter + bit.turn)) },
-    ];
-  });
-  const opacity = useDerivedValue(() => {
-    const p = q.value;
-    if (p <= 0 || p >= 1) return 0;
-    return p < 0.06 ? p / 0.06 : (1 - p) ** 0.7;
-  });
-  return (
-    <Group transform={transform} opacity={opacity}>
-      {bit.round ? (
-        <Circle cx={0} cy={0} r={1.15} color={bit.colour} />
-      ) : (
-        <Rect x={-1.8} y={-1} width={3.6} height={2} color={bit.colour} />
-      )}
-    </Group>
-  );
+/** One bit of confetti, its colour on a paint of its own. */
+interface Bit {
+  bit: (typeof BITS)[number];
+  paint: SkPaint;
 }
 
-function Confetti({ t, front }: { t: Clock; front: boolean }) {
-  return (
-    <Group>
-      {BITS.filter((b) => b.front === front).map((bit) => (
-        <ConfettiBit key={bit.i} t={t} bit={bit} />
-      ))}
-    </Group>
-  );
+const confettiOf = (front: boolean): Bit[] =>
+  BITS.filter((b) => b.front === front).map((bit) => ({ bit, paint: brush(bit.colour) }));
+
+function drawConfetti(c: SkCanvas, bits: Bit[], rect: SkRect, T: number) {
+  "worklet";
+  const cyc = (((T + PHASE) % CYCLE) + CYCLE) % CYCLE;
+  for (let k = 0; k < bits.length; k++) {
+    const { bit, paint } = bits[k];
+    const q = (cyc - bit.start) / CONFETTI_LIFE;
+    if (q <= 0 || q >= 1) continue;
+    const p = q;
+    const go = 1 - (1 - p) ** 2.4;
+    c.save();
+    c.translate(bit.x + bit.dx * go, bit.y + bit.dy * go + GRAVITY * p * p);
+    c.rotate((bit.turn + p * bit.spin) * TO_DEG, 0, 0);
+    c.scale(1, 0.25 + 0.75 * Math.abs(Math.cos(p * bit.flutter + bit.turn)));
+    paint.setAlphaf(q < 0.06 ? q / 0.06 : (1 - q) ** 0.7);
+    if (bit.round) c.drawCircle(0, 0, 1.15, paint);
+    else c.drawRect(rect, paint);
+    c.restore();
+  }
 }
 
 // ══ The layers ════════════════════════════════════════════════════════
 
+const backScene = lazy(() => {
+  const halo = brush(radial(0, 0, 92, ["#FFD27A", "#FFD27A00"], [0.55, 1]));
+  return {
+    ...common(),
+    halo,
+    thickness: sheet(thicknessPicture(), -70, -70, 144, 144),
+    rays: sheet(raysPicture(), -28, -94, 56, 30),
+    rayPaint: brush("#FFFFFF"),
+    confetti: confettiOf(false),
+    bitRect: Skia.XYWHRect(-1.8, -1, 3.6, 2),
+  };
+});
+
+const frontScene = lazy(() => {
+  const start = polar(START * SQ, SQ_MID);
+  const shine = polar(-138 * DEG, 64.4);
+  const enamel = polar(13 * SQ, SQ_MID);
+  const screen = brush("#FFFFFF");
+  screen.setBlendMode(BlendMode.Screen);
+  const outline = pen(0.085, INK);
+  return {
+    ...common(),
+    start,
+    board: sheet(boardPicture(), -68, -68, 136, 136),
+    trackSweep: sweepAt(TRACK, 4.6, 0.6, true),
+    // the start ruby's glow
+    beat: sheet(
+      blurred((c, paint) => c.drawCircle(start.x, start.y, 4.6, paint), "#FF3A4A", 1, 2.4),
+      start.x - 13,
+      start.y - 13,
+      26,
+      26,
+    ),
+    beatPaint: screen,
+    shadows: SHADOW_W.map(shadowSheet),
+    shadowPaint: brush("#FFFFFF"),
+    stack: sheet(stackPicture(), -7.5, -10.5, 15, 11.5, PIECE_K),
+    king: sheet(kingPicture(), -7, -24.5, 14, 25.5, PIECE_K),
+    cardFace: sheet(cardFacePicture(), -6.2, -15.6, 12.4, 16.4, PIECE_K),
+    cardBack: sheet(cardBackPicture(), -6.2, -15.6, 12.4, 16.4, PIECE_K),
+    die: {
+      faces: FACES.map((f) => sheet(dieFacePicture(f.value), -0.6, -0.6, 1.2, 1.2, PIECE_K * EDGE)),
+      face: skPath(FACE) ?? Skia.Path.Make(),
+      shade: brush("#5A3A14"),
+      outline,
+      layer: brush("#FFFFFF"),
+      faceRect: Skia.XYWHRect(-0.6, -0.6, 1.2, 1.2),
+    } as DieParts,
+    coinFace: sheet(coinFacePicture(), -6, -6, 12, 12, PIECE_K),
+    coinInk: brush(INK),
+    coinEdge: brush("#9A6B1E"),
+    mascot: sheet(mascotPicture(), -10, -10, BOX[0] + 20, BOX[1] + 20, PIECE_K * MASCOT_SCALE),
+    crown: sheet(crownPicture(), -36, -93, 78, 46),
+    crownSweep: sweepAt(CROWN_METAL, 4.6, 0, false),
+    metal: skPath(CROWN_METAL) ?? Skia.Path.Make(),
+    hot: brush("#FFF8E0"),
+    burst: sheet(
+      blurred(
+        (c, paint) => {
+          const p = skPath(BURST);
+          if (p) c.drawPath(p, paint);
+        },
+        "#FFFFFF",
+        1,
+        0.6,
+        BlurStyle.Solid,
+      ),
+      -18,
+      -18,
+      36,
+      36,
+      PIECE_K,
+    ),
+    burstPaint: brush("#FFFFFF"),
+    confetti: confettiOf(true),
+    bitRect: Skia.XYWHRect(-1.8, -1, 3.6, 2),
+    glints: [
+      glintAt(start.x - 0.6, start.y - 0.8, 4.5, 0.4),
+      glintAt(-1, bandMid(0) - 1, 5, 1.5, 1.1),
+      glintAt(FINIAL.x, FINIAL.y, 4.5, 2.7, 1.3),
+      glintAt(shine.x, shine.y, 4, 3.6, 1),
+      glintAt(enamel.x, enamel.y, 3.5, 4.8, 0.9),
+    ],
+  };
+});
+
 function GrandBack({ t }: { t: Clock }) {
-  return (
-    <Group>
-      <BoardBack t={t} />
-      <CrownRays t={t} />
-      <Confetti t={t} front={false} />
-    </Group>
-  );
+  const start = useStart(t);
+  const S = useMemo(() => backScene(), []);
+  const recorder = useMemo(() => Skia.PictureRecorder(), []);
+  const bounds = useMemo(() => frameRect(), []);
+  const picture = useDerivedValue(() => {
+    const v = t.value;
+    const baked = v !== start;
+    const flash = flashAt(v);
+    const c = recorder.beginRecording(bounds);
+    // the glow round the board, brightest at the flash
+    S.halo.setAlphaf(0.2 + 0.05 * Math.sin(v * 1.2) + 0.35 * flash);
+    c.drawCircle(0, 0, 92, S.halo);
+    drawSheet(c, S.thickness, S.plain, baked);
+    // radiance behind the crown
+    c.save();
+    c.translate(RAY_AT.x, RAY_AT.y);
+    c.rotate(0.05 * Math.sin(v * 0.5) * TO_DEG, 0, 0);
+    const g = 1 + 0.12 * flash;
+    c.scale(g, g);
+    c.translate(-RAY_AT.x, -RAY_AT.y);
+    S.rayPaint.setAlphaf(0.38 + 0.12 * Math.sin(v * 1.4) + 0.5 * flash);
+    drawSheet(c, S.rays, S.rayPaint, baked, true);
+    c.restore();
+    drawConfetti(c, S.confetti, S.bitRect, v);
+    return recorder.finishRecordingAsPicture();
+  });
+  return <Picture picture={picture} />;
 }
 
 function GrandFront({ t }: { t: Clock }) {
-  const board = usePicture(boardPicture);
-  const crown = usePicture(crownPicture);
-  const m0 = useMove(t, 0);
-  const m1 = useMove(t, 1);
-  const m2 = useMove(t, 2);
-  const m3 = useMove(t, 3);
-  const m4 = useMove(t, 4);
-  const m5 = useMove(t, 5);
-  const start = polar(START * SQ, SQ_MID);
-  // the start ruby's slow double beat
-  const beat = useDerivedValue(() => {
-    const p = (t.value % 2.4) / 2.4;
-    const a = Math.exp(-(((p - 0.1) / 0.05) ** 2));
-    const b = Math.exp(-(((p - 0.26) / 0.06) ** 2)) * 0.7;
-    return 0.12 + 0.8 * Math.max(a, b);
+  const start = useStart(t);
+  const S = useMemo(() => frontScene(), []);
+  const recorder = useMemo(() => Skia.PictureRecorder(), []);
+  const bounds = useMemo(() => frameRect(), []);
+  const picture = useDerivedValue(() => {
+    const v = t.value;
+    const baked = v !== start;
+    const c = recorder.beginRecording(bounds);
+    drawSheet(c, S.board, S.plain, baked);
+    drawSweep(c, S.trackSweep, S.band, S.bandColors, v);
+    // the start ruby's slow double beat
+    const p = (v % 2.4) / 2.4;
+    const b1 = Math.exp(-(((p - 0.1) / 0.05) ** 2));
+    const b2 = Math.exp(-(((p - 0.26) / 0.06) ** 2)) * 0.7;
+    S.beatPaint.setAlphaf(0.12 + 0.8 * Math.max(b1, b2));
+    drawSheet(c, S.beat, S.beatPaint, baked, true);
+    // the game
+    const ms: Move[] = [];
+    for (let i = 0; i < PIECES; i++) ms.push(move(v, i, HOME[i]));
+    for (let i = 0; i < PIECES; i++) drawShadow(c, ms[i], S.shadows[i], S.shadowPaint, baked);
+    drawStack(c, ms[5], S.stack, S.plain, baked);
+    drawKing(c, ms[4], S.king, S.plain, baked);
+    drawCard(c, ms[3], S.cardFace, S.cardBack, S.plain, baked);
+    drawDie(c, ms[2], S.die, S.plain, baked);
+    drawCoin(c, ms[1], v, 1, S.coinFace, S, S.plain, baked);
+    drawMascot(c, ms[0], v, 0, S.mascot, S.plain, baked);
+    // the crown, its light and its flash
+    drawSheet(c, S.crown, S.plain, baked);
+    drawSweep(c, S.crownSweep, S.band, S.bandColors, v);
+    const flash = flashAt(v);
+    S.hot.setAlphaf(flash * 0.55);
+    c.drawPath(S.metal, S.hot);
+    c.save();
+    c.translate(MEDAL.x, MEDAL.y);
+    c.rotate((1 - flash) * 0.6 * TO_DEG, 0, 0);
+    c.scale(0.2 + flash, 0.2 + flash);
+    S.burstPaint.setAlphaf(flash);
+    drawSheet(c, S.burst, S.burstPaint, baked, true);
+    c.restore();
+    drawConfetti(c, S.confetti, S.bitRect, v);
+    for (const g of S.glints) drawGlint(c, g, S.white, v);
+    return recorder.finishRecordingAsPicture();
   });
-  const shine = polar(-138 * DEG, 64.4);
-  const enamel = polar(13 * SQ, SQ_MID);
-  return (
-    <Group>
-      <Picture picture={board} />
-      <Sweep t={t} d={TRACK} evenOdd every={4.6} phase={0.6} />
-      <Circle cx={start.x} cy={start.y} r={4.6} color="#FF3A4A" opacity={beat} blendMode="screen">
-        <BlurMask blur={2.4} style="normal" />
-      </Circle>
-      <PieceShadow m={m0} w={15} />
-      <PieceShadow m={m1} w={11} />
-      <PieceShadow m={m2} w={13} />
-      <PieceShadow m={m3} w={12} />
-      <PieceShadow m={m4} w={11} />
-      <PieceShadow m={m5} w={14} />
-      <StackPiece m={m5} />
-      <KingPiece m={m4} />
-      <CardPiece m={m3} />
-      <DiePiece m={m2} />
-      <CoinPiece t={t} m={m1} i={1} />
-      <MascotPiece t={t} m={m0} i={0} />
-      <Picture picture={crown} />
-      <Sweep t={t} d={CROWN_METAL} every={4.6} />
-      <CrownFlash t={t} />
-      <Confetti t={t} front />
-      <Glint t={t} x={start.x - 0.6} y={start.y - 0.8} size={4.5} phase={0.4} />
-      <Glint t={t} x={-1} y={bandMid(0) - 1} size={5} phase={1.5} speed={1.1} />
-      <Glint t={t} x={FINIAL.x} y={FINIAL.y} size={4.5} phase={2.7} speed={1.3} />
-      <Glint t={t} x={shine.x} y={shine.y} size={4} phase={3.6} speed={1} />
-      <Glint t={t} x={enamel.x} y={enamel.y} size={3.5} phase={4.8} speed={0.9} />
-    </Group>
-  );
+  return <Picture picture={picture} />;
 }
 
 export const GRANDBOARD_ART: Record<string, ArtBorderDrawing> = {

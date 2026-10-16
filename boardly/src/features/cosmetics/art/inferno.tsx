@@ -18,6 +18,7 @@
 // See heraldry.tsx, solar.tsx and abyss.tsx for the house style.
 
 import {
+  BlendMode,
   BlurMask,
   BlurStyle,
   Circle,
@@ -26,7 +27,6 @@ import {
   FilterMode,
   Group,
   Image,
-  LinearGradient,
   MipmapMode,
   Paint,
   PaintStyle,
@@ -42,6 +42,7 @@ import {
   vec,
   type SkCanvas,
   type SkImage,
+  type SkPaint,
   type SkPath,
   type SkPicture,
   type SkRect,
@@ -216,17 +217,6 @@ function record(draw: (c: SkCanvas) => void): SkPicture {
   const c = recorder.beginRecording(Skia.XYWHRect(-96, -96, 192, 192));
   draw(c);
   return recorder.finishRecordingAsPicture();
-}
-
-/** A picture recorded once, the first time it's drawn. */
-function once(draw: (c: SkCanvas) => void) {
-  let pic: SkPicture | null = null;
-  return () => (pic ??= record(draw));
-}
-
-function Still({ picture }: { picture: () => SkPicture }) {
-  const pic = useMemo(() => picture(), [picture]);
-  return <Picture picture={pic} />;
 }
 
 // ── baked pictures ────────────────────────────────────────────────────
@@ -1438,18 +1428,24 @@ half4 main(vec2 xy) {
   float halfW = 5.6 + 1.8 * n2 + pull * 1.2;
   float dist = abs(r - R0 + wob);
   float body = 1.0 - smoothstep(halfW - 2.0, halfW, dist);
-  // violet filaments wound through the dark
-  float fil = smoothstep(0.52, 0.84, fbm(d * 5.5 + vec2(n * 2.0, r * 0.22 - t * 0.5)));
-  vec3 col = mix(vec3(0.02, 0.0, 0.04), vec3(0.3, 0.07, 0.55), fil * 0.85);
-  col += vec3(0.72, 0.48, 1.0) * fil * fil * fil * 1.05;
-  // stars going down, smeared by the turning
-  vec2 p = rot(xy, spin * 1.4) / 2.6;
-  vec2 cell = floor(p);
-  float h = hash(cell + 7.0);
-  vec2 off = vec2(hash(cell + 3.1), hash(cell + 9.7)) * 0.6 + 0.2;
-  float sd = length((fract(p) - off) * vec2(0.55, 1.0));
-  float star = step(0.9, h) * exp(-sd * sd * 60.0) * (0.6 + 0.4 * sin(t * 6.0 + h * 40.0));
-  col += vec3(0.9, 0.82, 1.0) * star * body;
+  // the body's colour only shows inside it: outside, only the lit edges
+  vec3 col = vec3(0.0);
+  if (body > 0.0) {
+    // violet filaments wound through the dark
+    float fil = smoothstep(0.52, 0.84, fbm(d * 5.5 + vec2(n * 2.0, r * 0.22 - t * 0.5)));
+    col = mix(vec3(0.02, 0.0, 0.04), vec3(0.3, 0.07, 0.55), fil * 0.85);
+    col += vec3(0.72, 0.48, 1.0) * fil * fil * fil * 1.05;
+    // stars going down, smeared by the turning (one in ten cells)
+    vec2 p = rot(xy, spin * 1.4) / 2.6;
+    vec2 cell = floor(p);
+    float h = hash(cell + 7.0);
+    if (h >= 0.9) {
+      vec2 off = vec2(hash(cell + 3.1), hash(cell + 9.7)) * 0.6 + 0.2;
+      float sd = length((fract(p) - off) * vec2(0.55, 1.0));
+      float star = exp(-sd * sd * 60.0) * (0.6 + 0.4 * sin(t * 6.0 + h * 40.0));
+      col += vec3(0.9, 0.82, 1.0) * star * body;
+    }
+  }
   // its edges, lit
   float inner = exp(-pow((r - (R0 - halfW + wob + 0.6)) / 0.7, 2.0));
   float outer = exp(-pow((r - (R0 + halfW + wob - 0.3)) / 1.5, 2.0));
@@ -1476,19 +1472,26 @@ half4 main(vec2 xy) {
   vec2 dir = xy / r;
   float lr = log(rs);
   vec2 d = rot(dir, lr * 6.0 + t * 0.32);
-  float n = fbm(d * 2.2 + vec2(0.0, lr * 4.0 + t * 0.35));
-  float arms = smoothstep(0.42, 0.85, n);
   float fade = smoothstep(57.0, 66.0, rs) * (1.0 - smoothstep(78.0, 93.0, r));
-  float dust = arms * fade * (0.42 + flash * 0.4);
-  vec3 col = mix(vec3(0.32, 0.1, 0.66), vec3(0.8, 0.62, 1.0), smoothstep(0.6, 0.95, n));
-  // faint stars, wound in with the dust
+  float dust = 0.0;
+  vec3 col = vec3(0.0);
+  if (fade > 0.0) {
+    float n = fbm(d * 2.2 + vec2(0.0, lr * 4.0 + t * 0.35));
+    float arms = smoothstep(0.42, 0.85, n);
+    dust = arms * fade * (0.42 + flash * 0.4);
+    col = mix(vec3(0.32, 0.1, 0.66), vec3(0.8, 0.62, 1.0), smoothstep(0.6, 0.95, n));
+  }
+  // faint stars, wound in with the dust (in one cell in fourteen)
   vec2 p = rot(xy, lr * 6.0 + t * 0.32) / 3.2;
   vec2 cell = floor(p);
   float h = hash(cell + 21.0);
-  vec2 off = vec2(hash(cell + 1.7), hash(cell + 5.3)) * 0.6 + 0.2;
-  float sd = length(fract(p) - off);
-  float star = step(0.93, h) * exp(-sd * sd * 70.0) * (0.55 + 0.45 * sin(t * 2.5 + h * 50.0));
-  star *= smoothstep(58.0, 64.0, r) * (1.0 - smoothstep(86.0, 93.0, r));
+  float star = 0.0;
+  if (h >= 0.93) {
+    vec2 off = vec2(hash(cell + 1.7), hash(cell + 5.3)) * 0.6 + 0.2;
+    float sd = length(fract(p) - off);
+    star = exp(-sd * sd * 70.0) * (0.55 + 0.45 * sin(t * 2.5 + h * 50.0));
+    star *= smoothstep(58.0, 64.0, r) * (1.0 - smoothstep(86.0, 93.0, r));
+  }
   vec3 outc = col * dust + vec3(0.92, 0.88, 1.0) * star;
   return half4(outc, min(1.0, dust + star));
 }`;
@@ -1548,7 +1551,7 @@ const BEZEL_TICKS = Array.from({ length: 72 }, (_, k) => {
   return `M${at(a, 62)}L${at(a, k % 3 === 0 ? 63.9 : 62.9)}`;
 }).join("");
 
-const crownPicture = once((c) => {
+const crownImage = baked((c) => {
   // the points, behind the band
   for (const p of POINTS) {
     engrave(c, {
@@ -1620,7 +1623,7 @@ const crownPicture = once((c) => {
   jewel(c, 0, AM_Y, 4.8, 7.4, 6.4, AMETHYST, "#0A0218", "#E6CCFF");
 });
 
-const bezelPicture = once((c) => {
+const bezelImage = baked((c) => {
   engrave(c, {
     d: BEZEL,
     evenOdd: true,
@@ -1665,7 +1668,7 @@ const FIL_BRIDGES = [-32, -4, 24, 52].map((a) => ({
 const FIL_LOW = acanthus(5, 69, 0.18, 42, -4.8, 3.6, true);
 const PENDANT = kite(0, 71, 4.2, 4, 9);
 
-const filigreePicture = once((c) => {
+const filigreeImage = baked((c) => {
   const silver = (d: string, vein?: string, width = 0.75) =>
     engrave(c, {
       d,
@@ -1774,194 +1777,338 @@ const ARCS = ARC_PAIRS.map(([i, j], k) =>
   ),
 );
 
-function Arc({ t, k }: { t: Clock; k: number }) {
-  const paths = useMemo(
-    () => ARCS[k].map((d) => Skia.Path.MakeFromSVGString(d) as SkPath),
-    [k],
-  );
-  const shape = useDerivedValue(
-    () => paths[Math.floor(t.value * 14 + k * 3) % ARC_SHAPES],
-  );
-  const long = k >= 6;
-  const opacity = useDerivedValue(() => {
-    const u = voidPhase(t.value);
-    const pull = Math.max(0, voidPull(u));
-    const rate = long ? 0.31 : 0.47;
-    const q = (t.value * rate + rnd(k + 40)) % 1;
-    const on = q < 0.13 + pull * 0.25 ? 1 : 0;
-    const flick = 0.65 + 0.35 * Math.sin(t.value * 47 + k);
-    return Math.min(1, on * flick + voidFlash(u) * 1.4);
-  });
-  return (
-    <Shown when={opacity}>
-      <Group opacity={opacity}>
-        <Path
-          path={shape}
-          style="stroke"
-          strokeWidth={3.6}
-          strokeJoin="round"
-          strokeCap="round"
-          color="#8A3AFF"
-        >
-          <BlurMask blur={2.6} style="normal" />
-        </Path>
-        <Path
-          path={shape}
-          style="stroke"
-          strokeWidth={1.5}
-          strokeJoin="round"
-          color="#C9A0FF"
-        />
-        <Path
-          path={shape}
-          style="stroke"
-          strokeWidth={0.6}
-          strokeJoin="round"
-          color="#FFFFFF"
-        />
-      </Group>
-    </Shown>
-  );
-}
-
-/** The points' tips, kindled when lightning leaves them. */
-function TipGlow({ t }: { t: Clock }) {
-  const opacity = useDerivedValue(
-    () => 0.35 + 0.2 * Math.sin(t.value * 3.1) + voidFlash(voidPhase(t.value)),
-  );
-  return (
-    <Group opacity={opacity} blendMode="screen">
-      {POINTS.map((p, k) => (
-        <Circle key={k} cx={p.tip[0]} cy={p.tip[1]} r={2.6} color="#B07AFF">
-          <BlurMask blur={2} style="normal" />
-        </Circle>
-      ))}
-    </Group>
-  );
-}
-
 // ── stars falling in ──────────────────────────────────────────────────
 
 const STREAK =
   "M0.8 0Q0.5 1.2 -1.2 1.3L-11 0.3L-11 -0.3L-1.2 -1.3Q0.5 -1.2 0.8 0Z";
 
-/** A star caught by the void: it spirals in, stretching as it speeds up,
- *  and is gone at the rim. */
-function Infall({ t, i }: { t: Clock; i: number }) {
+/** Stars caught by the void: each spirals in, stretching as it speeds
+ *  up, and is gone at the rim. */
+const INFALL = Array.from({ length: 12 }, (_, i) => {
   const life = 2.8 + rnd(i) * 1.8;
-  const a0 = rnd(i + 3) * TAU;
   const r0 = 84 + rnd(i + 9) * 6;
-  const off = rnd(i + 5) * life;
-  const fall = r0 - 60;
-  const transform = useDerivedValue(() => {
-    const u = voidPhase(t.value);
-    const pull = voidPull(u);
-    const p = ((t.value + off) % life) / life;
-    const q = Math.min(1, p * p + Math.max(0, pull) * 0.25 * p);
-    const a = a0 - q * 3.2;
-    const r = (r0 - q * fall) * (1 - pull * 0.05);
-    const head = a + Math.atan2(-3.2 * r, -fall);
-    return [
-      { translateX: Math.cos(a) * r },
-      { translateY: Math.sin(a) * r },
-      { rotate: head },
-      { scaleX: 0.25 + 1.3 * p },
-    ];
-  });
-  const opacity = useDerivedValue(() => {
-    const p = ((t.value + off) % life) / life;
-    return Math.sin(p * Math.PI) ** 0.7;
-  });
-  return (
-    <Group transform={transform} opacity={opacity}>
-      <Path path={STREAK}>
-        <LinearGradient
-          start={vec(0.8, 0)}
-          end={vec(-11, 0)}
-          colors={
-            i % 3 === 0
-              ? ["#FFFFFF", "#E6CCFF", "#9A5AFF00"]
-              : ["#FFFFFF", "#B48CFF", "#5A2AD000"]
-          }
-          positions={[0, 0.25, 1]}
-        />
-      </Path>
-    </Group>
-  );
-}
+  return {
+    life,
+    a0: rnd(i + 3) * TAU,
+    r0,
+    off: rnd(i + 5) * life,
+    fall: r0 - 60,
+    pale: i % 3 === 0,
+  };
+});
 
 // ── the release ───────────────────────────────────────────────────────
 
-/** The ring of violet light the void lets go. */
-function Release({ t }: { t: Clock }) {
-  const r = useDerivedValue(() => {
-    const q = clamp01((voidPhase(t.value) - 7.6) / 1.3);
-    return 56 + (1 - (1 - q) ** 2) * 36;
-  });
-  const opacity = useDerivedValue(() => {
-    const u = voidPhase(t.value);
-    if (u < 7.6) return 0;
-    const q = clamp01((u - 7.6) / 1.3);
-    return (1 - q) ** 1.6;
-  });
-  const width = useDerivedValue(() => {
-    const q = clamp01((voidPhase(t.value) - 7.6) / 1.3);
-    return 6 * (1 - q) + 1;
-  });
-  return (
-    <Shown when={opacity}>
-      <Group opacity={opacity} blendMode="screen">
-        <Circle
-          cx={0}
-          cy={0}
-          r={r}
-          style="stroke"
-          strokeWidth={width}
-          color="#9A5AFF"
-        >
-          <BlurMask blur={4} style="normal" />
-        </Circle>
-        <Circle
-          cx={0}
-          cy={0}
-          r={r}
-          style="stroke"
-          strokeWidth={1}
-          color="#EADCFF"
-        />
-      </Group>
-    </Shown>
-  );
+/** The ring of violet light the void lets go, its soft glow worked out
+ *  per pixel as a blur of sigma 4 would leave a band of width w at
+ *  radius r (the difference of two error functions across it), so the
+ *  ring can widen and thin every frame without blurring anything. */
+const RELEASE_GLOW = `
+uniform float r;
+uniform float w;
+float erf1(float x) {
+  float a = abs(x);
+  float k = 1.0 / (1.0 + 0.3275911 * a);
+  float y = 1.0 - ((((1.061405429 * k - 1.453152027) * k + 1.421413741) * k - 0.284496736) * k + 0.254829592) * k * exp(-a * a);
+  return x < 0.0 ? -y : y;
+}
+half4 main(vec2 xy) {
+  float d = length(xy) - r;
+  // 1 / (sigma * sqrt(2)), sigma 4
+  float s = 0.17677670;
+  float v = 0.5 * (erf1((d + w * 0.5) * s) - erf1((d - w * 0.5) * s));
+  return half4(half3(0.60392, 0.35294, 1.0) * v, v);
+}`;
+
+// ── how it is drawn each frame ────────────────────────────────────────
+// Every frame Skia redraws each canvas, four borders at a time, so: the
+// crown, the bezel and the filigree are baked into pixels once; so are
+// the glows (the amethyst's, the tips', each lightning shape's halo),
+// blurs and all, which then only fade. Each layer is one picture,
+// recorded per frame from one derived value with the same numbers as
+// ever, placing those images and drawing the few live strokes.
+
+interface Cell {
+  image: SkImage;
+  src: SkRect;
+  dst: SkRect;
 }
 
-/** The amethyst's glow: slow, dark, flaring when the void lets go. */
-function AmethystGlow({ t }: { t: Clock }) {
-  const opacity = useDerivedValue(() => {
-    const u = voidPhase(t.value);
-    return Math.min(
-      1,
-      0.3 +
-        0.22 * Math.sin(t.value * 1.4) +
-        Math.max(0, voidPull(u)) * 0.4 +
-        voidFlash(u),
+const voidScale = () => (PixelRatio.get() * BAKE_PT) / 100;
+
+/** `draw` baked into pixels over the art rect x, y, w, h. */
+function voidBake(
+  draw: (c: SkCanvas) => void,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): Cell | null {
+  const k = voidScale();
+  const W = Math.ceil(w * k);
+  const H = Math.ceil(h * k);
+  const surface = Skia.Surface.Make(W, H);
+  if (!surface) return null;
+  const c = surface.getCanvas();
+  c.scale(k, k);
+  c.translate(-x, -y);
+  draw(c);
+  surface.flush();
+  return {
+    image: surface.makeImageSnapshot(),
+    src: Skia.XYWHRect(0, 0, W, H),
+    dst: Skia.XYWHRect(x, y, W / k, H / k),
+  };
+}
+
+const asCell = (b: Baked | null): Cell | null =>
+  b
+    ? {
+        image: b.image,
+        src: Skia.XYWHRect(0, 0, b.image.width(), b.image.height()),
+        dst: b.rect,
+      }
+    : null;
+
+/** A soft paint: `blur` is a blur's sigma, in art units. */
+function softly(paint: ReturnType<typeof brush>, blur: number) {
+  paint.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, blur, true));
+  return paint;
+}
+
+/** A plain stroke, as a Path with only a width and a round join. */
+function line(width: number, color: string) {
+  const paint = pen(width, color);
+  paint.setStrokeCap(StrokeCap.Butt);
+  return paint;
+}
+
+const glintStar = (size: number) => {
+  const w = size * 0.2;
+  return Skia.Path.MakeFromSVGString(
+    `M0 ${-size}Q${w} ${-w} ${size} 0Q${w} ${w} 0 ${size}Q${-w} ${w} ${-size} 0Q${-w} ${-w} 0 ${-size}z`,
+  ) as SkPath;
+};
+/** A four-pointed glint that flares and fades (as Glint in kit). */
+const glintAt = (
+  x: number,
+  y: number,
+  size: number,
+  phase: number,
+  speed: number,
+) => ({ x, y, path: glintStar(size), phase, speed });
+
+const voidParts = (() => {
+  let made: ReturnType<typeof makeVoidParts> | undefined;
+  return () => (made ??= makeVoidParts());
+})();
+
+function makeVoidParts() {
+  const screen = Skia.Paint();
+  screen.setBlendMode(BlendMode.Screen);
+  // each lightning shape's violet halo, baked: one sheet per arc, its
+  // shapes side by side
+  const halo = softly(pen(3.6, "#8A3AFF"), 2.6);
+  const arcPaths = ARCS.map((shapes) =>
+    shapes.map((d) => Skia.Path.MakeFromSVGString(d) as SkPath),
+  );
+  const arcGlows = arcPaths.map((paths) => {
+    let x0 = Infinity;
+    let y0 = Infinity;
+    let x1 = -Infinity;
+    let y1 = -Infinity;
+    for (const p of paths) {
+      const b = p.computeTightBounds();
+      x0 = Math.min(x0, b.x);
+      y0 = Math.min(y0, b.y);
+      x1 = Math.max(x1, b.x + b.width);
+      y1 = Math.max(y1, b.y + b.height);
+    }
+    // past the stroke and three sigmas of its blur
+    const m = 10.5;
+    x0 -= m;
+    y0 -= m;
+    const w = x1 - x0 + m;
+    const h = y1 - y0 + m;
+    const stride = w + 2;
+    const sheet = voidBake(
+      (c) =>
+        paths.forEach((p, s) => {
+          c.save();
+          c.translate(s * stride, 0);
+          c.drawPath(p, halo);
+          c.restore();
+        }),
+      x0,
+      y0,
+      stride * ARC_SHAPES,
+      h,
+    );
+    const k = voidScale();
+    return paths.map((_, s): Cell | null =>
+      sheet
+        ? {
+            image: sheet.image,
+            src: Skia.XYWHRect(s * stride * k, 0, w * k, h * k),
+            dst: Skia.XYWHRect(x0, y0, w, h),
+          }
+        : null,
     );
   });
-  return (
-    <Group opacity={opacity} blendMode="screen">
-      <Circle cx={0} cy={AM_Y} r={8} color="#8A3AFF">
-        <BlurMask blur={5} style="normal" />
-      </Circle>
-    </Group>
-  );
+  const tipX = POINTS.map((p) => p.tip[0]);
+  const tipY = POINTS.map((p) => p.tip[1]);
+  const tx0 = Math.min(...tipX) - 10;
+  const ty0 = Math.min(...tipY) - 10;
+  const tipGlow = softly(brush("#B07AFF"), 2);
+  return {
+    plain: Skia.Paint(),
+    screen,
+    crown: asCell(crownImage()),
+    bezel: asCell(bezelImage()),
+    filigree: asCell(filigreeImage()),
+    bezelPath: toPath(BEZEL, true),
+    bandPath: toPath(CROWN_BAND),
+    sweepColors: ["#FFFFFF00", "#FFFFFFCC", "#FFFFFF00"].map((col) =>
+      Skia.Color(col),
+    ),
+    amethystGlow: voidBake(
+      (c) => c.drawCircle(0, AM_Y, 8, softly(brush("#8A3AFF"), 5)),
+      -24,
+      AM_Y - 24,
+      48,
+      48,
+    ),
+    tipGlow: voidBake(
+      (c) =>
+        POINTS.forEach((p) => c.drawCircle(p.tip[0], p.tip[1], 2.6, tipGlow)),
+      tx0,
+      ty0,
+      Math.max(...tipX) + 10 - tx0,
+      Math.max(...tipY) + 10 - ty0,
+    ),
+    arcPaths,
+    arcGlows,
+    arcSeed: ARC_PAIRS.map((_, k) => rnd(k + 40)),
+    arcHalo: Skia.Paint(),
+    arcMid: line(1.5, "#C9A0FF"),
+    arcCore: line(0.6, "#FFFFFF"),
+    streak: toPath(STREAK) as SkPath,
+    streakPale: brush(
+      linear(0.8, 0, -11, 0, ["#FFFFFF", "#E6CCFF", "#9A5AFF00"], [0, 0.25, 1]),
+    ),
+    streakDeep: brush(
+      linear(0.8, 0, -11, 0, ["#FFFFFF", "#B48CFF", "#5A2AD000"], [0, 0.25, 1]),
+    ),
+    releaseFx: Skia.RuntimeEffect.Make(RELEASE_GLOW),
+    releaseGlow: (() => {
+      const paint = Skia.Paint();
+      paint.setAntiAlias(true);
+      paint.setStyle(PaintStyle.Stroke);
+      paint.setBlendMode(BlendMode.Screen);
+      return paint;
+    })(),
+    releaseLine: (() => {
+      const paint = pen(1, "#EADCFF");
+      paint.setBlendMode(BlendMode.Screen);
+      return paint;
+    })(),
+    white: brush("#FFFFFF"),
+    backGlints: [glintAt(0, 78, 3.5, 1.7, 0.8)],
+    crownGlints: [
+      glintAt(-1.4, AM_Y - 2, 4.5, 0.5, 0.9),
+      glintAt(POINTS[3].tip[0], POINTS[3].tip[1], 4, 2.6, 1.1),
+    ],
+    rimGlints: [glintAt(-44.5, -44.5, 3.5, 3.8, 0.8)],
+  };
 }
+
+type VoidParts = ReturnType<typeof makeVoidParts>;
+
+/** `paint` at alpha `a`, clamped as Skia's opacity is. A picture keeps a
+ *  copy of each paint it draws with, so one paint serves many alphas. */
+const vFaded = (paint: SkPaint, a: number) => {
+  "worklet";
+  paint.setAlphaf(Math.min(1, Math.max(0, a)));
+  return paint;
+};
+
+/** A baked image where it belongs, sampled as Bake samples it. */
+const vPut = (c: SkCanvas, b: Cell | null, paint: SkPaint) => {
+  "worklet";
+  if (b)
+    c.drawImageRectOptions(
+      b.image,
+      b.src,
+      b.dst,
+      FilterMode.Linear,
+      MipmapMode.Linear,
+      paint,
+    );
+};
+
+/** The shared light sweeping a shape (as Sweep in crowns): a soft white
+ *  band, tilted, crossing once every `every` seconds, drawn as the shape
+ *  filled with a moving gradient. */
+const vSweep = (
+  c: SkCanvas,
+  path: SkPath | null,
+  colors: Float32Array[],
+  t: number,
+  every: number,
+  phase: number,
+) => {
+  "worklet";
+  const p = ((t + phase) % every) / 1.1;
+  if (!path || p >= 1) return;
+  const x = -110 + p * 220;
+  const dx = Math.cos(0.45) * 12;
+  const dy = Math.sin(0.45) * 12;
+  const paint = Skia.Paint();
+  paint.setAntiAlias(true);
+  paint.setShader(
+    Skia.Shader.MakeLinearGradient(
+      Skia.Point(x - dx, -dy),
+      Skia.Point(x + dx, dy),
+      colors,
+      null,
+      TileMode.Clamp,
+    ),
+  );
+  c.drawPath(path, paint);
+};
+
+const vGlints = (
+  c: SkCanvas,
+  P: VoidParts,
+  list: VoidParts["rimGlints"],
+  t: number,
+) => {
+  "worklet";
+  for (const g of list) {
+    const s = Math.max(0, Math.sin(t * g.speed + g.phase));
+    if (s <= 0) continue;
+    c.save();
+    c.translate(g.x, g.y);
+    const k = 0.15 + s ** 5;
+    c.scale(k, k);
+    c.drawPath(g.path, vFaded(P.white, s ** 3));
+    c.restore();
+  }
+};
+
+const vBegin = () => {
+  "worklet";
+  const recorder = Skia.PictureRecorder();
+  const c = recorder.beginRecording(Skia.XYWHRect(-120, -120, 240, 240));
+  return { recorder, c };
+};
 
 // ── the layers ────────────────────────────────────────────────────────
 
-/** Everything leans in toward the void as it pulls. */
-const useDrawnIn = (t: Clock, k: number) =>
-  useDerivedValue(() => [{ scale: 1 - voidPull(voidPhase(t.value)) * k }]);
-
+/** Behind: the halo and the dust, then the stars falling in and the
+ *  filigree, leaning in toward the void as it pulls. */
 function VoidBack({ t }: { t: Clock }) {
+  const P = useMemo(() => voidParts(), []);
   const uniforms = useDerivedValue<Record<string, number>>(() => {
     const u = voidPhase(t.value);
     return { t: t.value, pull: voidPull(u), flash: voidFlash(u) };
@@ -1975,7 +2122,34 @@ function VoidBack({ t }: { t: Clock }) {
       voidFlash(u) * 0.3
     );
   });
-  const drawn = useDrawnIn(t, 0.04);
+  const picture = useDerivedValue(() => {
+    const T = t.value;
+    const pull = voidPull(voidPhase(T));
+    const { recorder, c } = vBegin();
+    // the stars: each spirals in, stretching as it speeds up
+    for (const s of INFALL) {
+      const p = ((T + s.off) % s.life) / s.life;
+      const op = Math.sin(p * Math.PI) ** 0.7;
+      if (!(op > 0)) continue;
+      const q = Math.min(1, p * p + Math.max(0, pull) * 0.25 * p);
+      const a = s.a0 - q * 3.2;
+      const r = (s.r0 - q * s.fall) * (1 - pull * 0.05);
+      const head = a + Math.atan2(-3.2 * r, -s.fall);
+      c.save();
+      c.translate(Math.cos(a) * r, Math.sin(a) * r);
+      c.rotate((head * 180) / Math.PI, 0, 0);
+      c.scale(0.25 + 1.3 * p, 1);
+      c.drawPath(P.streak, vFaded(s.pale ? P.streakPale : P.streakDeep, op));
+      c.restore();
+    }
+    const k = 1 - pull * 0.04;
+    c.save();
+    c.scale(k, k);
+    vPut(c, P.filigree, P.plain);
+    c.restore();
+    vGlints(c, P, P.backGlints, T);
+    return recorder.finishRecordingAsPicture();
+  });
   return (
     <Group>
       <Halo r={94} color="#7A3AE0" opacity={glow} />
@@ -1987,23 +2161,76 @@ function VoidBack({ t }: { t: Clock }) {
         w={188}
         h={188}
       />
-      {Array.from({ length: 12 }, (_, i) => (
-        <Infall key={i} t={t} i={i} />
-      ))}
-      <Group transform={drawn}>
-        <Still picture={filigreePicture} />
-      </Group>
-      <Glint t={t} x={0} y={78} size={3.5} phase={1.7} speed={0.8} />
+      <Picture picture={picture} />
     </Group>
   );
 }
 
+/** Over the picture's edge: the void, then the bezel, the crown with its
+ *  glows and lightning (leaning in as it pulls), and the release. */
 function VoidFront({ t }: { t: Clock }) {
+  const P = useMemo(() => voidParts(), []);
   const uniforms = useDerivedValue<Record<string, number>>(() => {
     const u = voidPhase(t.value);
     return { t: t.value, pull: voidPull(u), flash: voidFlash(u) };
   });
-  const drawn = useDrawnIn(t, 0.035);
+  const picture = useDerivedValue(() => {
+    const T = t.value;
+    const u = voidPhase(T);
+    const pull = voidPull(u);
+    const flash = voidFlash(u);
+    const drawing = Math.max(0, pull);
+    const { recorder, c } = vBegin();
+    vPut(c, P.bezel, P.plain);
+    vSweep(c, P.bezelPath, P.sweepColors, T, 5.6, 0.4);
+    const k = 1 - pull * 0.035;
+    c.save();
+    c.scale(k, k);
+    vPut(c, P.crown, P.plain);
+    vSweep(c, P.bandPath, P.sweepColors, T, 5.6, 0.9);
+    // the amethyst's glow: slow, dark, flaring when the void lets go
+    vPut(
+      c,
+      P.amethystGlow,
+      vFaded(P.screen, 0.3 + 0.22 * Math.sin(T * 1.4) + drawing * 0.4 + flash),
+    );
+    // the points' tips, kindled when lightning leaves them
+    vPut(
+      c,
+      P.tipGlow,
+      vFaded(P.screen, 0.35 + 0.2 * Math.sin(T * 3.1) + flash),
+    );
+    // the lightning, each arc flickering between its shapes
+    for (let a = 0; a < ARC_PAIRS.length; a++) {
+      const rate = a >= 6 ? 0.31 : 0.47;
+      const q = (T * rate + P.arcSeed[a]) % 1;
+      const on = q < 0.13 + drawing * 0.25 ? 1 : 0;
+      const flick = 0.65 + 0.35 * Math.sin(T * 47 + a);
+      const op = Math.min(1, on * flick + flash * 1.4);
+      if (!(op > 0.004)) continue;
+      const s = Math.floor(T * 14 + a * 3) % ARC_SHAPES;
+      vPut(c, P.arcGlows[a][s], vFaded(P.arcHalo, op));
+      c.drawPath(P.arcPaths[a][s], vFaded(P.arcMid, op));
+      c.drawPath(P.arcPaths[a][s], vFaded(P.arcCore, op));
+    }
+    vGlints(c, P, P.crownGlints, T);
+    c.restore();
+    // the ring of violet light the void lets go
+    if (u >= 7.6) {
+      const q = clamp01((u - 7.6) / 1.3);
+      const op = (1 - q) ** 1.6;
+      if (op > 0.004 && P.releaseFx) {
+        const r = 56 + (1 - (1 - q) ** 2) * 36;
+        const w = 6 * (1 - q) + 1;
+        P.releaseGlow.setShader(P.releaseFx.makeShader([r, w]));
+        P.releaseGlow.setStrokeWidth(w + 28);
+        c.drawCircle(0, 0, r, vFaded(P.releaseGlow, op));
+        c.drawCircle(0, 0, r, vFaded(P.releaseLine, op));
+      }
+    }
+    vGlints(c, P, P.rimGlints, T);
+    return recorder.finishRecordingAsPicture();
+  });
   return (
     <Group>
       <Sksl
@@ -2014,28 +2241,7 @@ function VoidFront({ t }: { t: Clock }) {
         w={140}
         h={140}
       />
-      <Still picture={bezelPicture} />
-      <Sweep t={t} d={BEZEL} evenOdd every={5.6} phase={0.4} />
-      <Group transform={drawn}>
-        <Still picture={crownPicture} />
-        <Sweep t={t} d={CROWN_BAND} every={5.6} phase={0.9} />
-        <AmethystGlow t={t} />
-        <TipGlow t={t} />
-        {ARC_PAIRS.map((_, k) => (
-          <Arc key={k} t={t} k={k} />
-        ))}
-        <Glint t={t} x={-1.4} y={AM_Y - 2} size={4.5} phase={0.5} speed={0.9} />
-        <Glint
-          t={t}
-          x={POINTS[3].tip[0]}
-          y={POINTS[3].tip[1]}
-          size={4}
-          phase={2.6}
-          speed={1.1}
-        />
-      </Group>
-      <Release t={t} />
-      <Glint t={t} x={-44.5} y={-44.5} size={3.5} phase={3.8} speed={0.8} />
+      <Picture picture={picture} />
     </Group>
   );
 }
