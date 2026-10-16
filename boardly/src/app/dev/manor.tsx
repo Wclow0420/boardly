@@ -1,9 +1,11 @@
-// Development only: Seal the Manor's board two nights in, with a sample
-// record and notebook, to look at on a device without playing a game.
-// Open with boardly-dev://dev/manor.
+// Development only: Seal the Manor's board in every moment of a game,
+// with sample states, to look at on a device without playing. Open with
+// boardly-dev://dev/manor?sample=<name> (start, evil, announce, patrol,
+// room, team, vote, mission, assassin, won, lost).
 
-import { Redirect } from "expo-router";
-import { useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Redirect, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -47,19 +49,53 @@ const base = {
   ],
 } as unknown as NightwatchState;
 
-const SAMPLES: Record<string, NightwatchState> = {
-  team: base,
-  over: {
-    ...base, phase: "finished", winner: "evil", winReason: "assassination",
-    roles: ["prophet", "tracker", "double", "apprentice", "hermit"],
-  } as unknown as NightwatchState,
+const first = {
+  ...base, phase: "announce", round: 0, results: [], history: [], timeline: [], log: [], event: null,
+  ready: [false, false, false, false, false],
+} as unknown as NightwatchState;
+const S = (over: Record<string, unknown>) => ({ ...base, ...over }) as unknown as NightwatchState;
+
+/** Each moment, and whether the role card is still to be dealt in it. */
+const SAMPLES: Record<string, { state: NightwatchState; deal?: boolean }> = {
+  start: { state: first, deal: true },
+  evil: {
+    state: { ...first, myRole: "double", known: [{ seat: 4, as: "evil" }], assassinSeat: 4, abilityLeft: 2 } as NightwatchState,
+    deal: true,
+  },
+  announce: { state: S({ phase: "announce", ready: [false, true, true, false, true] }) },
+  patrol: { state: S({ phase: "patrol", ready: [false, false, true, false, false] }) },
+  room: { state: S({ phase: "room", myRoom: 5, myFn: "dining", ready: [false, false, false, false, false] }) },
+  team: { state: S({ phase: "team", leader: 0 }) },
+  vote: { state: S({ phase: "vote", leader: 3, team: [0, 3] }) },
+  mission: { state: S({ phase: "mission", team: [0, 3], missionPlayed: [] }) },
+  assassin: {
+    state: S({ phase: "assassinate", myRole: "double", known: [{ seat: 4, as: "evil" }], assassinSeat: 0 }),
+  },
+  won: {
+    state: S({ phase: "finished", winner: "good", winReason: "missions", roles: ["prophet", "tracker", "double", "apprentice", "hermit"] }),
+  },
+  lost: {
+    state: S({ phase: "finished", winner: "evil", winReason: "assassination", roles: ["prophet", "tracker", "double", "apprentice", "hermit"] }),
+  },
 };
 const NAMES = ["You", "Ming", "Hua", "Qiang", "Mei"].map((username, seat) => ({ seat, userId: `u${seat}`, username, borderId: null, avatarUrl: null }));
 
 export default function ManorPreview() {
   const { colors, spacing } = useTheme();
-  const [sample, setSample] = useState("team");
+  const { sample: asked } = useLocalSearchParams<{ sample?: string }>();
+  const [sample, setSample] = useState(asked && SAMPLES[asked] ? asked : "team");
   const [rules, setRules] = useState(false);
+  // moments after the deal: the card counts as dealt for this session
+  const session = `dev-${sample}`;
+  const [seeded, setSeeded] = useState<string | null>(null);
+  useEffect(() => {
+    const watched = SAMPLES[sample].deal
+      ? { dealt: false, letters: 99, books: [], walked: "dev" }
+      : { dealt: true, letters: 99, books: [0, 1, 2], walked: "dev" };
+    AsyncStorage.setItem(`boardly.nightwatch.watched.${session}`, JSON.stringify(watched))
+      .catch(() => {})
+      .finally(() => setSeeded(sample));
+  }, [sample, session]);
   if (!__DEV__) return <Redirect href="/" />;
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -81,16 +117,17 @@ export default function ManorPreview() {
             <AppText variant="caption">rules</AppText>
           </Pressable>
         </View>
-        <NightwatchBoard
+        {seeded === sample ? <NightwatchBoard
           key={sample}
-          state={SAMPLES[sample]}
+          sessionId={session}
+          state={SAMPLES[sample].state}
           mySeat={0}
           isMyTurn={false}
           players={NAMES}
           busy={false}
           finished={false}
           onMove={() => {}}
-        />
+        /> : null}
       </ScrollView>
       <RulesSheet gameKey="nightwatch" gameName="Seal the Manor" visible={rules} onClose={() => setRules(false)} />
     </SafeAreaView>

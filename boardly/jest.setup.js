@@ -54,3 +54,13 @@ jest.mock("@/features/mascot/MascotStage", () => ({
   MascotFigure: () => null,
   MascotStage: () => null,
 }));
+jest.mock("@/components/tabletop/cards/PlayingCard", () => ({
+  FRONT: {
+    window: { x: 16, y: 12, w: 68, h: 50 },
+    plaque: { x: 10, y: 60, w: 80, h: 15 },
+    body: { x: 12, y: 78, w: 76, h: 50 },
+  },
+  CardBack: () => null,
+  CardFront: ({ children }) => children ?? null,
+  PlayingCard: ({ children }) => children ?? null,
+}));

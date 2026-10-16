@@ -11,7 +11,8 @@ import { ManorMap } from "./ManorMap";
 import { Journal, type JournalPage, type JournalSection } from "@/features/game/Journal";
 import { Popup } from "@/features/game/Popup";
 import { arrivalOf } from "./arrival";
-import { LetterScene, RoleIntro } from "./Immersion";
+import { LetterScene, RoleIntro, ROLE_CARD_W } from "./Immersion";
+import { RoleCardBack, RoleCardFace } from "./RoleCardFace";
 import { NightMap } from "./NightMap";
 import { RoomPicture } from "./RoomPicture";
 import { RoomScene, type ScenePerson } from "./RoomScene";
@@ -23,7 +24,6 @@ import { useSetPieces } from "./useSetPieces";
 import {
   EVENT_EMOJI,
   HALL,
-  ROLE_EMOJI,
   ROOMS,
   ROOM_COLOR,
   ROOM_EMOJI,
@@ -462,8 +462,15 @@ export function NightwatchBoard({
             ]).start()
           }
           onDone={() => pieces.mark({ dealt: true })}
+          back={<RoleCardBack width={ROLE_CARD_W} />}
         >
-          <RoleCard state={state} mySeat={mySeat} shown names={names} />
+          <RoleCardFace
+            state={state}
+            mySeat={mySeat}
+            width={ROLE_CARD_W}
+            namesOf={names.namesOf}
+            nameOf={names.nameOf}
+          />
         </RoleIntro>
       ) : null}
       <LetterScene
@@ -531,7 +538,15 @@ export function NightwatchBoard({
               </>
             ) : panel === "role" ? (
               state.myRole ? (
-                <RoleCard state={state} mySeat={mySeat} shown names={names} />
+                <View style={{ alignItems: "center" }}>
+                  <RoleCardFace
+                    state={state}
+                    mySeat={mySeat}
+                    width={ROLE_CARD_W}
+                    namesOf={names.namesOf}
+                    nameOf={names.nameOf}
+                  />
+                </View>
               ) : (
                 nothing
               )
@@ -809,83 +824,6 @@ function NightBar({
         </View>
       ) : null}
     </View>
-  );
-}
-
-function RoleCard({
-  state,
-  mySeat,
-  shown,
-  onToggle,
-  names,
-}: {
-  state: NightwatchState;
-  mySeat: number;
-  shown: boolean;
-  onToggle?: () => void;
-  names: Names;
-}) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-  const role = state.myRole!;
-  const evil = sideOf(role) === "evil";
-  const known = state.known.map((k) => k.seat);
-  const usesOf = { tracker: 2, double: 2, keeper: 1 } as Record<string, number>;
-
-  return (
-    <Card onPress={onToggle}>
-      <AppText variant="caption" color="textMuted">
-        {t("nightwatch.role.title")}
-      </AppText>
-      {shown ? (
-        <>
-          <View style={styles.roleHead}>
-            <AppText style={{ fontSize: 44 }}>{ROLE_EMOJI[role]}</AppText>
-            <View style={styles.grow}>
-              <AppText
-                variant="h2"
-                style={{ color: evil ? colors.danger : colors.successStrong }}
-              >
-                {t(`nightwatch.roles.${role}.name`)}
-              </AppText>
-              <AppText variant="caption" color="textMuted" style={{ marginTop: 2 }}>
-                {t(`nightwatch.roles.${role}.desc`)}
-              </AppText>
-            </View>
-          </View>
-          {known.length > 0 ? (
-            <AppText variant="bodyMedium" style={{ marginTop: 8 }}>
-              {role === "prophet"
-                ? t("nightwatch.role.knowsEvil", { names: names.namesOf(known) })
-                : role === "apprentice"
-                  ? t("nightwatch.role.knowsProphet", { names: names.namesOf(known) })
-                  : t("nightwatch.role.allies", { names: names.namesOf(known) })}
-            </AppText>
-          ) : null}
-          {evil && state.assassinSeat !== null ? (
-            <AppText variant="caption" color="textMuted" style={{ marginTop: 4 }}>
-              {state.assassinSeat === mySeat
-                ? t("nightwatch.role.youAssassin")
-                : t("nightwatch.role.assassin", { name: names.nameOf(state.assassinSeat) })}
-            </AppText>
-          ) : null}
-          {usesOf[role] ? (
-            <AppText variant="caption" color="primary" style={{ marginTop: 4 }}>
-              {t("nightwatch.role.uses", { count: state.abilityLeft, total: usesOf[role] })}
-            </AppText>
-          ) : null}
-          {onToggle ? (
-            <AppText variant="tiny" color="textSubtle" style={{ marginTop: 8 }}>
-              {t("nightwatch.role.hide")}
-            </AppText>
-          ) : null}
-        </>
-      ) : (
-        <AppText variant="title" style={{ marginTop: 4 }}>
-          {t("nightwatch.role.reveal")}
-        </AppText>
-      )}
-    </Card>
   );
 }
 

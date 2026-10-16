@@ -17,6 +17,8 @@ const NIGHT = "#05060B";
 const PAPER = "#E9E2CF";
 const INK = "#2A2433";
 const BEAT_MS = 1150;
+/** The role card's width when it is a playing card. */
+export const ROLE_CARD_W = 250;
 
 
 interface Box {
@@ -50,12 +52,14 @@ export interface RoleIntroProps {
   onDone: () => void;
   /** The face of the role card. */
   children: ReactNode;
+  /** Its back (a playing card's); without one, a plain dark card. */
+  back?: ReactNode;
 }
 
 /** The start of a game: a hush, then the role card face down in the
  *  middle of the screen. A tap turns it over; once read, it flies to
  *  the Role button, where it can be looked at again. */
-export function RoleIntro({ visible, tone, target, onLand, onDone, children }: RoleIntroProps) {
+export function RoleIntro({ visible, tone, target, onLand, onDone, children, back }: RoleIntroProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const [stage, setStage] = useState<"hush" | "card" | "seen" | "away">("hush");
@@ -167,7 +171,7 @@ export function RoleIntro({ visible, tone, target, onLand, onDone, children }: R
             ref={card}
             collapsable={false}
             style={[
-              styles.card,
+              back ? styles.playingCard : styles.card,
               {
                 opacity: Animated.multiply(
                   rise,
@@ -217,14 +221,16 @@ export function RoleIntro({ visible, tone, target, onLand, onDone, children }: R
                 accessibilityRole="button"
                 accessibilityLabel={t("nightwatch.intro.flip")}
                 onPress={turn}
-                style={[styles.back, { borderColor: colors.primary }]}
+                style={back ? styles.cardBack : [styles.back, { borderColor: colors.primary }]}
               >
-                <View style={[styles.backInner, { borderColor: colors.primary }]}>
-                  <AppText style={styles.backIcon}>🏮</AppText>
-                  <AppText variant="label" style={{ color: colors.primary, letterSpacing: 4 }}>
-                    ? ? ?
-                  </AppText>
-                </View>
+                {back ?? (
+                  <View style={[styles.backInner, { borderColor: colors.primary }]}>
+                    <AppText style={styles.backIcon}>🏮</AppText>
+                    <AppText variant="label" style={{ color: colors.primary, letterSpacing: 4 }}>
+                      ? ? ?
+                    </AppText>
+                  </View>
+                )}
               </Pressable>
             </Animated.View>
           </Animated.View>
@@ -356,6 +362,8 @@ const styles = StyleSheet.create({
   hushIcon: { fontSize: 96, lineHeight: 116 },
   hushWord: { fontSize: 40, lineHeight: 48, fontWeight: "800", letterSpacing: 6 },
   card: { width: "100%", maxWidth: 360 },
+  playingCard: { width: ROLE_CARD_W },
+  cardBack: { alignItems: "center", justifyContent: "center" },
   face: { backfaceVisibility: "hidden" },
   back: {
     flex: 1,
