@@ -71,7 +71,7 @@ Moves:
 
 import random
 
-from app.games.base import BaseGame, GameError, Badge, won_as
+from app.games.base import BaseGame, GameError, Badge, FEAT, RARE, WINS, won_as
 from app.games.shelter.bot import shelter as bot_policy
 
 DAYS = 6
@@ -136,14 +136,14 @@ class Shelter(BaseGame):
     has_bots = True
 
     badges = [
-        Badge("shelter.rescued", "bronze", 1, won_as("good")),
-        Badge("shelter.patientZero", "silver", 1, won_as("evil")),
-        Badge("shelter.caught", "silver", 1, lambda o: o.won and o.side == "good" and (o.facts or {}).get("reason") == "exiled"),
-        Badge("shelter.fullLarder", "gold", 1,
+        Badge("shelter.rescued", FEAT, won_as("good")),
+        Badge("shelter.patientZero", FEAT, won_as("evil")),
+        Badge("shelter.caught", RARE, lambda o: o.won and o.side == "good" and (o.facts or {}).get("reason") == "exiled"),
+        Badge("shelter.fullLarder", RARE,
               lambda o: o.won and o.side == "good"
               and (o.facts or {}).get("reason") == "rescue"
               and (o.facts or {}).get("store", 0) >= 10),
-        Badge("shelter.lastWinter", "legendary", 25, series="wins"),
+        Badge("shelter.lastWinter", WINS),
     ]
 
     def __init__(self, rng: random.Random | None = None):

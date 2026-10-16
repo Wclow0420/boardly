@@ -36,7 +36,7 @@ Moves:
 
 import random
 
-from app.games.base import BaseGame, GameError, Badge, won_as
+from app.games.base import BaseGame, GameError, Badge, FEAT, RARE, WINS, won_as
 
 EVIL_ROLES = {"assassin", "morgana", "mordred", "oberon", "minion"}
 
@@ -89,12 +89,12 @@ class Avalon(BaseGame):
     tag = "faction"
 
     badges = [
-        Badge("avalon.firstOp", "bronze", 1, won_as("good")),
-        Badge("avalon.mole", "silver", 1, won_as("evil")),
-        Badge("avalon.hitman", "gold", 1,
+        Badge("avalon.firstOp", FEAT, won_as("good")),
+        Badge("avalon.mole", FEAT, won_as("evil")),
+        Badge("avalon.hitman", RARE,
               lambda o: o.won and o.role == "assassin"
               and (o.facts or {}).get("reason") == "assassination"),
-        Badge("avalon.spymaster", "legendary", 25, series="wins"),
+        Badge("avalon.spymaster", WINS),
     ]
 
     def initial_state(self, num_players: int, rng: random.Random | None = None) -> dict:

@@ -2,8 +2,30 @@
 // tier and progress; the app says how each one looks (its BadgeArt) and
 // what it is called (badges.<key> in the locales).
 
-/** Rarity, rarest last (mirrors TIERS on the server). */
-export type BadgeTier = "bronze" | "silver" | "gold" | "legendary";
+import type { EmblemData } from "@/components/engraved/emblem";
+
+/** A badge's levels, rarest last (mirrors TIERS on the server). */
+export type BadgeTier = "bronze" | "silver" | "gold" | "diamond";
+export const TIERS: readonly BadgeTier[] = ["bronze", "silver", "gold", "diamond"];
+
+/** A badge's frame at one level, in a 120 × 120 box with the emblem's
+ *  disc at the centre (60, 60). Parts in "tint" take the game's colour
+ *  (the disc's enamel). */
+export interface BadgeFrame {
+  /** Drawn under the emblem: rays, wreaths, the rim, the disc. */
+  back: EmblemData;
+  /** Drawn over the emblem (a band, claws over the disc's edge). */
+  front?: EmblemData;
+  /** The emblem's disc: its radius round (60, 60). */
+  face: number;
+  /** The metal the light sweeps across: one path (holes cut even-odd). */
+  sweep: string;
+  /** Where glints flare: [x, y, size]. */
+  glints: [number, number, number][];
+}
+
+/** A set of frames (Boardly's own, or a game's), one per level. */
+export type BadgeStyle = (tier: BadgeTier) => BadgeFrame;
 
 /** A line icon on a 24-unit grid: outlines, and parts filled in. */
 export interface Glyph {

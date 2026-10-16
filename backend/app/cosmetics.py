@@ -63,11 +63,12 @@ BORDER_PRICES = {
 }
 
 # Borders that can't be bought: each comes with a badge.
+# border -> (badge, the level of it that brings the border)
 EARNED_BORDERS = {
-    "seal-halo": "nightwatch.ghostbreaker",
-    "winter-hearth": "shelter.lastWinter",
-    "spymaster": "avalon.spymaster",
-    "table-legend": "boardly.legend",
+    "seal-halo": ("nightwatch.ghostbreaker", "gold"),
+    "winter-hearth": ("shelter.lastWinter", "gold"),
+    "spymaster": ("avalon.spymaster", "gold"),
+    "table-legend": ("boardly.regular", "diamond"),
 }
 
 BORDER_IDS = frozenset(BORDER_PRICES) | frozenset(EARNED_BORDERS)
@@ -78,5 +79,5 @@ def owns_border(user, border_id) -> bool:
         # local import: outcomes reads the games, which read the models
         from app.outcomes import has_badge
 
-        return has_badge(user.id, EARNED_BORDERS[border_id])
+        return has_badge(user.id, *EARNED_BORDERS[border_id])
     return BORDER_PRICES.get(border_id) == 0 or border_id in (user.owned_borders or [])

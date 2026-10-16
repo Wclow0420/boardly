@@ -1,83 +1,42 @@
-// A badge: a medallion on its ribbon. The rim's metal says the tier
-// (bronze, silver, gold, or a shifting holographic legendary), the
-// enamel face is the game's colour, and the emblem in the middle is one
-// of the game's own icons. Three things keep it alive, all on one clock:
-// a soft halo that breathes in the tier's colour, a band of light that
-// sweeps across the face every few seconds, and the emblem's own little
-// loop (a flame flickers, a die tips over...). Gold and legendary also
-// glint with sparkles.
+// A badge: an engraved frame for its level (bronze, silver, gold,
+// diamond; Boardly's own or its game's style), the emblem on an enamel
+// disc in the game's colour, and, while it moves, a light sweeping the
+// metal, glints flaring, and the emblem's own loop (a flame flickers, a
+// die tips over). Locked, the whole badge is struck in dark iron.
 //
-// Locked, it is a dark coin with the emblem pressed in and a ring round
-// the rim showing how close it is.
+// The frame and emblem are still SVG, parsed once; on a badge that
+// doesn't move (a grid of them) nothing is drawn per frame.
 
 import {
-  BlurMask,
   Canvas,
-  Circle,
   ColorMatrix,
+  FillType,
   Group,
   ImageSVG,
   LinearGradient,
   Paint,
   Path,
-  RadialGradient,
   Rect,
   Skia,
-  SweepGradient,
   vec,
 } from "@shopify/react-native-skia";
 import { useMemo } from "react";
 import { useDerivedValue, type SharedValue } from "react-native-reanimated";
 
-import { toSvg } from "@/components/engraved/emblem";
+import { toSvg, toSvgBody, type EmblemData } from "@/components/engraved/emblem";
 import { emblemData } from "@/components/icons";
-import type { BadgeArt, BadgeLoop, BadgeTier } from "./types";
+import type { BadgeArt, BadgeLoop, BadgeStyle, BadgeTier } from "./types";
 
-interface Metal {
-  /** Highlight, body, shadow of the rim. */
-  rim: [string, string, string];
-  glow: string;
-  ribbon: string;
-}
-
-export const TIER_METAL: Record<BadgeTier, Metal> = {
-  bronze: {
-    rim: ["#F6CFA3", "#B8713A", "#6E3A16"],
-    glow: "#E58A45",
-    ribbon: "#7E3E17",
-  },
-  silver: {
-    rim: ["#FFFFFF", "#B7C2CF", "#5D6878"],
-    glow: "#BFD8F5",
-    ribbon: "#3E5068",
-  },
-  gold: {
-    rim: ["#FFF5BE", "#F2B630", "#8E5A0C"],
-    glow: "#FFC94A",
-    ribbon: "#9E2A20",
-  },
-  legendary: {
-    rim: ["#FFFFFF", "#C9A8FF", "#5B3FA8"],
-    glow: "#B98CFF",
-    ribbon: "#3A2878",
-  },
+/** Each level's glow, for the light round a badge and its words. */
+export const TIER_GLOW: Record<BadgeTier, string> = {
+  bronze: "#E59A5A",
+  silver: "#CFE0F2",
+  gold: "#FFC94A",
+  diamond: "#A8E4FF",
 };
 
-/** The holographic rim of a legendary badge. */
-const HOLO = [
-  "#FF6AD5",
-  "#C774E8",
-  "#8F9CFF",
-  "#6FE3FF",
-  "#7FFFD4",
-  "#FFE66D",
-  "#FF9A6A",
-  "#FF6AD5",
-];
-const LOCKED_RIM: [string, string, string] = ["#8A8A90", "#4C4C52", "#2A2A2E"];
-
-/** A locked badge's emblem, struck in dark iron: its own light and
- *  shade, but grey and dim, a little cool. */
+/** A locked badge, struck in dark iron: its own light and shade, grey
+ *  and dim, a little cool. */
 const IRON = [
   0.16, 0.5, 0.05, 0, 0.02,
   0.17, 0.52, 0.05, 0, 0.02,
@@ -85,18 +44,7 @@ const IRON = [
   0, 0, 0, 1, 0,
 ];
 
-/** A hex colour mixed towards white (t > 0) or black (t < 0). */
-function tint(hex: string, t: number): string {
-  const n = parseInt(hex.replace("#", "").slice(0, 6), 16);
-  const mix = (c: number) =>
-    Math.round(t > 0 ? c + (255 - c) * t : c * (1 + t));
-  const r = mix((n >> 16) & 255);
-  const g = mix((n >> 8) & 255);
-  const b = mix(n & 255);
-  return `rgb(${r},${g},${b})`;
-}
-
-/** The emblem's own movement at time `t`, in its 24-unit grid. */
+/** The emblem's own movement at time `t`, about its centre (or foot). */
 function loopTransform(loop: BadgeLoop, t: number) {
   "worklet";
   switch (loop) {
@@ -107,9 +55,9 @@ function loopTransform(loop: BadgeLoop, t: number) {
     case "sway":
       return [{ rotate: 0.13 * Math.sin(t * 1.9) }];
     case "spin":
-      return [{ rotate: (t * 0.5) % (Math.PI * 2) }];
+      return [{ rotate: 0.2 * Math.sin(t * 0.8) }];
     case "bob":
-      return [{ translateY: 1.1 * Math.sin(t * 2.2) }];
+      return [{ translateY: 1.4 * Math.sin(t * 2.2) }];
     case "pulse":
       return [{ scale: 1 + 0.08 * Math.max(0, Math.sin(t * 2.6)) ** 3 }];
     case "tumble": {
@@ -122,309 +70,127 @@ function loopTransform(loop: BadgeLoop, t: number) {
   }
 }
 
+const svgOf = (data: EmblemData, tint: string, id: string) =>
+  Skia.SVG.MakeFromString(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">${toSvgBody(data, tint, id)}</svg>`,
+  );
+
 export interface BadgeProps {
   art: BadgeArt;
+  /** The level whose frame is drawn. */
   tier: BadgeTier;
+  /** Its frames: Boardly's own or its game's. */
+  frames: BadgeStyle;
   /** The canvas: a square this wide. */
   size: number;
   clock: SharedValue<number>;
+  /** Struck in iron: not reached yet. */
   locked?: boolean;
-  /** 0..1 towards unlocking, shown on a locked badge. */
-  progress?: number;
   /** Sets this badge's moments apart from its neighbours'. */
   phase?: number;
-  /** The enamel when the art doesn't name one. */
+  /** The disc's enamel when the art doesn't name one. */
   face?: string;
+  /** Whether it moves at all (a grid of badges stands still). */
+  alive?: boolean;
 }
 
 export function Badge({
   art,
   tier,
+  frames,
   size,
   clock,
   locked = false,
-  progress = 0,
   phase = 0,
-  face: fallbackFace = "#24344F",
+  face = "#24344F",
+  alive = true,
 }: BadgeProps) {
-  const cx = size / 2;
-  // room round the medal for its halo, which must fade out inside the canvas
-  const cy = size * 0.46;
-  const R = size * 0.29;
-  const metal = TIER_METAL[tier];
-  const rim = locked ? LOCKED_RIM : metal.rim;
-  const face = locked ? "#2C2B30" : (art.face ?? fallbackFace);
-  const ink = locked ? "#5E5C66" : "#FFF6E6";
-  const legendary = tier === "legendary" && !locked;
-  const sparkly = (tier === "gold" || legendary) && !locked;
-
-  const medal = useMemo(() => {
-    const path = Skia.Path.Make();
-    path.addCircle(cx, cy, R);
-    return path;
-  }, [cx, cy, R]);
-  const ribbon = useMemo(() => {
-    const w = R * 0.42;
-    const top = cy + R * 0.55;
-    const bottom = size * 0.97;
-    const tail = (dir: number) =>
-      `M${cx + dir * R * 0.18} ${top}L${cx + dir * (R * 0.18 + w)} ${top + R * 0.15}` +
-      `L${cx + dir * (R * 0.42 + w)} ${bottom}L${cx + dir * (R * 0.3 + w * 0.5)} ${bottom - R * 0.2}` +
-      `L${cx + dir * R * 0.18} ${bottom - R * 0.05}z`;
-    return `${tail(-1)}${tail(1)}`;
-  }, [cx, cy, R, size]);
-  const ring = useMemo(() => {
-    const path = Skia.Path.Make();
-    const r = R * 1.1;
-    path.addArc(
-      { x: cx - r, y: cy - r, width: r * 2, height: r * 2 },
-      -90,
-      360 * Math.max(0.001, progress),
-    );
-    return path;
-  }, [cx, cy, R, progress]);
-
-  const t = useDerivedValue(() => clock.value + phase);
-  // the halo breathes
-  const halo = useDerivedValue(() =>
-    locked ? 0 : 0.42 + 0.22 * Math.sin(t.value * 1.6),
-  );
-  const haloB = useDerivedValue(() =>
-    legendary ? 0.42 + 0.22 * Math.sin(t.value * 1.6 + Math.PI) : 0,
-  );
-  // the holographic rim turns
-  const holoTurn = useDerivedValue(() => [{ rotate: t.value * 0.7 }]);
-  // a band of light crosses the face once every 3.6 s
-  const sweep = useDerivedValue(() => {
-    const p = (t.value % 3.6) / 0.95;
-    const x = p < 1 ? -R * 1.6 + p * R * 3.2 : R * 4;
-    return [{ translateX: cx + x }, { translateY: cy }, { rotate: 0.42 }];
-  });
-  const k = (R * 1.02) / 24;
-  const emblem = useDerivedValue(() =>
-    locked ? [] : loopTransform(art.loop, t.value),
-  );
-  // the engraved emblem, when the badge names one (else the line glyph)
-  const svg = useMemo(() => {
+  const tint = art.face ?? face;
+  const frame = useMemo(() => frames(tier), [frames, tier]);
+  const svgs = useMemo(() => {
     const found = art.emoji ? emblemData(art.emoji) : null;
-    return found ? Skia.SVG.MakeFromString(toSvg(found.data, 30, found.tint)) : null;
-  }, [art.emoji]);
+    const box = frame.face * 1.5;
+    return {
+      back: svgOf(frame.back, tint, "b"),
+      front: frame.front ? svgOf(frame.front, tint, "f") : null,
+      emblem: found ? Skia.SVG.MakeFromString(toSvg(found.data, box, found.tint)) : null,
+      box,
+    };
+  }, [frame, tint, art.emoji]);
+  const sweepPath = useMemo(() => {
+    const path = Skia.Path.MakeFromSVGString(frame.sweep);
+    path?.setFillType(FillType.EvenOdd);
+    return path;
+  }, [frame.sweep]);
+
+  const moving = alive && !locked;
+  const t = useDerivedValue(() => clock.value + phase);
   const footed = art.loop === "flicker" || art.loop === "sway";
-  const origin = vec(12, footed ? 21 : 12);
-  const sparkles = useMemo(
-    () => [
-      { a: -2.2, d: 1.12, s: 0.13, p: 0 },
-      { a: -0.6, d: 1.05, s: 0.1, p: 1.3 },
-      { a: 0.9, d: 1.14, s: 0.08, p: 2.4 },
-      { a: 2.6, d: 0.98, s: 0.11, p: 3.1 },
-    ],
-    [],
-  );
+  const box = svgs.box;
+  const emblem = useDerivedValue(() => {
+    const origin = footed ? box * 0.86 : box / 2;
+    return [
+      { translateX: 60 },
+      { translateY: 60 - box / 2 + origin },
+      ...(moving ? loopTransform(art.loop, t.value) : []),
+      { translateX: -box / 2 },
+      { translateY: -origin },
+    ];
+  });
+  // a band of light crosses the metal once every 4 s
+  const sweep = useDerivedValue(() => {
+    const p = (t.value % 4) / 1.1;
+    const x = p < 1 ? -30 + p * 180 : 200;
+    return [{ translateX: x }, { translateY: 60 }, { rotate: 0.42 }];
+  });
 
   return (
     <Canvas style={{ width: size, height: size }}>
-      {/* halo */}
-      {!locked ? (
-        <>
-          <Circle
-            cx={cx}
-            cy={cy}
-            r={R * 0.98}
-            color={legendary ? "#FF6AD5" : metal.glow}
-            opacity={halo}
-          >
-            <BlurMask blur={R * 0.24} style="normal" />
-          </Circle>
-          {legendary ? (
-            <Circle
-              cx={cx}
-              cy={cy}
-              r={R * 0.98}
-              color="#6FE3FF"
-              opacity={haloB}
-            >
-              <BlurMask blur={R * 0.24} style="normal" />
-            </Circle>
-          ) : null}
-        </>
-      ) : null}
-
-      {/* ribbon tails */}
-      <Path path={ribbon} color={locked ? "#3A393F" : metal.ribbon} />
-      <Path
-        path={ribbon}
-        color="rgba(0,0,0,0.25)"
-        style="stroke"
-        strokeWidth={1}
-      />
-
-      {/* rim: metal, or a holographic swirl */}
-      <Circle cx={cx} cy={cy} r={R}>
-        {legendary ? (
-          <SweepGradient
-            c={vec(cx, cy)}
-            colors={HOLO}
-            transform={holoTurn}
-            origin={vec(cx, cy)}
-          />
-        ) : (
-          <SweepGradient
-            c={vec(cx, cy)}
-            colors={[
-              rim[0],
-              rim[1],
-              rim[2],
-              rim[1],
-              rim[0],
-              rim[1],
-              rim[2],
-              rim[1],
-              rim[0],
-            ]}
-          />
-        )}
-      </Circle>
-      <Circle
-        cx={cx}
-        cy={cy}
-        r={R}
-        style="stroke"
-        strokeWidth={1.2}
-        color="rgba(0,0,0,0.35)"
-      />
-      {/* the bevel inside the rim */}
-      <Circle cx={cx} cy={cy} r={R * 0.84}>
-        <LinearGradient
-          start={vec(cx, cy - R)}
-          end={vec(cx, cy + R)}
-          colors={[rim[2], rim[0]]}
-        />
-      </Circle>
-      {/* enamel */}
-      <Circle cx={cx} cy={cy} r={R * 0.78}>
-        <RadialGradient
-          c={vec(cx - R * 0.25, cy - R * 0.3)}
-          r={R * 1.1}
-          colors={[tint(face, 0.28), face, tint(face, -0.45)]}
-        />
-      </Circle>
-
-      {/* emblem, with its shadow */}
-      <Group
-        transform={[
-          { translateX: cx - 12 * k },
-          { translateY: cy - 12 * k },
-          { scale: k },
-        ]}
-      >
-        <Group transform={emblem} origin={origin}>
-          {svg ? (
-            <Group
-              layer={
-                locked ? (
-                  <Paint>
-                    <ColorMatrix matrix={IRON} />
-                  </Paint>
-                ) : undefined
-              }
-            >
-              <ImageSVG svg={svg} x={-3} y={-3} width={30} height={30} />
+      <Group transform={[{ scale: size / 120 }]}>
+        <Group
+          layer={
+            locked ? (
+              <Paint>
+                <ColorMatrix matrix={IRON} />
+              </Paint>
+            ) : undefined
+          }
+        >
+          {svgs.back ? <ImageSVG svg={svgs.back} x={0} y={0} width={120} height={120} /> : null}
+          {svgs.emblem ? (
+            <Group transform={emblem}>
+              <ImageSVG svg={svgs.emblem} x={0} y={0} width={box} height={box} />
             </Group>
-          ) : (
-            <>
-              <Group
-                transform={[{ translateX: 0.5 }, { translateY: 0.8 }]}
-                opacity={locked ? 0 : 0.45}
-              >
-                {art.glyph.fill ? (
-                  <Path path={art.glyph.fill} color="#000" />
-                ) : null}
-                {art.glyph.line ? (
-                  <Path
-                    path={art.glyph.line}
-                    style="stroke"
-                    strokeWidth={1.9}
-                    color="#000"
-                    strokeCap="round"
-                    strokeJoin="round"
-                  />
-                ) : null}
-              </Group>
-              {art.glyph.fill ? <Path path={art.glyph.fill} color={ink} /> : null}
-              {art.glyph.line ? (
-                <Path
-                  path={art.glyph.line}
-                  style="stroke"
-                  strokeWidth={1.9}
-                  color={ink}
-                  strokeCap="round"
-                  strokeJoin="round"
+          ) : null}
+          {svgs.front ? <ImageSVG svg={svgs.front} x={0} y={0} width={120} height={120} /> : null}
+        </Group>
+
+        {moving && sweepPath ? (
+          <Group clip={sweepPath}>
+            <Group transform={sweep}>
+              <Rect x={-9} y={-90} width={18} height={180}>
+                <LinearGradient
+                  start={vec(-9, 0)}
+                  end={vec(9, 0)}
+                  colors={["#FFFFFF00", "#FFFFFFB0", "#FFFFFF00"]}
                 />
-              ) : null}
-            </>
-          )}
-        </Group>
-      </Group>
-
-      {/* the sweep of light, across the medal only */}
-      {!locked ? (
-        <Group clip={medal}>
-          <Group transform={sweep}>
-            <Rect x={-R * 0.32} y={-R * 2} width={R * 0.64} height={R * 4}>
-              <LinearGradient
-                start={vec(-R * 0.32, 0)}
-                end={vec(R * 0.32, 0)}
-                colors={[
-                  "rgba(255,255,255,0)",
-                  "rgba(255,255,255,0.55)",
-                  "rgba(255,255,255,0)",
-                ]}
-              />
-            </Rect>
+              </Rect>
+            </Group>
           </Group>
-        </Group>
-      ) : null}
+        ) : null}
 
-      {/* glints */}
-      {sparkly
-        ? sparkles.map((s, i) => (
-            <Sparkle
-              key={i}
-              t={t}
-              x={cx + Math.cos(s.a) * R * s.d}
-              y={cy + Math.sin(s.a) * R * s.d}
-              size={R * s.s * 2}
-              phase={s.p}
-            />
-          ))
-        : null}
-
-      {/* how close a locked badge is */}
-      {locked && progress > 0 ? (
-        <>
-          <Circle
-            cx={cx}
-            cy={cy}
-            r={R * 1.1}
-            style="stroke"
-            strokeWidth={R * 0.07}
-            color="rgba(255,246,230,0.12)"
-          />
-          <Path
-            path={ring}
-            style="stroke"
-            strokeWidth={R * 0.07}
-            strokeCap="round"
-            color="#F2B630"
-          />
-        </>
-      ) : null}
+        {moving
+          ? frame.glints.map(([x, y, s], i) => (
+              <Glint key={i} t={t} x={x} y={y} size={s} phase={i * 1.7} />
+            ))
+          : null}
+      </Group>
     </Canvas>
   );
 }
 
 /** A four-pointed glint that flares and fades. */
-function Sparkle({
+function Glint({
   t,
   x,
   y,
@@ -438,23 +204,20 @@ function Sparkle({
   phase: number;
 }) {
   const star = useMemo(() => {
-    const s = size;
-    const w = s * 0.18;
-    return `M0 ${-s}Q${w} ${-w} ${s} 0Q${w} ${w} 0 ${s}Q${-w} ${w} ${-s} 0Q${-w} ${-w} 0 ${-s}z`;
+    const w = size * 0.18;
+    return `M0 ${-size}Q${w} ${-w} ${size} 0Q${w} ${w} 0 ${size}Q${-w} ${w} ${-size} 0Q${-w} ${-w} 0 ${-size}z`;
   }, [size]);
   const transform = useDerivedValue(() => {
-    const p = Math.max(0, Math.sin(t.value * 1.3 + phase * 2.1)) ** 6;
+    const p = Math.max(0, Math.sin(t.value * 1.3 + phase)) ** 6;
     return [
       { translateX: x },
       { translateY: y },
-      { scale: 0.2 + p },
+      { scale: 0.15 + p },
       { rotate: t.value * 0.8 },
     ];
   });
   const opacity = useDerivedValue(
-    () => Math.max(0, Math.sin(t.value * 1.3 + phase * 2.1)) ** 4,
+    () => Math.max(0, Math.sin(t.value * 1.3 + phase)) ** 4,
   );
-  return (
-    <Path path={star} color="#FFFFFF" transform={transform} opacity={opacity} />
-  );
+  return <Path path={star} color="#FFFFFF" transform={transform} opacity={opacity} />;
 }

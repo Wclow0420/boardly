@@ -271,18 +271,21 @@ export interface GameRecord {
   sides: Partial<Record<"good" | "evil", SideRecord>>;
 }
 
+export type BadgeLevel = "bronze" | "silver" | "gold" | "diamond";
+
+/** A mission, earned in four levels. */
 export interface BadgeRecord {
   /** "<game key>.<name>", or "boardly.<name>" for Boardly's own. */
   key: string;
   gameType: string | null;
-  tier: "bronze" | "silver" | "gold" | "legendary";
-  /** Badges counting the same thing with bigger goals share a series
-   *  ("played", "wins"): each is a level of it. */
-  series: string | null;
-  goal: number;
-  progress: number;
-  /** When it was earned (ISO), null while locked. */
-  unlockedAt: string | null;
+  /** What it takes to reach bronze, silver, gold and diamond. */
+  goals: [number, number, number, number];
+  /** How far I am (my own card only; capped at the diamond goal). */
+  progress?: number;
+  /** The highest level reached, null before bronze. */
+  tier: BadgeLevel | null;
+  /** When each level reached was reached (ISO). */
+  unlocked: Partial<Record<BadgeLevel, string>>;
 }
 
 export interface UserStats {
@@ -294,8 +297,8 @@ export interface UserStats {
   favourite: string | null;
   games: GameRecord[];
   badges: BadgeRecord[];
-  /** When the latest finished game ended (ISO); badges unlocked at
-   *  exactly this time were earned in it. */
+  /** When the latest finished game ended (ISO); levels reached at
+   *  exactly this time were reached in it. */
   lastGameAt: string | null;
 }
 

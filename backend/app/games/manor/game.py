@@ -55,7 +55,7 @@ Moves:
 
 import random
 
-from app.games.base import BaseGame, GameError, Badge, won_as
+from app.games.base import BaseGame, GameError, Badge, FEAT, RARE, WINS, won_as
 
 ROOMS = [
     "study", "library", "bedroom",
@@ -118,10 +118,10 @@ class Manor(BaseGame):
     tag = "faction"
 
     badges = [
-        Badge("manor.dawn", "bronze", 1, lambda o: o.won and o.side == "good" and (o.facts or {}).get("reason") == "dawn"),
-        Badge("manor.intruder", "silver", 1, won_as("evil")),
-        Badge("manor.caught", "gold", 1, lambda o: o.won and o.side == "good" and (o.facts or {}).get("reason") == "caught"),
-        Badge("manor.lord", "legendary", 25, series="wins"),
+        Badge("manor.dawn", FEAT, lambda o: o.won and o.side == "good" and (o.facts or {}).get("reason") == "dawn"),
+        Badge("manor.intruder", FEAT, won_as("evil")),
+        Badge("manor.caught", RARE, lambda o: o.won and o.side == "good" and (o.facts or {}).get("reason") == "caught"),
+        Badge("manor.lord", WINS),
     ]
 
     def __init__(self, rng: random.Random | None = None):

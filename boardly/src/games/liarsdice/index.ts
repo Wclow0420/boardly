@@ -50,7 +50,6 @@ export const liarsdice: GameDefinition<LiarsDiceState> = {
   },
   needsMe: (state, mySeat) => taskFor(state, mySeat) !== null,
   badges: {
-    "liarsdice.firstWin": { glyph: G.cup, emoji: "🍻", loop: "sway" },
     "liarsdice.bluffer": { glyph: G.die, emoji: "🎲", loop: "tumble" },
   },
 };

@@ -11,7 +11,6 @@ export const tictactoe: GameDefinition<TicTacToeState> = {
   Board: TicTacToeBoard,
   currentSeat: (state) => state.currentSeat,
   badges: {
-    "tictactoe.firstWin": { glyph: G.xo, emoji: "⭕", loop: "pulse", face: "#2F5D8A" },
     "tictactoe.master": { glyph: G.crown, emoji: "👑", loop: "spin", face: "#2F5D8A" },
   },
 };

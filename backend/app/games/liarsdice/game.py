@@ -63,7 +63,7 @@ Moves:
 
 import random
 
-from app.games.base import BaseGame, GameError, Badge
+from app.games.base import BaseGame, GameError, Badge, QUICK_WINS
 
 DICE_EACH = 5
 KNOCKOUT_CUPS = 5
@@ -102,8 +102,7 @@ class LiarsDice(BaseGame):
     tag = "party"
 
     badges = [
-        Badge("liarsdice.firstWin", "bronze", 1, series="wins"),
-        Badge("liarsdice.bluffer", "gold", 10, series="wins"),
+        Badge("liarsdice.bluffer", QUICK_WINS),
     ]
     options = {"mode": ["knockout", "endless"]}
 

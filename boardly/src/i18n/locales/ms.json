@@ -1824,150 +1824,147 @@
       "bronze": "Gangsa",
       "silver": "Perak",
       "gold": "Emas",
-      "legendary": "Lagenda"
+      "diamond": "Berlian"
     },
     "boardly": {
-      "firstTable": {
-        "name": "Tempat Pertama",
-        "desc": "Duduk di meja pertama anda."
-      },
-      "firstWin": {
-        "name": "Kemenangan Pertama",
-        "desc": "Menang satu permainan."
-      },
       "regular": {
         "name": "Pelanggan Tetap",
-        "desc": "Main 10 permainan."
+        "desc": "Main {{count}} permainan.",
+        "desc_other": "Main {{count}} permainan."
       },
       "streak": {
         "name": "Panas Membara",
-        "desc": "Menang 3 permainan berturut-turut."
+        "desc": "Menang {{count}} permainan berturut-turut.",
+        "desc_other": "Menang {{count}} permainan berturut-turut."
       },
       "company": {
         "name": "Teman Baik",
-        "desc": "Main bersama 5 orang berbeza."
-      },
-      "veteran": {
-        "name": "Veteran",
-        "desc": "Main 50 permainan."
+        "desc": "Main bersama {{count}} orang berbeza.",
+        "desc_other": "Main bersama {{count}} orang berbeza."
       },
       "champion": {
         "name": "Juara",
-        "desc": "Menang 25 permainan."
-      },
-      "legend": {
-        "name": "Lagenda Meja",
-        "desc": "Main 100 permainan."
+        "desc": "Menang {{count}} permainan.",
+        "desc_other": "Menang {{count}} permainan."
       }
     },
     "nightwatch": {
       "sealed": {
         "name": "Penjaga Meterai",
-        "desc": "Meterai rumah agam sebagai penjaga."
+        "desc": "Meterai rumah agam sebagai penjaga sebanyak {{count}} kali.",
+        "desc_other": "Meterai rumah agam sebagai penjaga sebanyak {{count}} kali."
       },
       "possessed": {
         "name": "Dirasuk",
-        "desc": "Menang di pihak hantu."
+        "desc": "Menang di pihak hantu sebanyak {{count}} kali.",
+        "desc_other": "Menang di pihak hantu sebanyak {{count}} kali."
       },
       "prophet": {
         "name": "Peramal Tersembunyi",
-        "desc": "Menang sebagai Peramal."
+        "desc": "Menang sebagai Peramal sebanyak {{count}} kali.",
+        "desc_other": "Menang sebagai Peramal sebanyak {{count}} kali."
       },
       "sharpEye": {
         "name": "Mata Tajam",
-        "desc": "Sebagai pembunuh upahan, cari Peramal."
+        "desc": "Sebagai pembunuh upahan, cari Peramal sebanyak {{count}} kali.",
+        "desc_other": "Sebagai pembunuh upahan, cari Peramal sebanyak {{count}} kali."
       },
       "ghostbreaker": {
         "name": "Pemburu Hantu",
-        "desc": "Menang 25 permainan Meterai Rumah Agam."
+        "desc": "Menang {{count}} permainan Meterai Rumah Agam.",
+        "desc_other": "Menang {{count}} permainan Meterai Rumah Agam."
       }
     },
     "shelter": {
       "rescued": {
         "name": "Diselamatkan",
-        "desc": "Bertahan sehingga konvoi tiba."
+        "desc": "Bertahan sehingga konvoi tiba sebanyak {{count}} kali.",
+        "desc_other": "Bertahan sehingga konvoi tiba sebanyak {{count}} kali."
       },
       "patientZero": {
         "name": "Pesakit Sifar",
-        "desc": "Menang sebagai yang Dijangkiti."
+        "desc": "Menang sebagai yang Dijangkiti sebanyak {{count}} kali.",
+        "desc_other": "Menang sebagai yang Dijangkiti sebanyak {{count}} kali."
       },
       "caught": {
         "name": "Dapat Tangkap",
-        "desc": "Halau yang Dijangkiti dan menang."
+        "desc": "Halau yang Dijangkiti dan menang sebanyak {{count}} kali.",
+        "desc_other": "Halau yang Dijangkiti dan menang sebanyak {{count}} kali."
       },
       "fullLarder": {
         "name": "Stor Penuh",
-        "desc": "Diselamatkan dengan 10 makanan atau lebih dalam stor."
+        "desc": "Diselamatkan dengan 10 makanan atau lebih dalam stor sebanyak {{count}} kali.",
+        "desc_other": "Diselamatkan dengan 10 makanan atau lebih dalam stor sebanyak {{count}} kali."
       },
       "lastWinter": {
         "name": "Musim Sejuk Terakhir",
-        "desc": "Menang 25 permainan Tempat Perlindungan."
+        "desc": "Menang {{count}} permainan Tempat Perlindungan.",
+        "desc_other": "Menang {{count}} permainan Tempat Perlindungan."
       }
     },
     "avalon": {
       "firstOp": {
         "name": "Misi Selesai",
-        "desc": "Menang sebagai ejen."
+        "desc": "Menang sebagai ejen sebanyak {{count}} kali.",
+        "desc_other": "Menang sebagai ejen sebanyak {{count}} kali."
       },
       "mole": {
         "name": "Si Tikus",
-        "desc": "Menang sebagai tikus."
+        "desc": "Menang sebagai tikus sebanyak {{count}} kali.",
+        "desc_other": "Menang sebagai tikus sebanyak {{count}} kali."
       },
       "hitman": {
         "name": "Pembunuh Upahan",
-        "desc": "Sebagai pembunuh upahan, kena sasaran yang betul."
+        "desc": "Sebagai pembunuh upahan, kena sasaran yang betul sebanyak {{count}} kali.",
+        "desc_other": "Sebagai pembunuh upahan, kena sasaran yang betul sebanyak {{count}} kali."
       },
       "spymaster": {
         "name": "Ketua Pengintip",
-        "desc": "Menang 25 permainan Double Agent."
+        "desc": "Menang {{count}} permainan Double Agent.",
+        "desc_other": "Menang {{count}} permainan Double Agent."
       }
     },
     "manor": {
       "dawn": {
         "name": "Hingga Subuh",
-        "desc": "Pastikan orang tua itu hidup sehingga 6 pagi."
+        "desc": "Pastikan orang tua itu hidup sehingga 6 pagi sebanyak {{count}} kali.",
+        "desc_other": "Pastikan orang tua itu hidup sehingga 6 pagi sebanyak {{count}} kali."
       },
       "intruder": {
         "name": "Penceroboh",
-        "desc": "Menang sebagai penceroboh."
+        "desc": "Menang sebagai penceroboh sebanyak {{count}} kali.",
+        "desc_other": "Menang sebagai penceroboh sebanyak {{count}} kali."
       },
       "caught": {
         "name": "Tertangkap Basah",
-        "desc": "Tangkap penceroboh dan menang."
+        "desc": "Tangkap penceroboh dan menang sebanyak {{count}} kali.",
+        "desc_other": "Tangkap penceroboh dan menang sebanyak {{count}} kali."
       },
       "lord": {
         "name": "Tuan Rumah Agam",
-        "desc": "Menang 25 permainan Midnight Manor."
+        "desc": "Menang {{count}} permainan Midnight Manor.",
+        "desc_other": "Menang {{count}} permainan Midnight Manor."
       }
     },
     "coup": {
-      "firstWin": {
-        "name": "Buka Kedai",
-        "desc": "Menang satu permainan Hustle."
-      },
       "kingpin": {
         "name": "Taiko",
-        "desc": "Menang 10 permainan Hustle."
+        "desc": "Menang {{count}} permainan Hustle.",
+        "desc_other": "Menang {{count}} permainan Hustle."
       }
     },
     "liarsdice": {
-      "firstWin": {
-        "name": "Muka Selamba",
-        "desc": "Menang satu permainan Dadu Penipu."
-      },
       "bluffer": {
         "name": "Raja Temberang",
-        "desc": "Menang 10 permainan Dadu Penipu."
+        "desc": "Menang {{count}} permainan Dadu Penipu.",
+        "desc_other": "Menang {{count}} permainan Dadu Penipu."
       }
     },
     "tictactoe": {
-      "firstWin": {
-        "name": "Tiga Sebaris",
-        "desc": "Menang satu permainan Tic-Tac-Toe."
-      },
       "master": {
         "name": "Pakar Grid",
-        "desc": "Menang 10 permainan Tic-Tac-Toe."
+        "desc": "Menang {{count}} permainan Tic-Tac-Toe.",
+        "desc_other": "Menang {{count}} permainan Tic-Tac-Toe."
       }
     },
     "celebrate": {
@@ -1978,7 +1975,8 @@
       "nice": "Hebat!",
       "tapNext": "Ketik untuk yang seterusnya",
       "nextLevel": "Tahap seterusnya",
-      "topLevel": "Tahap tertinggi dicapai"
+      "topLevel": "Tahap tertinggi dicapai",
+      "toLevel": "{{n}} lagi ke {{level}}"
     }
   },
   "mascot": {

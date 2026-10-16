@@ -1,89 +1,76 @@
 import type { BadgeRecord } from "@/api/client";
 import {
   earnedLastGame,
+  levelId,
   nextBadge,
-  nextLevel,
+  nextTier,
   sortBadges,
   titleBadge,
+  toNext,
 } from "../order";
 
 const badge = (
   key: string,
-  tier: BadgeRecord["tier"],
   progress: number,
-  goal: number,
-  unlockedAt: string | null = null,
-): BadgeRecord => ({
-  key,
-  gameType: null,
-  tier,
-  series: null,
-  goal,
-  progress,
-  unlockedAt,
-});
+  unlocked: BadgeRecord["unlocked"] = {},
+  gameType: string | null = null,
+): BadgeRecord => {
+  const order = ["bronze", "silver", "gold", "diamond"] as const;
+  const tier = [...order].reverse().find((t) => unlocked[t]) ?? null;
+  return { key, gameType, goals: [1, 5, 10, 20], progress, tier, unlocked };
+};
 
-it("puts earned badges first, rarest then newest, then the closest to earning", () => {
+it("puts earned badges first, highest level then newest, then the closest to bronze", () => {
   const order = sortBadges([
-    badge("a", "gold", 2, 10),
-    badge("b", "bronze", 1, 1, "2026-10-01"),
-    badge("c", "silver", 1, 1, "2026-10-02"),
-    badge("d", "silver", 1, 1, "2026-10-05"),
-    badge("e", "bronze", 8, 10),
+    badge("a", 0),
+    badge("b", 1, { bronze: "2026-10-01" }),
+    badge("c", 5, { bronze: "2026-09-01", silver: "2026-10-02" }),
+    badge("d", 5, { bronze: "2026-09-01", silver: "2026-10-05" }),
+    badge("e", 0),
   ]).map((b) => b.key);
-  expect(order).toEqual(["d", "c", "b", "e", "a"]);
+  expect(order).toEqual(["d", "c", "b", "a", "e"]);
 });
 
-it("names the player after their rarest badge, or nothing yet", () => {
-  expect(titleBadge([badge("a", "gold", 2, 10)])).toBeNull();
+it("names the player after their highest badge, or nothing yet", () => {
+  expect(titleBadge([badge("a", 0)])).toBeNull();
   expect(
     titleBadge([
-      badge("b", "bronze", 1, 1, "2026-10-09"),
-      badge("c", "legendary", 1, 1, "2026-10-01"),
+      badge("b", 1, { bronze: "2026-10-09" }),
+      badge("c", 10, { bronze: "1", silver: "2", gold: "2026-10-01" }),
     ])?.key,
   ).toBe("c");
 });
 
-it("celebrates only what the latest game earned and this device hasn't shown", () => {
+it("knows the next level and how far there is to go", () => {
+  expect(nextTier(badge("a", 0))).toBe("bronze");
+  const silver = badge("b", 7, { bronze: "1", silver: "2" });
+  expect(nextTier(silver)).toBe("gold");
+  expect(toNext(silver)).toBeCloseTo(0.7);
+  const top = badge("c", 20, { bronze: "1", silver: "2", gold: "3", diamond: "4" });
+  expect(nextTier(top)).toBeNull();
+  expect(toNext(top)).toBe(1);
+});
+
+it("celebrates the levels the latest game reached that this device hasn't shown", () => {
+  const last = "2026-10-14T09:00:00";
   const badges = [
-    badge("old", "bronze", 1, 1, "2026-10-01T10:00:00"),
-    badge("new", "silver", 1, 1, "2026-10-14T09:00:00"),
-    badge("shown", "bronze", 1, 1, "2026-10-14T09:00:00"),
+    badge("old", 1, { bronze: "2026-10-01T10:00:00" }),
+    // two levels at once: only the higher is celebrated
+    badge("jump", 5, { bronze: last, silver: last }),
+    badge("seen", 1, { bronze: last }),
   ];
-  const keys = earnedLastGame(
-    badges,
-    "2026-10-14T09:00:00",
-    new Set(["shown"]),
-  ).map((b) => b.key);
-  expect(keys).toEqual(["new"]);
+  const ups = earnedLastGame(badges, last, new Set([levelId("seen", "bronze")]));
+  expect(ups.map((u) => `${u.badge.key}:${u.tier}`)).toEqual(["jump:silver"]);
   expect(earnedLastGame(badges, null, new Set())).toEqual([]);
 });
 
-it("points at the closest badge still to earn, the game's own first", () => {
+it("works towards the closest next level, the game's own first", () => {
   const badges = [
-    { ...badge("game.feat", "gold", 0, 1), gameType: "game" },
-    { ...badge("game.wins", "gold", 4, 10), gameType: "game" },
-    badge("boardly.veteran", "gold", 40, 50),
+    badge("boardly.a", 4, { bronze: "1" }),
+    badge("game.b", 1, {}, "game"),
+    badge("game.top", 20, { bronze: "1", silver: "2", gold: "3", diamond: "4" }, "game"),
   ];
-  expect(nextBadge(badges, "game")?.key).toBe("game.wins");
-  expect(nextBadge(badges, "other")?.key).toBe("boardly.veteran");
-  // on the player card: the closest of all
-  expect(nextBadge(badges)?.key).toBe("boardly.veteran");
-});
-
-it("finds the next level up in a badge's series", () => {
-  const played = (key: string, goal: number, progress: number) => ({
-    ...badge(key, "gold", progress, goal),
-    series: "played",
-  });
-  const badges = [
-    played("first", 1, 1),
-    played("regular", 10, 10),
-    played("veteran", 50, 31),
-    played("legend", 100, 31),
-    badge("feat", "gold", 0, 1),
-  ];
-  expect(nextLevel(badges, badges[1])?.key).toBe("veteran");
-  expect(nextLevel(badges, badges[3])).toBeNull();
-  expect(nextLevel(badges, badges[4])).toBeNull();
+  expect(nextBadge(badges, "game")?.key).toBe("game.b");
+  expect(nextBadge(badges, "other")?.key).toBe("boardly.a");
+  expect(nextBadge(badges)?.key).toBe("game.b");
 });

@@ -82,7 +82,7 @@ Moves:
 
 import random
 
-from app.games.base import BaseGame, GameError, Badge, won_as
+from app.games.base import BaseGame, GameError, Badge, FEAT, RARE, WINS, won_as
 from app.games.nightwatch.bot import nightwatch as bot_policy
 
 ROOMS = [
@@ -214,13 +214,13 @@ class Nightwatch(BaseGame):
     has_bots = True
 
     badges = [
-        Badge("nightwatch.sealed", "bronze", 1, won_as("good")),
-        Badge("nightwatch.possessed", "silver", 1, won_as("evil")),
-        Badge("nightwatch.prophet", "silver", 1, lambda o: o.won and o.role == "prophet"),
-        Badge("nightwatch.sharpEye", "gold", 1,
+        Badge("nightwatch.sealed", FEAT, won_as("good")),
+        Badge("nightwatch.possessed", FEAT, won_as("evil")),
+        Badge("nightwatch.prophet", RARE, lambda o: o.won and o.role == "prophet"),
+        Badge("nightwatch.sharpEye", RARE,
               lambda o: o.won and (o.facts or {}).get("assassin")
               and (o.facts or {}).get("reason") == "assassination"),
-        Badge("nightwatch.ghostbreaker", "legendary", 25, series="wins"),
+        Badge("nightwatch.ghostbreaker", WINS),
     ]
 
     def __init__(self, rng: random.Random | None = None):

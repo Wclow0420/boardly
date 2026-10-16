@@ -1,7 +1,8 @@
-// The player card's badges: earned ones first, rarest first; then the
-// ones still to earn, closest first. A badge earned since this device
-// last looked stamps down onto the card — once. Tapping one shows it
-// large, with what it is for and when it was earned.
+// The player card's badges: earned ones first, highest level first; then
+// the ones still to earn, closest first. Each shows the level it has
+// reached in its frame (struck in iron before bronze) and how far it is
+// to the next. A level reached since this device last looked stamps
+// down onto the card, once. Tapping a badge shows its four levels.
 
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -18,15 +19,15 @@ import Animated, {
 } from "react-native-reanimated";
 
 import type { BadgeRecord } from "@/api/client";
-import { Badge, TIER_METAL } from "@/components/badges/Badge";
+import { Badge, TIER_GLOW } from "@/components/badges/Badge";
+import { TIERS } from "@/components/badges/types";
 import { AppText } from "@/components/ui";
 import { Popup } from "@/features/game/Popup";
 import { useGameName } from "@/games/names";
 import { TABLE, fontFamily } from "@/theme";
 import { heavyHaptic, tapHaptic } from "@/utils/haptics";
 import { badgeArt } from "./art";
-import { NextBadge } from "./NextBadge";
-import { nextLevel, sortBadges } from "./order";
+import { goalOf, levelId, nextTier, sortBadges, toNext } from "./order";
 import { badgeText } from "./strings";
 
 const COLUMNS = 4;
@@ -42,9 +43,9 @@ export function BadgeGrid({
   clock: SharedValue<number>;
   /** A clock that never moves, for badges that don't need one. */
   still: SharedValue<number>;
-  /** Earned badges this device hasn't shown yet. */
+  /** Levels reached that this device hasn't shown yet (levelId). */
   fresh: Set<string>;
-  onStamped: (keys: string[]) => void;
+  onStamped: (ids: string[]) => void;
 }) {
   const [open, setOpen] = useState<BadgeRecord | null>(null);
   const sorted = useMemo(() => sortBadges(badges), [badges]);
@@ -52,9 +53,12 @@ export function BadgeGrid({
   const [gridWidth, setGridWidth] = useState(0);
   const cell = Math.floor(gridWidth / COLUMNS);
 
-  // the new ones stamp down one after another, then count as seen
+  // the new levels stamp down one after another, then count as seen
   const stamping = useMemo(
-    () => sorted.filter((b) => fresh.has(b.key)).map((b) => b.key),
+    () =>
+      sorted
+        .filter((b) => b.tier && fresh.has(levelId(b.key, b.tier)))
+        .map((b) => levelId(b.key, b.tier!)),
     [sorted, fresh],
   );
   useEffect(() => {
@@ -67,57 +71,46 @@ export function BadgeGrid({
   }, [stamping, onStamped]);
 
   return (
-    <View
-      style={styles.grid}
-      onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}
-    >
+    <View style={styles.grid} onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}>
       {cell > 0 &&
-        sorted.map((badge, index) => (
+        sorted.map((badge) => (
           <BadgeCell
             key={badge.key}
             badge={badge}
             size={cell}
-            clock={badge.unlockedAt ? clock : still}
-            phase={index * 0.83}
-            stampOrder={stamping.indexOf(badge.key)}
+            still={still}
+            stampOrder={badge.tier ? stamping.indexOf(levelId(badge.key, badge.tier)) : -1}
             onPress={() => {
               tapHaptic();
               setOpen(badge);
             }}
           />
         ))}
-      <BadgeDetail
-        badge={open}
-        badges={badges}
-        clock={clock}
-        onClose={() => setOpen(null)}
-      />
+      <BadgeDetail badge={open} clock={clock} still={still} onClose={() => setOpen(null)} />
     </View>
   );
 }
 
-/** Between one new badge stamping down and the next. */
+/** Between one new level stamping down and the next. */
 const STAMP_GAP = 650;
 
 function BadgeCell({
   badge,
   size,
-  clock,
-  phase,
+  still,
   stampOrder,
   onPress,
 }: {
   badge: BadgeRecord;
   size: number;
-  clock: SharedValue<number>;
-  phase: number;
+  still: SharedValue<number>;
   /** Its turn to stamp down, or -1 when it isn't new. */
   stampOrder: number;
   onPress: () => void;
 }) {
   const { t } = useTranslation();
-  const { art, face } = badgeArt(badge.key, badge.gameType);
-  const locked = !badge.unlockedAt;
+  const { art, face, frames } = badgeArt(badge.key, badge.gameType);
+  const next = nextTier(badge);
   const fresh = stampOrder >= 0;
   const drop = useSharedValue(fresh ? 0 : 1);
   const flash = useSharedValue(0);
@@ -138,10 +131,7 @@ function BadgeCell({
     flash.set(
       withDelay(
         delay + 240,
-        withSequence(
-          withTiming(1, { duration: 1 }),
-          withTiming(0, { duration: 650 }),
-        ),
+        withSequence(withTiming(1, { duration: 1 }), withTiming(0, { duration: 650 })),
       ),
     );
     const thud = setTimeout(heavyHaptic, delay + 250);
@@ -165,28 +155,24 @@ function BadgeCell({
       accessibilityRole="button"
       accessibilityLabel={badgeText(t, badge.key).name}
       onPress={onPress}
-      style={({ pressed }) => [
-        { width: size },
-        styles.cell,
-        pressed && styles.pressed,
-      ]}
+      style={({ pressed }) => [{ width: size }, styles.cell, pressed && styles.pressed]}
     >
       <Animated.View style={stamp}>
         <Badge
           art={art}
           face={face}
-          tier={badge.tier}
+          frames={frames}
+          tier={badge.tier ?? "bronze"}
           size={size}
-          clock={clock}
-          phase={phase}
-          locked={locked}
-          progress={badge.progress / badge.goal}
+          clock={still}
+          locked={!badge.tier}
+          alive={false}
         />
         <Animated.View
           pointerEvents="none"
           style={[
             styles.ring,
-            { borderColor: TIER_METAL[badge.tier].glow, borderRadius: size },
+            { borderColor: TIER_GLOW[badge.tier ?? "bronze"], borderRadius: size },
             ring,
           ]}
         />
@@ -195,102 +181,111 @@ function BadgeCell({
         variant="tiny"
         align="center"
         numberOfLines={2}
-        style={[styles.name, locked && styles.dim]}
+        style={[styles.name, !badge.tier && styles.dim]}
       >
         {badgeText(t, badge.key).name}
       </AppText>
-      {locked && badge.goal > 1 ? (
+      {next ? (
         <AppText variant="tiny" align="center" style={styles.progress}>
-          {t("profile.card.progress", { n: badge.progress, goal: badge.goal })}
+          {t("profile.card.progress", { n: badge.progress ?? 0, goal: goalOf(badge, next) })}
         </AppText>
-      ) : null}
+      ) : (
+        <AppText variant="tiny" align="center" style={[styles.progress, { color: TIER_GLOW.diamond }]}>
+          {t("badges.tiers.diamond")}
+        </AppText>
+      )}
     </Pressable>
   );
 }
 
-function BadgeDetail({
+/** A badge large, its four levels, and how far it is to the next. */
+export function BadgeDetail({
   badge,
-  badges,
   clock,
+  still,
   onClose,
 }: {
   badge: BadgeRecord | null;
-  /** All of them, to find the next level up. */
-  badges: BadgeRecord[];
   clock: SharedValue<number>;
+  still: SharedValue<number>;
   onClose: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const gameName = useGameName();
   if (!badge) return null;
-  const { art, face } = badgeArt(badge.key, badge.gameType);
-  const text = badgeText(t, badge.key);
-  const metal = TIER_METAL[badge.tier];
-  const earned = badge.unlockedAt
-    ? new Date(badge.unlockedAt).toLocaleDateString(i18n.language, {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })
-    : null;
-  // the first level above this one still to earn (skipping any already won)
-  let up = earned ? nextLevel(badges, badge) : null;
-  while (up?.unlockedAt) up = nextLevel(badges, up);
-  const top = earned && badge.series !== null && up === null;
+  const { art, face, frames } = badgeArt(badge.key, badge.gameType);
+  const next = nextTier(badge);
+  const goal = goalOf(badge, next ?? "diamond");
+  const text = badgeText(t, badge.key, goal);
+  const progress = badge.progress;
+  const date = (iso: string) =>
+    new Date(iso).toLocaleDateString(i18n.language, { day: "numeric", month: "short" });
+  const glow = TIER_GLOW[badge.tier ?? "bronze"];
   return (
     <Popup visible title={text.name} onClose={onClose}>
       <View style={styles.detail}>
         <Badge
           art={art}
           face={face}
-          tier={badge.tier}
-          size={190}
+          frames={frames}
+          tier={badge.tier ?? "bronze"}
+          size={170}
           clock={clock}
-          locked={!earned}
-          progress={badge.progress / badge.goal}
+          locked={!badge.tier}
         />
-        <AppText style={[styles.tier, { color: metal.glow }]}>
-          {`${t(`badges.tiers.${badge.tier}`)}${badge.gameType ? `  ·  ${gameName(badge.gameType)}` : ""}`}
+        <AppText style={[styles.tier, { color: badge.tier ? glow : TABLE.creamMuted }]}>
+          {`${badge.tier ? t(`badges.tiers.${badge.tier}`) : t("profile.card.locked")}${badge.gameType ? `  ·  ${gameName(badge.gameType)}` : ""}`}
         </AppText>
         <AppText variant="body" align="center">
           {text.desc}
         </AppText>
-        {earned ? (
-          <>
-            <AppText variant="caption" color="textMuted" align="center">
-              {t("profile.card.earned", { date: earned })}
-            </AppText>
-            {up ? (
-              <View style={styles.up}>
-                <NextBadge
-                  badge={up}
-                  clock={clock}
-                  label={t("badges.celebrate.nextLevel")}
+
+        {/* the ladder: every level, its goal, and when it was reached */}
+        <View style={styles.ladder}>
+          {TIERS.map((tier) => {
+            const at = badge.unlocked[tier];
+            return (
+              <View key={tier} style={styles.rung}>
+                <Badge
+                  art={art}
+                  face={face}
+                  frames={frames}
+                  tier={tier}
+                  size={62}
+                  clock={still}
+                  locked={!at}
+                  alive={false}
                 />
+                <AppText style={[styles.rungGoal, { color: at ? TIER_GLOW[tier] : TABLE.creamMuted }]}>
+                  {goalOf(badge, tier).toLocaleString()}
+                </AppText>
+                <AppText variant="tiny" style={styles.rungWhen}>
+                  {at ? date(at) : t(`badges.tiers.${tier}`)}
+                </AppText>
               </View>
-            ) : top ? (
-              <AppText style={[styles.tier, { color: metal.glow }]}>
-                {`★  ${t("badges.celebrate.topLevel")}`}
-              </AppText>
-            ) : null}
-          </>
-        ) : (
+            );
+          })}
+        </View>
+
+        {progress === undefined ? null : next ? (
           <View style={styles.barWrap}>
             <View style={styles.bar}>
-              <View
-                style={[
-                  styles.fill,
-                  { width: `${(badge.progress / badge.goal) * 100}%` },
-                ]}
-              />
+              <View style={[styles.fill, { width: `${Math.max(3, toNext(badge) * 100)}%` }]} />
             </View>
             <AppText variant="caption" color="textMuted">
-              {`${t("profile.card.progress", { n: badge.progress, goal: badge.goal })}  ·  `}
+              {`${t("profile.card.progress", { n: progress, goal })}  ·  `}
               <AppText variant="caption" style={styles.toGo}>
-                {t("badges.celebrate.toGo", { n: badge.goal - badge.progress })}
+                {t("badges.celebrate.toLevel", {
+                  n: goal - progress,
+                  level: t(`badges.tiers.${next}`),
+                })}
               </AppText>
             </AppText>
           </View>
+        ) : (
+          <AppText style={[styles.tier, { color: TIER_GLOW.diamond }]}>
+            {`★  ${t("badges.celebrate.topLevel")}`}
+          </AppText>
         )}
       </View>
     </Popup>
@@ -298,39 +293,35 @@ function BadgeDetail({
 }
 
 const styles = StyleSheet.create({
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "flex-start",
-    rowGap: 6,
-  },
+  grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-start", rowGap: 6 },
   cell: { alignItems: "center", paddingBottom: 4 },
   pressed: { opacity: 0.8 },
-  name: {
-    color: TABLE.cream,
-    marginTop: -4,
-    paddingHorizontal: 2,
-    fontFamily: fontFamily.medium,
-  },
+  name: { color: TABLE.cream, marginTop: -2, paddingHorizontal: 2, fontFamily: fontFamily.medium },
   dim: { color: TABLE.creamMuted, opacity: 0.75 },
   progress: { color: "#F2B630" },
   ring: {
     position: "absolute",
-    left: "18%",
-    right: "18%",
-    top: "14%",
-    bottom: "24%",
+    left: "16%",
+    right: "16%",
+    top: "16%",
+    bottom: "16%",
     borderWidth: 3,
   },
   detail: { alignItems: "center", gap: 8, paddingBottom: 4 },
   tier: { fontFamily: fontFamily.semiBold, fontSize: 13, letterSpacing: 0.5 },
-  up: {
+  ladder: {
+    flexDirection: "row",
     alignSelf: "stretch",
-    marginTop: 8,
-    padding: 12,
+    justifyContent: "space-between",
+    marginTop: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
     borderRadius: 14,
     backgroundColor: "rgba(0,0,0,0.25)",
   },
+  rung: { alignItems: "center", flex: 1 },
+  rungGoal: { fontFamily: fontFamily.bold, fontSize: 14, marginTop: -2 },
+  rungWhen: { color: TABLE.creamMuted },
   toGo: { color: "#F2B630", fontFamily: fontFamily.semiBold },
   barWrap: { alignSelf: "stretch", alignItems: "center", gap: 6, marginTop: 4 },
   bar: {

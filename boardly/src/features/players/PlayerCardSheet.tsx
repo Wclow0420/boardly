@@ -10,7 +10,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { ApiError, api, type MascotLook } from "@/api/client";
-import { Badge, TIER_METAL } from "@/components/badges/Badge";
+import { Badge, TIER_GLOW } from "@/components/badges/Badge";
 import { useIsoClock } from "@/components/iso";
 import { Meeple } from "@/components/tabletop/Meeple";
 import {
@@ -186,7 +186,7 @@ function Body({
               style={[
                 styles.title,
                 {
-                  color: title ? TIER_METAL[title.tier].glow : TABLE.creamMuted,
+                  color: title ? TIER_GLOW[title.tier ?? "bronze"] : TABLE.creamMuted,
                 },
               ]}
             >
@@ -255,13 +255,14 @@ function Body({
               contentContainerStyle={styles.badgeRow}
             >
               {sortBadges(card.badges).map((badge, i) => {
-                const { art, face } = badgeArt(badge.key, badge.gameType);
+                const { art, face, frames } = badgeArt(badge.key, badge.gameType);
                 return (
                   <View key={badge.key} style={styles.badge}>
                     <Badge
                       art={art}
                       face={face}
-                      tier={badge.tier}
+                      frames={frames}
+                      tier={badge.tier ?? "bronze"}
                       size={70}
                       clock={clock}
                       phase={i * 0.9}

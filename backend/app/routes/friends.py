@@ -319,7 +319,11 @@ def player_card_of(user_id):
             "wins": card["wins"],
             "bestStreak": card["bestStreak"],
             "favourite": card["favourite"],
-            "badges": [b for b in card["badges"] if b["unlockedAt"]],
+            "badges": [
+                {k: v for k, v in b.items() if k != "progress"}
+                for b in card["badges"]
+                if b["tier"]
+            ],
             "together": _together(me.id, {user.id}).get(user.id),
             "presence": presence.presence_of([user.id])[user.id] if is_friend else None,
             "playing": presence.playing([user.id]).get(user.id) if is_friend else None,

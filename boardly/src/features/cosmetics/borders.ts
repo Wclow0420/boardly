@@ -60,8 +60,10 @@ export interface ArtBorder extends BorderBase {
   kind: "art";
   /** Its drawing in art/ (usually the same as its id). */
   art: string;
-  /** The badge that unlocks it, for borders that can't be bought. */
+  /** The badge that unlocks it, for borders that can't be bought... */
   earnedBy?: string;
+  /** ...once it reaches this level. */
+  earnedAt?: "bronze" | "silver" | "gold" | "diamond";
 }
 
 export type ProfileBorder =
@@ -486,6 +488,7 @@ export const BORDERS: ProfileBorder[] = [
     rarity: "legendary",
     price: 0,
     earnedBy: "nightwatch.ghostbreaker",
+    earnedAt: "gold",
   },
   {
     id: "winter-hearth",
@@ -495,6 +498,7 @@ export const BORDERS: ProfileBorder[] = [
     rarity: "legendary",
     price: 0,
     earnedBy: "shelter.lastWinter",
+    earnedAt: "gold",
   },
   {
     id: "spymaster",
@@ -504,6 +508,7 @@ export const BORDERS: ProfileBorder[] = [
     rarity: "legendary",
     price: 0,
     earnedBy: "avalon.spymaster",
+    earnedAt: "gold",
   },
   {
     id: "table-legend",
@@ -512,7 +517,8 @@ export const BORDERS: ProfileBorder[] = [
     art: "table-legend",
     rarity: "legendary",
     price: 0,
-    earnedBy: "boardly.legend",
+    earnedBy: "boardly.regular",
+    earnedAt: "diamond",
   },
 ];
 

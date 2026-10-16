@@ -24,7 +24,6 @@ export const coup: GameDefinition<CoupState> = {
   needsMe: (state, mySeat) =>
     state.phase !== "finished" && taskFor(state, mySeat) !== null,
   badges: {
-    "coup.firstWin": { glyph: G.cards, emoji: "💼", loop: "sway" },
     "coup.kingpin": { glyph: G.coins, emoji: "🪙", loop: "spin" },
   },
 };

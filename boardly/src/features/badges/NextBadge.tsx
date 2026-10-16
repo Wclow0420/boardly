@@ -1,6 +1,6 @@
-// The badge to work towards next, and how far there is to go: its coin,
-// its name and what it asks, and a bar. Shown when a game ends and on
-// the player card.
+// The badge to work towards next, and how far there is to go to its next
+// level: the badge in that level's frame, its name and what it asks, and
+// a bar. Shown when a game ends and on the player card.
 
 import { StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/badges/Badge";
 import { AppText } from "@/components/ui";
 import { fontFamily } from "@/theme";
 import { badgeArt } from "./art";
+import { goalOf, nextTier, toNext } from "./order";
 import { badgeText } from "./strings";
 
 export function NextBadge({
@@ -29,19 +30,23 @@ export function NextBadge({
   muted?: string;
 }) {
   const { t } = useTranslation();
-  const { art, face } = badgeArt(badge.key, badge.gameType);
-  const text = badgeText(t, badge.key);
-  const ratio = badge.progress / badge.goal;
+  const { art, face, frames } = badgeArt(badge.key, badge.gameType);
+  const next = nextTier(badge) ?? "diamond";
+  const goal = goalOf(badge, next);
+  const progress = badge.progress ?? 0;
+  const text = badgeText(t, badge.key, goal);
+  const ratio = toNext(badge);
   return (
     <View style={styles.row}>
       <Badge
         art={art}
         face={face}
-        tier={badge.tier}
+        frames={frames}
+        tier={next}
         size={58}
         clock={clock}
         locked
-        progress={ratio}
+        alive={false}
       />
       <View style={styles.body}>
         <AppText variant="tiny" style={{ color: muted }}>
@@ -52,7 +57,10 @@ export function NextBadge({
             {text.name}
           </AppText>
           <AppText style={styles.toGo}>
-            {t("badges.celebrate.toGo", { n: badge.goal - badge.progress })}
+            {t("badges.celebrate.toLevel", {
+              n: goal - progress,
+              level: t(`badges.tiers.${next}`),
+            })}
           </AppText>
         </View>
         <View style={styles.bar}>
@@ -61,7 +69,7 @@ export function NextBadge({
           />
         </View>
         <AppText variant="tiny" numberOfLines={1} style={{ color: muted }}>
-          {`${text.desc}  ${t("profile.card.progress", { n: badge.progress, goal: badge.goal })}`}
+          {`${text.desc}  ${t("profile.card.progress", { n: progress, goal })}`}
         </AppText>
       </View>
     </View>

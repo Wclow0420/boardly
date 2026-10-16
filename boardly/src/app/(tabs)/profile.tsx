@@ -18,7 +18,7 @@ import { useReducedMotion, useSharedValue } from "react-native-reanimated";
 
 import { Emblem } from "@/components/icons";
 import { api } from "@/api/client";
-import { TIER_METAL } from "@/components/badges/Badge";
+import { TIER_GLOW } from "@/components/badges/Badge";
 import { GearEmblem } from "@/components/engraved";
 import { useIsoClock } from "@/components/iso";
 import {
@@ -35,7 +35,7 @@ import {
 import { useSession } from "@/context/SessionContext";
 import { BadgeGrid } from "@/features/badges/BadgeGrid";
 import { NextBadge } from "@/features/badges/NextBadge";
-import { nextBadge, titleBadge } from "@/features/badges/order";
+import { levelId, nextBadge, titleBadge } from "@/features/badges/order";
 import { badgeText } from "@/features/badges/strings";
 import { useSeenBadges } from "@/features/badges/useSeenBadges";
 import { CoinPill } from "@/features/coins/CoinPill";
@@ -92,15 +92,15 @@ export default function ProfileScreen() {
     if (!card || !seen || !focused) return new Set<string>();
     return new Set(
       card.badges
-        .filter((b) => b.unlockedAt && !seen.has(b.key))
-        .map((b) => b.key),
+        .filter((b) => b.tier && !seen.has(levelId(b.key, b.tier)))
+        .map((b) => levelId(b.key, b.tier!)),
     );
   }, [card, seen, focused]);
   const onStamped = useCallback((keys: string[]) => markSeen(keys), [markSeen]);
 
   const title = card ? titleBadge(card.badges) : null;
   const next = card ? nextBadge(card.badges) : null;
-  const earned = card?.badges.filter((b) => b.unlockedAt).length ?? 0;
+  const earned = card?.badges.filter((b) => b.tier).length ?? 0;
   const tokens = [
     { label: t("profile.gamesPlayed"), value: card?.gamesPlayed },
     { label: t("profile.wins"), value: card?.wins },
@@ -182,7 +182,7 @@ export default function ProfileScreen() {
                     styles.title,
                     {
                       color: title
-                        ? TIER_METAL[title.tier].glow
+                        ? TIER_GLOW[title.tier ?? "bronze"]
                         : TABLE.creamMuted,
                     },
                   ]}

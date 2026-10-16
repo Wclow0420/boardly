@@ -1827,150 +1827,147 @@
       "bronze": "Bronze",
       "silver": "Silver",
       "gold": "Gold",
-      "legendary": "Legendary"
+      "diamond": "Diamond"
     },
     "boardly": {
-      "firstTable": {
-        "name": "First Seat",
-        "desc": "Sit down at your first table."
-      },
-      "firstWin": {
-        "name": "First Victory",
-        "desc": "Win a game."
-      },
       "regular": {
         "name": "Regular",
-        "desc": "Play 10 games."
+        "desc_one": "Play a game.",
+        "desc_other": "Play {{count}} games."
       },
       "streak": {
         "name": "On Fire",
-        "desc": "Win 3 games in a row."
+        "desc_one": "Win {{count}} games in a row.",
+        "desc_other": "Win {{count}} games in a row."
       },
       "company": {
         "name": "Good Company",
-        "desc": "Play with 5 different people."
-      },
-      "veteran": {
-        "name": "Veteran",
-        "desc": "Play 50 games."
+        "desc_one": "Play with {{count}} different people.",
+        "desc_other": "Play with {{count}} different people."
       },
       "champion": {
         "name": "Champion",
-        "desc": "Win 25 games."
-      },
-      "legend": {
-        "name": "Legend of the Table",
-        "desc": "Play 100 games."
+        "desc_one": "Win a game.",
+        "desc_other": "Win {{count}} games."
       }
     },
     "nightwatch": {
       "sealed": {
         "name": "Seal Keeper",
-        "desc": "Seal the manor as a watcher."
+        "desc_one": "Seal the manor as a watcher.",
+        "desc_other": "Seal the manor as a watcher {{count}} times."
       },
       "possessed": {
         "name": "Possessed",
-        "desc": "Win on the ghosts' side."
+        "desc_one": "Win on the ghosts' side.",
+        "desc_other": "Win on the ghosts' side {{count}} times."
       },
       "prophet": {
         "name": "Hidden Prophet",
-        "desc": "Win as the Prophet."
+        "desc_one": "Win as the Prophet.",
+        "desc_other": "Win as the Prophet {{count}} times."
       },
       "sharpEye": {
         "name": "Sharp Eye",
-        "desc": "As the assassin, find the Prophet."
+        "desc_one": "As the assassin, find the Prophet.",
+        "desc_other": "As the assassin, find the Prophet {{count}} times."
       },
       "ghostbreaker": {
         "name": "Ghostbreaker",
-        "desc": "Win 25 games of Seal the Manor."
+        "desc_one": "Win a game of Seal the Manor.",
+        "desc_other": "Win {{count}} games of Seal the Manor."
       }
     },
     "shelter": {
       "rescued": {
         "name": "Rescued",
-        "desc": "Last until the convoy comes."
+        "desc_one": "Last until the convoy comes.",
+        "desc_other": "Last until the convoy comes {{count}} times."
       },
       "patientZero": {
         "name": "Patient Zero",
-        "desc": "Win as the Infected."
+        "desc_one": "Win as the Infected.",
+        "desc_other": "Win as the Infected {{count}} times."
       },
       "caught": {
         "name": "Caught It",
-        "desc": "Send the Infected out and win."
+        "desc_one": "Send the Infected out and win.",
+        "desc_other": "Send the Infected out and win {{count}} times."
       },
       "fullLarder": {
         "name": "Full Larder",
-        "desc": "Be rescued with 10 or more food in store."
+        "desc_one": "Be rescued with 10 or more food in store.",
+        "desc_other": "Be rescued with 10 or more food in store {{count}} times."
       },
       "lastWinter": {
         "name": "The Last Winter",
-        "desc": "Win 25 games of Shelter."
+        "desc_one": "Win a game of Shelter.",
+        "desc_other": "Win {{count}} games of Shelter."
       }
     },
     "avalon": {
       "firstOp": {
         "name": "Mission Complete",
-        "desc": "Win as an agent."
+        "desc_one": "Win as an agent.",
+        "desc_other": "Win as an agent {{count}} times."
       },
       "mole": {
         "name": "The Mole",
-        "desc": "Win as a mole."
+        "desc_one": "Win as a mole.",
+        "desc_other": "Win as a mole {{count}} times."
       },
       "hitman": {
         "name": "Hitman",
-        "desc": "As the assassin, take out the right target."
+        "desc_one": "As the assassin, take out the right target.",
+        "desc_other": "As the assassin, take out the right target {{count}} times."
       },
       "spymaster": {
         "name": "Spymaster",
-        "desc": "Win 25 games of Double Agent."
+        "desc_one": "Win a game of Double Agent.",
+        "desc_other": "Win {{count}} games of Double Agent."
       }
     },
     "manor": {
       "dawn": {
         "name": "Until Dawn",
-        "desc": "Keep the old man alive until 6 AM."
+        "desc_one": "Keep the old man alive until 6 AM.",
+        "desc_other": "Keep the old man alive until 6 AM {{count}} times."
       },
       "intruder": {
         "name": "Intruder",
-        "desc": "Win as an intruder."
+        "desc_one": "Win as an intruder.",
+        "desc_other": "Win as an intruder {{count}} times."
       },
       "caught": {
         "name": "Caught Red-Handed",
-        "desc": "Catch the intruders and win."
+        "desc_one": "Catch the intruders and win.",
+        "desc_other": "Catch the intruders and win {{count}} times."
       },
       "lord": {
         "name": "Lord of the Manor",
-        "desc": "Win 25 games of Midnight Manor."
+        "desc_one": "Win a game of Midnight Manor.",
+        "desc_other": "Win {{count}} games of Midnight Manor."
       }
     },
     "coup": {
-      "firstWin": {
-        "name": "Open for Business",
-        "desc": "Win a game of Hustle."
-      },
       "kingpin": {
         "name": "Kingpin",
-        "desc": "Win 10 games of Hustle."
+        "desc_one": "Win a game of Hustle.",
+        "desc_other": "Win {{count}} games of Hustle."
       }
     },
     "liarsdice": {
-      "firstWin": {
-        "name": "Straight Face",
-        "desc": "Win a game of Liar's Dice."
-      },
       "bluffer": {
         "name": "Master Bluffer",
-        "desc": "Win 10 games of Liar's Dice."
+        "desc_one": "Win a game of Liar's Dice.",
+        "desc_other": "Win {{count}} games of Liar's Dice."
       }
     },
     "tictactoe": {
-      "firstWin": {
-        "name": "Three in a Row",
-        "desc": "Win a game of Tic-Tac-Toe."
-      },
       "master": {
         "name": "Grid Master",
-        "desc": "Win 10 games of Tic-Tac-Toe."
+        "desc_one": "Win a game of Tic-Tac-Toe.",
+        "desc_other": "Win {{count}} games of Tic-Tac-Toe."
       }
     },
     "celebrate": {
@@ -1981,7 +1978,8 @@
       "nice": "Nice!",
       "tapNext": "Tap for the next one",
       "nextLevel": "Next level",
-      "topLevel": "Top level reached"
+      "topLevel": "Top level reached",
+      "toLevel": "{{n}} to {{level}}"
     }
   },
   "mascot": {

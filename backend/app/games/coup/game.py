@@ -40,7 +40,7 @@ Moves:
 import copy
 import random
 
-from app.games.base import BaseGame, GameError, Badge
+from app.games.base import BaseGame, GameError, Badge, QUICK_WINS
 
 ROLES = ["duke", "assassin", "captain", "ambassador", "contessa"]
 COPIES_PER_ROLE = 3
@@ -109,8 +109,7 @@ class Coup(BaseGame):
     tag = "card"
 
     badges = [
-        Badge("coup.firstWin", "bronze", 1, series="wins"),
-        Badge("coup.kingpin", "gold", 10, series="wins"),
+        Badge("coup.kingpin", QUICK_WINS),
     ]
 
     def initial_state(self, num_players: int, rng: random.Random | None = None) -> dict:

@@ -1,5 +1,5 @@
 import type { MascotLook } from "@/api/client";
-import type { BadgeArt } from "@/components/badges/types";
+import type { BadgeArt, BadgeStyle } from "@/components/badges/types";
 import type { ComponentType } from "react";
 import type { ImageSourcePropType } from "react-native";
 
@@ -89,6 +89,9 @@ export interface GameDefinition<TState = Record<string, unknown>> {
    *  badges ("<game key>.<name>"): an emblem from the game's own icons
    *  and the way it moves. Names live under badges.<key> in the locales. */
   badges?: Record<string, BadgeArt>;
+  /** The frames its badges wear at each level (bronze to diamond), in
+   *  the game's own style; without them, Boardly's. */
+  badgeFrames?: BadgeStyle;
   /** Whether the game is waiting on this player — drives the
    *  "Your move" badge in the header of skinned games. */
   needsMe?: (state: TState, mySeat: number) => boolean;

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui";
 import { api } from "@/api/client";
 import { useSession } from "@/context/SessionContext";
+import { TIERS, type BadgeTier } from "@/components/badges/types";
 import { badgeText } from "@/features/badges/strings";
 import { CoinIcon } from "@/features/coins/CoinIcon";
 import { CoinPill } from "@/features/coins/CoinPill";
@@ -88,12 +89,11 @@ export default function BordersScreen() {
     queryFn: async () => (await api.auth.stats()).stats,
     enabled: user !== null,
   });
-  const earned = new Set(
-    stats.data?.badges.filter((b) => b.unlockedAt).map((b) => b.key) ?? [],
-  );
+  const reached = (key: string, tier: BadgeTier) =>
+    stats.data?.badges.some((b) => b.key === key && b.unlocked[tier]) ?? false;
   const owns = (border: ProfileBorder) =>
     border.kind === "art" && border.earnedBy
-      ? earned.has(border.earnedBy)
+      ? reached(border.earnedBy, border.earnedAt ?? "bronze")
       : border.price === 0 || (user?.ownedBorders ?? []).includes(border.id);
 
   /** Wear a border; a locked one is bought first, then worn. */
@@ -118,6 +118,14 @@ export default function BordersScreen() {
   const shortBy = Math.max(0, selected.price - coins);
   // the badge an earned border comes with
   const earnedBy = selected.kind === "art" ? selected.earnedBy : undefined;
+  const earnedAt = (selected.kind === "art" && selected.earnedAt) || "bronze";
+  // what that level asks for ("Win 25 games of Shelter")
+  const earnedGoal =
+    stats.data?.badges.find((b) => b.key === earnedBy)?.goals[TIERS.indexOf(earnedAt)] ?? 1;
+  // "Gold · Spymaster": the badge and the level of it that brings this border
+  const earnedName = earnedBy
+    ? `${t(`badges.tiers.${earnedAt}`)} · ${badgeText(t, earnedBy).name}`
+    : "";
 
   return (
     <Screen
@@ -162,7 +170,7 @@ export default function BordersScreen() {
             {selected.price > 0 ? <CoinIcon size={16} /> : null}
             <AppText variant="label" style={{ color: TABLE.yellow.fill[0] }}>
               {earnedBy
-                ? `🏅 ${badgeText(t, earnedBy).name}`
+                ? `🏅 ${earnedName}`
                 : selected.price > 0
                   ? selected.price.toLocaleString()
                   : t("borders.free")}
@@ -175,7 +183,7 @@ export default function BordersScreen() {
             selected.id === equippedId
               ? t("borders.equipped")
               : !selectedOwned && earnedBy
-                ? t("borders.earnWith", { badge: badgeText(t, earnedBy).name })
+                ? t("borders.earnWith", { badge: earnedName })
                 : !selectedOwned
                   ? t("borders.unlock", { price: selected.price.toLocaleString() })
                   : t("borders.equip")
@@ -195,7 +203,7 @@ export default function BordersScreen() {
         />
         {!selectedOwned && earnedBy ? (
           <AppText variant="caption" color="textMuted" align="center">
-            {badgeText(t, earnedBy).desc}
+            {badgeText(t, earnedBy, earnedGoal).desc}
           </AppText>
         ) : !selectedOwned && shortBy > 0 ? (
           <AppText variant="caption" color="textMuted" align="center">
