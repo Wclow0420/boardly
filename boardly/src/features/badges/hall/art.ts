@@ -71,7 +71,7 @@ function cornerParts(): EmblemData {
 
 /** Corner pieces in all four corners of a w × h box, `inset` in,
  *  drawn at `scale`. */
-function corners(w: number, h: number, inset: number, scale: number, id: string) {
+export function corners(w: number, h: number, inset: number, scale: number, id: string) {
   const body = toSvgBody(cornerParts(), undefined, id);
   const at = (x: number, y: number, sx: number, sy: number) =>
     `<g transform="translate(${f(x)} ${f(y)}) scale(${f(sx * scale)} ${f(sy * scale)})">${body}</g>`;
@@ -315,5 +315,43 @@ ${bracket}
 <g transform="translate(${w} 0) scale(-1 1)">${bracket}</g>
 <g transform="translate(0 ${h}) scale(1 -1)">${bracket}</g>
 <g transform="translate(${w} ${h}) scale(-1 -1)">${bracket}</g>
+</svg>`;
+}
+
+/** The badge popup's card, w × h: dark planks in a gilded moulding with a
+ *  corner piece at each corner. */
+export function popupArt(w: number, h: number) {
+  const t = 6;
+  const r = 18;
+  const inner = rrect(t, t, w - 2 * t, h - 2 * t, r - t);
+  const planks = Array.from({ length: Math.ceil(w / 40) }, (_, i) =>
+    `<rect x="${i * 40}" y="0" width="40" height="${h}" fill="${i % 2 ? "#3E2716" : "#47301B"}"/><rect x="${i * 40 + 38.5}" y="0" width="1.5" height="${h}" fill="#1E1208"/>`,
+  ).join("");
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+<defs>
+${radial("pl", ["#FFD58A", "#FFD58A"], [0.14, 0], 0.5, 0.25, 0.7)}
+${radial("pv", ["#000000", "#000000"], [0, 0.55], 0.5, 0.45, 0.8)}
+<clipPath id="pc"><path d="${inner}"/></clipPath>
+</defs>
+<g clip-path="url(#pc)">${planks}<rect width="${w}" height="${h}" fill="url(#pl)"/><rect width="${w}" height="${h}" fill="url(#pv)"/></g>
+${moulding(0, 0, w, h, r, t, "pm")}
+${corners(w, h, -2, 0.55, "pk")}
+</svg>`;
+}
+
+/** Rays of light fanning round a point, for behind a badge (size square,
+ *  centred). */
+export function raysArt(size: number, color: string) {
+  const c = size / 2;
+  const rays = Array.from({ length: 16 }, (_, i) => {
+    const a = (i / 16) * Math.PI * 2;
+    const da = 0.09;
+    const p = (ang: number) => `${f(c + Math.cos(ang) * c)} ${f(c + Math.sin(ang) * c)}`;
+    return `M${c} ${c}L${p(a - da)}L${p(a + da)}Z`;
+  }).join("");
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+<defs>${radial("rg", [color, color], [0.55, 0], 0.5, 0.5, 0.5)}</defs>
+<path d="${rays}" fill="url(#rg)"/>
+<circle cx="${c}" cy="${c}" r="${f(c * 0.42)}" fill="url(#rg)" fill-opacity="0.5"/>
 </svg>`;
 }

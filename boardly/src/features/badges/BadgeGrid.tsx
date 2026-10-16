@@ -23,7 +23,7 @@ import { Badge, TIER_GLOW } from "@/components/badges/Badge";
 import { TIERS } from "@/components/badges/types";
 import { AppText, BezelOverlay } from "@/components/ui";
 import { LinearGradient } from "expo-linear-gradient";
-import { Popup } from "@/features/game/Popup";
+import { BadgePopup, BadgeRays } from "./hall/BadgePopup";
 import { useGameName } from "@/games/names";
 import { TABLE, fontFamily } from "@/theme";
 import { heavyHaptic, tapHaptic } from "@/utils/haptics";
@@ -296,8 +296,10 @@ export function BadgeDetail({
     new Date(iso).toLocaleDateString(i18n.language, { day: "numeric", month: "short" });
   const glow = TIER_GLOW[badge.tier ?? "bronze"];
   return (
-    <Popup visible title={text.name} onClose={onClose}>
+    <BadgePopup visible title={text.name} onClose={onClose}>
       <View style={styles.detail}>
+        <View style={styles.hero}>
+          <BadgeRays size={230} color={badge.tier ? glow : "#8A8070"} />
         <Badge
           art={art}
           face={face}
@@ -307,6 +309,7 @@ export function BadgeDetail({
           clock={clock}
           locked={!badge.tier}
         />
+        </View>
         <AppText style={[styles.tier, { color: badge.tier ? glow : TABLE.creamMuted }]}>
           {`${badge.tier ? t(`badges.tiers.${badge.tier}`) : t("profile.card.locked")}${badge.gameType ? `  ·  ${gameName(badge.gameType)}` : ""}`}
         </AppText>
@@ -316,6 +319,8 @@ export function BadgeDetail({
 
         {/* the ladder: every level, its goal, and when it was reached */}
         <View style={styles.ladder}>
+          <LinearGradient colors={["#2E1C10", "#1E1208"]} style={StyleSheet.absoluteFill} />
+          <BezelOverlay r={14} t={3} />
           {TIERS.map((tier) => {
             const at = badge.unlocked[tier];
             return (
@@ -344,7 +349,13 @@ export function BadgeDetail({
         {progress === undefined ? null : next ? (
           <View style={styles.barWrap}>
             <View style={styles.bar}>
-              <View style={[styles.fill, { width: `${Math.max(3, toNext(badge) * 100)}%` }]} />
+              <LinearGradient
+                colors={[TIER_GLOW[next], "#F2B630"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.fill, { width: `${Math.max(3, toNext(badge) * 100)}%` }]}
+              />
+              <BezelOverlay r={7} t={2} />
             </View>
             <AppText variant="caption" color="textMuted">
               {`${t("profile.card.progress", { n: progress, goal })}  ·  `}
@@ -363,7 +374,7 @@ export function BadgeDetail({
         )}
         {action ? <View style={styles.action}>{action}</View> : null}
       </View>
-    </Popup>
+    </BadgePopup>
   );
 }
 
@@ -411,15 +422,16 @@ const styles = StyleSheet.create({
   },
   detail: { alignItems: "center", gap: 8, paddingBottom: 4 },
   tier: { fontFamily: fontFamily.semiBold, fontSize: 13, letterSpacing: 0.5 },
+  hero: { width: 230, height: 190, alignItems: "center", justifyContent: "center" },
   ladder: {
     flexDirection: "row",
     alignSelf: "stretch",
     justifyContent: "space-between",
     marginTop: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
     borderRadius: 14,
-    backgroundColor: "rgba(0,0,0,0.25)",
+    overflow: "hidden",
   },
   rung: { alignItems: "center", flex: 1 },
   rungGoal: { fontFamily: fontFamily.bold, fontSize: 14, marginTop: -2 },
@@ -429,10 +441,11 @@ const styles = StyleSheet.create({
   barWrap: { alignSelf: "stretch", alignItems: "center", gap: 6, marginTop: 4 },
   bar: {
     alignSelf: "stretch",
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "rgba(255,255,255,0.12)",
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#1A0E06",
     overflow: "hidden",
+    justifyContent: "center",
   },
-  fill: { height: 8, borderRadius: 4, backgroundColor: "#F2B630" },
+  fill: { position: "absolute", left: 2, top: 2, bottom: 2, borderRadius: 5 },
 });

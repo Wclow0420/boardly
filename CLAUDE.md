@@ -27,6 +27,32 @@ show quick sketches, and agree one with the owner before building.
 Then draw it with the same craft, and give it life the borders' way
 (Skia, still parts baked once, one picture per frame).
 
+## Pages: what the owner liked (the badge hall, `app/badges.tsx`)
+
+- Full screen, no frame round the screen. The art goes into the
+  header, drawn like a border: an idea (here a winged crest with a
+  palmette and a ruby over a crimson sign, under an iron canopy) and
+  alive the borders' way (sway, a beating jewel, flickering lamps, slow
+  rays, a sweep, glints), on Skia with the still parts baked once
+  (`hall/HallCrest.tsx`, `hall/crest.ts`). Measure it: 60 fps.
+- The background matches the app: warm wood (planks), not a new colour
+  scheme. Colours stay in the app's palette (`theme/table.ts`): table
+  wood, felt, cream, Quick Play yellow, orange buttons, gold trim.
+- The page scrolls under the header; nothing may draw over a frame
+  (clip, or draw the frame on top).
+- Titles must be readable: never `adjustsFontSizeToFit` on a title
+  (it shrank "BADGES" to nothing). Check every text on the simulator.
+- Items in a grid are all the same size: reserve the lines a name may
+  take (two), never size a card by its text.
+- The most important thing comes first (the showcase friends see);
+  a summary (the level tally, "12/25") sits beside what it sums up,
+  not in a bar of its own.
+- Boards like a game's collection screen: each group on its own board
+  (planks in a riveted iron frame, gold brackets, a name plate), cards
+  on clips that swing in once.
+- Popups opened from a page wear the page's style (see
+  `hall/BadgePopup.tsx`), not the plain shared card.
+
 ## The craft
 
 1. **Silhouette first.** Block in big, bold shapes that say what the
