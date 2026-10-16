@@ -12,7 +12,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BackIcon, Emblem } from "@/components/icons";
 import { AppText, BezelOverlay, Button, IconButton } from "@/components/ui";
-import { Glow, HangingSign, Plinth, ToolButton } from "@/features/game/stage/parts";
+import { NightArch } from "@/features/game/stage/NightArch";
+import { Glow, Plinth, ToolButton } from "@/features/game/stage/parts";
 import { RoomScene } from "@/games/nightwatch/RoomScene";
 import { GAMES } from "@/games/registry";
 import { ROOMS, ROOM_COLOR, type NightwatchState } from "@/games/nightwatch/logic";
@@ -69,7 +70,7 @@ export default function StagePreview() {
         <Glow size={520} color="#F28B4B" style={{ top: height * 0.24, left: width * 0.5 - 260 }} />
 
         {/* the scene, as large as the screen allows */}
-        <View style={[styles.scene, { top: insets.top + 156, bottom: plinthH + 4 }]}>
+        <View style={[styles.scene, { top: insets.top + 176, bottom: plinthH + 4 }]}>
           <RoomScene
             room={room}
             active={active}
@@ -93,7 +94,7 @@ export default function StagePreview() {
         </View>
 
         {/* the tools down the side: just the emblems and their names */}
-        <View style={[styles.tools, { top: insets.top + 196 }]}>
+        <View style={[styles.tools, { top: insets.top + 206 }]}>
           {TOOLS.map((tool) => (
             <ToolButton key={tool.label} emoji={tool.emoji} label={tool.label} badge={tool.badge} onPress={() => {}} />
           ))}
@@ -101,19 +102,13 @@ export default function StagePreview() {
 
         {/* the sign hanging over it all, and tonight's rooms */}
         <View style={styles.top} pointerEvents="box-none">
-          <HangingSign
-            drop={insets.top + 26}
-            width={Math.min(280, width - 120)}
+          <NightArch
+            width={width}
+            top={insets.top}
             title="Night 3 of 5"
             subtitle={`Patrol · you're in the ${roomTitle}`}
-            enamel={["#2C3A68", "#141C3A", "#0A0F24"]}
-            seals={[
-              { kind: "won" },
-              { kind: "lost" },
-              { kind: "now", label: "3" },
-              { kind: "ahead", label: "4" },
-              { kind: "ahead", label: "4" },
-            ]}
+            panes={["won", "lost", "now", "ahead", "ahead"]}
+            labels={["", "", "", "4", "4"]}
           />
           <View style={styles.tags}>
             <RoomTag kind="Mission" room={STATE.missionRoom} detail="· 3" />
@@ -166,7 +161,7 @@ const styles = StyleSheet.create({
   scene: { position: "absolute", left: 0, right: 52, justifyContent: "center" },
   tools: { position: "absolute", right: 4, gap: 14 },
   top: { position: "absolute", left: 0, right: 0, top: 0, alignItems: "center" },
-  tags: { flexDirection: "row", gap: 8, marginTop: 6 },
+  tags: { flexDirection: "row", gap: 8, marginTop: -6 },
   tag: {
     flexDirection: "row",
     alignItems: "center",
