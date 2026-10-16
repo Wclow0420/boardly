@@ -235,7 +235,8 @@ def test_assassination_succeeds():
     with pytest.raises(GameError, match="can't block"):
         do(state, 2, "block", role="contessa")  # only the target may block
     state = do(state, 1, "pass")
-    assert state["pending"] == {"seat": 1, "next": "end"}
+    assert state["pending"] == {"seat": 1, "next": "end", "why": "assassinate"}
+    assert game.view_for(state, 2)["losing"] == {"seat": 1, "why": "assassinate"}
     state = do(state, 1, "reveal", card=0)
     assert len(hand(state, 1)) == 1 and state["turn"] == 1
 
@@ -450,3 +451,35 @@ def test_api_serves_only_my_own_hand(client, make_user):
         assert all(c["role"] in ROLES for c in mine["cards"])
         assert all(c["role"] is None for c in theirs["cards"])
         assert "deck" not in state
+
+
+# ------------------------------------------------- why a card is lost
+
+
+def test_the_table_sees_why_a_card_is_turned_over():
+    # a caught bluff: the loser chooses, everyone sees it's a challenge
+    state = do(act(table(THREE), 0, "steal", 1), 1, "challenge")
+    assert state["log"][-1] == {
+        "t": "challenge", "challenger": 1, "claimant": 0, "role": "captain", "caught": False,
+    }
+    state = do(state, 1, "reveal", card=0)
+    assert state["log"][-1] == {"t": "lose", "seat": 1, "role": "assassin", "why": "challenge"}
+    assert game.view_for(state, 0)["losing"] is None
+
+
+def test_a_coup_on_a_last_card_is_logged_as_a_coup():
+    hands = ["duke,captain", "assassin,contessa", "ambassador,captain"]
+    state = table(hands, coins=[7, 2, 2])
+    state["players"][1]["cards"][0]["revealed"] = True
+    state = act(state, 0, "coup", 1)
+    assert {"t": "lose", "seat": 1, "role": "contessa", "why": "coup"} in state["log"]
+    assert state["log"][-1] == {"t": "out", "seat": 1}
+
+
+def test_a_coup_on_two_cards_shows_who_is_choosing():
+    state = act(table(THREE, coins=[7, 2, 2]), 0, "coup", 2)
+    view = game.view_for(state, 1)
+    assert view["phase"] == "loseInfluence"
+    assert view["losing"] == {"seat": 2, "why": "coup"}
+    state = do(state, 2, "reveal", card=1)
+    assert state["log"][-1] == {"t": "lose", "seat": 2, "role": "captain", "why": "coup"}

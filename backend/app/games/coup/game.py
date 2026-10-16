@@ -22,7 +22,9 @@ Full state (server only — clients get `view_for`):
                     "claim": "captain"},
   "block": null | {"seat": 2, "role": "ambassador"},
   "passed": [1, 3],                # who let the current claim through
-  "pending": null | {"seat": 1, "next": "end"},   # must lose a card
+  "pending": null | {"seat": 1, "next": "end", "why": "challenge"},
+                                   # must lose a card, and why:
+                                   # "challenge" | "coup" | "assassinate"
   "exchange": null | ["duke", "captain", "contessa", "duke"],
   "log": [ ...public events... ],
   "winner": null | seat
@@ -258,15 +260,15 @@ class Coup(BaseGame):
             s["deck"].append(proof["role"])
             _rng.shuffle(s["deck"])
             proof["role"] = s["deck"].pop()
-            self._lose(s, seat, "actionStands" if on_action else "blockStands")
+            self._lose(s, seat, "actionStands" if on_action else "blockStands", "challenge")
         elif on_action:
             # Bluff called: the action never happens, its cost is returned
             cost = ACTIONS[s["action"]["type"]].get("cost", 0)
             s["players"][claimant]["coins"] += cost
-            self._lose(s, claimant, "end")
+            self._lose(s, claimant, "end", "challenge")
         else:
             s["block"] = None
-            self._lose(s, claimant, "resolve")
+            self._lose(s, claimant, "resolve", "challenge")
 
     def _block(self, s, seat, move):
         if s["phase"] != "block":
@@ -291,8 +293,9 @@ class Coup(BaseGame):
         if type(card) is not int or card not in hand(s, seat):
             raise GameError("Pick one of your face-down cards")
         next_step = s["pending"]["next"]
+        why = s["pending"].get("why")
         s["pending"] = None
-        self._flip(s, seat, card)
+        self._flip(s, seat, card, why)
         self._continue(s, next_step)
 
     def _exchange(self, s, seat, move):
@@ -349,7 +352,7 @@ class Coup(BaseGame):
             player["coins"] += taken
         elif kind in ("coup", "assassinate"):
             # The target may already be out (lost a challenge on the way)
-            self._lose(s, target, "end")
+            self._lose(s, target, "end", kind)
             return
         elif kind == "exchange":
             drawn = [s["deck"].pop(), s["deck"].pop()]
@@ -360,24 +363,26 @@ class Coup(BaseGame):
             return
         self._end_turn(s)
 
-    def _lose(self, s, seat, next_step):
-        """`seat` must give up an influence, then play continues with
+    def _lose(self, s, seat, next_step, why):
+        """`seat` must give up an influence (`why`: lost a challenge, or
+        the target of a coup / assassination), then play continues with
         `next_step`. With one card left there is nothing to choose."""
         cards = hand(s, seat)
         if len(cards) > 1:
             s["phase"] = "loseInfluence"
-            s["pending"] = {"seat": seat, "next": next_step}
+            s["pending"] = {"seat": seat, "next": next_step, "why": why}
             return
         if cards:
-            self._flip(s, seat, cards[0])
+            self._flip(s, seat, cards[0], why)
         self._continue(s, next_step)
 
-    def _flip(self, s, seat, card):
+    def _flip(self, s, seat, card, why=None):
         player = s["players"][seat]
         player["cards"][card]["revealed"] = True
-        s["log"].append(
-            {"t": "lose", "seat": seat, "role": player["cards"][card]["role"]}
-        )
+        event = {"t": "lose", "seat": seat, "role": player["cards"][card]["role"]}
+        if why:
+            event["why"] = why
+        s["log"].append(event)
         if not alive(s, seat):
             player["coins"] = 0
             s["log"].append({"t": "out", "seat": seat})
@@ -472,6 +477,13 @@ class Coup(BaseGame):
             "waitingOn": waiting,
             "exchange": state["exchange"]
             if phase == "exchange" and state["action"]["actor"] == seat
+            else None,
+            # who is turning a card over and why, for the table to see
+            "losing": {
+                "seat": state["pending"]["seat"],
+                "why": state["pending"].get("why"),
+            }
+            if phase == "loseInfluence" and state.get("pending")
             else None,
             "log": state["log"],
             "winner": state["winner"],

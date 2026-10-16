@@ -13,7 +13,7 @@ export const coup: GameDefinition<CoupState> = {
   maxPlayers: 6,
   Board: CoupBoard,
   currentSeat,
-  layout: "custom",
+  layout: "stage",
   rulePages: COUP_RULES,
   skin: {
     colors: SKIN_COLORS,
