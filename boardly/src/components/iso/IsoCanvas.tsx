@@ -85,6 +85,43 @@ function gradientOf(shape: IsoShape) {
   );
 }
 
+/** Shapes recorded into one picture, in order, the first at the back
+ *  (engraved gradients and dashes included). */
+export function recordShapes(shapes: IsoShape[]) {
+  const recorder = Skia.PictureRecorder();
+  // far more than any picture needs; a recording is only as big as what is drawn
+  const canvas = recorder.beginRecording(Skia.XYWHRect(-4096, -4096, 8192, 8192));
+  for (const shape of shapes) {
+    const path = Skia.Path.MakeFromSVGString(shape.d);
+    if (!path) continue;
+    const alpha = shape.opacity ?? 1;
+    if (shape.fill) {
+      const paint = Skia.Paint();
+      paint.setAntiAlias(true);
+      paint.setColor(Skia.Color(shape.fill));
+      const shader = gradientOf(shape);
+      if (shader) paint.setShader(shader);
+      paint.setAlphaf(alpha);
+      canvas.drawPath(path, paint);
+    }
+    if (shape.stroke) {
+      const paint = Skia.Paint();
+      paint.setAntiAlias(true);
+      paint.setStyle(PaintStyle.Stroke);
+      paint.setStrokeWidth(shape.strokeWidth ?? 1);
+      paint.setStrokeJoin(StrokeJoin.Round);
+      paint.setStrokeCap(StrokeCap.Round);
+      paint.setColor(Skia.Color(shape.stroke));
+      paint.setAlphaf(alpha);
+      if (shape.dash) {
+        paint.setPathEffect(Skia.PathEffect.MakeDash(shape.dash.split(/[ ,]+/).map(Number), 0));
+      }
+      canvas.drawPath(path, paint);
+    }
+  }
+  return recorder.finishRecordingAsPicture();
+}
+
 /** Shapes drawn in order, the first at the back. They are recorded
  *  once into a single picture and, inside an IsoCanvas, painted once
  *  into an image at the screen's density: a layer of hundreds of
@@ -92,40 +129,7 @@ function gradientOf(shape: IsoShape) {
  *  around it. */
 export function IsoLayer({ shapes }: { shapes: IsoShape[] }) {
   const size = useContext(CanvasSize);
-  const picture = useMemo(() => {
-    const recorder = Skia.PictureRecorder();
-    // far more than any picture needs; a recording is only as big as what is drawn
-    const canvas = recorder.beginRecording(Skia.XYWHRect(-4096, -4096, 8192, 8192));
-    for (const shape of shapes) {
-      const path = Skia.Path.MakeFromSVGString(shape.d);
-      if (!path) continue;
-      const alpha = shape.opacity ?? 1;
-      if (shape.fill) {
-        const paint = Skia.Paint();
-        paint.setAntiAlias(true);
-        paint.setColor(Skia.Color(shape.fill));
-        const shader = gradientOf(shape);
-        if (shader) paint.setShader(shader);
-        paint.setAlphaf(alpha);
-        canvas.drawPath(path, paint);
-      }
-      if (shape.stroke) {
-        const paint = Skia.Paint();
-        paint.setAntiAlias(true);
-        paint.setStyle(PaintStyle.Stroke);
-        paint.setStrokeWidth(shape.strokeWidth ?? 1);
-        paint.setStrokeJoin(StrokeJoin.Round);
-        paint.setStrokeCap(StrokeCap.Round);
-        paint.setColor(Skia.Color(shape.stroke));
-        paint.setAlphaf(alpha);
-        if (shape.dash) {
-          paint.setPathEffect(Skia.PathEffect.MakeDash(shape.dash.split(/[ ,]+/).map(Number), 0));
-        }
-        canvas.drawPath(path, paint);
-      }
-    }
-    return recorder.finishRecordingAsPicture();
-  }, [shapes]);
+  const picture = useMemo(() => recordShapes(shapes), [shapes]);
 
   const image = useMemo(() => {
     if (!size || size.scale <= 0) return null;

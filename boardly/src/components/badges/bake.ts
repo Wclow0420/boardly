@@ -3,7 +3,7 @@
 // Opening a page again costs nothing to redraw, and a board of badges is
 // one canvas drawing a handful of images instead of dozens of views. 
 
-import { Skia, type SkImage, type SkPicture, type SkSVG } from "@shopify/react-native-skia";
+import { Skia, type SkCanvas, type SkImage, type SkPicture, type SkSVG } from "@shopify/react-native-skia";
 import { PixelRatio } from "react-native";
 
 import { toSvg, toSvgBody, type EmblemData } from "@/components/engraved/emblem";
@@ -19,6 +19,41 @@ const BUDGET = 96 * 1024 * 1024;
 
 /** `markup` (w × h) baked into an image, crisp at the screen's density;
  *  made once per `key` and size, and kept while there's room. */
+/** A drawing (made on a canvas in w × h points) baked into an image,
+ *  crisp at the screen's density; made once per `key` and size and kept
+ *  with the rest, within the same budget. */
+export function bakedDrawing(key: string, w: number, h: number, draw: (canvas: SkCanvas) => void): SkImage | null {
+  const k = `draw|${key}|${Math.round(w)}x${Math.round(h)}`;
+  const hit = images.get(k);
+  if (hit) {
+    images.delete(k);
+    images.set(k, hit);
+    return hit.image;
+  }
+  const scale = Math.max(2, PixelRatio.get());
+  const surface = Skia.Surface.Make(Math.ceil(w * scale), Math.ceil(h * scale));
+  let image: SkImage | null = null;
+  if (surface) {
+    const c = surface.getCanvas();
+    c.scale(scale, scale);
+    draw(c);
+    surface.flush();
+    image = surface.makeImageSnapshot();
+  }
+  keep(k, image, Math.ceil(w * scale) * Math.ceil(h * scale) * 4);
+  return image;
+}
+
+function keep(k: string, image: SkImage | null, bytes: number) {
+  images.set(k, { image, bytes });
+  held += bytes;
+  while (held > BUDGET && images.size > 1) {
+    const [oldest, entry] = images.entries().next().value!;
+    images.delete(oldest);
+    held -= entry.bytes;
+  }
+}
+
 export function bakedSvg(key: string, w: number, h: number, markup: () => string): SkImage | null {
   const k = `${key}|${Math.round(w)}x${Math.round(h)}`;
   const hit = images.get(k);
@@ -41,14 +76,7 @@ export function bakedSvg(key: string, w: number, h: number, markup: () => string
     surface.flush();
     image = surface.makeImageSnapshot();
   }
-  const bytes = Math.ceil(w * scale) * Math.ceil(h * scale) * 4;
-  images.set(k, { image, bytes });
-  held += bytes;
-  while (held > BUDGET && images.size > 1) {
-    const [oldest, entry] = images.entries().next().value!;
-    images.delete(oldest);
-    held -= entry.bytes;
-  }
+  keep(k, image, Math.ceil(w * scale) * Math.ceil(h * scale) * 4);
   return image;
 }
 
@@ -108,6 +136,16 @@ const pictures = new Map<string, SkPicture>();
 
 /** A still badge (in the 120 box), recorded once: its frame, emblem and
  *  front, struck in iron when `locked`. */
+/** A still badge baked into an image `size` points square: what a grid
+ *  or a card of badges draws (one image each, kept). */
+export function badgeImage(look: BadgeLook, locked: boolean, size: number): SkImage | null {
+  const key = `badge|${styleId(look.frames)}|${look.tier}|${look.tint}|${look.art.emoji}|${locked}`;
+  return bakedDrawing(key, size, size, (c) => {
+    c.scale(size / 120, size / 120);
+    c.drawPicture(badgePicture(look, locked));
+  });
+}
+
 export function badgePicture(look: BadgeLook, locked: boolean): SkPicture {
   const key = `${styleId(look.frames)}|${look.tier}|${look.tint}|${look.art.emoji}|${locked}`;
   const cached = pictures.get(key);

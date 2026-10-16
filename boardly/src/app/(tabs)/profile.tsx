@@ -15,7 +15,6 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { Emblem } from "@/components/icons";
-import { api } from "@/api/client";
 import { TIER_GLOW } from "@/components/badges/Badge";
 import { GearEmblem } from "@/components/engraved";
 import {
@@ -42,6 +41,7 @@ import { DeleteAccountSheet } from "@/features/profile/DeleteAccountSheet";
 import { GameRecords } from "@/features/profile/GameRecords";
 import { LanguageSheet } from "@/features/profile/LanguageSheet";
 import { PhotoSheet } from "@/features/profile/PhotoSheet";
+import { statsQuery as playerCardQuery } from "@/features/profile/warm";
 import {
   SettingsSheet,
   type SettingKey,
@@ -62,11 +62,8 @@ export default function ProfileScreen() {
   const deleteSheetRef = useRef<GorhomBottomSheetModal>(null);
   const photoSheetRef = useRef<GorhomBottomSheetModal>(null);
 
-  const statsQuery = useQuery({
-    queryKey: ["stats", user?.id],
-    queryFn: async () => (await api.auth.stats()).stats,
-    enabled: user !== null,
-  });
+  // usually already fetched by the time the profile opens (useWarmProfile)
+  const statsQuery = useQuery(playerCardQuery(user?.id));
   const card = statsQuery.data;
   // into the badge hall through the meeple, like the wardrobe
   const go = useMeepleTransition();

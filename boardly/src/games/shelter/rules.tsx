@@ -92,7 +92,7 @@ function PlacesPage() {
         return (
           <Panel key={place} color={PLACE_COLOR[place]}>
             <View style={styles.row}>
-              <IsoPicture shapes={placeScene(place)} width={PLACE_WIDTH} height={PLACE_HEIGHT} size={92} />
+              <IsoPicture shapes={() => placeScene(place)} width={PLACE_WIDTH} height={PLACE_HEIGHT} size={92} cacheKey={`shelter-place|${place}`} />
               <View style={[styles.grow, { gap: 4 }]}>
                 <AppText variant="title">{`${PLACE_EMOJI[place]}  ${t(`shelter.places.${place}`)}`}</AppText>
                 <AppText variant="tiny" style={{ fontFamily: fontFamily.semiBold, color: PLACE_COLOR[place] }}>

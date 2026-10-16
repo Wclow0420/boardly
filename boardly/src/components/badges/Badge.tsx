@@ -11,10 +11,10 @@ import {
   Canvas,
   FillType,
   Group,
+  Image as SkImage,
   ImageSVG,
   LinearGradient,
   Path,
-  Picture,
   Rect,
   Skia,
   vec,
@@ -22,7 +22,7 @@ import {
 import { useMemo } from "react";
 import { useDerivedValue, type SharedValue } from "react-native-reanimated";
 
-import { badgePicture, badgeSvgs } from "./bake";
+import { badgeImage, badgeSvgs } from "./bake";
 import type { BadgeArt, BadgeLoop, BadgeStyle, BadgeTier } from "./types";
 
 /** Each level's glow, for the light round a badge and its words. */
@@ -93,8 +93,8 @@ export function Badge({
   const moving = alive && !locked;
   // a still badge is one picture, recorded once for the whole app
   const still = useMemo(
-    () => (moving ? null : badgePicture({ art, tier, frames, tint }, locked)),
-    [moving, art, tier, frames, tint, locked],
+    () => (moving ? null : badgeImage({ art, tier, frames, tint }, locked, size)),
+    [moving, art, tier, frames, tint, locked, size],
   );
   const svgs = useMemo(() => badgeSvgs({ art, tier, frames, tint }), [art, tier, frames, tint]);
   const frame = svgs.frame;
@@ -127,9 +127,7 @@ export function Badge({
   if (still)
     return (
       <Canvas style={{ width: size, height: size }}>
-        <Group transform={[{ scale: size / 120 }]}>
-          <Picture picture={still} />
-        </Group>
+        <SkImage image={still} x={0} y={0} width={size} height={size} />
       </Canvas>
     );
 

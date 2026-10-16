@@ -403,7 +403,7 @@ function Task({
                 { borderColor: PLACE_COLOR[place], backgroundColor: pressed ? colors.well : colors.card },
               ]}
             >
-              <IsoPicture shapes={placeScene(place)} width={PLACE_WIDTH} height={PLACE_HEIGHT} size={92} />
+              <IsoPicture shapes={() => placeScene(place)} width={PLACE_WIDTH} height={PLACE_HEIGHT} size={92} cacheKey={`shelter-place|${place}`} />
               <AppText variant="label" align="center">
                 {`${PLACE_EMOJI[place]} ${t(`shelter.places.${place}`)}`}
               </AppText>

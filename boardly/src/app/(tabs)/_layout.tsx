@@ -1,8 +1,11 @@
 import { Tabs } from "expo-router/js-tabs";
 
 import { TabBar } from "@/components/navigation/TabBar";
+import { useWarmProfile } from "@/features/profile/warm";
 
 export default function TabsLayout() {
+  // the profile made ready in the background once the app has settled
+  useWarmProfile();
   return (
     <Tabs
       tabBar={(props) => <TabBar {...props} />}

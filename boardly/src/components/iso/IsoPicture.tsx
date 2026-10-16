@@ -1,71 +1,65 @@
-// A still drawing as plain SVG: for small pictures that never move
-// (thumbnails, rules pages, choice cards), where a Skia canvas would be
-// more than is needed. Engraved gradients are drawn too.
+// A still drawing of shapes, for pictures that never move (box lids,
+// thumbnails, rules pages, choice cards): recorded once and baked into an
+// image, kept with the app's other baked art, so a screen of them costs
+// one image each — not, as plain SVG did, hundreds of native views per
+// picture rebuilt every time a screen opens.
 
-import { useId } from "react";
-import Svg, { Defs, LinearGradient, Path, RadialGradient, Stop } from "react-native-svg";
+import { Canvas, Image } from "@shopify/react-native-skia";
+import { View } from "react-native";
 
+import { bakedDrawing } from "@/components/badges/bake";
+import { recordShapes } from "./IsoCanvas";
 import type { Shape } from "./kit";
 
-/** A shape's gradient as an SVG definition (in the drawing's units). */
-export function svgGradient(shape: Shape, id: string) {
-  const g = shape.grad;
-  if (!g) return null;
-  const stops = g.colors.map((c, i) => (
-    <Stop key={i} offset={i / Math.max(1, g.colors.length - 1)} stopColor={c} />
-  ));
-  if (g.radius !== undefined)
-    return (
-      <RadialGradient key={id} id={id} gradientUnits="userSpaceOnUse" cx={g.from[0]} cy={g.from[1]} r={g.radius}>
-        {stops}
-      </RadialGradient>
-    );
-  if (!g.to) return null;
-  return (
-    <LinearGradient
-      key={id}
-      id={id}
-      gradientUnits="userSpaceOnUse"
-      x1={g.from[0]}
-      y1={g.from[1]}
-      x2={g.to[0]}
-      y2={g.to[1]}
-    >
-      {stops}
-    </LinearGradient>
-  );
-}
+/** Ids for drawings without a key of their own: one per shapes array. */
+const ids = new WeakMap<Shape[], string>();
+const keyFor = (shapes: Shape[]) => {
+  let key = ids.get(shapes);
+  if (!key) {
+    key = `iso${next++}`;
+    ids.set(shapes, key);
+  }
+  return key;
+};
+let next = 0;
+
+/** The width a picture shown `size` wide is baked at. */
+export const bakeWidth = (size: number) => [128, 256, 384].find((w) => w >= size) ?? Math.ceil(size);
 
 export function IsoPicture({
   shapes,
   width,
   height,
   size,
+  cacheKey,
 }: {
-  shapes: Shape[];
+  /** The shapes, or how to make them: then they are only made when the
+   *  picture isn't already baked (give it a `cacheKey`). */
+  shapes: Shape[] | (() => Shape[]);
   /** The drawing's own size. */
   width: number;
   height: number;
   /** Width on the page; the height follows. */
   size: number;
+  /** What the drawing is ("room|chapel"): the same key is baked once for
+   *  every screen showing it. Without one, it's baked once per array. */
+  cacheKey?: string;
 }) {
-  const base = `p${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
+  const h = (size * height) / width;
+  const key = cacheKey ?? (typeof shapes === "function" ? "unkeyed" : keyFor(shapes));
+  // baked at the next of a few set widths and drawn scaled down, so a box
+  // on the shelf and the same box on the profile share one image
+  const bw = bakeWidth(size);
+  const bh = (bw * height) / width;
+  const image = bakedDrawing(`isopic|${key}`, bw, bh, (canvas) => {
+    canvas.scale(bw / width, bw / width);
+    canvas.drawPicture(recordShapes(typeof shapes === "function" ? shapes() : shapes));
+  });
   return (
-    <Svg viewBox={`0 0 ${width} ${height}`} style={{ width: size, height: (size * height) / width }}>
-      <Defs>{shapes.map((shape, index) => svgGradient(shape, `${base}${index}`))}</Defs>
-      {shapes.map((shape, index) => (
-        <Path
-          key={index}
-          d={shape.d}
-          fill={shape.grad && shape.fill ? `url(#${base}${index})` : (shape.fill ?? "none")}
-          stroke={shape.stroke}
-          strokeWidth={shape.strokeWidth}
-          strokeDasharray={shape.dash}
-          strokeLinejoin="round"
-          strokeLinecap="round"
-          opacity={shape.opacity}
-        />
-      ))}
-    </Svg>
+    <View style={{ width: size, height: h }} pointerEvents="none">
+      <Canvas style={{ width: size, height: h }}>
+        {image ? <Image image={image} x={0} y={0} width={size} height={h} /> : null}
+      </Canvas>
+    </View>
   );
 }
