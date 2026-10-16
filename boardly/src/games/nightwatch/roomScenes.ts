@@ -12,91 +12,67 @@
 // The front of the floor (x + y > 1.3) is kept clear in every room:
 // that is where the watchers stand.
 
-import { ROOMS, type RoomId } from "./logic";
 import {
-  BOOKS,
-  CARPET,
-  DOOR,
-  GOLD,
-  INK,
-  LEAF,
-  LOCK,
-  STONE,
-  WOOD,
+  ROOMS,
+  type RoomId,
+} from "./logic";
+import {
   P,
-  arch,
-  ball,
-  box,
-  candle,
-  cylinder,
-  firefly,
-  flame,
-  flat,
-  hoop,
-  k,
-  lightPool,
-  line,
   live,
-  moon,
-  moonShaft,
   n,
-  onX,
-  onY,
-  paint,
-  path,
-  steam,
   unit,
   type Door,
   type Effect,
   type Pt,
   type Shape,
-  type Tones,
   type V3,
 } from "@/components/iso/kit";
 import {
   BASE,
-  CLOTH,
-  EARTH,
-  IRON,
-  THICK,
-  WAX,
   barriers,
-  chair,
-  courses,
-  disc,
-  drum,
-  exitOf,
-  flags,
   pawn,
   pawnTop as roomPawnTop,
-  picture,
-  planks,
-  plinth,
   SPOTS as ROOM_SPOTS,
-  prop,
   roomOutline,
-  sconce,
   setExits,
-  shell,
-  solid,
-  stars,
-  table,
-  tint,
-  windowOn,
   type Side,
 } from "@/components/iso/room";
-import type { BurstSpec } from "@/components/iso/bursts";
 import {
-  BRASS,
-  IRONWORK,
-  cabinet,
-  hangingPan,
-  jar,
-  panel,
-  range,
-  shelfY,
-} from "@/components/iso/furniture";
-import { doorBetween, inScene, paintAs } from "./manorShapes";
+  belltower,
+} from "./rooms/belltower";
+import {
+  study,
+} from "./rooms/study";
+import {
+  chapel,
+} from "./rooms/chapel";
+import {
+  gallery,
+} from "./rooms/gallery";
+import {
+  hall,
+} from "./rooms/hall";
+import {
+  dining,
+} from "./rooms/dining";
+import {
+  cellar,
+} from "./rooms/cellar";
+import {
+  kitchen,
+} from "./rooms/kitchen";
+import {
+  garden,
+} from "./rooms/garden";
+import type {
+  BurstSpec,
+} from "@/components/iso/bursts";
+
+import {
+  doorBetween,
+  inScene,
+  paintAs,
+} from "./manorShapes";
 
 export type { Side } from "@/components/iso/room";
 
@@ -138,564 +114,6 @@ export interface SceneOptions {
   /** Build for an animated canvas: flames, steam and fireflies come
    *  back as effects instead of drawn shapes. */
   live?: boolean;
-}
-
-function belltower(accent: string): Shape[] {
-  const [bx, by] = P(0.5, 0.34, 0.36);
-  const s = 7 * k();
-  const opening = (wall: "x" | "y") => [
-    arch(wall, 0.27, 0.73, 0.15, 0.44, STONE[1]),
-    arch(wall, 0.3, 0.7, 0.18, 0.44, INK.night),
-    (wall === "x" ? onX : onY)(0, 0.26, 0.74, 0.13, 0.16, STONE[0]),
-  ];
-  return [
-    ...shell(),
-    ...planks(),
-    ...courses(),
-    // the belfry's two openings on the night
-    ...opening("x"),
-    ...opening("y"),
-    moon(P(0.5, 0, 0.5)[0] + 1, P(0.5, 0, 0.5)[1], 2.6),
-    ...stars([[0.38, 0, 0.36], [0.62, 0, 0.3], [0, 0.42, 0.5], [0, 0.6, 0.34], [0, 0.5, 0.26]]),
-    tint([[0.3, 0.06, 0], [0.7, 0.06, 0], [0.86, 0.5, 0], [0.46, 0.5, 0]], INK.glass, 0.07),
-    ...moonShaft([[0.3, 0, 0.64], [0.7, 0, 0.64]], [[0.86, 0.5, 0], [0.46, 0.5, 0]], INK.glass),
-    ...moonShaft([[0, 0.3, 0.64], [0, 0.7, 0.64]], [[0.5, 0.86, 0], [0.5, 0.46, 0]], INK.glass),
-    // a crate of candles with a lantern on it
-    ...solid(0.74, 0.06, 0.18, 0.16, 0.13, WOOD),
-    line([[0.74, 0.22, 0.09], [0.92, 0.22, 0.09]], WOOD[2]),
-    ...box(0.8, 0.11, 0.13, 0.05, 0.05, 0.012, IRON),
-    ...box(0.81, 0.12, 0.142, 0.03, 0.03, 0.05, GOLD),
-    ...flame([0.825, 0.135, 0.192], 2, accent),
-    // headstock frame: back post, bell, beam, front post
-    ...solid(0.16, 0.3, 0.06, 0.08, 0.66, WOOD),
-    line([[0.22, 0.34, 0.48], [0.36, 0.34, 0.66]], WOOD[0], 1.2),
-    ...prop(() => [
-      line([[0.5, 0.34, 0.66], [0.5, 0.34, 0.56]], WOOD[0], 1.2),
-      {
-        d: `M${n(bx - s * 0.95)} ${n(by + s)} Q${n(bx - s * 0.8)} ${n(by - s * 0.1)} ${n(bx - s * 0.4)} ${n(by - s * 0.75)} Q${n(bx)} ${n(by - s * 1.15)} ${n(bx + s * 0.4)} ${n(by - s * 0.75)} Q${n(bx + s * 0.8)} ${n(by - s * 0.1)} ${n(bx + s * 0.95)} ${n(by + s)} Z`,
-        fill: accent,
-        stroke: GOLD[2],
-        strokeWidth: 0.5,
-      },
-      {
-        d: `M${n(bx + s * 0.1)} ${n(by - s * 1.0)} Q${n(bx + s * 0.75)} ${n(by - s * 0.3)} ${n(bx + s * 0.95)} ${n(by + s)} L${n(bx + s * 0.35)} ${n(by + s * 1.25)} Q${n(bx + s * 0.4)} ${n(by)} ${n(bx + s * 0.1)} ${n(by - s * 1.0)} Z`,
-        fill: GOLD[2],
-        opacity: 0.45,
-      },
-      {
-        d: `M${n(bx - s * 0.62)} ${n(by + s * 0.2)} Q${n(bx)} ${n(by + s * 0.48)} ${n(bx + s * 0.78)} ${n(by + s * 0.2)}`,
-        stroke: GOLD[2],
-        strokeWidth: 0.5,
-      },
-      {
-        d: `M${n(bx - s * 0.95)} ${n(by + s)} A${n(s * 0.95)} ${n(s * 0.3)} 0 0 0 ${n(bx + s * 0.95)} ${n(by + s)} A${n(s * 0.95)} ${n(s * 0.3)} 0 0 0 ${n(bx - s * 0.95)} ${n(by + s)} Z`,
-        fill: GOLD[2],
-        stroke: "#7A5A2A",
-        strokeWidth: 0.5,
-      },
-      ball([0.5, 0.34, 0.36 - (s + 1.6 * k()) / unit()], 1.5, GOLD[0], GOLD[2]),
-    ]),
-    ...box(0.16, 0.3, 0.66, 0.68, 0.08, 0.07, WOOD),
-    // an owl keeping watch on the beam
-    ball([0.3, 0.34, 0.765], 1.5, STONE[0], INK.line),
-    ball([0.293, 0.345, 0.775], 0.35, GOLD[0]),
-    ball([0.307, 0.345, 0.775], 0.35, GOLD[0]),
-    ...solid(0.78, 0.3, 0.06, 0.08, 0.66, WOOD),
-    line([[0.78, 0.38, 0.48], [0.64, 0.38, 0.66]], WOOD[0], 1.2),
-    // the bell rope, down to its coil on the floor
-    ...drum(0.62, 0.42, 0.045, 0.014, WAX),
-    disc(0.62, 0.42, 0.014, 0.022, undefined, "#B3AB95"),
-    line([[0.62, 0.38, 0.66], [0.62, 0.42, 0.02]], INK.paper, 0.8),
-    // a ladder against the wall
-    line([[0.2, 0.8, 0], [0, 0.8, 0.62]], WOOD[0], 1.2),
-    ...[0.12, 0.24, 0.36, 0.48].map((z) =>
-      line([[0.2 - z / 3.1, 0.8, z], [0.2 - z / 3.1, 0.92, z]], WOOD[1], 0.9)
-    ),
-    line([[0.2, 0.92, 0], [0, 0.92, 0.62]], WOOD[0], 1.2),
-  ];
-}
-
-function study(accent: string): Shape[] {
-  const shapes: Shape[] = [
-    ...shell(),
-    ...planks(),
-    ...windowOn("y", 0.72, 0.92, 0.32, 0.5),
-    moon(P(0.84, 0, 0.5)[0], P(0.84, 0, 0.5)[1], 1.8),
-    // bookcase against the right wall
-    ...solid(0.08, 0.02, 0.56, 0.14, 0.7, WOOD),
-  ];
-  for (const [row, z] of [0.06, 0.28, 0.5].entries()) {
-    shapes.push(onY(0.16, 0.11, 0.61, z, z + 0.17, INK.iron, WOOD[2]));
-    for (let i = 0; i < 9; i++) {
-      const x = 0.12 + i * 0.054;
-      const tall = 0.1 + ((i * 7 + row * 3) % 5) * 0.014;
-      shapes.push(
-        onY(0.16, x, x + 0.045, z, z + tall, BOOKS[(i + row * 2) % BOOKS.length], INK.iron)
-      );
-    }
-  }
-  shapes.push(
-    ...box(0.07, 0.02, 0.7, 0.58, 0.15, 0.02, WOOD),
-    // rug, with its border
-    flat(0.3, 0.66, 0.44, 0.9, 0, INK.redDark, INK.red),
-    flat(0.33, 0.63, 0.47, 0.87, 0, INK.redDark, GOLD[2]),
-    // a globe on its stand
-    ...drum(0.44, 0.3, 0.04, 0.02, WOOD),
-    ...box(0.432, 0.292, 0.02, 0.016, 0.016, 0.13, GOLD),
-    ball([0.44, 0.3, 0.215], 3.2, "#3F5A8C", GOLD[1]),
-    ball([0.43, 0.3, 0.225], 1.2, LEAF[1]),
-    // stool and desk, the records open on it
-    ...drum(0.58, 0.3, 0.045, 0.12, WOOD),
-    ...solid(0.66, 0.2, 0.26, 0.2, 0.22, WOOD),
-    onY(0.4, 0.69, 0.89, 0.07, 0.18, WOOD[1], WOOD[2]),
-    line([[0.79, 0.4, 0.07], [0.79, 0.4, 0.18]], WOOD[2]),
-    ball([0.74, 0.4, 0.125], 0.6, GOLD[0]),
-    ball([0.84, 0.4, 0.125], 0.6, GOLD[0]),
-    ...box(0.86, 0.33, 0.22, 0.04, 0.04, 0.03, IRON),
-    ...prop(() => [
-      flat(0.69, 0.83, 0.23, 0.37, 0.224, INK.paper, "#B3AB95"),
-      line([[0.76, 0.23, 0.224], [0.76, 0.37, 0.224]], "#B3AB95", 0.8),
-      ...[0.26, 0.29, 0.32].flatMap((y) => [
-        line([[0.7, y, 0.224], [0.745, y, 0.224]], "#8C8676"),
-        line([[0.775, y, 0.224], [0.82, y, 0.224]], "#8C8676"),
-      ]),
-      line([[0.76, 0.37, 0.224], [0.775, 0.4, 0.224]], INK.red, 1),
-    ]),
-    ...candle(0.88, 0.25, 0.22, 0.09, accent),
-    // reading chair and a side table
-    ...solid(0.06, 0.72, 0.2, 0.2, 0.14, CLOTH),
-    ...box(0.06, 0.72, 0.14, 0.05, 0.2, 0.2, CLOTH),
-    ...drum(0.36, 0.86, 0.05, 0.14, WOOD),
-    flat(0.33, 0.39, 0.83, 0.88, 0.141, BOOKS[3], INK.iron)
-  );
-  return shapes;
-}
-
-function chapel(accent: string): Shape[] {
-  const pew = (x: number, y: number): Shape[] => [
-    ...solid(x, y, 0.32, 0.08, 0.09, WOOD),
-    ...box(x, y + 0.08, 0, 0.32, 0.025, 0.18, WOOD),
-  ];
-  return [
-    ...shell(),
-    ...flags(4),
-    // stained glass: the light comes in coloured
-    ...windowOn("y", 0.1, 0.26, 0.3, 0.44, true, INK.glass, "#E7A3C8"),
-    ...windowOn("y", 0.74, 0.9, 0.3, 0.44, true, INK.glass, "#F2C46B"),
-    // rose window over the altar
-    ball([0.5, 0, 0.66], 4.4, STONE[1], INK.line),
-    ball([0.5, 0, 0.66], 3.6, INK.glass, GOLD[2]),
-    line([[0.41, 0, 0.66], [0.59, 0, 0.66]], GOLD[2], 0.6),
-    line([[0.5, 0, 0.57], [0.5, 0, 0.75]], GOLD[2], 0.6),
-    ...sconce("x", 0.2, 0.4, accent),
-    ...sconce("x", 0.8, 0.4, accent),
-    // the aisle, and the altar on its dais
-    flat(0.43, 0.57, 0.3, 0.99, 0, INK.redDark, INK.red),
-    ...box(0.24, 0, 0, 0.52, 0.3, 0.02, STONE),
-    ...box(0.32, 0.05, 0.02, 0.36, 0.17, 0.26, STONE),
-    flat(0.32, 0.68, 0.05, 0.22, 0.282, INK.paper, "#B3AB95"),
-    onY(0.22, 0.44, 0.56, 0.1, 0.28, INK.paper, "#B3AB95"),
-    line([[0.5, 0.22, 0.14], [0.5, 0.22, 0.24]], GOLD[1], 0.9),
-    line([[0.47, 0.22, 0.2], [0.53, 0.22, 0.2]], GOLD[1], 0.9),
-    ...prop(() => [
-      ...box(0.485, 0.11, 0.28, 0.03, 0.03, 0.34, GOLD),
-      ...box(0.42, 0.11, 0.48, 0.16, 0.03, 0.035, GOLD),
-    ]),
-    ...candle(0.37, 0.15, 0.28, 0.1, accent),
-    ...candle(0.63, 0.15, 0.28, 0.1, accent),
-    // the Chapel's record on its lectern
-    ...solid(0.12, 0.34, 0.03, 0.03, 0.24, WOOD),
-    ...box(0.08, 0.32, 0.24, 0.11, 0.08, 0.02, WOOD),
-    flat(0.09, 0.18, 0.33, 0.39, 0.262, INK.paper, "#B3AB95"),
-    line([[0.135, 0.33, 0.262], [0.135, 0.39, 0.262]], "#B3AB95"),
-    ...pew(0.06, 0.44),
-    ...pew(0.62, 0.44),
-    ...pew(0.06, 0.66),
-    // the font by the door
-    ...drum(0.16, 0.9, 0.03, 0.14, STONE),
-    ...cylinder(0.16, 0.9, 0.14, 0.065, 0.03, STONE),
-    disc(0.16, 0.9, 0.171, 0.05, INK.glass, undefined, 0.75),
-  ];
-}
-
-function gallery(accent: string): Shape[] {
-  const [ix, iy] = P(0.69, 0.2, 0.25);
-  const post = (y: number): Shape[] => [
-    ...drum(0.14, y, 0.02, 0.01, GOLD),
-    ...box(0.134, y - 0.006, 0.01, 0.012, 0.012, 0.16, GOLD),
-    ball([0.14, y, 0.185], 0.9, GOLD[0], GOLD[2]),
-  ];
-  const rope = (y1: number, y2: number) =>
-    line([[0.14, y1, 0.17], [0.14, (y1 + y2) / 2, 0.125], [0.14, y2, 0.17]], INK.red, 0.9);
-  return [
-    ...shell(),
-    ...planks(),
-    // dado and picture rail
-    line([[0, 1, 0.24], [0, 0, 0.24], [1, 0, 0.24]], paint().line),
-    line([[0, 1, 0.7], [0, 0, 0.7], [1, 0, 0.7]], paint().line),
-    ...picture("x", 0.08, 0.3, 0.38, 0.64, LEAF[2]),
-    ...picture("x", 0.38, 0.72, 0.32, 0.68, "#2A3152"),
-    ...picture("x", 0.8, 0.94, 0.4, 0.6, INK.redDark),
-    // a moonlit landscape in the big frame
-    ball([0, 0.48, 0.58], 1.8, accent),
-    line([[0, 0.68, 0.42], [0, 0.6, 0.52], [0, 0.52, 0.43], [0, 0.42, 0.5]], INK.glass, 0.7),
-    ...picture("y", 0.1, 0.28, 0.38, 0.62, "#3A4A7A"),
-    ball([0.19, 0, 0.52], 1.6, INK.paper, "#B3AB95"),
-    ...picture("y", 0.72, 0.92, 0.4, 0.6, LEAF[2]),
-    // a vase on a pedestal, and the bust
-    ...solid(0.1, 0.04, 0.1, 0.1, 0.2, STONE),
-    ...cylinder(0.15, 0.09, 0.2, 0.03, 0.08, [INK.glass, "#5A6FA8", "#5A6FA8"]),
-    ...solid(0.16, 0.2, 0.14, 0.14, 0.26, STONE),
-    ...box(0.195, 0.235, 0.26, 0.07, 0.07, 0.06, WAX),
-    ball([0.23, 0.27, 0.4], 2.6, INK.paper, "#B3AB95"),
-    // writing desk: paper, the letter box, and a quill in its inkwell
-    ...solid(0.66, 0.14, 0.28, 0.18, 0.22, WOOD),
-    onY(0.32, 0.69, 0.91, 0.08, 0.18, WOOD[1], WOOD[2]),
-    ball([0.8, 0.32, 0.13], 0.6, GOLD[0]),
-    flat(0.73, 0.84, 0.17, 0.29, 0.222, INK.paper, "#B3AB95"),
-    ...[0.2, 0.225, 0.25].map((y) => line([[0.75, y, 0.222], [0.82, y, 0.222]], "#8C8676")),
-    ...box(0.86, 0.16, 0.22, 0.07, 0.07, 0.08, GOLD),
-    line([[0.875, 0.195, 0.3], [0.915, 0.195, 0.3]], "#7A5A2A", 0.9),
-    ...cylinder(0.69, 0.2, 0.22, 0.018, 0.03, IRON),
-    ...prop(() => [
-      { d: `M${n(ix)} ${n(iy)} L${n(ix - 5)} ${n(iy - 17)}`, stroke: INK.paper, strokeWidth: 0.7 },
-      {
-        d: `M${n(ix - 1.6)} ${n(iy - 5.5)} Q${n(ix - 7.5)} ${n(iy - 9)} ${n(ix - 5.4)} ${n(iy - 18.5)} Q${n(ix - 0.2)} ${n(iy - 13)} ${n(ix - 1.6)} ${n(iy - 5.5)} Z`,
-        fill: INK.paper,
-        stroke: "#B3AB95",
-        strokeWidth: 0.5,
-      },
-    ]),
-    ...candle(0.91, 0.29, 0.22, 0.07, accent),
-    ...chair(0.75, 0.36, "y1"),
-    // rope along the pictures, and a bench to look at them from
-    ...post(0.42),
-    rope(0.42, 0.66),
-    ...post(0.66),
-    rope(0.66, 0.9),
-    ...post(0.9),
-    ...solid(0.3, 0.52, 0.12, 0.3, 0.1, WOOD),
-    flat(0.31, 0.41, 0.54, 0.8, 0.101, INK.red, INK.redDark),
-  ];
-}
-
-function hall(accent: string): Shape[] {
-  const stand = (): Shape[] => [
-    ...drum(0.28, 0.28, 0.05, 0.03, IRON),
-    ...box(0.268, 0.268, 0.03, 0.024, 0.024, 0.34, [GOLD[2], GOLD[2], "#7A5A2A"]),
-    ...cylinder(0.28, 0.28, 0.37, 0.07, 0.02, GOLD),
-    ...[0.23, 0.33, 0.28].flatMap((x, i) => [
-      ...box(x - 0.008, 0.272, 0.39, 0.016, 0.016, i === 2 ? 0.05 : 0.03, WAX),
-      ...flame([x, 0.28, i === 2 ? 0.44 : 0.42], i === 2 ? 2.4 : 2.2, accent),
-    ]),
-  ];
-  const shapes: Shape[] = [
-    ...shell(),
-    // checkered floor
-    ...[0, 1, 2, 3].flatMap((i) =>
-      [0, 1, 2, 3]
-        .filter((j) => (i + j) % 2 === 0)
-        .map((j) =>
-          flat(i * 0.25, i * 0.25 + 0.25, j * 0.25, j * 0.25 + 0.25, 0, paint().tile, paint().line)
-        )
-    ),
-    // carpet runners from door to door
-    flat(0.4, 0.6, 0, 1, 0, CARPET.fill, CARPET.edge),
-    flat(0, 1, 0.4, 0.6, 0, CARPET.fill, CARPET.edge),
-    flat(0.4, 0.6, 0.4, 0.6, 0, "#333A5C", GOLD[2]),
-    // banners
-    onX(0, 0.1, 0.26, 0.34, 0.7, INK.red, INK.redDark),
-    ball([0, 0.18, 0.55], 1.6, GOLD[1], GOLD[2]),
-    onY(0, 0.12, 0.28, 0.34, 0.7, INK.red, INK.redDark),
-    ball([0.2, 0, 0.55], 1.6, GOLD[1], GOLD[2]),
-    // console table with flowers, and the long-case clock
-    ...table(0.1, 0.03, 0.2, 0.1, 0.2),
-    ...cylinder(0.2, 0.08, 0.2, 0.025, 0.06, [INK.glass, "#5A6FA8", "#5A6FA8"]),
-    ball([0.19, 0.08, 0.31], 1.5, LEAF[1]),
-    ball([0.215, 0.08, 0.33], 1.3, INK.red),
-    ball([0.2, 0.08, 0.35], 1.1, INK.paper),
-    ...solid(0.74, 0.02, 0.13, 0.09, 0.56, WOOD),
-    onY(0.11, 0.775, 0.835, 0.08, 0.34, INK.iron, WOOD[2]),
-    line([[0.805, 0.11, 0.34], [0.805, 0.11, 0.16]], GOLD[1], 0.7),
-    ball([0.805, 0.11, 0.15], 1, GOLD[0], GOLD[2]),
-    ball([0.805, 0.11, 0.46], 2.4, INK.paper, GOLD[1]),
-    line([[0.805, 0.11, 0.46], [0.805, 0.11, 0.5]], INK.iron, 0.6),
-    line([[0.805, 0.11, 0.46], [0.83, 0.11, 0.46]], INK.iron, 0.6),
-    // a potted fern by the door
-    ...drum(0.07, 0.26, 0.04, 0.08, STONE),
-    ball([0.07, 0.26, 0.15], 3, LEAF[2], INK.grassLine),
-    ball([0.06, 0.25, 0.2], 2.2, LEAF[1]),
-    ball([0.085, 0.27, 0.22], 1.6, LEAF[0]),
-    ...prop(stand),
-  ];
-  // staircase climbing along the left wall, with its newel and rail
-  for (let i = 0; i < 5; i++) {
-    shapes.push(...box(0.02, 0.66 + i * 0.066, 0, 0.24, 0.066, 0.5 - i * 0.1, STONE));
-    shapes.push(flat(0.05, 0.23, 0.66 + i * 0.066, 0.726 + i * 0.066, 0.5 - i * 0.1, INK.redDark));
-  }
-  shapes.push(
-    line([[0.26, 0.69, 0.62], [0.26, 0.69, 0.5]], WOOD[0], 1.2),
-    line([[0.26, 0.69, 0.62], [0.275, 0.975, 0.3]], WOOD[0], 1.4),
-    ...solid(0.26, 0.96, 0.03, 0.03, 0.3, WOOD),
-    ball([0.275, 0.975, 0.32], 1.2, GOLD[0], GOLD[2])
-  );
-  return shapes;
-}
-
-function dining(accent: string): Shape[] {
-  const y = 0.28;
-  const goblet = (x: number): Shape[] => [
-    ...cylinder(x, y + 0.13, 0.24, 0.014, 0.004, GOLD),
-    ...box(x - 0.004, y + 0.126, 0.244, 0.008, 0.008, 0.03, GOLD),
-    ...cylinder(x, y + 0.13, 0.274, 0.02, 0.032, GOLD),
-    disc(x, y + 0.13, 0.305, 0.014, INK.red),
-  ];
-  return [
-    ...shell(),
-    ...planks(),
-    ...picture("x", 0.08, 0.28, 0.4, 0.66, "#3A4A7A"),
-    ball([0, 0.18, 0.55], 1.8, INK.paper, "#B3AB95"),
-    ...picture("x", 0.72, 0.92, 0.4, 0.66, LEAF[2]),
-    ...picture("y", 0.72, 0.92, 0.4, 0.66, INK.redDark),
-    ball([0.82, 0, 0.55], 1.8, INK.paper, "#B3AB95"),
-    ...sconce("y", 0.2, 0.44, accent),
-    flat(0.1, 0.9, 0.12, 0.64, 0, INK.redDark, INK.red),
-    flat(0.13, 0.87, 0.15, 0.61, 0, INK.redDark, GOLD[2]),
-    // chairs along the far side, and the long table, laid
-    ...[0.26, 0.45, 0.64].flatMap((x) => chair(x, y - 0.12, "y0")),
-    ...table(0.16, y, 0.68, 0.26, 0.24),
-    flat(0.2, 0.8, y + 0.09, y + 0.17, 0.242, INK.redDark, INK.red),
-    ...cylinder(0.3, y + 0.05, 0.24, 0.04, 0.006, WAX),
-    ...cylinder(0.7, y + 0.05, 0.24, 0.04, 0.006, WAX),
-    ...candle(0.38, y + 0.13, 0.24, 0.09, accent),
-    // two goblets, for the toast
-    ...prop(() => [...goblet(0.47), ...goblet(0.54)]),
-    ...cylinder(0.63, y + 0.13, 0.24, 0.022, 0.08, LEAF),
-    ...cylinder(0.63, y + 0.13, 0.32, 0.008, 0.035, LEAF),
-    ...cylinder(0.3, y + 0.21, 0.24, 0.04, 0.006, WAX),
-    ...cylinder(0.7, y + 0.21, 0.24, 0.04, 0.006, WAX),
-    ...chair(0.86, y + 0.08, "x1"),
-    // sideboard with a tureen
-    ...solid(0.04, 0.72, 0.14, 0.24, 0.2, WOOD),
-    line([[0.18, 0.84, 0], [0.18, 0.84, 0.2]], WOOD[2]),
-    ball([0.18, 0.81, 0.11], 0.6, GOLD[0]),
-    ball([0.18, 0.87, 0.11], 0.6, GOLD[0]),
-    ...cylinder(0.11, 0.84, 0.2, 0.045, 0.04, WAX),
-    ball([0.11, 0.84, 0.26], 0.8, GOLD[0]),
-  ];
-}
-
-function cellar(accent: string): Shape[] {
-  const barrel = (x: number, y: number): Shape[] => [
-    ...drum(x, y, 0.12, 0.3, WOOD),
-    hoop(x, y, 0.07, 0.12, INK.iron),
-    hoop(x, y, 0.23, 0.12, INK.iron),
-  ];
-  const shapes: Shape[] = [...shell(), ...courses()];
-  // brick joints, staggered course by course
-  for (const [row, z] of [0, 0.2, 0.4, 0.6].entries()) {
-    for (let a = row % 2 ? 0.125 : 0.25; a < 1; a += 0.25) {
-      shapes.push(line([[0, a, z], [0, a, z + (row === 3 ? 0.15 : 0.2)]], paint().line));
-    }
-  }
-  shapes.push(
-    ...flags(4),
-    // a barred light high in the wall, and a cobweb in the corner
-    onX(0, 0.42, 0.6, 0.54, 0.66, INK.night, STONE[1]),
-    ...[0.465, 0.51, 0.555].map((a) => line([[0, a, 0.54], [0, a, 0.66]], STONE[0], 0.8)),
-    line([[0, 0.16, 0.75], [0.16, 0, 0.75]], INK.line),
-    line([[0, 0.09, 0.69], [0.09, 0, 0.69]], INK.line),
-    line([[0, 0, 0.6], [0.08, 0.08, 0.75]], INK.line),
-    // wine rack
-    ...solid(0.68, 0.02, 0.28, 0.1, 0.46, WOOD),
-    ...[0.06, 0.2, 0.34].flatMap((z) => [
-      onY(0.12, 0.7, 0.94, z, z + 0.1, INK.iron, WOOD[2]),
-      ...[0.74, 0.82, 0.9].map((x) => ball([x, 0.12, z + 0.05], 1.1, LEAF[2], LEAF[1])),
-    ]),
-    // barrels along the left wall, one with a lantern on it
-    ...barrel(0.14, 0.16),
-    ...barrel(0.14, 0.42),
-    ...box(0.115, 0.395, 0.3, 0.05, 0.05, 0.012, IRON),
-    ...box(0.125, 0.405, 0.312, 0.03, 0.03, 0.05, GOLD),
-    ...flame([0.14, 0.42, 0.362], 2.2, accent),
-    // crates
-    ...solid(0.78, 0.28, 0.18, 0.18, 0.16, WOOD),
-    line([[0.78, 0.46, 0.08], [0.96, 0.46, 0.08]], WOOD[2]),
-    ...box(0.81, 0.31, 0.16, 0.12, 0.12, 0.1, WOOD),
-    // the passage under the floor: its curb, the shaft and a ladder
-    flat(0.42, 0.7, 0.42, 0.7, 0, STONE[2], INK.line),
-    flat(0.44, 0.68, 0.44, 0.68, 0, "#070912"),
-    {
-      d: path(
-        ([[0.44, 0.44, 0], [0.44, 0.68, 0], [0.44, 0.62, -0.07], [0.44, 0.44, -0.07]] as V3[]).map(
-          (p) => P(...p)
-        )
-      ),
-      fill: paint().shade,
-      stroke: INK.line,
-      strokeWidth: 0.5,
-    },
-    {
-      d: path(
-        ([[0.44, 0.44, 0], [0.68, 0.44, 0], [0.62, 0.44, -0.07], [0.44, 0.44, -0.07]] as V3[]).map(
-          (p) => P(...p)
-        )
-      ),
-      fill: paint().lit,
-      stroke: INK.line,
-      strokeWidth: 0.5,
-    },
-    line([[0.5, 0.44, 0], [0.5, 0.44, -0.07]], WOOD[0], 0.9),
-    line([[0.58, 0.44, 0], [0.58, 0.44, -0.07]], WOOD[0], 0.9),
-    line([[0.5, 0.44, -0.025], [0.58, 0.44, -0.025]], WOOD[0], 0.9),
-    line([[0.5, 0.44, -0.055], [0.58, 0.44, -0.055]], WOOD[0], 0.9),
-    ...prop(() => [
-      ...box(0.44, 0.44, 0, 0.24, 0.24, 0.025, WOOD),
-      ...[0.5, 0.56, 0.62].map((x) => line([[x, 0.44, 0.025], [x, 0.68, 0.025]], WOOD[2])),
-      flat(0.44, 0.68, 0.48, 0.51, 0.026, INK.iron),
-      flat(0.44, 0.68, 0.61, 0.64, 0.026, INK.iron),
-      disc(0.56, 0.56, 0.027, 0.028, undefined, STONE[0], undefined, 1),
-    ]),
-    ...barrel(0.14, 0.76),
-    // sacks
-    ball([0.36, 0.9, 0.05], 3.6, "#8C7B5A", "#5E5340"),
-    ball([0.44, 0.94, 0.045], 3.1, "#9A8964", "#5E5340")
-  );
-  return shapes;
-}
-
-function kitchen(accent: string): Shape[] {
-  return [
-    ...shell(),
-    ...planks(),
-    // copper pans on a rail, and the servants' bells on their board
-    line([[0, 0.05, 0.66], [0, 0.34, 0.66]], BRASS[1], 1.1),
-    ...hangingPan(0.12, 0.54, 1.5),
-    ...hangingPan(0.25, 0.53, 1.8),
-    onX(0, 0.7, 0.94, 0.42, 0.62, WOOD[1]),
-    ...panel("shade", 0.002, 0.715, 0.925, 0.435, 0.605, WOOD[1]),
-    ...[0.76, 0.82, 0.88].flatMap((y) => [
-      ball([0.004, y, 0.57], 0.9, BRASS[0], BRASS[2]),
-      ball([0.004, y, 0.49], 0.9, BRASS[0], BRASS[2]),
-    ]),
-    // a shelf of jars on carved brackets
-    ...shelfY(0.06, 0.34, 0.44),
-    ...[0.1, 0.16, 0.22, 0.28].flatMap((x, i) =>
-      jar(x, 0.035, 0.458, 0.022, 0.05 + (i % 2) * 0.016, i % 2 ? LEAF[1] : "#7A9AD8"),
-    ),
-    // the dresser: a cupboard with drawers, a loaf and a knife on its board
-    ...cabinet(0.08, 0.06, 0.24, 0.18, 0.22, { doors: 2, drawers: 2 }),
-    flat(0.12, 0.26, 0.1, 0.21, 0.222, WAX[1]),
-    ball([0.18, 0.16, 0.245], 1.6, "#B4683C", "#7A4526"),
-    line([[0.25, 0.14, 0.223], [0.3, 0.2, 0.223]], "#C9D0DA", 1),
-    // the range in the far-right corner
-    ...range(0.66, 0.06, 0.28, 0.2, 0.3, accent),
-    ...lightPool([0.78, 0.5, 0], 0.46),
-    // a broom against the wall
-    line([[0.07, 0.36, 0.04], [0, 0.36, 0.44]], WOOD[0], 1.1),
-    tint([[0.1, 0.34, 0], [0.1, 0.38, 0], [0.06, 0.37, 0.07], [0.06, 0.35, 0.07]], GOLD[2], 1),
-    // the cauldron on its trivet, over the fire
-    line([[0.74, 0.34, 0], [0.76, 0.34, 0.09]], IRONWORK[1], 1.1),
-    line([[0.86, 0.34, 0], [0.84, 0.34, 0.09]], IRONWORK[1], 1.1),
-    line([[0.8, 0.4, 0], [0.8, 0.38, 0.09]], IRONWORK[1], 1.1),
-    ...prop(() => [
-      ...cylinder(0.8, 0.34, 0.08, 0.07, 0.1, IRONWORK),
-      hoop(0.8, 0.34, 0.165, 0.07, BRASS[1]),
-      disc(0.8, 0.34, 0.181, 0.055, "#6F8452", IRONWORK[2]),
-      ball([0.78, 0.33, 0.183], 0.5, "#9DB37A"),
-      ball([0.82, 0.35, 0.183], 0.4, "#9DB37A"),
-    ]),
-    ...steam([0.8, 0.34, 0.19], 0.26, 0.46),
-    // the worktop, a bowl of apples and a cloth on it
-    ...cabinet(0.03, 0.66, 0.18, 0.3, 0.24, { doors: 1, sidePanels: 2 }),
-    ...cylinder(0.12, 0.78, 0.24, 0.05, 0.035, ["#E8E2D0", "#C8C0A8", "#9A9278"]),
-    ball([0.11, 0.78, 0.29], 1.2, INK.red),
-    ball([0.135, 0.785, 0.295], 1.2, "#B4484D"),
-    flat(0.07, 0.17, 0.87, 0.93, 0.242, INK.paper),
-  ];
-}
-
-function garden(accent: string): Shape[] {
-  const [a, b] = DOOR;
-  const [mx, my] = P(1, 0, 0.72);
-  /** A hedge along a back edge, with its gate and gateposts. */
-  const hedge = (wall: "x" | "y", door: Door | null): Shape[] => {
-    const piece = (from: number, to: number, tones: Tones, h: number, inset = 0) =>
-      wall === "x"
-        ? box(-THICK + inset, from, 0, THICK - inset * 2, to - from, h, tones)
-        : box(from, -THICK + inset, 0, to - from, THICK - inset * 2, h, tones);
-    const start = wall === "x" ? -THICK : 0;
-    if (!door) return piece(start, 1, LEAF, 0.26);
-    const gatepost = (at: number) => [
-      ...piece(at - 0.03, at + 0.03, STONE, 0.34),
-      ball(wall === "x" ? [-THICK / 2, at, 0.36] : [at, -THICK / 2, 0.36], 1.4, STONE[0], INK.line),
-    ];
-    return [
-      ...piece(start, a - 0.03, LEAF, 0.26),
-      ...gatepost(a),
-      ...(door === "locked"
-        ? piece(a + 0.03, b - 0.03, LOCK, 0.22, 0.015)
-        : door === "shut"
-          ? piece(a + 0.03, b - 0.03, WOOD, 0.3, 0.01)
-          : []),
-      ...gatepost(b),
-      ...piece(b + 0.03, 1, LEAF, 0.26),
-    ];
-  };
-  const stone = ([x, y]: [number, number]) => flat(x, x + 0.1, y, y + 0.1, 0, STONE[2], INK.grassLine);
-  return [
-    moon(mx - 8 * k(), my, 4.5),
-    ...stars([[0.42, 0, 0.74], [0.16, 0, 0.56], [0.7, 0, 0.5], [0, 0.4, 0.7], [0, 0.82, 0.6], [0, 0.6, 0.46]]),
-    ...plinth(EARTH),
-    flat(0, 1, 0, 1, 0, INK.grass, INK.grassLine),
-    ...[0.2, 0.4, 0.6, 0.8].map((y) => line([[0, y, 0], [1, y, 0]], INK.grassLine)),
-    ...hedge("x", exitOf("left")),
-    ...hedge("y", exitOf("right")),
-    // stepping stones from each gate to the well
-    ...([[0.03, 0.45], [0.19, 0.45], [0.35, 0.45], [0.45, 0.03], [0.45, 0.17], [0.52, 0.33]] as [number, number][]).map(stone),
-    // a flower bed under the hedge
-    flat(0.02, 0.12, 0.7, 0.97, 0, EARTH[2], INK.grassLine),
-    ...[0.74, 0.8, 0.86, 0.92].map((y, i) => ball([0.07, y, 0.03], 1, i % 2 ? accent : INK.paper)),
-    // a lamp by the gate
-    ...drum(0.92, 0.08, 0.025, 0.02, IRON),
-    ...box(0.912, 0.072, 0.02, 0.016, 0.016, 0.36, IRON),
-    ...box(0.9, 0.06, 0.38, 0.04, 0.04, 0.06, GOLD),
-    ...flame([0.92, 0.08, 0.39], 2.2, accent),
-    // tree
-    ...drum(0.22, 0.24, 0.035, 0.3, WOOD),
-    ball([0.22, 0.24, 0.46], 8, LEAF[2], INK.grassLine),
-    ball([0.17, 0.2, 0.53], 5.8, LEAF[1]),
-    ball([0.26, 0.26, 0.57], 4.4, LEAF[0]),
-    ball([0.2, 0.26, 0.42], 0.7, INK.red),
-    ball([0.27, 0.22, 0.5], 0.7, INK.red),
-    // the well: its wall, the water, the windlass and the bucket
-    ...drum(0.76, 0.3, 0.12, 0.12, STONE),
-    hoop(0.76, 0.3, 0.06, 0.12, STONE[2]),
-    ...cylinder(0.76, 0.3, 0.115, 0.085, 0.004, [INK.night, INK.night, INK.night]),
-    ball([0.74, 0.28, 0.12], 1.1, INK.glass, undefined, 0.8),
-    ...box(0.645, 0.285, 0.12, 0.025, 0.03, 0.26, WOOD),
-    line([[0.76, 0.3, 0.38], [0.76, 0.3, 0.27]], INK.paper, 0.7),
-    ...prop(() => [
-      ...cylinder(0.76, 0.3, 0.2, 0.034, 0.06, WOOD),
-      hoop(0.76, 0.3, 0.225, 0.034, INK.iron),
-      line([[0.735, 0.3, 0.26], [0.76, 0.3, 0.3], [0.785, 0.3, 0.26]], INK.iron, 0.7),
-    ]),
-    ...box(0.645, 0.285, 0.38, 0.235, 0.03, 0.03, WOOD),
-    ...box(0.855, 0.285, 0.12, 0.025, 0.03, 0.26, WOOD),
-    line([[0.88, 0.3, 0.395], [0.92, 0.3, 0.395], [0.92, 0.3, 0.34]], INK.iron, 0.9),
-    ball([0.92, 0.3, 0.34], 0.7, WOOD[0], WOOD[2]),
-    // a stone bench
-    ...solid(0.12, 0.66, 0.04, 0.1, 0.08, STONE),
-    ...solid(0.36, 0.66, 0.04, 0.1, 0.08, STONE),
-    ...box(0.1, 0.65, 0.08, 0.32, 0.12, 0.025, STONE),
-    // flowers, and fireflies over the grass
-    ...([[0.9, 0.56], [0.56, 0.1], [0.3, 0.9], [0.6, 0.62], [0.96, 0.4]] as [number, number][]).map(
-      ([x, y], i) => ball([x, y, 0.03], 0.9, i % 2 ? accent : INK.paper)
-    ),
-    ...([[0.5, 0.6, 0.2], [0.34, 0.5, 0.34], [0.86, 0.6, 0.28], [0.6, 0.86, 0.16], [0.44, 0.2, 0.3]] as V3[]).flatMap(
-      firefly
-    ),
-  ];
 }
 
 const BUILDERS: Record<RoomId, (accent: string) => Shape[]> = {
