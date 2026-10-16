@@ -83,6 +83,49 @@ way.
   sits where, the proportions) and render it in the house materials,
   with a jewel and a little motion.
 
+## Borders must run at 60 fps
+
+The owner wants every scene exactly as drawn: speed comes from how a
+border is drawn, never from cutting detail or motion. `art/dragon.tsx`
+is the model; copy its helpers (`bake`, `put`, `lazy`, `own`, `begin`,
+`sweep`, `faded`).
+
+- **Bake what doesn't move.** Draw every still part (engraving, gold,
+  jewels, shadows, blurred glows) once, on first use, into an image
+  (`bake`, at about 2.4× the art scale so it stays crisp to ~130pt).
+  Each frame then draws that image, not hundreds of paths.
+- **One picture per layer per frame.** Each layer is one
+  `useDerivedValue` that records a `Skia.PictureRecorder` picture and
+  hands it to `<Picture>`. Don't build moving parts as many separate
+  React Skia components, each with its own derived values.
+- **Move it with transforms and alpha.** Swaying feathers, a beating
+  jewel, a turning gear: `c.save()`, rotate/scale, draw the baked image,
+  `c.restore()`. Fade by setting a paint's alpha (`faded`), not with a
+  group `opacity` or `layer`.
+- **No per-frame blurs, clips or layers.** A `BlurMask` drawn every
+  frame is the most expensive thing there is. Bake the blur in, or use a
+  radial gradient for a glow. Draw the light `Sweep` by filling the
+  metal's shape with a moving gradient (`sweep`), not a band clipped to
+  it.
+- **Shaders return early** where they draw nothing (outside their ring),
+  and use the shared `NOISE` in `iso/noise.ts`.
+- **Make paints and paths once** (`lazy`), and give each mounted copy
+  its own paints (`own`): a paint's alpha is set per frame.
+- **Skia only on first use.** Never call `Skia.*`, `vec()` or Skia enums
+  at module top level (Jest has no Skia). Every helper called inside a
+  derived value needs `"worklet"`.
+- **Measure, every time.** Open `boardly-dev://` first (screens left
+  open behind keep animating), then
+  `boardly-dev://dev/borders?perf=1&size=74&ids=x,x,x,x`. Four copies
+  must read 60 fps. Also check it with nine or ten other heavy
+  legendary borders. Check the id line under the fps reading: it shows
+  what is actually drawn. Keep the original file and compare
+  screenshots: the new version must look the same.
+- **The app's safety nets** (`art/kit.tsx`, `AvatarBorder.tsx`): only
+  `MOVING_AT_ONCE` (6) borders move at once, the biggest first; borders
+  on screens you've left stop; below 42pt a border stands still. They
+  are a backstop, not a substitute for a cheap border.
+
 ## Icons specifically
 
 - Use a 48 × 48 box with the drawing filling about 4–44, in 2–6

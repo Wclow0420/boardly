@@ -68,7 +68,14 @@ to ~92), as a `back` layer (behind the avatar) and a `front` layer (over
 its edge; keep off its face, r < 46). Use the kit (`art/kit.tsx`: Band,
 Halo, Sparks, Glint, Flicker, polar/rnd, the iso `Fire`/`Steam`) and the
 shared clock it is handed; helpers called inside `useDerivedValue` must
-be worklets. Below 44pt a border stands still. Every new border's id
+be worklets. Below 42pt a border stands still, only six move at once
+(`MOVING_AT_ONCE`), and borders on screens you've left pause. Every
+border must hold 60 fps with four copies at 74pt
+(`boardly-dev://dev/borders?perf=1&size=74&ids=…`): bake the still
+parts once and record one picture per layer per frame, as
+`art/dragon.tsx` does (see "Borders must run at 60 fps" in the root
+CLAUDE.md). Rarity is common → rare → epic → legendary → mythic
+(10,000+ coins); the shop sorts by it. Every new border's id
 and price go in `backend/app/cosmetics.py` too (`BORDER_PRICES`, or
 `EARNED_BORDERS` for one that comes with a badge). Check them all at
 `boardly-dev://dev/borders`.
