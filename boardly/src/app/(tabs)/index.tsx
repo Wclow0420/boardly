@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { BellIcon, ChevronRightIcon, Emblem, PlusIcon } from "@/components/icons";
 import {
   AppText,
+  BezelOverlay,
   GorhomBottomSheetModal,
   IconButton,
   Screen,
@@ -28,11 +29,9 @@ import {
   HOME,
   INVITE_DICE,
   MEEPLE,
-  QUICK_PANEL,
-  QUICK_PANEL_RATIO,
   SCENE_TOP,
 } from "@/features/home/art";
-import { Frame, Ribbon } from "@/features/home/frames";
+import { Frame, SectionTitle } from "@/features/home/frames";
 import { JoinTableSheet } from "@/features/home/JoinTableSheet";
 import { TableCard } from "@/features/home/TableCard";
 import {
@@ -122,6 +121,7 @@ export default function HomeScreen() {
         </AppText>
       </View>
       <LinearGradient colors={HOME.button} style={styles.startButton}>
+        <BezelOverlay r={22} t={3.2} />
         <AppText style={styles.startText}>{t("home.start")}</AppText>
         <ChevronRightIcon size={12} color="#FFFFFF" strokeWidth={2.6} />
       </LinearGradient>
@@ -173,27 +173,16 @@ export default function HomeScreen() {
 
       {/* Quick start */}
       <View style={{ marginTop: spacing.md }}>
-        <Ribbon label={t("home.quickStart")} colors={HOME.ribbonRed} />
+        <SectionTitle label={t("home.quickStart")} colors={HOME.ribbonRed} />
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t("home.quickPlay")}
           onPress={quickPlay}
           style={({ pressed }) => pressed && styles.pressed}
         >
-          {QUICK_PANEL ? (
-            <View style={[styles.quickArt, { aspectRatio: QUICK_PANEL_RATIO }]}>
-              <Image
-                source={QUICK_PANEL}
-                style={StyleSheet.absoluteFill}
-                contentFit="fill"
-              />
-              {quickContent}
-            </View>
-          ) : (
-            <Frame tone="yellow" style={styles.quick}>
-              {quickContent}
-            </Frame>
-          )}
+          <Frame tone="yellow" ornate style={styles.quick}>
+            {quickContent}
+          </Frame>
         </Pressable>
       </View>
 
@@ -207,7 +196,8 @@ export default function HomeScreen() {
         style={({ pressed }) => [styles.joinWrap, pressed && styles.pressed]}
       >
         <LinearGradient colors={HOME.woodButton} style={styles.join}>
-          <Texture radius={11} />
+          <Texture radius={13} />
+          <BezelOverlay r={13} t={3} metal="silver" />
           <Emblem emoji="🎟" size={28} />
           <AppText style={styles.joinText}>{t("home.joinWithCode")}</AppText>
         </LinearGradient>
@@ -215,17 +205,21 @@ export default function HomeScreen() {
 
       {/* My tables */}
       <View style={styles.tablesSection}>
-        <View style={styles.sectionRow}>
-          <Ribbon label={t("home.yourTables")} colors={HOME.ribbonBlue} />
-          <Pressable
-            onPress={() => tapHaptic()}
-            hitSlop={8}
-            style={styles.seeAll}
-          >
-            <AppText style={styles.seeAllText}>{t("common.seeAll")}</AppText>
-            <ChevronRightIcon size={10} color={HOME.cream} strokeWidth={2.4} />
-          </Pressable>
-        </View>
+        <SectionTitle
+          label={t("home.yourTables")}
+          colors={HOME.ribbonBlue}
+          right={
+            <Pressable
+              onPress={() => tapHaptic()}
+              hitSlop={8}
+              style={styles.seeAll}
+            >
+              <BezelOverlay r={10} t={2.4} metal="silver" />
+              <AppText style={styles.seeAllText}>{t("common.seeAll")}</AppText>
+              <ChevronRightIcon size={10} color={HOME.cream} strokeWidth={2.4} />
+            </Pressable>
+          }
+        />
         <Frame tone="blue" stitched style={styles.tablesFrame}>
           {tablesLoading ? (
             <View style={styles.tables}>
@@ -308,7 +302,7 @@ export default function HomeScreen() {
 
       {/* Friends online */}
       <View style={{ marginTop: spacing.lg }}>
-        <Ribbon label={t("home.friendsOnline")} colors={HOME.ribbonGreen} />
+        <SectionTitle label={t("home.friendsOnline")} colors={HOME.ribbonGreen} />
         <Frame tone="wood" style={styles.friendsFrame}>
           <ScrollView
             horizontal
@@ -441,12 +435,6 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 16,
   },
-  quickArt: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 22,
-  },
   dice: { width: 56, height: 56, marginLeft: -4 },
   die: { marginHorizontal: 4 },
   quickTitle: { fontFamily: fontFamily.bold, fontSize: 17, color: HOME.ink },
@@ -464,8 +452,6 @@ const styles = StyleSheet.create({
     minWidth: 44,
     paddingHorizontal: 12,
     borderRadius: 22,
-    borderWidth: 2,
-    borderColor: HOME.buttonBorder,
     justifyContent: "center",
   },
   startText: { fontFamily: fontFamily.bold, fontSize: 12.5, color: "#FFFFFF" },
@@ -475,11 +461,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
     borderRadius: 13,
-    borderWidth: 2,
-    borderColor: HOME.woodButtonBorder,
   },
   joinIcon: {
     fontFamily: fontFamily.bold,
@@ -508,12 +492,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 9,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 10,
     backgroundColor: "#16263D",
-    borderWidth: 1,
-    borderColor: "#2E4A70",
   },
   seeAllText: {
     fontFamily: fontFamily.semiBold,

@@ -4,7 +4,6 @@
 // gear.
 
 import { useQuery } from "@tanstack/react-query";
-import { LinearGradient } from "expo-linear-gradient";
 import { useIsFocused, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -24,13 +23,13 @@ import { GearEmblem } from "@/components/engraved";
 import { useIsoClock } from "@/components/iso";
 import {
   AppText,
+  Medallion,
   Frame,
   GorhomBottomSheetModal,
   IconButton,
-  Ribbon,
+  SectionTitle, TitlePlaque,
   Screen,
   TableBackdrop,
-  Texture,
 } from "@/components/ui";
 import { useSession } from "@/context/SessionContext";
 import { BadgeGrid } from "@/features/badges/BadgeGrid";
@@ -135,11 +134,7 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.content}
       >
         <View style={styles.header}>
-          <Ribbon
-            label={t("profile.title")}
-            colors={TABLE.ribbonGold}
-            standalone
-          />
+          <TitlePlaque label={t("profile.title")} />
           <IconButton
             accessibilityLabel={t("profile.settings")}
             onPress={() => {
@@ -200,12 +195,11 @@ export default function ProfileScreen() {
           <View style={styles.tokens}>
             {tokens.map((token) => (
               <View key={token.label} style={styles.tokenWrap}>
-                <LinearGradient colors={TABLE.woodButton} style={styles.token}>
-                  <Texture radius={26} />
+                <Medallion size={TOKEN}>
                   <AppText style={styles.tokenValue}>
                     {token.value ?? "–"}
                   </AppText>
-                </LinearGradient>
+                </Medallion>
                 <AppText
                   variant="tiny"
                   align="center"
@@ -225,17 +219,21 @@ export default function ProfileScreen() {
         </Frame>
 
         {/* Badges */}
-        <View style={[styles.sectionHead, { marginTop: spacing.xl }]}>
-          <Ribbon label={t("profile.card.badges")} colors={TABLE.ribbonRed} />
-          {card ? (
-            <AppText variant="tiny" style={styles.count}>
-              {t("profile.card.unlocked", {
-                n: earned,
-                total: card.badges.length,
-              })}
-            </AppText>
-          ) : null}
-        </View>
+        <SectionTitle
+          label={t("profile.card.badges")}
+          colors={TABLE.ribbonRed}
+          style={{ marginTop: spacing.xl }}
+          right={
+            card ? (
+              <AppText variant="tiny" style={styles.count}>
+                {t("profile.card.unlocked", {
+                  n: earned,
+                  total: card.badges.length,
+                })}
+              </AppText>
+            ) : null
+          }
+        />
         <Frame tone="blue" stitched style={styles.badges}>
           {card ? (
             <BadgeGrid
@@ -249,7 +247,7 @@ export default function ProfileScreen() {
         </Frame>
 
         {/* By game */}
-        <Ribbon
+        <SectionTitle
           label={t("profile.card.byGame")}
           colors={TABLE.ribbonGreen}
           style={{ marginTop: spacing.xl }}
@@ -307,17 +305,6 @@ const styles = StyleSheet.create({
   coins: { alignSelf: "flex-start", marginTop: 6 },
   tokens: { flexDirection: "row", justifyContent: "space-between" },
   tokenWrap: { flex: 1, alignItems: "center", gap: 4 },
-  // each number on a round wooden token
-  token: {
-    width: TOKEN,
-    height: TOKEN,
-    borderRadius: TOKEN / 2,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderBottomWidth: 4,
-    borderColor: TABLE.woodButtonBorder,
-  },
   tokenValue: { fontFamily: fontFamily.bold, fontSize: 16, color: TABLE.cream },
   tokenLabel: { color: TABLE.creamMuted },
   next: {

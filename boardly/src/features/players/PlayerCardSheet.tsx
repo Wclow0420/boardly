@@ -5,7 +5,6 @@
 // answer their request, invite a friend to my table, or let them go.
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { LinearGradient } from "expo-linear-gradient";
 import { forwardRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -16,11 +15,11 @@ import { useIsoClock } from "@/components/iso";
 import { Meeple } from "@/components/tabletop/Meeple";
 import {
   AppText,
+  Medallion,
   BottomSheetModal,
   Button,
   GorhomBottomSheetModal,
   Skeleton,
-  Texture,
 } from "@/components/ui";
 import { badgeArt } from "@/features/badges/art";
 import { sortBadges, titleBadge } from "@/features/badges/order";
@@ -208,10 +207,9 @@ function Body({
         <View style={styles.tokens}>
           {tokens.map((token) => (
             <View key={token.label} style={styles.tokenWrap}>
-              <LinearGradient colors={TABLE.woodButton} style={styles.token}>
-                <Texture radius={22} />
+              <Medallion size={TOKEN}>
                 <AppText style={styles.tokenValue}>{token.value}</AppText>
-              </LinearGradient>
+              </Medallion>
               <AppText
                 variant="tiny"
                 align="center"
@@ -381,16 +379,6 @@ const styles = StyleSheet.create({
   title: { fontFamily: fontFamily.semiBold, fontSize: 13 },
   tokens: { flexDirection: "row" },
   tokenWrap: { flex: 1, alignItems: "center", gap: 4 },
-  token: {
-    width: TOKEN,
-    height: TOKEN,
-    borderRadius: TOKEN / 2,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderBottomWidth: 4,
-    borderColor: TABLE.woodButtonBorder,
-  },
   tokenValue: { fontFamily: fontFamily.bold, fontSize: 14, color: TABLE.cream },
   muted: { color: TABLE.creamMuted },
   together: {

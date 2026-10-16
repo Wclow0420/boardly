@@ -14,8 +14,11 @@ import {
   BlurMask,
   Canvas,
   Circle,
+  ColorMatrix,
   Group,
+  ImageSVG,
   LinearGradient,
+  Paint,
   Path,
   RadialGradient,
   Rect,
@@ -26,6 +29,8 @@ import {
 import { useMemo } from "react";
 import { useDerivedValue, type SharedValue } from "react-native-reanimated";
 
+import { toSvg } from "@/components/engraved/emblem";
+import { emblemData } from "@/components/icons";
 import type { BadgeArt, BadgeLoop, BadgeTier } from "./types";
 
 interface Metal {
@@ -70,6 +75,15 @@ const HOLO = [
   "#FF6AD5",
 ];
 const LOCKED_RIM: [string, string, string] = ["#8A8A90", "#4C4C52", "#2A2A2E"];
+
+/** A locked badge's emblem, struck in dark iron: its own light and
+ *  shade, but grey and dim, a little cool. */
+const IRON = [
+  0.16, 0.5, 0.05, 0, 0.02,
+  0.17, 0.52, 0.05, 0, 0.02,
+  0.18, 0.56, 0.06, 0, 0.03,
+  0, 0, 0, 1, 0,
+];
 
 /** A hex colour mixed towards white (t > 0) or black (t < 0). */
 function tint(hex: string, t: number): string {
@@ -190,6 +204,11 @@ export function Badge({
   const emblem = useDerivedValue(() =>
     locked ? [] : loopTransform(art.loop, t.value),
   );
+  // the engraved emblem, when the badge names one (else the line glyph)
+  const svg = useMemo(() => {
+    const found = art.emoji ? emblemData(art.emoji) : null;
+    return found ? Skia.SVG.MakeFromString(toSvg(found.data, 30, found.tint)) : null;
+  }, [art.emoji]);
   const footed = art.loop === "flicker" || art.loop === "sway";
   const origin = vec(12, footed ? 21 : 12);
   const sparkles = useMemo(
@@ -299,35 +318,51 @@ export function Badge({
         ]}
       >
         <Group transform={emblem} origin={origin}>
-          <Group
-            transform={[{ translateX: 0.5 }, { translateY: 0.8 }]}
-            opacity={locked ? 0 : 0.45}
-          >
-            {art.glyph.fill ? (
-              <Path path={art.glyph.fill} color="#000" />
-            ) : null}
-            {art.glyph.line ? (
-              <Path
-                path={art.glyph.line}
-                style="stroke"
-                strokeWidth={1.9}
-                color="#000"
-                strokeCap="round"
-                strokeJoin="round"
-              />
-            ) : null}
-          </Group>
-          {art.glyph.fill ? <Path path={art.glyph.fill} color={ink} /> : null}
-          {art.glyph.line ? (
-            <Path
-              path={art.glyph.line}
-              style="stroke"
-              strokeWidth={1.9}
-              color={ink}
-              strokeCap="round"
-              strokeJoin="round"
-            />
-          ) : null}
+          {svg ? (
+            <Group
+              layer={
+                locked ? (
+                  <Paint>
+                    <ColorMatrix matrix={IRON} />
+                  </Paint>
+                ) : undefined
+              }
+            >
+              <ImageSVG svg={svg} x={-3} y={-3} width={30} height={30} />
+            </Group>
+          ) : (
+            <>
+              <Group
+                transform={[{ translateX: 0.5 }, { translateY: 0.8 }]}
+                opacity={locked ? 0 : 0.45}
+              >
+                {art.glyph.fill ? (
+                  <Path path={art.glyph.fill} color="#000" />
+                ) : null}
+                {art.glyph.line ? (
+                  <Path
+                    path={art.glyph.line}
+                    style="stroke"
+                    strokeWidth={1.9}
+                    color="#000"
+                    strokeCap="round"
+                    strokeJoin="round"
+                  />
+                ) : null}
+              </Group>
+              {art.glyph.fill ? <Path path={art.glyph.fill} color={ink} /> : null}
+              {art.glyph.line ? (
+                <Path
+                  path={art.glyph.line}
+                  style="stroke"
+                  strokeWidth={1.9}
+                  color={ink}
+                  strokeCap="round"
+                  strokeJoin="round"
+                />
+              ) : null}
+            </>
+          )}
         </Group>
       </Group>
 

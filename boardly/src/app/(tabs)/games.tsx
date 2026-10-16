@@ -17,7 +17,7 @@ import {
   EmptyState,
   ErrorState,
   IconButton,
-  Ribbon,
+  TitlePlaque,
   Screen,
   SkeletonListItem,
   TableBackdrop,
@@ -77,7 +77,7 @@ export default function GamesScreen() {
   const header = (
     <View>
       <View style={styles.header}>
-        <Ribbon label={t("games.title")} colors={TABLE.ribbonRed} standalone />
+        <TitlePlaque label={t("games.title")} />
         <View style={styles.actions}>
           <IconButton accessibilityLabel="Search">
             <SearchIcon size={20} color={colors.icon} />

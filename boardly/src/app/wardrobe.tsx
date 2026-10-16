@@ -18,7 +18,7 @@ import { BackHandler, Pressable, ScrollView, StyleSheet, useWindowDimensions, Vi
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { BackIcon, Emblem } from "@/components/icons";
-import { AppText, Button, IconButton, Ribbon, Texture } from "@/components/ui";
+import { AppText, Button, IconButton, TitlePlaque, Texture } from "@/components/ui";
 import { CoinIcon } from "@/features/coins/CoinIcon";
 import { CoinPill } from "@/features/coins/CoinPill";
 import { useSession } from "@/context/SessionContext";
@@ -239,11 +239,7 @@ export default function Wardrobe() {
         >
           <BackIcon size={20} />
         </IconButton>
-        <Ribbon
-          label={t("mascot.wardrobe")}
-          colors={TABLE.ribbonGold}
-          standalone
-        />
+        <TitlePlaque label={t("mascot.wardrobe")} />
         <View style={{ flex: 1 }} />
         <CoinPill amount={coins} />
       </View>

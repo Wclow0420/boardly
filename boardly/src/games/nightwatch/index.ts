@@ -54,10 +54,10 @@ export const nightwatch: GameDefinition<NightwatchState> = {
   needsMe: (state, mySeat) => taskFor(state, mySeat) !== null,
   boxArt: ManorBoxArt,
   badges: {
-    "nightwatch.sealed": { glyph: GLYPHS.candle, loop: "sway" },
-    "nightwatch.possessed": { glyph: GLYPHS.ghost, loop: "bob" },
-    "nightwatch.prophet": { glyph: GLYPHS.eye, loop: "pulse" },
-    "nightwatch.sharpEye": { glyph: GLYPHS.dagger, loop: "sway" },
-    "nightwatch.ghostbreaker": { glyph: GLYPHS.orb, loop: "spin" },
+    "nightwatch.sealed": { glyph: GLYPHS.candle, emoji: "🕯", loop: "sway" },
+    "nightwatch.possessed": { glyph: GLYPHS.ghost, emoji: "👻", loop: "bob" },
+    "nightwatch.prophet": { glyph: GLYPHS.eye, emoji: "👀", loop: "pulse" },
+    "nightwatch.sharpEye": { glyph: GLYPHS.dagger, emoji: "🗡", loop: "sway" },
+    "nightwatch.ghostbreaker": { glyph: GLYPHS.orb, emoji: "🔮", loop: "spin" },
   },
 };

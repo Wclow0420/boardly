@@ -17,7 +17,7 @@ import {
   Frame,
   GorhomBottomSheetModal,
   IconButton,
-  Ribbon,
+  SectionTitle, TitlePlaque,
   Screen,
   SkeletonListItem,
   TableBackdrop,
@@ -69,11 +69,7 @@ export default function FriendsScreen() {
   const header = (
     <View>
       <View style={styles.header}>
-        <Ribbon
-          label={t("friends.title")}
-          colors={TABLE.ribbonGreen}
-          standalone
-        />
+        <TitlePlaque label={t("friends.title")} />
         <IconButton
           accessibilityLabel={t("friends.add.title")}
           onPress={() => addSheetRef.current?.present()}
@@ -130,10 +126,10 @@ export default function FriendsScreen() {
         />
       ) : (
         <>
-          <Ribbon
+          <SectionTitle
             label={t("friends.table.atTable")}
             colors={TABLE.ribbonBlue}
-            style={styles.firstRibbon}
+            style={styles.firstSection}
           />
           <Frame tone="blue" stitched style={styles.table}>
             {atTable.length ? (
@@ -162,7 +158,7 @@ export default function FriendsScreen() {
 
           {away.length ? (
             <>
-              <Ribbon
+              <SectionTitle
                 label={t("friends.table.away")}
                 colors={TABLE.ribbonRed}
                 style={{ marginTop: spacing.xl }}
@@ -291,7 +287,7 @@ const styles = StyleSheet.create({
   tabs: { flexDirection: "row", gap: 8 },
   scroll: { flex: 1, marginTop: 8 },
   content: { paddingBottom: 32, paddingTop: 8 },
-  firstRibbon: { marginTop: 4 },
+  firstSection: { marginTop: 4 },
   table: { paddingTop: 20, paddingHorizontal: 12, paddingBottom: 14 },
   tiles: {
     flexDirection: "row",

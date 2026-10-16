@@ -14,6 +14,7 @@ import {
   ProfileEmblem,
 } from "@/components/engraved";
 import { EMOJI_EMBLEMS } from "@/components/engraved/emoji";
+import type { EmblemData } from "@/components/engraved/emblem";
 import { UI_EMBLEMS, type UiEmblemName } from "@/components/engraved/ui";
 
 export interface IconProps {
@@ -103,6 +104,16 @@ const strip = (emoji: string) => emoji.replace(/\uFE0F/g, "");
 /** Whether `emoji` has an emblem. */
 export const hasEmblem = (emoji: string) =>
   strip(emoji) in EMOJI_EMBLEM || strip(emoji) in EMOJI_EMBLEMS;
+
+/** An emoji's emblem as data (and the colour its tint parts take), for
+ *  drawing it elsewhere, e.g. on a badge's canvas. */
+export function emblemData(
+  emoji: string,
+): { data: EmblemData; tint?: string } | null {
+  const name = EMOJI_EMBLEM[strip(emoji)];
+  if (name && name in UI_EMBLEMS) return { data: UI_EMBLEMS[name as UiEmblemName] };
+  return name ? null : (EMOJI_EMBLEMS[strip(emoji)] ?? null);
+}
 
 /** The emblem for an emoji, `size` points square (nothing if none). */
 export function Emblem({ emoji, size }: { emoji: string; size: number }) {

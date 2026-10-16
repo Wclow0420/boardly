@@ -122,6 +122,21 @@ and Baroque Silver (`art/baroque.tsx`).
     `node scripts/emblem-sheet.mjs <file.ts> <out.png>`: each icon large
     and at text size. Every icon must read at about 17pt.
   - Never ship a bare emoji or a line icon as UI.
+- The app's own pieces wear the same trim (`components/ui`; shapes in
+  `engraved/trim.ts`, drawn once as still SVG): the tray's wood or felt
+  stays, the trim is engraved metal, gold for what matters and silver
+  for the second choice.
+  - `TitlePlaque`: a page's title (ivory plaque, gold scrolls, a
+    sapphire).
+  - `SectionTitle`: a section's name on an enamel tab in its colour,
+    then a gold rule; `right` holds a "See all" or a count.
+  - `Frame`: a tray in a gold moulding; `ornate` (corner scrolls) only
+    for the one card that leads a page.
+  - `Button` (enamel in gold; `secondary` in silver), `Chip`,
+    `CoinPill`, `Medallion` (a stat number on a beaded gold coin).
+  - Anything drawn by hand (a home card, a big button) gets
+    `<BezelOverlay r t metal />` after its fill and before its content.
+    No plain borders.
 - Life comes from a light `Sweep`, `Glint`s, one jewel that glows or
   beats, and a gentle sway. No creature heads drawn in code. People
   with faces are only the avatar figures (`src/features/avatar`).
@@ -198,8 +213,10 @@ otherwise.
     bigger goals are levels of one `series` ("wins": 1 → 10 → 25):
     give them the same series and the app shows the next level up.
   App (`src/games/<key>/index.ts`): a `badges` entry for every key —
-  `{ glyph, loop }`, the emblem drawn from the game's own icon set
-  (`icons.tsx`) or `components/badges/glyphs.ts`, and how it moves
+  `{ glyph, emoji, loop }`: `emoji` names the engraved emblem drawn
+  on the medal (any emoji `<Emblem>` draws; locked, it is struck in
+  iron), `glyph` the line icon from the game's `icons.tsx` or
+  `components/badges/glyphs.ts` as the fallback, and how it moves
   (`flicker`, `sway`, `spin`, `bob`, `pulse`, `tumble`; pick what
   suits the object). Name and description under
   `badges.<key>.<name>.{name,desc}` in all three locales. The badge

@@ -23,6 +23,7 @@ import {
 import { ChevronRightIcon } from "@/components/icons";
 import {
   AppText,
+  BezelOverlay,
   BottomSheetModal,
   GorhomBottomSheetModal,
   Texture,
@@ -105,16 +106,10 @@ export const SettingsSheet = forwardRef<
           >
             <LinearGradient
               colors={row.danger ? DANGER_TILE.fill : TABLE.button}
-              style={[
-                styles.row,
-                {
-                  borderColor: row.danger
-                    ? DANGER_TILE.border
-                    : TABLE.buttonBorder,
-                },
-              ]}
+              style={styles.row}
             >
-              <Texture radius={ROW_RADIUS - 2} />
+              <Texture radius={ROW_RADIUS} />
+              <BezelOverlay r={ROW_RADIUS} t={3} />
               <row.Emblem size={30} />
               <AppText numberOfLines={1} style={[styles.grow, styles.label]}>
                 {row.label}
@@ -141,11 +136,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingVertical: 11,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     borderRadius: ROW_RADIUS,
-    borderWidth: 2,
-    borderBottomWidth: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.35,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 3 },
   },
   label: { fontFamily: fontFamily.semiBold, fontSize: 14, color: "#FFFFFF" },
   value: {

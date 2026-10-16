@@ -1,8 +1,9 @@
 import { Pressable } from "react-native";
 
-import { shade, useTheme } from "@/theme";
+import { useTheme } from "@/theme";
 import { tapHaptic } from "@/utils/haptics";
 import { AppText } from "./AppText";
+import { BezelOverlay } from "./Trim";
 
 export interface ChipProps {
   label: string;
@@ -10,7 +11,8 @@ export interface ChipProps {
   onPress?: () => void;
 }
 
-/** Filter/tab token — gold when selected, wood otherwise. */
+/** Filter/tab token: gold enamel in a gold bezel when selected, wood in
+ *  silver otherwise. */
 export function Chip({ label, selected = false, onPress }: ChipProps) {
   const { colors, radius } = useTheme();
 
@@ -27,12 +29,10 @@ export function Chip({ label, selected = false, onPress }: ChipProps) {
           : undefined
       }
       style={({ pressed }) => ({
-        paddingVertical: 7,
-        paddingHorizontal: 14,
+        paddingVertical: 8,
+        paddingHorizontal: 15,
         borderRadius: radius.pill,
-        borderWidth: 1.5,
-        borderBottomWidth: 3,
-        borderColor: selected ? shade(colors.accentPressed, -0.35) : colors.border,
+        transform: [{ translateY: pressed ? 1 : 0 }],
         backgroundColor: selected
           ? pressed
             ? colors.accentPressed
@@ -42,6 +42,7 @@ export function Chip({ label, selected = false, onPress }: ChipProps) {
             : colors.card,
       })}
     >
+      <BezelOverlay r={radius.pill} t={2.4} metal={selected ? "gold" : "silver"} />
       <AppText
         variant="label"
         style={{

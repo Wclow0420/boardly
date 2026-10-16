@@ -22,7 +22,11 @@ export type BadgeLoop =
   "flicker" | "sway" | "spin" | "bob" | "pulse" | "tumble";
 
 export interface BadgeArt {
+  /** The line icon: the fallback when there is no emblem. */
   glyph: Glyph;
+  /** The engraved emblem in the middle, by its emoji (any emoji
+   *  <Emblem> draws, except the few drawn as components). */
+  emoji?: string;
   loop: BadgeLoop;
   /** The enamel behind the emblem; defaults to the game's colour. */
   face?: string;

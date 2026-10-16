@@ -4,9 +4,11 @@ import { Pressable, View, type StyleProp, type ViewStyle } from "react-native";
 import { useTheme } from "@/theme";
 
 import { Texture } from "./Texture";
+import { BezelOverlay } from "./Trim";
 import { tapHaptic } from "@/utils/haptics";
 
-const CARD_BORDER = 2;
+/** The gold moulding round a card. */
+const CARD_RIM = 3;
 
 export interface CardProps {
   children: ReactNode;
@@ -20,26 +22,26 @@ export interface CardProps {
 export function Card({ children, onPress, padding, radius, style }: CardProps) {
   const theme = useTheme();
 
-  // A tray on the table: solid fill, dark rim, thicker bottom edge
+  // A tray on the table in a thin engraved gold moulding; the fill is
+  // the theme's, so a game's skin keeps its own colour inside the rim
+  const r = radius ?? theme.radius.lg;
   const cardStyle: ViewStyle = {
     backgroundColor: theme.colors.card,
-    borderWidth: CARD_BORDER,
-    borderBottomWidth: 4,
-    borderColor: theme.colors.border,
-    borderRadius: radius ?? theme.radius.lg,
-    padding: padding ?? theme.spacing.md,
+    borderRadius: r,
+    padding: (padding ?? theme.spacing.md) + CARD_RIM - 1,
     ...theme.shadows.card,
   };
 
-  const texture = (
-    <Texture radius={(radius ?? theme.radius.lg) - CARD_BORDER} />
-  );
+  const texture = <Texture radius={r} />;
+  // over the content, so a picture running to the edge sits in the frame
+  const rim = <BezelOverlay r={r} t={CARD_RIM} />;
 
   if (!onPress) {
     return (
       <View style={[cardStyle, style]}>
         {texture}
         {children}
+        {rim}
       </View>
     );
   }
@@ -54,6 +56,7 @@ export function Card({ children, onPress, padding, radius, style }: CardProps) {
     >
       {texture}
       {children}
+      {rim}
     </Pressable>
   );
 }

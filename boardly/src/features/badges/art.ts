@@ -11,17 +11,17 @@ import { getGame } from "@/games/registry";
 export const BOARDLY_FACE = "#1F4E5F";
 
 const GENERAL: Record<string, BadgeArt> = {
-  "boardly.firstTable": { glyph: G.meeple, loop: "bob" },
-  "boardly.firstWin": { glyph: G.trophy, loop: "pulse" },
-  "boardly.regular": { glyph: G.die, loop: "tumble" },
-  "boardly.streak": { glyph: G.flame, loop: "flicker" },
-  "boardly.company": { glyph: G.people, loop: "bob" },
-  "boardly.veteran": { glyph: G.laurel, loop: "pulse" },
-  "boardly.champion": { glyph: G.star, loop: "spin" },
-  "boardly.legend": { glyph: G.crown, loop: "pulse" },
+  "boardly.firstTable": { glyph: G.meeple, emoji: "🪑", loop: "bob" },
+  "boardly.firstWin": { glyph: G.trophy, emoji: "🏆", loop: "pulse" },
+  "boardly.regular": { glyph: G.die, emoji: "🎲", loop: "tumble" },
+  "boardly.streak": { glyph: G.flame, emoji: "🔥", loop: "flicker" },
+  "boardly.company": { glyph: G.people, emoji: "🤝", loop: "bob" },
+  "boardly.veteran": { glyph: G.laurel, emoji: "🏅", loop: "pulse" },
+  "boardly.champion": { glyph: G.star, emoji: "★", loop: "spin" },
+  "boardly.legend": { glyph: G.crown, emoji: "👑", loop: "pulse" },
 };
 
-const FALLBACK: BadgeArt = { glyph: G.star, loop: "pulse" };
+const FALLBACK: BadgeArt = { glyph: G.star, emoji: "★", loop: "pulse" };
 
 /** A badge's art and its enamel colour. */
 export function badgeArt(

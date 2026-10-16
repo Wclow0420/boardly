@@ -13,6 +13,7 @@ import { shade, useTheme } from "@/theme";
 import { tapHaptic } from "@/utils/haptics";
 import { AppText } from "./AppText";
 import { Texture } from "./Texture";
+import { BezelOverlay } from "./Trim";
 
 export type ButtonVariant = "primary" | "secondary" | "tertiary" | "danger";
 export type ButtonSize = "lg" | "md" | "sm";
@@ -52,26 +53,26 @@ export function Button({
   const { colors, radius, typography } = theme;
   const sizeStyle = SIZE_STYLES[size];
 
-  // Each variant is a top-to-bottom gradient with a darker rim, like a
-  // raised game piece. Everything derives from the theme, so a game's
-  // own skin recolours its buttons too.
+  // Each variant is an enamel face in an engraved metal bezel: gold for
+  // the buttons that matter, silver for the second choice. The enamel
+  // derives from the theme, so a game's own skin recolours its buttons.
   const look: Record<
     Exclude<ButtonVariant, "tertiary">,
-    { fill: [string, string]; rim: string; label: string }
+    { fill: [string, string, string]; metal: "gold" | "silver"; label: string }
   > = {
     primary: {
-      fill: [colors.primary, colors.primaryPressed],
-      rim: shade(colors.primaryPressed, -0.3),
+      fill: [shade(colors.primary, 0.3), colors.primary, colors.primaryPressed],
+      metal: "gold",
       label: colors.primaryContrast,
     },
     secondary: {
-      fill: [shade(colors.card, 0.12), colors.card],
-      rim: colors.border,
+      fill: [shade(colors.card, 0.18), colors.card, shade(colors.card, -0.15)],
+      metal: "silver",
       label: colors.text,
     },
     danger: {
-      fill: [colors.danger, shade(colors.danger, -0.22)],
-      rim: shade(colors.danger, -0.45),
+      fill: [shade(colors.danger, 0.3), colors.danger, shade(colors.danger, -0.25)],
+      metal: "gold",
       label: "#FFFFFF",
     },
   };
@@ -134,7 +135,11 @@ export function Button({
           : undefined
       }
       style={({ pressed }) => [
-        { opacity: disabled ? 0.5 : pressed ? 0.85 : 1 },
+        {
+          opacity: disabled ? 0.5 : pressed ? 0.92 : 1,
+          // pressed, the piece sinks into the table
+          transform: [{ translateY: pressed && variant !== "tertiary" ? 1.5 : 0 }],
+        },
         variant === "tertiary" ? [styles.base, shape, face] : null,
         outer,
       ]}
@@ -144,18 +149,17 @@ export function Button({
       ) : (
         <LinearGradient
           colors={look[variant].fill}
-          style={[
-            styles.base,
-            styles.raised,
-            shape,
-            face,
-            { borderColor: look[variant].rim },
-          ]}
+          style={[styles.base, styles.raised, shape, face]}
         >
           <Texture
             radius={
               (face.borderRadius as number | undefined) ?? shape.borderRadius
             }
+          />
+          <BezelOverlay
+            r={(face.borderRadius as number | undefined) ?? shape.borderRadius}
+            t={size === "sm" ? 2.8 : 3.5}
+            metal={look[variant].metal}
           />
           {content}
         </LinearGradient>
@@ -170,8 +174,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 20,
   },
-  // Thicker bottom edge reads as a pressable, raised piece
-  raised: { borderWidth: 2, borderBottomWidth: 4 },
+  // A raised piece casts a shadow on the table
+  raised: {
+    shadowColor: "#000",
+    shadowOpacity: 0.4,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
   content: {
     flexDirection: "row",
     alignItems: "center",

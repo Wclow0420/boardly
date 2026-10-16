@@ -31,8 +31,8 @@ import {
   type TextInputProps,
 } from "react-native";
 
-import { TABLE, ThemeRelay, shade, useThemeRelay } from "@/theme";
-import { Ribbon } from "./Frames";
+import { ThemeRelay, shade, useThemeRelay } from "@/theme";
+import { TitlePlaque } from "./Frames";
 
 export interface BottomSheetModalProps {
   children: ReactNode;
@@ -114,7 +114,7 @@ export const BottomSheetModal = forwardRef<
         <ThemeRelay value={themeValue}>
           {title ? (
             <View style={{ paddingHorizontal: spacing.xl, paddingBottom: 14 }}>
-              <Ribbon label={title} colors={TABLE.ribbonGold} />
+              <TitlePlaque label={title} />
             </View>
           ) : null}
           {children}

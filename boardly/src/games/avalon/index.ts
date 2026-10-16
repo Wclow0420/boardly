@@ -24,9 +24,9 @@ export const avalon: GameDefinition<AvalonState> = {
   needsMe: (state, mySeat) =>
     state.phase !== "finished" && pendingAction(state, mySeat) !== null,
   badges: {
-    "avalon.firstOp": { glyph: G.star, loop: "pulse" },
-    "avalon.mole": { glyph: G.mask, loop: "bob" },
-    "avalon.hitman": { glyph: G.target, loop: "spin" },
-    "avalon.spymaster": { glyph: G.crown, loop: "pulse" },
+    "avalon.firstOp": { glyph: G.star, emoji: "★", loop: "pulse" },
+    "avalon.mole": { glyph: G.mask, emoji: "🎭", loop: "bob" },
+    "avalon.hitman": { glyph: G.target, emoji: "🎯", loop: "spin" },
+    "avalon.spymaster": { glyph: G.crown, emoji: "🕵", loop: "pulse" },
   },
 };

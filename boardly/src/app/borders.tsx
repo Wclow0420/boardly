@@ -11,7 +11,7 @@ import {
   Button,
   Frame,
   IconButton,
-  Ribbon,
+  SectionTitle, TitlePlaque,
   Screen,
   TableBackdrop,
 } from "@/components/ui";
@@ -132,17 +132,13 @@ export default function BordersScreen() {
         >
           <BackIcon size={20} color={colors.icon} />
         </IconButton>
-        <Ribbon
-          label={t("borders.title")}
-          colors={TABLE.ribbonGold}
-          standalone
-        />
+        <TitlePlaque label={t("borders.title")} />
         <View style={styles.grow} />
         <CoinPill amount={coins} />
       </View>
 
       {/* Preview of the selected border */}
-      <Frame tone="dark" style={styles.preview}>
+      <Frame tone="dark" ornate style={styles.preview}>
         <View style={styles.previewAvatar}>
           <AvatarBorder
             key={selected.id}
@@ -221,18 +217,15 @@ export default function BordersScreen() {
             if (borders.length === 0) return null;
             return (
               <View key={section.key} style={styles.section}>
-                <View style={styles.sectionHead}>
-                  <Ribbon
+                <SectionTitle
                     label={
                       section.key === "earned"
                         ? t("borders.earnedSection")
                         : t(`borders.rarity.${section.key}`)
                     }
                     colors={SECTION_RIBBON[section.key]}
-                    standalone
-                  />
-                  <AppText style={styles.count}>{borders.length}</AppText>
-                </View>
+                  right={<AppText style={styles.count}>{borders.length}</AppText>}
+                />
                 <View style={styles.grid}>
                   {borders.map((border) => {
                     const active = border.id === selectedId;

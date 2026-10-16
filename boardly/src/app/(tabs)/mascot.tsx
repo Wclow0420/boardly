@@ -10,7 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Emblem } from "@/components/icons";
-import { AppText, Frame, Ribbon, Texture } from "@/components/ui";
+import { AppText, BezelOverlay, Frame, TitlePlaque, Texture } from "@/components/ui";
 import { useSession } from "@/context/SessionContext";
 import { CoinPill } from "@/features/coins/CoinPill";
 import { asLook } from "@/features/mascot/dress";
@@ -32,7 +32,7 @@ export default function MascotTab() {
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: TABLE.table[1] }}>
       <LinearGradient colors={TABLE.table} style={StyleSheet.absoluteFill} />
       <View style={styles.header}>
-        <Ribbon label={t("mascot.tab")} colors={TABLE.ribbonGold} standalone />
+        <TitlePlaque label={t("mascot.tab")} />
         <View style={{ flex: 1 }} />
         <CoinPill amount={user?.coins ?? 0} />
       </View>
@@ -54,6 +54,7 @@ export default function MascotTab() {
         >
           <LinearGradient colors={TABLE.button} style={styles.wardrobeFill}>
             <Texture radius={16} />
+            <BezelOverlay r={16} t={4} />
             <Emblem emoji="👗" size={40} />
             <AppText style={styles.wardrobeText}>{t("mascot.open")}</AppText>
           </LinearGradient>
@@ -76,18 +77,19 @@ const styles = StyleSheet.create({
   wardrobe: {
     marginTop: 12,
     alignSelf: "stretch",
-    borderRadius: 18,
-    borderWidth: 2,
-    borderBottomWidth: 4,
-    borderColor: TABLE.buttonBorder,
-    overflow: "hidden",
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 3 },
   },
   wardrobeFill: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
-    paddingVertical: 12,
+    paddingVertical: 14,
+    borderRadius: 16,
   },
   wardrobeText: { color: "#FFFFFF", fontFamily: fontFamily.bold, fontSize: 18 },
   soon: { marginTop: 14, alignSelf: "stretch", flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },

@@ -7,7 +7,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Meeple } from "@/components/tabletop/Meeple";
-import { AppText, Texture } from "@/components/ui";
+import { AppText, BezelOverlay, Texture } from "@/components/ui";
 import type { Friend } from "@/data/types";
 import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
 import { GameBox } from "@/features/games/GameBox";
@@ -48,7 +48,8 @@ export function FriendTile({
       style={({ pressed }) => [styles.wrap, pressed && styles.pressed]}
     >
       <LinearGradient colors={TABLE.woodButton} style={styles.tile}>
-        <Texture radius={14} />
+        <Texture radius={16} />
+        <BezelOverlay r={16} t={3} />
         <View style={styles.avatar}>
           <AvatarBorder
             name={friend.name}
@@ -109,6 +110,7 @@ export function FriendTile({
             ]}
           >
             <LinearGradient colors={TABLE.button} style={styles.inviteFill}>
+              <BezelOverlay r={INVITE_RADIUS} t={2.6} />
               <AppText style={styles.inviteText}>{t("common.invite")}</AppText>
             </LinearGradient>
           </Pressable>
@@ -117,6 +119,8 @@ export function FriendTile({
     </Pressable>
   );
 }
+
+const INVITE_RADIUS = 12;
 
 const styles = StyleSheet.create({
   wrap: { width: "48%" },
@@ -128,9 +132,6 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     paddingHorizontal: 10,
     borderRadius: 16,
-    borderWidth: 2,
-    borderBottomWidth: 4,
-    borderColor: TABLE.woodButtonBorder,
     minHeight: 168,
   },
   // room round the avatar for its border
@@ -156,10 +157,8 @@ const styles = StyleSheet.create({
   invite: { alignSelf: "stretch", marginTop: "auto" },
   inviteFill: {
     alignItems: "center",
-    paddingVertical: 7,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: TABLE.buttonBorder,
+    paddingVertical: 8,
+    borderRadius: INVITE_RADIUS,
   },
   inviteText: { fontFamily: fontFamily.bold, fontSize: 13, color: "#FFFFFF" },
 });
