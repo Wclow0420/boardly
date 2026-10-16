@@ -52,6 +52,17 @@ Then draw it with the same craft, and give it life the borders' way
   on clips that swing in once.
 - Popups opened from a page wear the page's style (see
   `hall/BadgePopup.tsx`), not the plain shared card.
+- A page must open fast, not only animate at 60 fps. Measure the time
+  from mount to first frame (the hall went from ~2 s to ~0.3 s):
+  - Still art (walls, boards, cards, cases, popups) is baked once into
+    images and kept for the app (`components/badges/bake.ts`:
+    `bakedSvg`, `badgePicture`), never re-parsed on every visit.
+  - No `SvgXml` or `BezelOverlay` per repeated item: each is dozens of
+    native views. A board of cards is one canvas drawing its images
+    and pictures; only text and invisible buttons sit on top.
+  - Still badges are one recorded picture each, shared by every copy.
+  - Show the top of the page first and mount the rest a frame at a
+    time.
 
 ## The craft
 

@@ -6,7 +6,9 @@ import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { SharedValue } from "react-native-reanimated";
-import { SvgXml } from "react-native-svg";
+import { Canvas, Image as SkImage } from "@shopify/react-native-skia";
+
+import { bakedSvg } from "@/components/badges/bake";
 
 import type { BadgeRecord } from "@/api/client";
 import { Badge } from "@/components/badges/Badge";
@@ -33,12 +35,21 @@ export function Showcase({
   onOpen: (badge: BadgeRecord) => void;
 }) {
   const { t } = useTranslation();
-  const art = useMemo(() => showcaseCase(width, HEIGHT, SHOWCASE_SIZE), [width]);
+  const art = useMemo(() => {
+    const parts = showcaseCase(width, HEIGHT, SHOWCASE_SIZE);
+    return {
+      ...parts,
+      caseImage: bakedSvg("case", width, HEIGHT, () => parts.caseSvg),
+      glassImage: bakedSvg("glass", width, HEIGHT, () => parts.glass),
+    };
+  }, [width]);
   const slot = (width - 30) / SHOWCASE_SIZE;
   const size = Math.min(92, slot * 1.02);
   return (
     <View style={{ width, height: HEIGHT }}>
-      <SvgXml xml={art.caseSvg} width={width} height={HEIGHT} style={StyleSheet.absoluteFill} />
+      <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
+        {art.caseImage ? <SkImage image={art.caseImage} x={0} y={0} width={width} height={HEIGHT} /> : null}
+      </Canvas>
       {art.centres.map((cx, i) => {
         const badge = badges[i];
         const left = cx - size / 2;
@@ -80,13 +91,9 @@ export function Showcase({
         );
       })}
       {/* the glass, over everything in the case */}
-      <SvgXml
-        xml={art.glass}
-        width={width}
-        height={HEIGHT}
-        style={StyleSheet.absoluteFill}
-        pointerEvents="none"
-      />
+      <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
+        {art.glassImage ? <SkImage image={art.glassImage} x={0} y={0} width={width} height={HEIGHT} /> : null}
+      </Canvas>
       {/* name plates along the floor */}
       {art.centres.map((cx, i) => (
         <View

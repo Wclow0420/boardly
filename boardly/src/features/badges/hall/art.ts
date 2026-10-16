@@ -85,18 +85,42 @@ export function corners(w: number, h: number, inset: number, scale: number, id: 
 
 /** A gilded moulding (a rounded frame `t` thick) with its groove, ink and
  *  one shine, as markup. */
-function moulding(x: number, y: number, w: number, h: number, r: number, t: number, id: string) {
+function moulding(
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+  t: number,
+  id: string,
+  metal: "gold" | "silver" = "gold",
+) {
   const outer = rrect(x, y, w, h, r);
   const inner = rrect(x + t, y + t, w - 2 * t, h - 2 * t, Math.max(1, r - t));
   const groove = rrect(x + t / 2, y + t / 2, w - t, h - t, Math.max(1, r - t / 2));
+  const { ink, vein } = INKS[metal];
   return (
-    `<defs>${linear(id, GOLD, false)}</defs>` +
+    `<defs>${linear(id, MATERIALS[metal], false)}</defs>` +
     `<path d="${outer}${inner}" fill-rule="evenodd" fill="url(#${id})"/>` +
-    `<path d="${groove}" fill="none" stroke="${VEIN}" stroke-width="0.7" stroke-opacity="0.9"/>` +
+    `<path d="${groove}" fill="none" stroke="${vein}" stroke-width="0.7" stroke-opacity="0.9"/>` +
     `<path d="M${f(x + r)} ${f(y + t * 0.4)}H${f(x + w * 0.4)}" stroke="#fff" stroke-width="1.1" stroke-linecap="round" stroke-opacity="0.9"/>` +
-    `<path d="${outer}" fill="none" stroke="${INK}" stroke-width="1.3"/>` +
-    `<path d="${inner}" fill="none" stroke="${INK}" stroke-width="0.9"/>`
+    `<path d="${outer}" fill="none" stroke="${ink}" stroke-width="1.3"/>` +
+    `<path d="${inner}" fill="none" stroke="${ink}" stroke-width="0.9"/>`
   );
+}
+
+/** A badge card, w × h (drawn with 4 to spare round it for its shadow):
+ *  dark wood in a metal moulding, the tag it hangs from at the top;
+ *  dimmer when the badge isn't earned. */
+export function cardArt(w: number, h: number, metal: "gold" | "silver", dim: boolean) {
+  const p = 4;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w + 2 * p}" height="${h + 2 * p}" viewBox="${-p} ${-p} ${w + 2 * p} ${h + 2 * p}">
+<defs>${linear("cf", dim ? ["#2E2620", "#1E1812"] : ["#4A2E1A", "#2E1A0E"])}</defs>
+<path d="${rrect(0, 3, w, h, 12)}" fill="#000" fill-opacity="0.45"/>
+<path d="${rrect(1, 1, w - 2, h - 2, 11)}" fill="url(#cf)"/>
+${moulding(0, 0, w, h, 12, 3, "cm", metal)}
+<path d="${rrect(w / 2 - 9, 3, 18, 5, 2.5)}" fill="#1A0E06" stroke="#C8902E" stroke-width="1"/>
+</svg>`;
 }
 
 /** The hall's wall: tall wooden planks, the grain running down them,

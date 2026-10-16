@@ -9,13 +9,12 @@
 
 import {
   Canvas,
-  ColorMatrix,
   FillType,
   Group,
   ImageSVG,
   LinearGradient,
-  Paint,
   Path,
+  Picture,
   Rect,
   Skia,
   vec,
@@ -23,8 +22,7 @@ import {
 import { useMemo } from "react";
 import { useDerivedValue, type SharedValue } from "react-native-reanimated";
 
-import { toSvg, toSvgBody, type EmblemData } from "@/components/engraved/emblem";
-import { emblemData } from "@/components/icons";
+import { badgePicture, badgeSvgs } from "./bake";
 import type { BadgeArt, BadgeLoop, BadgeStyle, BadgeTier } from "./types";
 
 /** Each level's glow, for the light round a badge and its words. */
@@ -34,15 +32,6 @@ export const TIER_GLOW: Record<BadgeTier, string> = {
   gold: "#FFC94A",
   diamond: "#A8E4FF",
 };
-
-/** A locked badge, struck in dark iron: its own light and shade, grey
- *  and dim, a little cool. */
-const IRON = [
-  0.16, 0.5, 0.05, 0, 0.02,
-  0.17, 0.52, 0.05, 0, 0.02,
-  0.18, 0.56, 0.06, 0, 0.03,
-  0, 0, 0, 1, 0,
-];
 
 /** The emblem's own movement at time `t`, about its centre (or foot). */
 function loopTransform(loop: BadgeLoop, t: number) {
@@ -69,11 +58,6 @@ function loopTransform(loop: BadgeLoop, t: number) {
     }
   }
 }
-
-const svgOf = (data: EmblemData, tint: string, id: string) =>
-  Skia.SVG.MakeFromString(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">${toSvgBody(data, tint, id)}</svg>`,
-  );
 
 export interface BadgeProps {
   art: BadgeArt;
@@ -106,24 +90,20 @@ export function Badge({
   alive = true,
 }: BadgeProps) {
   const tint = art.face ?? face;
-  const frame = useMemo(() => frames(tier), [frames, tier]);
-  const svgs = useMemo(() => {
-    const found = art.emoji ? emblemData(art.emoji) : null;
-    const box = frame.face * 1.5;
-    return {
-      back: svgOf(frame.back, tint, "b"),
-      front: frame.front ? svgOf(frame.front, tint, "f") : null,
-      emblem: found ? Skia.SVG.MakeFromString(toSvg(found.data, box, found.tint)) : null,
-      box,
-    };
-  }, [frame, tint, art.emoji]);
+  const moving = alive && !locked;
+  // a still badge is one picture, recorded once for the whole app
+  const still = useMemo(
+    () => (moving ? null : badgePicture({ art, tier, frames, tint }, locked)),
+    [moving, art, tier, frames, tint, locked],
+  );
+  const svgs = useMemo(() => badgeSvgs({ art, tier, frames, tint }), [art, tier, frames, tint]);
+  const frame = svgs.frame;
   const sweepPath = useMemo(() => {
     const path = Skia.Path.MakeFromSVGString(frame.sweep);
     path?.setFillType(FillType.EvenOdd);
     return path;
   }, [frame.sweep]);
 
-  const moving = alive && !locked;
   const t = useDerivedValue(() => clock.value + phase);
   const footed = art.loop === "flicker" || art.loop === "sway";
   const box = svgs.box;
@@ -144,18 +124,19 @@ export function Badge({
     return [{ translateX: x }, { translateY: 60 }, { rotate: 0.42 }];
   });
 
+  if (still)
+    return (
+      <Canvas style={{ width: size, height: size }}>
+        <Group transform={[{ scale: size / 120 }]}>
+          <Picture picture={still} />
+        </Group>
+      </Canvas>
+    );
+
   return (
     <Canvas style={{ width: size, height: size }}>
       <Group transform={[{ scale: size / 120 }]}>
-        <Group
-          layer={
-            locked ? (
-              <Paint>
-                <ColorMatrix matrix={IRON} />
-              </Paint>
-            ) : undefined
-          }
-        >
+        <Group>
           {svgs.back ? <ImageSVG svg={svgs.back} x={0} y={0} width={120} height={120} /> : null}
           {svgs.emblem ? (
             <Group transform={emblem}>

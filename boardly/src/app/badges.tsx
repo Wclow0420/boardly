@@ -17,10 +17,11 @@ import { useTranslation } from "react-i18next";
 import { BackHandler, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { SvgXml } from "react-native-svg";
+import { Canvas, Image as SkImage } from "@shopify/react-native-skia";
 
 import { api, type BadgeRecord } from "@/api/client";
 import { Badge, TIER_GLOW } from "@/components/badges/Badge";
+import { bakedSvg } from "@/components/badges/bake";
 import { BOARDLY_FRAMES } from "@/components/badges/frames/boardly";
 import { TIERS } from "@/components/badges/types";
 import { BackIcon } from "@/components/icons";
@@ -33,8 +34,6 @@ import { hallWall } from "@/features/badges/hall/art";
 import { GameBoard } from "@/features/badges/hall/GameBoard";
 import { HallCrest } from "@/features/badges/hall/HallCrest";
 import { SHOWCASE_SIZE, Showcase } from "@/features/badges/hall/Showcase";
-import { levelId } from "@/features/badges/order";
-import { useSeenBadges } from "@/features/badges/useSeenBadges";
 import { useMeepleTransition } from "@/features/mascot/MeepleTransition";
 import { useGameName } from "@/games/names";
 import { useOnScreen } from "@/hooks/useOnScreen";
@@ -84,17 +83,14 @@ export default function BadgesScreen() {
     return [...out.entries()].sort(([a], [b]) => (a === null ? -1 : b === null ? 1 : 0));
   }, [badges]);
 
-  // levels reached since this device last looked stamp down, once
-  const { seen, markSeen } = useSeenBadges(user?.id);
-  const fresh = useMemo(() => {
-    if (!seen || !onScreen) return new Set<string>();
-    return new Set(
-      earned
-        .filter((b) => !seen.has(levelId(b.key, b.tier!)))
-        .map((b) => levelId(b.key, b.tier!)),
-    );
-  }, [earned, seen, onScreen]);
-  const onStamped = useCallback((ids: string[]) => markSeen(ids), [markSeen]);
+  // the showcase and the first board come at once; the rest follow a
+  // frame at a time, so the page shows without waiting for them all
+  const [boards, setBoards] = useState(1);
+  useEffect(() => {
+    if (boards >= groups.length) return;
+    const id = requestAnimationFrame(() => setBoards((n) => n + 1));
+    return () => cancelAnimationFrame(id);
+  }, [boards, groups.length]);
 
   /** Show a badge on my card (first, pushing the last off when full), or
    *  take it off. My picks start from what the card shows now. */
@@ -131,13 +127,16 @@ export default function BadgesScreen() {
     ) : null;
 
   const insets = useSafeAreaInsets();
-  const wall = useMemo(() => hallWall(width, height), [width, height]);
+  const wall = useMemo(() => bakedSvg("wall", width, height, () => hallWall(width, height)), [width, height]);
   const crestH = insets.top + 140;
   const inner = width - 28;
 
   return (
     <View style={styles.screen}>
-      <SvgXml xml={wall} width={width} height={height} style={StyleSheet.absoluteFill} />
+      {/* the planks, baked once for the app */}
+      <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
+        {wall ? <SkImage image={wall} x={0} y={0} width={width} height={height} /> : null}
+      </Canvas>
       <ScrollView
         contentContainerStyle={[styles.body, { paddingTop: crestH - 4 }]}
         showsVerticalScrollIndicator={false}
@@ -178,16 +177,12 @@ export default function BadgesScreen() {
         <AppText variant="tiny" style={styles.hint}>
           {t("badges.hall.collectionHint")}
         </AppText>
-        {groups.map(([game, list]) => (
+        {groups.slice(0, boards).map(([game, list]) => (
           <GameBoard
             key={game ?? "boardly"}
             name={game ? gameName(game) : "Boardly"}
             badges={list}
-            clock={clock}
-            still={still}
-            fresh={fresh}
-            onStamped={onStamped}
-            action={action}
+            onOpen={setOpen}
           />
         ))}
       </ScrollView>

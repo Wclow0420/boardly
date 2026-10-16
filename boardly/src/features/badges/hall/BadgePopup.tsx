@@ -16,7 +16,9 @@ import Animated, {
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
-import { SvgXml } from "react-native-svg";
+import { Canvas, Image as SkImage } from "@shopify/react-native-skia";
+
+import { bakedSvg } from "@/components/badges/bake";
 
 import { Emblem } from "@/components/icons";
 import { AppText, BezelOverlay, IconButton, useBox } from "@/components/ui";
@@ -42,7 +44,7 @@ export function BadgePopup({
         <Pressable accessibilityLabel={t("rules.close")} onPress={onClose} style={styles.dim} />
         <View style={styles.wrap}>
           <View style={styles.card} onLayout={onLayout}>
-            {w > 0 ? <SvgXml xml={popupArt(w, h)} width={w} height={h} style={StyleSheet.absoluteFill} /> : null}
+            {w > 0 ? <PopupCard w={w} h={h} /> : null}
             <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
               {children}
             </ScrollView>
@@ -69,6 +71,16 @@ export function BadgePopup({
   );
 }
 
+/** The card's wood and gilt, baked once per size. */
+function PopupCard({ w, h }: { w: number; h: number }) {
+  const image = bakedSvg("popup", w, h, () => popupArt(w, h));
+  return (
+    <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
+      {image ? <SkImage image={image} x={0} y={0} width={w} height={h} /> : null}
+    </Canvas>
+  );
+}
+
 /** Rays of the level's colour turning slowly behind a badge. */
 export function BadgeRays({ size, color }: { size: number; color: string }) {
   const still = useReducedMotion();
@@ -81,7 +93,9 @@ export function BadgeRays({ size, color }: { size: number; color: string }) {
   const style = useAnimatedStyle(() => ({ transform: [{ rotate: `${turn.value}deg` }] }));
   return (
     <Animated.View pointerEvents="none" style={[{ position: "absolute", width: size, height: size }, style]}>
-      <SvgXml xml={raysArt(size, color)} width={size} height={size} />
+      <Canvas style={{ width: size, height: size }}>
+        <RaysImage size={size} color={color} />
+      </Canvas>
     </Animated.View>
   );
 }
@@ -123,3 +137,8 @@ const styles = StyleSheet.create({
   close: { position: "absolute", right: -10, top: -12 },
   closeFace: { position: "absolute", left: 0, top: 0, right: 0, bottom: 0, borderRadius: 19 },
 });
+
+function RaysImage({ size, color }: { size: number; color: string }) {
+  const image = bakedSvg(`rays|${color}`, size, size, () => raysArt(size, color));
+  return image ? <SkImage image={image} x={0} y={0} width={size} height={size} /> : null;
+}

@@ -87,6 +87,14 @@ function makeParts(w: number, top: number): Parts {
   };
 }
 
+/** The crest's parts for a size, made once for the app. */
+const made = new Map<string, Parts>();
+const partsFor = (w: number, top: number) => {
+  const key = `${w}|${top}`;
+  if (!made.has(key)) made.set(key, makeParts(w, top));
+  return made.get(key)!;
+};
+
 export function HallCrest({
   width,
   top,
@@ -99,7 +107,7 @@ export function HallCrest({
   clock: SharedValue<number>;
   title: string;
 }) {
-  const P = useMemo(() => makeParts(width, top), [width, top]);
+  const P = useMemo(() => partsFor(width, top), [width, top]);
   const { L } = P;
 
   const picture = useDerivedValue(() => {
