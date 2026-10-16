@@ -1,6 +1,6 @@
 // A lantern alive on the canvas (inside a parent <Canvas>), and the
 // light that flows into it. Its art is baked once (art.ts); each frame
-// moves it (a slow swing on its chain, a tremble when it's full), and
+// moves it (a slow swing on its chain), and
 // draws its light over and under the art: the aura round it, a halo,
 // the glow behind the glass, the flame on its candle.
 
@@ -109,11 +109,7 @@ export function Lantern({
 
   const transform = useDerivedValue(() => {
     const t = clock.value + seed * 3.1;
-    const full = clamp01((power.value - 0.75) * 4);
-    const swing =
-      Math.sin(t * 0.85) * 0.035 +
-      Math.sin(t * 2.3) * 0.008 +
-      Math.sin(t * 37) * 0.012 * full;
+    const swing = Math.sin(t * 0.85) * 0.035 + Math.sin(t * 2.3) * 0.008;
     return [
       { translateX: x + (shift ? shift.value : 0) },
       { translateY: y },

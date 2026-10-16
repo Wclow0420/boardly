@@ -422,8 +422,10 @@ export function NightwatchBoard({
     rite = {
       kind: "reveal",
       key: `vote-${state.history.length}`,
+      // one colour for the whole table: all green when the team goes,
+      // all red when it's turned back
       result: voteToShow.approved ? "good" : "bad",
-      seats: allSeats.map((seat) => ({ seat, name: nameOf(seat), done: true, tint: voteToShow.votes[seat] ? 1 : -1 })),
+      seats: allSeats.map((seat) => ({ seat, name: nameOf(seat), done: true, tint: voteToShow.approved ? 1 : -1 })),
     };
   } else if (revealing && missionToShow) {
     rite = {

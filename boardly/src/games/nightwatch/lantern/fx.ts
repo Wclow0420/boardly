@@ -48,7 +48,7 @@ half4 main(vec2 xy) {
   if (power < 0.01) return half4(0.0);
   vec2 d = (xy - c) / R;
   float q = length(d);
-  float reach = 0.2 + 0.75 * power;
+  float reach = 0.18 + 0.5 * power;
   float h = (q - 0.7) / reach;
   if (h < 0.0 || h > 1.0) return half4(0.0);
   vec2 dir = d / q;
@@ -70,7 +70,7 @@ half4 main(vec2 xy) {
   }
   vec3 col = mix(c0, c1, smoothstep(0.15, 0.5, heat));
   col = mix(col, c2, smoothstep(0.55, 0.95, heat));
-  float a = smoothstep(0.04, 0.32, heat) * min(power * 1.5, 1.0);
+  float a = smoothstep(0.04, 0.32, heat) * min(power * 1.2, 0.85);
   return half4(col * a, a);
 }`;
 

@@ -139,12 +139,14 @@ function Choose({
   });
   const goodLit = useSharedValue(locked === "good" ? 0 : 0.6);
   const badLit = useSharedValue(locked === "bad" ? 0 : 0.5);
+  // full while held; once cast it settles to a steady glow
+  const settle = useSharedValue(1);
   const goodPower = useDerivedValue(
-    () => (picked === "good" ? hold.value : 0),
+    () => (picked === "good" ? hold.value * settle.value : 0),
     [picked],
   );
   const badPower = useDerivedValue(
-    () => (picked === "bad" ? hold.value : 0),
+    () => (picked === "bad" ? hold.value * settle.value : 0),
     [picked],
   );
   const flow = useDerivedValue(
@@ -156,12 +158,13 @@ function Choose({
   const burst = useSharedValue(0);
   useEffect(() => {
     if (cast) {
+      settle.set(withDelay(500, withTiming(0.45, { duration: 900, easing: Easing.out(Easing.quad) })));
       burst.set(0);
       burst.set(
         withTiming(1, { duration: 1000, easing: Easing.out(Easing.quad) }),
       );
     }
-  }, [cast, burst]);
+  }, [cast, burst, settle]);
 
   const target = picked
     ? { x: at[picked], y: glassY }
