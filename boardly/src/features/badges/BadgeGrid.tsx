@@ -86,12 +86,13 @@ export function BadgeGrid({
       onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}
     >
       {cell > 0 &&
-        sorted.map((badge) => (
+        sorted.map((badge, index) => (
           <BadgeCell
             key={badge.key}
             badge={badge}
             size={cell}
             card={cards}
+            order={index}
             still={still}
             stampOrder={badge.tier ? stamping.indexOf(levelId(badge.key, badge.tier)) : -1}
             onPress={() => {
@@ -118,6 +119,7 @@ function BadgeCell({
   badge,
   size,
   card,
+  order,
   still,
   stampOrder,
   onPress,
@@ -126,6 +128,8 @@ function BadgeCell({
   size: number;
   /** On a framed card of its own. */
   card: boolean;
+  /** Its place in the grid (cards swing in one after another). */
+  order: number;
   still: SharedValue<number>;
   /** Its turn to stamp down, or -1 when it isn't new. */
   stampOrder: number;
@@ -161,6 +165,18 @@ function BadgeCell({
     return () => clearTimeout(thud);
   }, [fresh, stampOrder, drop, flash]);
 
+  // a card swings in on its clip, once, then hangs still
+  const swing = useSharedValue(card ? 1 : 0);
+  useEffect(() => {
+    if (!card) return;
+    swing.set(withDelay(120 + order * 70, withSpring(0, { damping: 5, stiffness: 90, mass: 0.6 })));
+  }, [card, order, swing]);
+  const hang = useAnimatedStyle(() => ({
+    transformOrigin: "top",
+    opacity: Math.min(1, 1.6 - swing.value * 1.5),
+    transform: [{ rotate: `${swing.value * -16}deg` }],
+  }));
+
   const stamp = useAnimatedStyle(() => ({
     opacity: Math.min(1, drop.value * 3),
     transform: [
@@ -180,7 +196,12 @@ function BadgeCell({
       onPress={onPress}
       style={({ pressed }) => [{ width: size }, styles.cell, pressed && styles.pressed]}
     >
-      <View style={card ? [styles.card, !badge.tier && styles.cardDim] : styles.bare}>
+      <Animated.View
+        style={[
+          card ? [styles.card, { height: size * 0.78 + 66 }, !badge.tier && styles.cardDim] : styles.bare,
+          card && hang,
+        ]}
+      >
       {card ? (
         <>
           <LinearGradient
@@ -212,14 +233,17 @@ function BadgeCell({
           ]}
         />
       </Animated.View>
-      <AppText
-        variant="tiny"
-        align="center"
-        numberOfLines={2}
-        style={[styles.name, !badge.tier && styles.dim]}
-      >
-        {badgeText(t, badge.key).name}
-      </AppText>
+      {/* two lines kept for the name, so every card is the same size */}
+      <View style={card ? styles.nameBox : undefined}>
+        <AppText
+          variant="tiny"
+          align="center"
+          numberOfLines={2}
+          style={[styles.name, !badge.tier && styles.dim]}
+        >
+          {badgeText(t, badge.key).name}
+        </AppText>
+      </View>
       {/* how far to the next level, in that level's colour */}
       {next ? (
         <AppText
@@ -240,7 +264,7 @@ function BadgeCell({
           {`★ ${t("badges.tiers.diamond")}`}
         </AppText>
       )}
-      </View>
+      </Animated.View>
     </Pressable>
   );
 }
@@ -362,6 +386,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
   },
   cardDim: { opacity: 0.85 },
+  nameBox: { height: 30, justifyContent: "center", alignSelf: "stretch", paddingHorizontal: 4 },
   clip: {
     position: "absolute",
     top: 3,

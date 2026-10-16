@@ -266,3 +266,54 @@ ${moulding(0, 0, w, h, r, t, "case")}
 </svg>`;
   return { caseSvg, glass, centres, standAt: floor - 16 };
 }
+
+/** A game's badge board, w × h: dark planks in a riveted iron frame with
+ *  gold brackets on its corners (the cards hang inside, the game's name
+ *  on a plate over the top edge). */
+export function boardArt(w: number, h: number) {
+  const t = 8;
+  const r = 14;
+  const iron = ["#8A909A", "#4A505A", "#24282E", "#6A707A"];
+  const outer = rrect(0, 0, w, h, r);
+  const inner = rrect(t, t, w - 2 * t, h - 2 * t, r - t);
+  const planks = Array.from({ length: Math.ceil(w / 38) }, (_, i) => {
+    const x = t + i * 38;
+    return `<rect x="${x}" y="${t}" width="38" height="${h - 2 * t}" fill="${i % 2 ? "#3A2414" : "#432A17"}"/><rect x="${x + 36.5}" y="${t}" width="1.5" height="${h - 2 * t}" fill="#1A0E06"/>`;
+  }).join("");
+  const rivetsAlong = (x0: number, y0: number, x1: number, y1: number, n: number) =>
+    Array.from({ length: n }, (_, i) => {
+      const k = (i + 0.5) / n;
+      const x = x0 + (x1 - x0) * k;
+      const y = y0 + (y1 - y0) * k;
+      return `<circle cx="${f(x)}" cy="${f(y)}" r="1.9" fill="url(#bv)" stroke="#0E1014" stroke-width="0.6"/>`;
+    }).join("");
+  const nx = Math.max(2, Math.round(w / 34));
+  const ny = Math.max(2, Math.round(h / 34));
+  // a gold L-bracket on each corner, with a stud
+  const bracket = `<path d="M2 2H28L22 8H8V22L2 28Z" fill="url(#bg)" stroke="${INK}" stroke-width="1"/><circle cx="6.5" cy="6.5" r="2.6" fill="url(#bv2)" stroke="${INK}" stroke-width="0.7"/>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+<defs>
+${linear("bi", iron, false)}
+${linear("bg", GOLD, false)}
+${radial("bv", ["#C9D0DA", "#5A606A", "#1E2128"], undefined, 0.35, 0.3, 0.7)}
+${radial("bv2", ["#FFF6D0", "#E2B04A", "#7A5212"], undefined, 0.35, 0.3, 0.7)}
+${radial("bsh", ["#000000", "#000000"], [0, 0.5], 0.5, 0.45, 0.75)}
+<clipPath id="bc"><path d="${inner}"/></clipPath>
+</defs>
+<path d="${outer}" fill="#000" fill-opacity="0.45" transform="translate(0 4)"/>
+<g clip-path="url(#bc)">${planks}<rect x="0" y="0" width="${w}" height="${h}" fill="url(#bsh)"/></g>
+<path d="${outer}${inner}" fill-rule="evenodd" fill="url(#bi)"/>
+<path d="${rrect(t / 2, t / 2, w - t, h - t, r - t / 2)}" fill="none" stroke="#24282E" stroke-width="0.8"/>
+<path d="M${r} 1.6H${f(w * 0.45)}" stroke="#fff" stroke-opacity="0.5" stroke-width="1" stroke-linecap="round"/>
+<path d="${outer}" fill="none" stroke="#0E1014" stroke-width="1.3"/>
+<path d="${inner}" fill="none" stroke="#0E1014" stroke-width="1"/>
+${rivetsAlong(30, t / 2, w - 30, t / 2, nx)}
+${rivetsAlong(30, h - t / 2, w - 30, h - t / 2, nx)}
+${rivetsAlong(t / 2, 30, t / 2, h - 30, ny)}
+${rivetsAlong(w - t / 2, 30, w - t / 2, h - 30, ny)}
+${bracket}
+<g transform="translate(${w} 0) scale(-1 1)">${bracket}</g>
+<g transform="translate(0 ${h}) scale(1 -1)">${bracket}</g>
+<g transform="translate(${w} ${h}) scale(-1 -1)">${bracket}</g>
+</svg>`;
+}

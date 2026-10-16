@@ -34,7 +34,7 @@ export { TextField, type TextFieldProps } from "./TextField";
 export { Toggle, type ToggleProps } from "./Toggle";
 export { WebFrame } from "./WebFrame";
 export { Frame, SectionTitle, TitlePlaque, type FrameProps } from "./Frames";
-export { BezelOverlay, LightSweep, type Metal } from "./Trim";
+export { BezelOverlay, LightSweep, useBox, type Metal } from "./Trim";
 export { TableBackdrop } from "./TableBackdrop";
 export { Texture, type TextureKind, type TextureProps } from "./Texture";
 export { Medallion } from "./Medallion";
