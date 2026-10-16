@@ -168,12 +168,12 @@ export function StageLineup({
   );
 }
 
-type Place = Standing & { x: number; y: number; size: number; order: number };
+export type Place = Standing & { x: number; y: number; size: number; order: number };
 
 /** Where everyone stands on a stage w × h. A big table stands in two
  *  rows: the back one further up the boards and smaller, each of them in
  *  a gap of the row in front. */
-function placeAll(people: Standing[], w: number, h: number): Place[] {
+export function placeAll(people: Standing[], w: number, h: number): Place[] {
   const two = people.length > 5;
   const rows = two ? [people.slice(0, Math.ceil(people.length / 2)), people.slice(Math.ceil(people.length / 2))] : [people];
   const across = w * 0.92;

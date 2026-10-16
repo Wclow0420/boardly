@@ -815,7 +815,74 @@
       "failCards_other": "{{count}} 张失败牌",
       "dismiss": "点击继续"
     },
-    "tagline": "信任 · 欺骗 · 揭穿"
+    "tagline": "信任 · 欺骗 · 揭穿",
+    "stage": {
+      "op": "任务 {{n}} / {{total}}",
+      "team": "队伍",
+      "twoFails": "需 2 张失败牌",
+      "rejected": "否决",
+      "rejections": "否决 {{count}}/{{max}}",
+      "secret": "绝密",
+      "continue": "继续"
+    },
+    "phases": {
+      "team": "挑选队伍",
+      "vote": "投票",
+      "quest": "执行任务",
+      "assassinate": "杀手出手",
+      "finished": "结案"
+    },
+    "menu": {
+      "role": "身份",
+      "record": "档案",
+      "agents": "特工"
+    },
+    "intro": {
+      "hush": "嘘……",
+      "hushHint": "你的身份只有你自己知道。",
+      "continue": "点击继续",
+      "flip": "点击翻开卡牌",
+      "keep": "收好，保密"
+    },
+    "council": {
+      "pickHint": "为任务 {{n}} 挑选 {{count}} 人。大家都能看到你的选择。",
+      "picking": "{{name}} 正在为任务挑选 {{count}} 人",
+      "voteHint": "为 {{name}} 的队伍投票：{{names}}",
+      "lastChance": "再否决一次，内鬼就赢了。",
+      "tally": "{{yes}} 票赞成，{{no}} 票反对"
+    },
+    "desk": {
+      "approve": "成功",
+      "seal": "失败",
+      "approved": "批准",
+      "accomplished": "完成",
+      "band": "绝密",
+      "pick": "点击一枚印章来选择",
+      "holdApprove": "长按批准档案",
+      "holdSeal": "长按破坏档案",
+      "agentsOnly": "特工只能批准档案。",
+      "molesHint": "内鬼可以破坏任务，没人会知道是谁。",
+      "played": "已交 {{done}}/{{total}} 张牌",
+      "cast": "你的牌已交。等待队友……",
+      "noFails": "没有失败牌"
+    },
+    "shot": {
+      "pick": "点击你认为是联络官的人",
+      "hold": "长按指认 {{name}}",
+      "hint": "找出联络官，内鬼就能夺回胜利。"
+    },
+    "journal": {
+      "op": "任务 {{n}}",
+      "teams": "队伍与投票",
+      "operation": "任务",
+      "private": "只有你知道",
+      "proposal": "{{leader}} 提名 {{team}}",
+      "approved": "通过",
+      "rejected": "否决",
+      "succeeded": "成功",
+      "failed": "失败",
+      "team": "队伍：{{names}}"
+    }
   },
   "coup": {
     "coins_other": "{{count}} 块钱",
@@ -829,7 +896,8 @@
     "hand": {
       "title": "你的牌",
       "show": "点击显示你的牌",
-      "hide": "点击盖住你的牌"
+      "hide": "点击盖住你的牌",
+      "secret": "只有你看得到。尽管诈唬，别被抓到就行。"
     },
     "roles": {
       "duke": {
@@ -892,7 +960,8 @@
       "reveal": "选择要失去的一张牌",
       "exchange_other": "选择要保留的 {{count}} 张牌",
       "losing": "{{name}} 必须弃掉一张牌",
-      "waiting": "等待 {{names}}"
+      "waiting": "等待 {{names}}",
+      "forced": "有 $10 或以上时必须砸场。"
     },
     "result": {
       "none": "游戏结束"
@@ -910,9 +979,127 @@
       "caught": "{{challenger}} 质疑 {{claimant}} — 没有{{role}}，吹牛被抓！",
       "proved": "{{challenger}} 质疑 {{claimant}} — 但对方真的有{{role}}。{{claimant}} 把它洗回牌堆，换了一张新牌。",
       "lose": "{{name}} 失去一张牌：{{role}}",
-      "out": "{{name}} 出局了"
+      "out": "{{name}} 出局了",
+      "lose_challenge": "{{name}} 输了质疑，翻开{{role}}",
+      "lose_coup": "{{name}} 被砸场，翻开{{role}}",
+      "lose_assassinate": "{{name}} 被教训，翻开{{role}}"
     },
-    "tagline": "吹牛 · 质疑 · 称王"
+    "tagline": "吹牛 · 质疑 · 称王",
+    "cardText": {
+      "tax": "拿 $3",
+      "assassinate": "付 $3，一名玩家失去一张牌",
+      "steal": "从一名玩家拿 $2",
+      "exchange": "摸 2 张，放回 2 张",
+      "blocks": "可阻挡{{what}}",
+      "blockedBy": "{{role}}可阻挡"
+    },
+    "felt": {
+      "income": "+$1",
+      "foreignAid": "+$2",
+      "tax": "+$3",
+      "steal": "拿 $2",
+      "exchange": "换 2 张牌",
+      "assassinate": "失去一张牌",
+      "coup": "失去一张牌 · 无法阻止",
+      "claims": "声称是{{role}}",
+      "blockable": "老板可阻挡",
+      "sure": "谁也挡不住"
+    },
+    "stage": {
+      "continue": "继续",
+      "youOut": "你出局了",
+      "out": "{{name}} 出局了",
+      "left_one": "还剩 {{count}} 名玩家",
+      "left_other": "还剩 {{count}} 名玩家",
+      "moving": "牌局继续…",
+      "feltHint": "把筹码押在一个行动上。双线框的行动要声称角色：手里没有就是诈唬。",
+      "pickAction": "在台面上选一个行动",
+      "swapping": "{{name}} 正在和牌堆换牌"
+    },
+    "deal": {
+      "title": "你的两张牌",
+      "hint": "别让人看见。两张都没了就出局；没有的角色也可以诈唬。",
+      "go": "上桌"
+    },
+    "show": {
+      "title": "{{challenger}} 质疑 {{claimant}}：真是{{role}}？",
+      "caught": "没有{{role}}！是诈唬——{{claimant}} 翻开一张牌。",
+      "proved": "{{claimant}} 真有{{role}}！这张牌洗回牌堆换一张新的，{{loser}} 翻开一张牌。",
+      "titleMe": "你质疑 {{claimant}}：真是{{role}}？",
+      "caughtMe": "没有{{role}}！你的诈唬被识破——你翻开一张牌。",
+      "provedMe": "{{claimant}} 真有{{role}}！这张牌洗回牌堆换一张新的，你翻开一张牌。"
+    },
+    "aim": {
+      "steal": "点选要扒窃的玩家。",
+      "assassinate": "点选要教训的玩家。",
+      "coup": "点选要砸场的玩家。",
+      "back": "换一个行动",
+      "pick": "在台上点选一名玩家",
+      "hold": {
+        "steal": "按住扒窃 {{name}}",
+        "assassinate": "按住教训 {{name}}",
+        "coup": "按住砸 {{name}} 的场"
+      }
+    },
+    "claim": {
+      "says": "{{name}} 说：",
+      "iam": "我是{{role}}",
+      "blocks": "我挡下了——我是{{role}}",
+      "plain": {
+        "foreignAid": "借 $2"
+      },
+      "against": "阻挡 {{name}} 的{{action}}",
+      "on": "对 {{name}}",
+      "progress": "{{done}}/{{total}} 人放行",
+      "progressBlock": "{{done}}/{{total}} 人不阻挡",
+      "blockAs": "以{{role}}",
+      "letGo": "放行",
+      "youLet": "你放行了——等其他人",
+      "holdBlock": "阻挡",
+      "holdChallenge": "质疑",
+      "watch": "谁不信，谁就可以质疑。",
+      "watchBlock": "能阻挡的人正在考虑。",
+      "againstMe": "阻挡你的{{action}}",
+      "saysMe": "你说："
+    },
+    "lose": {
+      "tag": "翻开",
+      "hint": "选要放弃的牌，然后按住。留下的牌依然保密。",
+      "hold": "按住翻开{{role}}",
+      "coup": "{{actor}} 砸了 {{name}} 的场：要失去一张牌",
+      "assassinate": "{{actor}} 教训了 {{name}}：要失去一张牌",
+      "challenge": "{{name}} 输了质疑：要失去一张牌"
+    },
+    "swap": {
+      "keep": "保留",
+      "new": "新牌"
+    },
+    "den": {
+      "won": "{{name}} 坐镇赌场",
+      "yourTurn": "轮到你",
+      "turn": "轮到 {{name}}",
+      "subtitle": "第 {{n}} 手 · {{total}} 人中还剩 {{left}} 人"
+    },
+    "tools": {
+      "hand": "你的牌",
+      "record": "记录",
+      "roles": "角色"
+    },
+    "tags": {
+      "purse": "你的钱",
+      "deck": "牌堆"
+    },
+    "journal": {
+      "turn": "第 {{n}} 手",
+      "empty": "还什么都没发生。"
+    },
+    "end": {
+      "youWin": "你坐镇赌场",
+      "wins": "{{name}} 坐镇赌场",
+      "abandoned": "还没分出胜负牌局就散了。",
+      "reason_one": "{{count}} 手之后最后一个站着的人。",
+      "reason_other": "{{count}} 手之后最后一个站着的人。"
+    }
   },
   "manor": {
     "tagline": "守护老爷爷，撑到天亮",
@@ -1193,7 +1380,51 @@
     "lockedKaizhai": "这一轮已经开斋：1 是万能，不能再叫斋，也不能叫 1。",
     "leopard": "豹子 +1",
     "reroll": "散骰 — 亮骰重摇",
-    "rerolled": "{{name}} 散骰重摇（亮出 {{dice}}）"
+    "rerolled": "{{name}} 散骰重摇（亮出 {{dice}}）",
+    "stage": {
+      "round": "第 {{round}} 轮",
+      "closing": "打烊了",
+      "dice_one": "桌上共 {{count}} 颗骰",
+      "dice_other": "桌上共 {{count}} 颗骰",
+      "yourCup": "你的骰盅",
+      "reshake": "散骰 —— 重摇",
+      "callsTool": "叫数",
+      "noCalls": "本轮还没有人叫数。",
+      "called": "{{name}} 叫",
+      "splitBy": "{{name}} 劈了 {{bidder}} 的叫数！",
+      "beat": "压过 {{name}} 的叫数",
+      "openMin": "至少 {{min}} 个 —— 或斋 {{zhaiMin}} 个",
+      "liarAs": "开法",
+      "openCups": "开 · 1 杯",
+      "splitCups": "劈 · 2 杯",
+      "callIt": "叫 {{bid}}",
+      "holdOpen": "按住：开！",
+      "holdSplit": "按住：劈！×2",
+      "holdCounter": "反劈 ×4",
+      "holdSplitThem": "按住劈 {{name}} · 2 杯",
+      "liar": "开！",
+      "continue": "继续",
+      "counting": "正在数骰…",
+      "counted": "已数 {{count}} / {{need}}",
+      "lie": "吹牛！",
+      "stands": "叫数成立！",
+      "leopard": "豹子",
+      "out": "出局",
+      "leftEarly": "牌局在结束前散了。",
+      "theReveal": "开盅",
+      "revealHead": {
+        "open": "{{name}} 开了 {{bidder}} 的叫数",
+        "split": "{{name}} 劈了 {{bidder}} 的叫数",
+        "counter": "{{name}} 劈了 {{bidder}} 的叫数 —— 被反劈！"
+      },
+      "splitYou": "{{name}} 劈了你的叫数！",
+      "revealYou": {
+        "open": "{{name}} 开了你的叫数",
+        "split": "{{name}} 劈了你的叫数",
+        "counter": "{{name}} 劈了你的叫数 —— 你反劈了！"
+      },
+      "answerHold": "接受：输家喝 2 杯。按住反劈：输家喝 4 杯。"
+    }
   },
   "nightwatch": {
     "tagline": "在鬼逃出来之前，点亮封印灯",
@@ -2041,5 +2272,35 @@
       "hand": "手持",
       "back": "背饰"
     }
+  },
+  "tictactoe": {
+    "turn": {
+      "mine": "轮到你了",
+      "theirs": "轮到{{name}}"
+    },
+    "plinth": {
+      "mine": "轮到你 —— 落下你的{{mark}}",
+      "placing": "正在落子…",
+      "theirs": "{{name}}正在思考…"
+    },
+    "marks": {
+      "X": "叉",
+      "O": "圈"
+    },
+    "hint": "点一个格子。三子连成一线即胜 —— 横、竖或斜线皆可。",
+    "result": {
+      "youWin": "你赢了！",
+      "winner": "{{name}}赢了！",
+      "draw": "平局！",
+      "ended": "游戏结束"
+    },
+    "reason": {
+      "row": "三子横向连成一线。",
+      "column": "三子竖向连成一线。",
+      "diagonal": "三子沿对角线连成一线。",
+      "full": "九格下满，无人连线。",
+      "left": "棋局未下完便结束了。"
+    },
+    "continue": "继续"
   }
 }

@@ -817,7 +817,74 @@
       "failCards_other": "{{count}} fail cards",
       "dismiss": "Tap to continue"
     },
-    "tagline": "TRUST · DECEIVE · EXPOSE"
+    "tagline": "TRUST · DECEIVE · EXPOSE",
+    "stage": {
+      "op": "Operation {{n}} of {{total}}",
+      "team": "Team",
+      "twoFails": "2 fails needed",
+      "rejected": "Rejected",
+      "rejections": "Rejected {{count}}/{{max}}",
+      "secret": "Top secret",
+      "continue": "Continue"
+    },
+    "phases": {
+      "team": "Choosing the team",
+      "vote": "The vote",
+      "quest": "On the operation",
+      "assassinate": "The Hitman's shot",
+      "finished": "Case closed"
+    },
+    "menu": {
+      "role": "Role",
+      "record": "Record",
+      "agents": "Agents"
+    },
+    "intro": {
+      "hush": "Shhh…",
+      "hushHint": "Your cover is for your eyes only.",
+      "continue": "Tap to continue",
+      "flip": "Tap the card to turn it over",
+      "keep": "Keep it secret"
+    },
+    "council": {
+      "pickHint": "Pick {{count}} for Operation {{n}}. Everyone sees your picks.",
+      "picking": "{{name}} is picking {{count}} for the operation",
+      "voteHint": "Vote on {{name}}'s team: {{names}}",
+      "lastChance": "One more rejection and the moles win.",
+      "tally": "{{yes}} for, {{no}} against"
+    },
+    "desk": {
+      "approve": "Success",
+      "seal": "Fail",
+      "approved": "Approved",
+      "accomplished": "Accomplished",
+      "band": "Top secret",
+      "pick": "Tap a stamp to choose",
+      "holdApprove": "Hold to approve the file",
+      "holdSeal": "Hold to sabotage the file",
+      "agentsOnly": "Agents can only approve the file.",
+      "molesHint": "A mole may sabotage it. No one will see who.",
+      "played": "{{done}} of {{total}} cards in",
+      "cast": "Your card is in. Waiting for the team…",
+      "noFails": "No fail cards"
+    },
+    "shot": {
+      "pick": "Tap the one you think is the Handler",
+      "hold": "Hold to name {{name}}",
+      "hint": "Name the Handler and the moles steal the win."
+    },
+    "journal": {
+      "op": "Operation {{n}}",
+      "teams": "Teams and votes",
+      "operation": "The operation",
+      "private": "Only you know",
+      "proposal": "{{leader}} proposed {{team}}",
+      "approved": "approved",
+      "rejected": "rejected",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "team": "Team: {{names}}"
+    }
   },
   "coup": {
     "coins_one": "${{count}}",
@@ -832,7 +899,8 @@
     "hand": {
       "title": "Your cards",
       "show": "Tap to show your cards",
-      "hide": "Tap to hide your cards"
+      "hide": "Tap to hide your cards",
+      "secret": "Only you can see these. Bluff with anything; just don't get caught."
     },
     "roles": {
       "duke": {
@@ -896,7 +964,8 @@
       "exchange_one": "Choose {{count}} card to keep",
       "exchange_other": "Choose {{count}} cards to keep",
       "losing": "{{name}} must give up a card",
-      "waiting": "Waiting for {{names}}"
+      "waiting": "Waiting for {{names}}",
+      "forced": "With $10 or more you must Shut Down someone."
     },
     "result": {
       "none": "Game ended"
@@ -914,9 +983,127 @@
       "caught": "{{challenger}} challenged {{claimant}} — no {{role}}. Bluff caught!",
       "proved": "{{challenger}} challenged {{claimant}} — but they had the {{role}}. {{claimant}} shuffles it back and draws a new card.",
       "lose": "{{name}} loses a card: {{role}}",
-      "out": "{{name}} is out of the game"
+      "out": "{{name}} is out of the game",
+      "lose_challenge": "{{name}} loses the challenge and turns over the {{role}}",
+      "lose_coup": "{{name}} is shut down and turns over the {{role}}",
+      "lose_assassinate": "{{name}} is roughed up and turns over the {{role}}"
     },
-    "tagline": "BLUFF · HAGGLE · WIN"
+    "tagline": "BLUFF · HAGGLE · WIN",
+    "cardText": {
+      "tax": "Take $3",
+      "assassinate": "Pay $3, a player loses a card",
+      "steal": "Take $2 from a player",
+      "exchange": "Draw 2, put back 2",
+      "blocks": "Blocks {{what}}",
+      "blockedBy": "blocked by {{role}}"
+    },
+    "felt": {
+      "income": "+$1",
+      "foreignAid": "+$2",
+      "tax": "+$3",
+      "steal": "Take $2",
+      "exchange": "Swap 2 cards",
+      "assassinate": "A card lost",
+      "coup": "A card lost · unstoppable",
+      "claims": "Claims {{role}}",
+      "blockable": "A Boss can block it",
+      "sure": "Nobody can stop it"
+    },
+    "stage": {
+      "continue": "Continue",
+      "youOut": "You're out of the game",
+      "out": "{{name}} is out of the game",
+      "left_one": "{{count}} player is still in",
+      "left_other": "{{count}} players are still in",
+      "moving": "The table moves on…",
+      "feltHint": "Lay your chip on an action. The double-ruled ones claim a role: a bluff, if you don't hold it.",
+      "pickAction": "Choose an action on the felt",
+      "swapping": "{{name}} is swapping cards with the deck"
+    },
+    "deal": {
+      "title": "Your two cards",
+      "hint": "Keep them secret. Lose both and you're out; bluff with what you don't have.",
+      "go": "To the table"
+    },
+    "show": {
+      "title": "{{challenger}} calls {{claimant}}'s bluff: the {{role}}?",
+      "caught": "No {{role}}! It was a bluff — {{claimant}} turns a card over.",
+      "proved": "{{claimant}} had the {{role}}! It goes back in the deck for a new card, and {{loser}} turns a card over.",
+      "titleMe": "You call {{claimant}}'s bluff: the {{role}}?",
+      "caughtMe": "No {{role}}! Your bluff is caught — you turn a card over.",
+      "provedMe": "{{claimant}} had the {{role}}! It goes back in the deck for a new card, and you turn a card over."
+    },
+    "aim": {
+      "steal": "Tap who to pickpocket.",
+      "assassinate": "Tap who to rough up.",
+      "coup": "Tap whose place to shut down.",
+      "back": "Choose another action",
+      "pick": "Tap a player on the stage",
+      "hold": {
+        "steal": "Hold to pickpocket {{name}}",
+        "assassinate": "Hold to rough up {{name}}",
+        "coup": "Hold to shut down {{name}}"
+      }
+    },
+    "claim": {
+      "says": "{{name}} says:",
+      "iam": "I'm the {{role}}",
+      "blocks": "I block it — I'm the {{role}}",
+      "plain": {
+        "foreignAid": "Borrowing $2"
+      },
+      "against": "Against {{name}}'s {{action}}",
+      "on": "on {{name}}",
+      "progress": "{{done}} of {{total}} let it go",
+      "progressBlock": "{{done}} of {{total}} let it happen",
+      "blockAs": "As {{role}}",
+      "letGo": "Let it go",
+      "youLet": "You let it go — waiting on the others",
+      "holdBlock": "Block",
+      "holdChallenge": "Challenge",
+      "watch": "Anyone who doubts the claim can challenge it.",
+      "watchBlock": "Whoever can block it is deciding.",
+      "againstMe": "Against your {{action}}",
+      "saysMe": "You say:"
+    },
+    "lose": {
+      "tag": "TURN OVER",
+      "hint": "Pick the card to give up, then hold. The one you keep stays secret.",
+      "hold": "Hold to turn over the {{role}}",
+      "coup": "{{actor}} shut down {{name}}: a card goes",
+      "assassinate": "{{actor}} roughed up {{name}}: a card goes",
+      "challenge": "{{name}} lost the challenge: a card goes"
+    },
+    "swap": {
+      "keep": "KEEP",
+      "new": "NEW"
+    },
+    "den": {
+      "won": "{{name}} runs the den",
+      "yourTurn": "Your turn",
+      "turn": "{{name}}'s turn",
+      "subtitle": "Turn {{n}} · {{left}} of {{total}} still in"
+    },
+    "tools": {
+      "hand": "Your cards",
+      "record": "Record",
+      "roles": "Roles"
+    },
+    "tags": {
+      "purse": "Your cash",
+      "deck": "Deck"
+    },
+    "journal": {
+      "turn": "Turn {{n}}",
+      "empty": "Nothing has happened yet."
+    },
+    "end": {
+      "youWin": "You run the den",
+      "wins": "{{name}} runs the den",
+      "abandoned": "The table broke up before anyone won.",
+      "reason_one": "Last one standing after {{count}} turn.",
+      "reason_other": "Last one standing after {{count}} turns."
+    }
   },
   "manor": {
     "tagline": "Keep the old man alive until dawn",
@@ -1201,7 +1388,51 @@
     "lockedKaizhai": "This round is kaizhai: 1s are wild, and nobody can call zhai or 1s.",
     "leopard": "Five of a kind +1",
     "reroll": "Scattered — show and reshake",
-    "rerolled": "{{name}} reshook a scattered cup (showed {{dice}})"
+    "rerolled": "{{name}} reshook a scattered cup (showed {{dice}})",
+    "stage": {
+      "round": "Round {{round}}",
+      "closing": "Closing time",
+      "dice_one": "{{count}} die on the table",
+      "dice_other": "{{count}} dice on the table",
+      "yourCup": "Your cup",
+      "reshake": "Scattered — reshake",
+      "callsTool": "Calls",
+      "noCalls": "No calls yet this round.",
+      "called": "{{name}} called",
+      "splitBy": "{{name}} split {{bidder}}'s call!",
+      "beat": "Beat {{name}}'s call",
+      "openMin": "At least {{min}} — or {{zhaiMin}} zhai",
+      "liarAs": "Call a lie by",
+      "openCups": "Opening · 1 cup",
+      "splitCups": "Splitting · 2 cups",
+      "callIt": "Call {{bid}}",
+      "holdOpen": "Hold: Liar!",
+      "holdSplit": "Hold: Liar! ×2",
+      "holdCounter": "Counter ×4",
+      "holdSplitThem": "Hold to split {{name}} · 2 cups",
+      "liar": "Liar!",
+      "continue": "Continue",
+      "counting": "Counting the dice…",
+      "counted": "Counted {{count}} of {{need}}",
+      "lie": "A lie!",
+      "stands": "The call stands!",
+      "leopard": "five of a kind",
+      "out": "out",
+      "leftEarly": "The table broke up before the end.",
+      "theReveal": "The reveal",
+      "revealHead": {
+        "open": "{{name}} opened {{bidder}}'s call",
+        "split": "{{name}} split {{bidder}}'s call",
+        "counter": "{{name}} split {{bidder}}'s call — countered!"
+      },
+      "splitYou": "{{name}} split your call!",
+      "revealYou": {
+        "open": "{{name}} opened your call",
+        "split": "{{name}} split your call",
+        "counter": "{{name}} split your call — you countered!"
+      },
+      "answerHold": "Accept: the loser drinks 2. Hold Counter: the loser drinks 4."
+    }
   },
   "nightwatch": {
     "tagline": "Light the seal before the ghosts break free",
@@ -2049,5 +2280,35 @@
       "hand": "Hand",
       "back": "Back"
     }
+  },
+  "tictactoe": {
+    "turn": {
+      "mine": "Your turn",
+      "theirs": "{{name}}'s turn"
+    },
+    "plinth": {
+      "mine": "Your turn — place your {{mark}}",
+      "placing": "Placing your mark…",
+      "theirs": "{{name}} is thinking…"
+    },
+    "marks": {
+      "X": "cross",
+      "O": "nought"
+    },
+    "hint": "Tap a square. Three in a row wins — across, down or corner to corner.",
+    "result": {
+      "youWin": "You win!",
+      "winner": "{{name}} wins!",
+      "draw": "A draw!",
+      "ended": "Game over"
+    },
+    "reason": {
+      "row": "Three in a row, straight across.",
+      "column": "Three in a row, straight down.",
+      "diagonal": "Three in a row, corner to corner.",
+      "full": "All nine squares filled, and no line.",
+      "left": "The game ended before the board was done."
+    },
+    "continue": "Continue"
   }
 }

@@ -816,7 +816,74 @@
       "failCards_other": "{{count}} kad gagal",
       "dismiss": "Ketik untuk teruskan"
     },
-    "tagline": "PERCAYA · PERDAYA · DEDAH"
+    "tagline": "PERCAYA · PERDAYA · DEDAH",
+    "stage": {
+      "op": "Misi {{n}} daripada {{total}}",
+      "team": "Pasukan",
+      "twoFails": "Perlu 2 kad gagal",
+      "rejected": "Ditolak",
+      "rejections": "Ditolak {{count}}/{{max}}",
+      "secret": "Sulit",
+      "continue": "Teruskan"
+    },
+    "phases": {
+      "team": "Memilih pasukan",
+      "vote": "Undian",
+      "quest": "Dalam misi",
+      "assassinate": "Tembakan Pembunuh Upahan",
+      "finished": "Kes ditutup"
+    },
+    "menu": {
+      "role": "Peranan",
+      "record": "Rekod",
+      "agents": "Ejen"
+    },
+    "intro": {
+      "hush": "Syyy…",
+      "hushHint": "Identiti anda hanya untuk mata anda.",
+      "continue": "Ketik untuk teruskan",
+      "flip": "Ketik kad untuk membalikkannya",
+      "keep": "Rahsiakan"
+    },
+    "council": {
+      "pickHint": "Pilih {{count}} untuk Misi {{n}}. Semua orang nampak pilihan anda.",
+      "picking": "{{name}} sedang memilih {{count}} untuk misi",
+      "voteHint": "Undi pasukan {{name}}: {{names}}",
+      "lastChance": "Satu lagi penolakan dan pengkhianat menang.",
+      "tally": "{{yes}} setuju, {{no}} menolak"
+    },
+    "desk": {
+      "approve": "Berjaya",
+      "seal": "Gagal",
+      "approved": "Diluluskan",
+      "accomplished": "Selesai",
+      "band": "Sulit",
+      "pick": "Ketik setem untuk memilih",
+      "holdApprove": "Tahan untuk meluluskan fail",
+      "holdSeal": "Tahan untuk mensabotaj fail",
+      "agentsOnly": "Ejen hanya boleh meluluskan fail.",
+      "molesHint": "Pengkhianat boleh mensabotajnya. Tiada siapa akan tahu siapa.",
+      "played": "{{done}} daripada {{total}} kad masuk",
+      "cast": "Kad anda sudah masuk. Menunggu pasukan…",
+      "noFails": "Tiada kad gagal"
+    },
+    "shot": {
+      "pick": "Ketik orang yang anda rasa Pengendali",
+      "hold": "Tahan untuk menamakan {{name}}",
+      "hint": "Namakan Pengendali dan pengkhianat merampas kemenangan."
+    },
+    "journal": {
+      "op": "Misi {{n}}",
+      "teams": "Pasukan dan undian",
+      "operation": "Misi",
+      "private": "Hanya anda tahu",
+      "proposal": "{{leader}} mencadangkan {{team}}",
+      "approved": "diluluskan",
+      "rejected": "ditolak",
+      "succeeded": "Berjaya",
+      "failed": "Gagal",
+      "team": "Pasukan: {{names}}"
+    }
   },
   "coup": {
     "coins_other": "${{count}}",
@@ -830,7 +897,8 @@
     "hand": {
       "title": "Kad anda",
       "show": "Ketik untuk tunjuk kad anda",
-      "hide": "Ketik untuk sembunyi kad anda"
+      "hide": "Ketik untuk sembunyi kad anda",
+      "secret": "Hanya anda boleh lihat. Tipulah apa saja; cuma jangan tertangkap."
     },
     "roles": {
       "duke": {
@@ -893,7 +961,8 @@
       "reveal": "Pilih kad untuk dilepaskan",
       "exchange_other": "Pilih {{count}} kad untuk disimpan",
       "losing": "{{name}} mesti melepaskan satu kad",
-      "waiting": "Menunggu {{names}}"
+      "waiting": "Menunggu {{names}}",
+      "forced": "Dengan $10 atau lebih anda mesti Tutup Kedai seseorang."
     },
     "result": {
       "none": "Permainan tamat"
@@ -911,9 +980,127 @@
       "caught": "{{challenger}} mencabar {{claimant}} — tiada {{role}}. Tembelang pecah!",
       "proved": "{{challenger}} mencabar {{claimant}} — tetapi mereka memang ada {{role}}. {{claimant}} mengocoknya semula dan mencabut kad baharu.",
       "lose": "{{name}} kehilangan kad: {{role}}",
-      "out": "{{name}} tersingkir"
+      "out": "{{name}} tersingkir",
+      "lose_challenge": "{{name}} kalah cabaran dan membuka {{role}}",
+      "lose_coup": "Kedai {{name}} ditutup, dia membuka {{role}}",
+      "lose_assassinate": "{{name}} dibelasah dan membuka {{role}}"
     },
-    "tagline": "TIPU · CABAR · MENANG"
+    "tagline": "TIPU · CABAR · MENANG",
+    "cardText": {
+      "tax": "Ambil $3",
+      "assassinate": "Bayar $3, seorang pemain hilang kad",
+      "steal": "Ambil $2 daripada pemain",
+      "exchange": "Ambil 2, pulangkan 2",
+      "blocks": "Halang {{what}}",
+      "blockedBy": "dihalang oleh {{role}}"
+    },
+    "felt": {
+      "income": "+$1",
+      "foreignAid": "+$2",
+      "tax": "+$3",
+      "steal": "Ambil $2",
+      "exchange": "Tukar 2 kad",
+      "assassinate": "Satu kad hilang",
+      "coup": "Satu kad hilang · tak boleh dihalang",
+      "claims": "Mengaku {{role}}",
+      "blockable": "Bos boleh halang",
+      "sure": "Tiada siapa boleh halang"
+    },
+    "stage": {
+      "continue": "Teruskan",
+      "youOut": "Anda tersingkir",
+      "out": "{{name}} tersingkir",
+      "left_one": "{{count}} pemain masih bermain",
+      "left_other": "{{count}} pemain masih bermain",
+      "moving": "Meja bergerak…",
+      "feltHint": "Letak cip anda pada satu tindakan. Yang bergaris dua mengaku satu watak: menipu jika anda tiada.",
+      "pickAction": "Pilih tindakan di atas meja",
+      "swapping": "{{name}} sedang menukar kad dengan dek"
+    },
+    "deal": {
+      "title": "Dua kad anda",
+      "hint": "Rahsiakan. Hilang kedua-duanya dan anda keluar; menipulah dengan watak yang anda tiada.",
+      "go": "Ke meja"
+    },
+    "show": {
+      "title": "{{challenger}} mencabar {{claimant}}: betul {{role}}?",
+      "caught": "Tiada {{role}}! Itu tipu — {{claimant}} membuka satu kad.",
+      "proved": "{{claimant}} memang ada {{role}}! Kad itu masuk semula ke dek untuk kad baru, dan {{loser}} membuka satu kad.",
+      "titleMe": "Anda mencabar {{claimant}}: betul {{role}}?",
+      "caughtMe": "Tiada {{role}}! Tipu anda tertangkap — anda membuka satu kad.",
+      "provedMe": "{{claimant}} memang ada {{role}}! Kad itu masuk semula ke dek untuk kad baru, dan anda membuka satu kad."
+    },
+    "aim": {
+      "steal": "Ketik siapa untuk diseluk saku.",
+      "assassinate": "Ketik siapa untuk dibelasah.",
+      "coup": "Ketik kedai siapa untuk ditutup.",
+      "back": "Pilih tindakan lain",
+      "pick": "Ketik seorang pemain di pentas",
+      "hold": {
+        "steal": "Tahan untuk seluk saku {{name}}",
+        "assassinate": "Tahan untuk belasah {{name}}",
+        "coup": "Tahan untuk tutup kedai {{name}}"
+      }
+    },
+    "claim": {
+      "says": "{{name}} berkata:",
+      "iam": "Saya {{role}}",
+      "blocks": "Saya halang — saya {{role}}",
+      "plain": {
+        "foreignAid": "Pinjam $2"
+      },
+      "against": "Menentang {{action}} {{name}}",
+      "on": "ke atas {{name}}",
+      "progress": "{{done}} daripada {{total}} benarkan",
+      "progressBlock": "{{done}} daripada {{total}} tidak halang",
+      "blockAs": "Sebagai {{role}}",
+      "letGo": "Biarkan",
+      "youLet": "Anda biarkan — menunggu yang lain",
+      "holdBlock": "Halang",
+      "holdChallenge": "Cabar",
+      "watch": "Sesiapa yang ragu boleh mencabar.",
+      "watchBlock": "Yang boleh menghalang sedang berfikir.",
+      "againstMe": "Menentang {{action}} anda",
+      "saysMe": "Anda berkata:"
+    },
+    "lose": {
+      "tag": "BUKA",
+      "hint": "Pilih kad untuk dilepaskan, kemudian tahan. Kad yang tinggal kekal rahsia.",
+      "hold": "Tahan untuk buka {{role}}",
+      "coup": "{{actor}} menutup kedai {{name}}: satu kad hilang",
+      "assassinate": "{{actor}} membelasah {{name}}: satu kad hilang",
+      "challenge": "{{name}} kalah cabaran: satu kad hilang"
+    },
+    "swap": {
+      "keep": "SIMPAN",
+      "new": "BARU"
+    },
+    "den": {
+      "won": "{{name}} menguasai sarang",
+      "yourTurn": "Giliran anda",
+      "turn": "Giliran {{name}}",
+      "subtitle": "Giliran ke-{{n}} · {{left}} daripada {{total}} masih bermain"
+    },
+    "tools": {
+      "hand": "Kad anda",
+      "record": "Rekod",
+      "roles": "Watak"
+    },
+    "tags": {
+      "purse": "Wang anda",
+      "deck": "Dek"
+    },
+    "journal": {
+      "turn": "Giliran {{n}}",
+      "empty": "Belum ada apa-apa berlaku."
+    },
+    "end": {
+      "youWin": "Anda menguasai sarang",
+      "wins": "{{name}} menguasai sarang",
+      "abandoned": "Meja bersurai sebelum ada pemenang.",
+      "reason_one": "Yang terakhir berdiri selepas {{count}} giliran.",
+      "reason_other": "Yang terakhir berdiri selepas {{count}} giliran."
+    }
   },
   "manor": {
     "tagline": "Pastikan datuk tua hidup hingga subuh",
@@ -1198,7 +1385,51 @@
     "lockedKaizhai": "Pusingan ini kaizhai: 1 ialah joker, dan tiada siapa boleh panggil zhai atau 1.",
     "leopard": "Lima sama +1",
     "reroll": "Bersepah — tunjuk dan goncang semula",
-    "rerolled": "{{name}} goncang semula cawan bersepah (tunjuk {{dice}})"
+    "rerolled": "{{name}} goncang semula cawan bersepah (tunjuk {{dice}})",
+    "stage": {
+      "round": "Pusingan {{round}}",
+      "closing": "Masa tutup",
+      "dice_one": "{{count}} dadu di atas meja",
+      "dice_other": "{{count}} dadu di atas meja",
+      "yourCup": "Cawan anda",
+      "reshake": "Berselerak — goncang semula",
+      "callsTool": "Panggilan",
+      "noCalls": "Belum ada panggilan pusingan ini.",
+      "called": "{{name}} memanggil",
+      "splitBy": "{{name}} membelah panggilan {{bidder}}!",
+      "beat": "Atasi panggilan {{name}}",
+      "openMin": "Sekurang-kurangnya {{min}} — atau {{zhaiMin}} zhai",
+      "liarAs": "Tuduh tipu dengan",
+      "openCups": "Buka · 1 cawan",
+      "splitCups": "Belah · 2 cawan",
+      "callIt": "Panggil {{bid}}",
+      "holdOpen": "Tahan: Tipu!",
+      "holdSplit": "Tahan: Tipu! ×2",
+      "holdCounter": "Balas ×4",
+      "holdSplitThem": "Tahan untuk belah {{name}} · 2 cawan",
+      "liar": "Tipu!",
+      "continue": "Teruskan",
+      "counting": "Mengira dadu…",
+      "counted": "Dikira {{count}} daripada {{need}}",
+      "lie": "Tipu!",
+      "stands": "Panggilan sah!",
+      "leopard": "lima sama",
+      "out": "keluar",
+      "leftEarly": "Meja bersurai sebelum tamat.",
+      "theReveal": "Pendedahan",
+      "revealHead": {
+        "open": "{{name}} membuka panggilan {{bidder}}",
+        "split": "{{name}} membelah panggilan {{bidder}}",
+        "counter": "{{name}} membelah panggilan {{bidder}} — dibalas!"
+      },
+      "splitYou": "{{name}} membelah panggilan anda!",
+      "revealYou": {
+        "open": "{{name}} membuka panggilan anda",
+        "split": "{{name}} membelah panggilan anda",
+        "counter": "{{name}} membelah panggilan anda — anda membalas!"
+      },
+      "answerHold": "Terima: yang kalah minum 2. Tahan Balas: yang kalah minum 4."
+    }
   },
   "nightwatch": {
     "tagline": "Nyalakan pelita meterai sebelum hantu terlepas",
@@ -2046,5 +2277,35 @@
       "hand": "Pegang",
       "back": "Belakang"
     }
+  },
+  "tictactoe": {
+    "turn": {
+      "mine": "Giliran anda",
+      "theirs": "Giliran {{name}}"
+    },
+    "plinth": {
+      "mine": "Giliran anda — letak {{mark}} anda",
+      "placing": "Meletak tanda anda…",
+      "theirs": "{{name}} sedang berfikir…"
+    },
+    "marks": {
+      "X": "pangkah",
+      "O": "bulatan"
+    },
+    "hint": "Ketik satu petak. Tiga sebaris menang — melintang, menegak atau pepenjuru.",
+    "result": {
+      "youWin": "Anda menang!",
+      "winner": "{{name}} menang!",
+      "draw": "Seri!",
+      "ended": "Permainan tamat"
+    },
+    "reason": {
+      "row": "Tiga sebaris, melintang.",
+      "column": "Tiga sebaris, menegak.",
+      "diagonal": "Tiga sebaris, dari sudut ke sudut.",
+      "full": "Kesemua sembilan petak penuh, tiada barisan.",
+      "left": "Permainan tamat sebelum papan selesai."
+    },
+    "continue": "Teruskan"
   }
 }

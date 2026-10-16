@@ -13,7 +13,7 @@ export const avalon: GameDefinition<AvalonState> = {
   maxPlayers: 10,
   Board: AvalonBoard,
   currentSeat,
-  layout: "custom",
+  layout: "stage",
   rulePages: AVALON_RULES,
   skin: {
     colors: SKIN_COLORS,

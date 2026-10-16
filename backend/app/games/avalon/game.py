@@ -28,6 +28,8 @@ Full state (server only — clients get `view_for`):
 }
 
 Moves:
+  {"type": "pick", "team": [seats]}          leader, phase "team" (the
+      team so far, shown to everyone as it's picked; changes nothing else)
   {"type": "propose", "team": [seats]}       leader, phase "team"
   {"type": "vote", "approve": bool}          everyone, phase "vote"
   {"type": "quest", "card": "success"|"fail"}  team members, phase "quest"
@@ -129,6 +131,7 @@ class Avalon(BaseGame):
             raise GameError("Invalid move")
 
         handlers = {
+            "pick": self._pick,
             "propose": self._propose,
             "vote": self._vote,
             "quest": self._quest,
@@ -138,6 +141,25 @@ class Avalon(BaseGame):
         if handler is None:
             raise GameError("Unknown move type")
         return handler(state, seat, move)
+
+    def _pick(self, state, seat, move):
+        """The leader's picks so far, before proposing: everyone watches
+        the spotlights move. Never more than the team's size."""
+        if state["phase"] != "team":
+            raise GameError("Not choosing a team right now")
+        if seat != state["leader"]:
+            raise GameError("Only the leader picks the team")
+        n = state["numPlayers"]
+        team = move.get("team")
+        size = QUEST_SIZES[n][state["quest"]]
+        if (
+            not isinstance(team, list)
+            or len(team) > size
+            or not all(type(s) is int and 0 <= s < n for s in team)
+            or len(set(team)) != len(team)
+        ):
+            raise GameError(f"Pick up to {size} different players")
+        return {**state, "team": sorted(team)}
 
     def _propose(self, state, seat, move):
         if state["phase"] != "team":
