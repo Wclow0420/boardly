@@ -4,6 +4,7 @@
 // a game scene, a card); MascotStage adds the hop when you tap it. Both
 // stand still with reduced motion, or when `paused`.
 
+import { onMemoryWarning } from "@/utils/memory";
 import { Canvas, Image, Skia, type SkImage, type SkPicture } from "@shopify/react-native-skia";
 import { useEffect, useMemo } from "react";
 import { PixelRatio, Pressable, StyleSheet, View } from "react-native";
@@ -67,7 +68,8 @@ type Baked = { back: SkImage | null; body: SkImage | null; eyes: SkImage | null;
  *  kept across screens and games — the oldest let go past a limit, so a
  *  long evening of rematches doesn't fill the memory. */
 const BAKED = new Map<string, Baked>();
-const KEEP = 48;
+const KEEP = 32;
+onMemoryWarning(() => BAKED.clear());
 function bakedFigure(look: Look, scale: number): Baked {
   const key = `${lookKey(look)}@${scale.toFixed(3)}`;
   const hit = BAKED.get(key);

@@ -4,6 +4,7 @@
 // cards). Pictures are kept by look, so a card that didn't change is
 // never drawn twice.
 
+import { onMemoryWarning } from "@/utils/memory";
 import { Canvas, Group, Picture, type SkPicture } from "@shopify/react-native-skia";
 import { memo, useMemo } from "react";
 
@@ -12,7 +13,8 @@ import { dress, type Look } from "./dress";
 import { BOX } from "./rig";
 
 const CACHE = new Map<string, SkPicture>();
-const LIMIT = 400;
+const LIMIT = 80;
+onMemoryWarning(() => CACHE.clear());
 
 /** The look's picture, from the cache or recorded now. */
 export function pictureOf(look: Look): SkPicture {

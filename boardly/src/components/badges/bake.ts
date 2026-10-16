@@ -3,6 +3,7 @@
 // Opening a page again costs nothing to redraw, and a board of badges is
 // one canvas drawing a handful of images instead of dozens of views. 
 
+import { onMemoryWarning } from "@/utils/memory";
 import { Skia, type SkCanvas, type SkImage, type SkPicture, type SkSVG } from "@shopify/react-native-skia";
 import { PixelRatio } from "react-native";
 
@@ -15,7 +16,7 @@ let held = 0;
 /** How much baked art is kept, in bytes of pixels: past it the images
  *  least recently asked for are let go (anything still on screen keeps
  *  its own). Keeps a long evening of games from filling the memory. */
-const BUDGET = 96 * 1024 * 1024;
+const BUDGET = 64 * 1024 * 1024;
 
 /** `markup` (w × h) baked into an image, crisp at the screen's density;
  *  made once per `key` and size, and kept while there's room. */
@@ -133,6 +134,12 @@ export function badgeSvgs({ art, tier, frames, tint }: BadgeLook) {
 }
 
 const pictures = new Map<string, SkPicture>();
+onMemoryWarning(() => {
+  images.clear();
+  held = 0;
+  svgs.clear();
+  pictures.clear();
+});
 
 /** A still badge (in the 120 box), recorded once: its frame, emblem and
  *  front, struck in iron when `locked`. */

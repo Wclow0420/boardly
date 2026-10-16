@@ -1,4 +1,5 @@
 import { Canvas, Group } from "@shopify/react-native-skia";
+import { Image } from "expo-image";
 import {
   type ReactNode,
   useContext,
@@ -29,6 +30,7 @@ import {
 import { useOnScreen } from "@/hooks/useOnScreen";
 
 import { ART, useBorderClock, useMayMove, type ArtBorderDrawing } from "./art";
+import { THUMBS } from "./thumbs";
 import {
   getBorder,
   type ArtBorder,
@@ -334,6 +336,39 @@ function ArtAvatar({
   children?: ReactNode;
 }) {
   const drawing: ArtBorderDrawing = ART[border.art];
+  const thumb = THUMBS[border.art];
+  // small and still: its two layers as pictures drawn ahead of time
+  // (scripts/border-thumbs.mjs), not the border running at full size
+  if (size < ART_MOVES_FROM && thumb)
+    return (
+      <View style={{ width: size, height: size }}>
+        {thumb.back ? <Image source={thumb.back} style={canvasStyle(size)} pointerEvents="none" /> : null}
+        <Avatar name={name} size={size} imageUri={imageUri} mascot={mascot} />
+        {thumb.front ? <Image source={thumb.front} style={canvasStyle(size)} pointerEvents="none" /> : null}
+        {children}
+      </View>
+    );
+  return <LiveArt border={border} drawing={drawing} name={name} size={size} imageUri={imageUri} mascot={mascot}>{children}</LiveArt>;
+}
+
+/** An art border drawn live: its layers on two canvases on the shared
+ *  clock. */
+function LiveArt({
+  drawing,
+  name,
+  size,
+  imageUri,
+  mascot,
+  children,
+}: {
+  border: ArtBorder;
+  drawing: ArtBorderDrawing;
+  name: string;
+  size: number;
+  imageUri: string | null;
+  mascot?: MascotLook | null;
+  children?: ReactNode;
+}) {
   const onScreen = useOnScreen();
   const moves = useMayMove(size, size >= ART_MOVES_FROM && onScreen);
   const clock = useBorderClock(!moves);

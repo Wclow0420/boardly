@@ -89,7 +89,11 @@ CLAUDE.md). Rarity is common → rare → epic → legendary → mythic
 (10,000+ coins); the shop sorts by it. Every new border's id
 and price go in `backend/app/cosmetics.py` too (`BORDER_PRICES`, or
 `EARNED_BORDERS` for one that comes with a badge). Check them all at
-`boardly-dev://dev/borders`. A border draws well outside its avatar, so
+`boardly-dev://dev/borders`. Below 42pt (the shop's tiles, friend
+lists) a border is drawn from two still pictures of its layers, not
+live: after adding or redrawing a border, run `node
+scripts/border-thumbs.mjs` and open `boardly-dev://dev/thumbs` on the
+simulator to make them. A border draws well outside its avatar, so
 anything laid out after it would cover it: inside an `<AvatarStage>`
 (`components/ui`) bordered avatars are drawn in a top layer instead.
 Scrolling `Screen`s have one; a screen with its own ScrollView puts one

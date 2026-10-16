@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { forget } from "@/api/remember";
 import {
   api,
   setAccessToken,
@@ -57,6 +58,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setStatus("signedOut");
     tokenStorage.clear().catch(() => {});
+    // what was kept on the phone for the last player goes with them
+    forget();
   }, []);
 
   // Bootstrap: restore tokens and validate them against /auth/me.

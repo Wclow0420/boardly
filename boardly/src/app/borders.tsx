@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { FlatList, Pressable, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { BackIcon, Emblem } from "@/components/icons";
@@ -71,6 +71,20 @@ const SECTIONS: { key: SectionKey; borders: ProfileBorder[] }[] = [
   { key: "earned", borders: BORDERS.filter(earnedOnly) },
 ];
 
+/** The shop as rows for a list that builds only what's in view: each
+ *  section's head, then its borders three to a row. */
+type Row =
+  | { kind: "head"; key: string; section: SectionKey; count: number; first: boolean }
+  | { kind: "tiles"; key: string; borders: ProfileBorder[] };
+const ROWS: Row[] = SECTIONS.filter((section) => section.borders.length > 0).flatMap((section, i) => [
+  { kind: "head" as const, key: `head-${section.key}`, section: section.key, count: section.borders.length, first: i === 0 },
+  ...Array.from({ length: Math.ceil(section.borders.length / 3) }, (_, r) => ({
+    kind: "tiles" as const,
+    key: `${section.key}-${r}`,
+    borders: section.borders.slice(r * 3, r * 3 + 3),
+  })),
+]);
+
 /** Gallery of profile borders: preview one on your avatar and wear it. */
 export default function BordersScreen() {
   const { t } = useTranslation();
@@ -126,6 +140,81 @@ export default function BordersScreen() {
   const earnedName = earnedBy
     ? `${t(`badges.tiers.${earnedAt}`)} · ${badgeText(t, earnedBy).name}`
     : "";
+
+  const renderTile = (border: ProfileBorder) => {
+    const active = border.id === selectedId;
+    const look = RARITY_TILE[border.rarity];
+    const earnedBy =
+      border.kind === "art" ? border.earnedBy : undefined;
+    return (
+      <Pressable
+        key={border.id}
+        accessibilityRole="button"
+        accessibilityState={{ selected: active }}
+        accessibilityLabel={border.name}
+        onPress={() => {
+          tapHaptic();
+          setFailed(false);
+          setSelectedId(border.id);
+        }}
+        style={[
+          styles.tile,
+          { borderColor: active ? "#FFFFFF" : look.edge },
+          active && styles.tileOn,
+        ]}
+      >
+        <LinearGradient colors={look.fill} style={styles.tileFill}>
+          {/* a fine line of light along the top */}
+          <View style={[styles.tileShine, { backgroundColor: look.shine }]} />
+          <View style={styles.tileAvatar}>
+            <AvatarBorder
+              name={name}
+              size={40}
+              borderId={border.id}
+              avatarUrl={user?.avatarUrl}
+              mascot={user?.mascot}
+            />
+          </View>
+          <AppText
+            variant="tiny"
+            numberOfLines={1}
+            align="center"
+            style={styles.tileName}
+          >
+            {border.name}
+          </AppText>
+          <View style={styles.tilePrice}>
+            {owns(border) ? (
+              <AppText style={styles.tileOwned}>
+                {border.id === equippedId
+                  ? t("borders.equipped")
+                  : t("borders.owned")}
+              </AppText>
+            ) : earnedBy ? (
+              <Emblem emoji="🏅" size={13} />
+            ) : (
+              <>
+                <CoinIcon size={11} />
+                <AppText style={styles.tileCost}>
+                  {border.price.toLocaleString()}
+                </AppText>
+              </>
+            )}
+          </View>
+          {border.id === equippedId ? (
+            <View style={styles.check}>
+              <Emblem emoji="✓" size={14} />
+            </View>
+          ) : null}
+          {!owns(border) ? (
+            <View style={styles.lock}>
+              <Emblem emoji="🔒" size={14} />
+            </View>
+          ) : null}
+        </LinearGradient>
+      </Pressable>
+    );
+  };
 
   return (
     <Screen
@@ -219,105 +308,35 @@ export default function BordersScreen() {
 
       {/* All borders, by rarity; the ones earned with a badge last */}
       <Frame tone="wood" style={styles.list}>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {SECTIONS.map((section) => {
-            const borders = section.borders;
-            if (borders.length === 0) return null;
-            return (
-              <View key={section.key} style={styles.section}>
-                <SectionTitle
-                    label={
-                      section.key === "earned"
-                        ? t("borders.earnedSection")
-                        : t(`borders.rarity.${section.key}`)
-                    }
-                    colors={SECTION_RIBBON[section.key]}
-                  right={<AppText style={styles.count}>{borders.length}</AppText>}
-                />
-                <View style={styles.grid}>
-                  {borders.map((border) => {
-                    const active = border.id === selectedId;
-                    const look = RARITY_TILE[border.rarity];
-                    const earnedBy =
-                      border.kind === "art" ? border.earnedBy : undefined;
-                    return (
-                      <Pressable
-                        key={border.id}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: active }}
-                        accessibilityLabel={border.name}
-                        onPress={() => {
-                          tapHaptic();
-                          setFailed(false);
-                          setSelectedId(border.id);
-                        }}
-                        style={[
-                          styles.tile,
-                          { borderColor: active ? "#FFFFFF" : look.edge },
-                          active && styles.tileOn,
-                        ]}
-                      >
-                        <LinearGradient colors={look.fill} style={styles.tileFill}>
-                          {/* a fine line of light along the top */}
-                          <View style={[styles.tileShine, { backgroundColor: look.shine }]} />
-                          <View style={styles.tileAvatar}>
-                            <AvatarBorder
-                              name={name}
-                              size={40}
-                              borderId={border.id}
-                              avatarUrl={user?.avatarUrl}
-                              mascot={user?.mascot}
-                            />
-                          </View>
-                          <AppText
-                            variant="tiny"
-                            numberOfLines={1}
-                            align="center"
-                            style={styles.tileName}
-                          >
-                            {border.name}
-                          </AppText>
-                          <View style={styles.tilePrice}>
-                            {owns(border) ? (
-                              <AppText style={styles.tileOwned}>
-                                {border.id === equippedId
-                                  ? t("borders.equipped")
-                                  : t("borders.owned")}
-                              </AppText>
-                            ) : earnedBy ? (
-                              <Emblem emoji="🏅" size={13} />
-                            ) : (
-                              <>
-                                <CoinIcon size={11} />
-                                <AppText style={styles.tileCost}>
-                                  {border.price.toLocaleString()}
-                                </AppText>
-                              </>
-                            )}
-                          </View>
-                          {border.id === equippedId ? (
-                            <View style={styles.check}>
-                              <Emblem emoji="✓" size={14} />
-                            </View>
-                          ) : null}
-                          {!owns(border) ? (
-                            <View style={styles.lock}>
-                              <Emblem emoji="🔒" size={14} />
-                            </View>
-                          ) : null}
-                        </LinearGradient>
-                      </Pressable>
-                    );
-                  })}
-                  {/* empty cells so a short last row stays left-aligned */}
-                  {Array.from({ length: (3 - (borders.length % 3)) % 3 }, (_, i) => (
-                    <View key={i} style={styles.filler} />
-                  ))}
-                </View>
+        {/* only the rows in view are built: a screen of borders all at
+            once held hundreds of MB */}
+        <FlatList
+          data={ROWS}
+          keyExtractor={(row) => row.key}
+          showsVerticalScrollIndicator={false}
+          initialNumToRender={6}
+          maxToRenderPerBatch={4}
+          windowSize={5}
+          removeClippedSubviews
+          renderItem={({ item: row }) =>
+            row.kind === "head" ? (
+              <SectionTitle
+                label={row.section === "earned" ? t("borders.earnedSection") : t(`borders.rarity.${row.section}`)}
+                colors={SECTION_RIBBON[row.section]}
+                right={<AppText style={styles.count}>{row.count}</AppText>}
+                style={row.first ? undefined : styles.sectionGap}
+              />
+            ) : (
+              <View style={styles.grid}>
+                {row.borders.map(renderTile)}
+                {/* empty cells so a short last row stays left-aligned */}
+                {Array.from({ length: 3 - row.borders.length }, (_, i) => (
+                  <View key={i} style={styles.filler} />
+                ))}
               </View>
-            );
-          })}
-        </ScrollView>
+            )
+          }
+        />
       </Frame>
     </Screen>
   );
@@ -342,7 +361,7 @@ const styles = StyleSheet.create({
   equip: { alignSelf: "stretch", marginTop: 6 },
 
   list: { flex: 1, minHeight: 0, marginTop: 14, padding: 10 },
-  section: { marginBottom: 14 },
+  sectionGap: { marginTop: 14 },
   sectionHead: {
     flexDirection: "row",
     alignItems: "center",
@@ -352,9 +371,8 @@ const styles = StyleSheet.create({
   count: { color: TABLE.creamMuted, fontFamily: fontFamily.semiBold, fontSize: 12 },
   grid: {
     flexDirection: "row",
-    flexWrap: "wrap",
     justifyContent: "space-between",
-    rowGap: 8,
+    marginBottom: 8,
   },
   tile: {
     width: "31.3%",
