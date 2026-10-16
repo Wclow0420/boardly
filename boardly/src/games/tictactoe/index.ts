@@ -11,6 +11,7 @@ export const tictactoe: GameDefinition<TicTacToeState> = {
   maxPlayers: 2,
   Board: TicTacToeBoard,
   currentSeat: (state) => state.currentSeat,
+  layout: "stage",
   badges: {
     "tictactoe.master": { glyph: G.crown, emoji: "👑", loop: "spin", face: "#2F5D8A" },
   },
