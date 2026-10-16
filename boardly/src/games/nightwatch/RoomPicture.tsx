@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import Svg, { Path } from "react-native-svg";
 
+import { IsoPicture } from "@/components/iso";
 import { useTheme } from "@/theme";
 import { SCENE_HEIGHT, SCENE_WIDTH } from "./manorShapes";
 import { buildScene } from "./roomScenes";
@@ -19,24 +19,5 @@ export function RoomPicture({ room, width }: { room: number; width: number }) {
     return [...scene.back, ...scene.prop, ...scene.front];
   }, [room, colors.primary]);
 
-  return (
-    <Svg
-      viewBox={`0 0 ${SCENE_WIDTH} ${SCENE_HEIGHT}`}
-      style={{ width, height: (width * SCENE_HEIGHT) / SCENE_WIDTH }}
-    >
-      {shapes.map((shape, index) => (
-        <Path
-          key={index}
-          d={shape.d}
-          fill={shape.fill ?? "none"}
-          stroke={shape.stroke}
-          strokeWidth={shape.strokeWidth}
-          strokeDasharray={shape.dash}
-          strokeLinejoin="round"
-          strokeLinecap="round"
-          opacity={shape.opacity}
-        />
-      ))}
-    </Svg>
-  );
+  return <IsoPicture shapes={shapes} width={SCENE_WIDTH} height={SCENE_HEIGHT} size={width} />;
 }

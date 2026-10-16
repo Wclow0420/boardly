@@ -29,6 +29,7 @@ import {
   paint,
   path,
   setLayer,
+  tone,
   unit,
   type Door,
   type Pt,
@@ -219,8 +220,11 @@ export function wallDoor(wall: "x" | "y", door: Door): Shape[] {
   const mid = (a + b) / 2;
   const h = 0.5;
   const shapes: Shape[] = [
-    on(0, a - 0.035, b + 0.035, 0, h + 0.035, STONE[1]),
-    on(0, mid - 0.025, mid + 0.025, h + 0.035, h + 0.07, STONE[0]),
+    // a carved wooden frame, its lintel crowned by a gold keystone
+    { ...on(0, a - 0.04, b + 0.04, 0, h + 0.04, WOOD[1]) },
+    { ...line([at(a - 0.025, 0.01), at(a - 0.025, h + 0.025), at(b + 0.025, h + 0.025), at(b + 0.025, 0.01)], tone(WOOD[1], 0.3), 0.5), opacity: 0.7 },
+    on(0, mid - 0.03, mid + 0.03, h + 0.03, h + 0.075, GOLD[1]),
+    { ...line([at(mid - 0.025, h + 0.07), at(mid + 0.025, h + 0.07)], "#FFFFFF", 0.5), opacity: 0.6 },
   ];
   if (door === "open") {
     shapes.push(
@@ -324,18 +328,74 @@ export function barriers(): Shape[] {
   );
 }
 
+/** A band along both back walls between heights z1 and z2, filled with
+ *  `colors` (top to bottom), inked, with a line of light along its top:
+ *  a moulding, a rail. */
+function band(z1: number, z2: number, colors: string[], light = 0.45): Shape[] {
+  const strip = (on: typeof onX) => {
+    const shape = on(0, 0, 1, z1, z2, colors[1]);
+    const [ax, ay] = P(0, 0, z2);
+    const [, by] = P(0, 0, z1);
+    return { ...shape, grad: { colors, from: [ax, ay] as Pt, to: [ax, by] as Pt } };
+  };
+  return [
+    strip(onX),
+    strip(onY),
+    { ...line([[0, 1, z2], [0, 0, z2], [1, 0, z2]], "#FFFFFF", 0.5), opacity: light },
+  ];
+}
+
+/** Panelling along the foot of both back walls: a darker dado with
+ *  sunk panels (lit on their lower edges, as light falls from above),
+ *  under a gilded rail. */
+export function wainscot(top = 0.25): Shape[] {
+  const ink = paint();
+  const dado = tone(ink.lit, -0.14);
+  const sunk = tone(ink.lit, -0.24);
+  const shapes: Shape[] = [];
+  const panels = [0.04, 0.27, 0.5, 0.73];
+  for (const [on, axis] of [
+    [onX, "x"],
+    [onY, "y"],
+  ] as const) {
+    shapes.push(on(0, 0, 1, 0.04, top, dado));
+    for (const a of panels) {
+      const b = a + 0.2;
+      const z1 = 0.075;
+      const z2 = top - 0.035;
+      shapes.push(on(0, a + 0.015, b - 0.015, z1, z2, sunk));
+      const at = (u: number, z: number): V3 => (axis === "x" ? [0, u, z] : [u, 0, z]);
+      shapes.push(
+        { ...line([at(a + 0.015, z1), at(b - 0.015, z1), at(b - 0.015, z2)], tone(ink.lit, 0.25), 0.5), opacity: 0.6 },
+      );
+    }
+  }
+  shapes.push(...band(top, top + 0.025, [GOLD[0], GOLD[1], GOLD[2]]));
+  return shapes;
+}
+
 /** Plinth, the two thick back walls with their doors, floor and trim. */
 export function shell(base: Tones = STONE): Shape[] {
   const ink = paint();
+  const floor = flat(0, 1, 0, 1, 0, ink.floor);
   return [
     ...plinth(base),
     ...box(-THICK, -THICK, 0, THICK, 1 + THICK, WALL, [ink.line, ink.lit, ink.shade]),
     ...box(0, -THICK, 0, 1, THICK, WALL, [ink.line, ink.lit, ink.shade]),
-    flat(0, 1, 0, 1, 0, ink.floor),
-    // skirting and cornice
-    onX(0, 0, 1, 0, 0.04, ink.lit, ink.line),
-    onY(0, 0, 1, 0, 0.04, ink.tile, ink.line),
-    line([[0, 1, 0.75], [0, 0, 0.75], [1, 0, 0.75]], paint().line),
+    // the floor, lit from the back corner and falling into shadow at the front
+    {
+      ...floor,
+      grad: {
+        colors: [tone(ink.floor, 0.16), ink.floor, tone(ink.floor, -0.22)],
+        from: P(0, 0, 0),
+        to: P(1, 1, 0),
+      },
+    },
+    // skirting, panelling under a gilded rail, and a gilded cornice
+    onX(0, 0, 1, 0, 0.04, tone(ink.lit, -0.3)),
+    onY(0, 0, 1, 0, 0.04, tone(ink.tile, -0.3)),
+    ...wainscot(),
+    ...band(0.72, 0.76, [GOLD[0], GOLD[1], GOLD[2]], 0.55),
     ...(exits.left ? wallDoor("x", exits.left) : []),
     ...(exits.right ? wallDoor("y", exits.right) : []),
     ...mats(),

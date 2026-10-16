@@ -14,6 +14,7 @@ import {
   Skia,
   StrokeCap,
   StrokeJoin,
+  TileMode,
 } from "@shopify/react-native-skia";
 
 import type { Shape } from "./kit";
@@ -57,6 +58,23 @@ export function IsoClip({ d, children }: { d: string; children: ReactNode }) {
   return clip ? <Group clip={clip}>{children}</Group> : <>{children}</>;
 }
 
+/** A shape's engraved gradient as a Skia shader (none if it has none). */
+function gradientOf(shape: IsoShape) {
+  const g = shape.grad;
+  if (!g) return null;
+  const colors = g.colors.map((c) => Skia.Color(c));
+  if (g.radius !== undefined)
+    return Skia.Shader.MakeRadialGradient({ x: g.from[0], y: g.from[1] }, g.radius, colors, null, TileMode.Clamp);
+  if (!g.to) return null;
+  return Skia.Shader.MakeLinearGradient(
+    { x: g.from[0], y: g.from[1] },
+    { x: g.to[0], y: g.to[1] },
+    colors,
+    null,
+    TileMode.Clamp,
+  );
+}
+
 /** Shapes drawn in order, the first at the back. They are recorded
  *  once into a single picture, so a layer of hundreds of shapes costs
  *  one draw a frame however much moves around it. */
@@ -73,6 +91,8 @@ export function IsoLayer({ shapes }: { shapes: IsoShape[] }) {
         const paint = Skia.Paint();
         paint.setAntiAlias(true);
         paint.setColor(Skia.Color(shape.fill));
+        const shader = gradientOf(shape);
+        if (shader) paint.setShader(shader);
         paint.setAlphaf(alpha);
         canvas.drawPath(path, paint);
       }
