@@ -3,6 +3,11 @@
 // count, the cards hanging inside three to a row; each swings in on its
 // clip the first time the board is shown, then hangs still.
 //
+// The hall is a list that unmounts boards far off the screen, so a board
+// can mount more than once in a visit. Whether its cards have swung is
+// kept by the hall (`swung`, by the board's game), not by the board, so
+// they swing in once.
+//
 // The whole board (its frame, every card and every badge) is one canvas
 // drawing images and pictures made once for the app (components/badges/
 // bake.ts); only the names and progress are text over it, and invisible
@@ -55,17 +60,28 @@ const startOf = (i: number) => {
 };
 
 export function GameBoard({
+  id,
+  width,
   name,
   badges,
+  swung,
   onOpen,
 }: {
+  /** The board's game, which `swung` remembers. */
+  id: string;
+  /** The board's width; known up front, so the list can size the board
+   *  on its first render instead of waiting for a layout. */
+  width: number;
   name: string;
   badges: BadgeRecord[];
+  /** The boards that have already swung in on this visit. */
+  swung: Set<string>;
   onOpen: (badge: BadgeRecord) => void;
 }) {
   const { t } = useTranslation();
-  const still = useReducedMotion();
-  const [width, setWidth] = useState(0);
+  const reduced = useReducedMotion();
+  // a board that has swung in before (scrolled away and back) hangs still
+  const [still] = useState(() => reduced || swung.has(id));
   const sorted = useMemo(() => sortBadges(badges), [badges]);
   const earned = badges.filter((b) => b.tier).length;
 
@@ -115,12 +131,13 @@ export function GameBoard({
     };
   }, [width, height, cell, cardW, cardH, cards]);
 
-  // the swing: once, when the board is first laid out
+  // the swing: once, when the board first comes near the screen
   const clock = useSharedValue(still ? SWING : 0);
   useEffect(() => {
+    swung.add(id);
     if (width === 0 || still) return;
     clock.value = withTiming(SWING, { duration: SWING * 1000, easing: Easing.linear });
-  }, [width, still, clock]);
+  }, [width, still, clock, swung, id]);
 
   const picture = useDerivedValue(() => {
     const recorder = Skia.PictureRecorder();
@@ -167,10 +184,7 @@ export function GameBoard({
 
   return (
     <View style={styles.wrap}>
-      <View
-        style={{ height: width > 0 ? height : 200 }}
-        onLayout={(e) => setWidth(Math.round(e.nativeEvent.layout.width))}
-      >
+      <View style={{ height: width > 0 ? height : 200 }}>
         {parts ? (
           <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
             <Picture picture={picture} />

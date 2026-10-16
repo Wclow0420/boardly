@@ -4,8 +4,12 @@
 // pedestals) and the collection: every badge on a framed card, Boardly's
 // own first and then each game's. Tap a badge for its four levels and to
 // show it on my card (or take it off). It opens and closes through the
-// meeple, like the wardrobe. The frame is drawn over the page and the
-// scrolling is clipped inside it.
+// meeple, like the wardrobe. The crest is drawn over the page and the
+// page scrolls under it.
+//
+// The boards are a FlashList: each board is a canvas the size of the
+// board, and only the ones near the screen are mounted, so a long
+// collection doesn't hold every board's drawing at once.
 //
 // Only the four in the showcase move, and only while this is the screen
 // showing; the rest are still pictures.
@@ -14,10 +18,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BackHandler, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { BackHandler, StyleSheet, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Canvas, Image as SkImage } from "@shopify/react-native-skia";
+import { FlashList } from "@shopify/flash-list";
 
 import { api, type BadgeRecord } from "@/api/client";
 import { Badge, TIER_GLOW } from "@/components/badges/Badge";
@@ -83,14 +88,10 @@ export default function BadgesScreen() {
     return [...out.entries()].sort(([a], [b]) => (a === null ? -1 : b === null ? 1 : 0));
   }, [badges]);
 
-  // the showcase and the first board come at once; the rest follow a
-  // frame at a time, so the page shows without waiting for them all
-  const [boards, setBoards] = useState(1);
-  useEffect(() => {
-    if (boards >= groups.length) return;
-    const id = requestAnimationFrame(() => setBoards((n) => n + 1));
-    return () => cancelAnimationFrame(id);
-  }, [boards, groups.length]);
+  // The boards whose cards have swung in on this visit. A board scrolled
+  // far away is unmounted and comes back as a new one; this keeps it from
+  // swinging in a second time.
+  const [swung] = useState(() => new Set<string>());
 
   /** Show a badge on my card (first, pushing the last off when full), or
    *  take it off. My picks start from what the card shows now. */
@@ -137,55 +138,68 @@ export default function BadgesScreen() {
       <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
         {wall ? <SkImage image={wall} x={0} y={0} width={width} height={height} /> : null}
       </Canvas>
-      <ScrollView
+      <FlashList
+        data={groups}
+        keyExtractor={([game]) => game ?? "boardly"}
+        getItemType={() => "board"}
         contentContainerStyle={[styles.body, { paddingTop: crestH - 4 }]}
         showsVerticalScrollIndicator={false}
-      >
-        <SectionTitle label={t("badges.hall.showcase")} colors={TABLE.ribbonRed} />
-        <AppText variant="tiny" style={styles.hint}>
-          {t("badges.hall.hint")}
-        </AppText>
-        <Showcase width={inner} badges={shown} clock={clock} onOpen={setOpen} />
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <SectionTitle label={t("badges.hall.showcase")} colors={TABLE.ribbonRed} />
+            <AppText variant="tiny" style={styles.hint}>
+              {t("badges.hall.hint")}
+            </AppText>
+            <Showcase width={inner} badges={shown} clock={clock} onOpen={setOpen} />
 
-        <SectionTitle
-          label={t("badges.hall.collection")}
-          colors={TABLE.ribbonGold}
-          style={styles.section}
-          right={
-            // how many stand at each level, and how many earned
-            <View style={styles.tally}>
-              {TIERS.map((tier) => (
-                <View key={tier} style={styles.tallyItem}>
-                  <Badge
-                    art={{ glyph: {}, emoji: "★", loop: "pulse" }}
-                    face={BOARDLY_FACE}
-                    frames={BOARDLY_FRAMES}
-                    tier={tier}
-                    size={24}
-                    clock={still}
-                    alive={false}
-                  />
-                  <AppText style={[styles.tallyN, { color: TIER_GLOW[tier] }]}>
-                    {badges.filter((b) => b.tier === tier).length}
-                  </AppText>
+            <SectionTitle
+              label={t("badges.hall.collection")}
+              colors={TABLE.ribbonGold}
+              style={styles.section}
+              right={
+                // how many stand at each level, and how many earned
+                <View style={styles.tally}>
+                  {TIERS.map((tier) => (
+                    <View key={tier} style={styles.tallyItem}>
+                      <Badge
+                        art={{ glyph: {}, emoji: "★", loop: "pulse" }}
+                        face={BOARDLY_FACE}
+                        frames={BOARDLY_FRAMES}
+                        tier={tier}
+                        size={24}
+                        clock={still}
+                        alive={false}
+                      />
+                      <AppText style={[styles.tallyN, { color: TIER_GLOW[tier] }]}>
+                        {badges.filter((b) => b.tier === tier).length}
+                      </AppText>
+                    </View>
+                  ))}
+                  <AppText style={styles.tallyTotal}>{`${earned.length}/${badges.length}`}</AppText>
                 </View>
-              ))}
-              <AppText style={styles.tallyTotal}>{`${earned.length}/${badges.length}`}</AppText>
-            </View>
-          }
-        />
-        <AppText variant="tiny" style={styles.hint}>
-          {t("badges.hall.collectionHint")}
-        </AppText>
-        {groups.slice(0, boards).map(([game, list]) => (
-          <GameBoard
-            key={game ?? "boardly"}
-            name={game ? gameName(game) : "Boardly"}
-            badges={list}
-            onOpen={setOpen}
-          />
-        ))}
-      </ScrollView>
+              }
+            />
+            <AppText variant="tiny" style={styles.hint}>
+              {t("badges.hall.collectionHint")}
+            </AppText>
+          </View>
+        }
+        renderItem={({ item: [game, list] }) => (
+          <View style={styles.item}>
+            {/* keyed by its game, so a recycled cell starts a new board
+                and never shows another game's swing */}
+            <GameBoard
+              key={game ?? "boardly"}
+              id={game ?? "boardly"}
+              width={inner}
+              name={game ? gameName(game) : "Boardly"}
+              badges={list}
+              swung={swung}
+              onOpen={setOpen}
+            />
+          </View>
+        )}
+      />
 
       {/* the crest over the top; the page scrolls under it */}
       <View style={styles.crest} pointerEvents="box-none">
@@ -223,7 +237,9 @@ const styles = StyleSheet.create({
   tallyItem: { flexDirection: "row", alignItems: "center" },
   tallyN: { fontFamily: fontFamily.bold, fontSize: 12.5, marginLeft: -1 },
   tallyTotal: { color: TABLE.cream, fontFamily: fontFamily.bold, fontSize: 12.5, marginLeft: 4 },
-  body: { paddingHorizontal: 14, paddingBottom: 60, gap: 8 },
+  body: { paddingHorizontal: 14, paddingBottom: 60 },
+  header: { gap: 8 },
+  item: { paddingTop: 8 },
   section: { marginTop: 14 },
   hint: {
     color: TABLE.cream,

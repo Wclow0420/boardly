@@ -1,13 +1,8 @@
+import { FlashList } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
-import {
-  FlatList,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { SearchIcon, SortIcon } from "@/components/icons";
@@ -35,6 +30,9 @@ import { tapHaptic } from "@/utils/haptics";
 /** Boxes per shelf. */
 const PER_SHELF = 2;
 const GAP = 14;
+
+/** One shelf of the bookcase: the boxes standing on one plank. */
+type Shelf = { key: string; games: GameCatalogEntry[] };
 
 export default function GamesScreen() {
   const { t } = useTranslation();
@@ -70,9 +68,11 @@ export default function GamesScreen() {
   };
 
   // the catalogue, a shelf at a time
-  const shelves: GameCatalogEntry[][] = [];
-  for (let i = 0; i < games.length; i += PER_SHELF)
-    shelves.push(games.slice(i, i + PER_SHELF));
+  const shelves: Shelf[] = [];
+  for (let i = 0; i < games.length; i += PER_SHELF) {
+    const row = games.slice(i, i + PER_SHELF);
+    shelves.push({ key: row.map((game) => game.id).join(","), games: row });
+  }
 
   const header = (
     <View>
@@ -128,14 +128,27 @@ export default function GamesScreen() {
       style={styles.screen}
       backdrop={<TableBackdrop dim={0.45} />}
     >
-      <FlatList
+      {/* only the shelves in view are built, and their views are reused
+          as the case scrolls */}
+      <FlashList
         data={shelfWidth > 0 ? shelves : []}
-        keyExtractor={(shelf) => shelf.map((game) => game.id).join(",")}
+        keyExtractor={(shelf) => shelf.key}
+        // A shelf with one box left over is laid out differently from a
+        // full one, so it is kept apart when views are reused.
+        getItemType={(shelf) => shelf.games.length}
+        // The boxes' width comes from the list's own width, so a new
+        // width must redraw the shelves already built.
+        extraData={boxWidth}
+        // A new filter swaps the whole catalogue: the case should stay
+        // where it is, as it always has, not chase a box that has gone.
+        maintainVisibleContentPosition={{ disabled: true }}
         onLayout={(e) => setShelfWidth(e.nativeEvent.layout.width)}
         renderItem={({ item: shelf }) => (
           <View style={styles.shelf}>
             <View style={styles.boxes}>
-              {shelf.map((game) => (
+              {/* Keyed by the game, so a reused shelf builds a fresh box
+                  for a new game rather than keeping the last one's art. */}
+              {shelf.games.map((game) => (
                 <Pressable
                   key={game.id}
                   accessibilityRole="button"
@@ -166,7 +179,7 @@ export default function GamesScreen() {
             </LinearGradient>
             <View style={styles.plankFront} />
             <View style={styles.labels}>
-              {shelf.map((game) => (
+              {shelf.games.map((game) => (
                 <AppText
                   key={game.id}
                   variant="tiny"

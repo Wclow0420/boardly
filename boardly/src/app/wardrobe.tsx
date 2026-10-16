@@ -3,6 +3,7 @@
 // on, then buy what you're wearing (all at once) and keep the look. It
 // slides up over the tabs from the Mascot tab.
 
+import { FlashList } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -68,6 +69,33 @@ function withItem(look: Look, tab: Tab, id: string): Look {
   if (tab === "colour") return { ...look, colour: id };
   return { ...look, wear: { ...look.wear, [tab]: id } };
 }
+
+type Item = { id: string; name: string; price: number };
+
+/** The cards sit four to a row, as the grid always wrapped them. */
+const PER_ROW = 4;
+
+/** The slot's items, from the catalogue (the colours are swatches). */
+function itemsOf(tab: Tab): Item[] {
+  if (tab === "skin")
+    return Object.entries(SKINS).map(([id, s]) => ({
+      id,
+      name: s.name,
+      price: s.price,
+    }));
+  if (tab === "colour") return [];
+  return Object.entries(CATALOG[tab] as Record<string, PartDef>).map(
+    ([id, p]) => ({ id, name: p.name, price: p.price }),
+  );
+}
+
+/**
+ * A row of the list: four cards, or the colour swatches all in one (there
+ * are only a dozen, and plain views, so they wrap as one block).
+ */
+type Row =
+  | { kind: "cards"; key: string; items: Item[] }
+  | { kind: "swatches"; key: string };
 
 /** What a look wears that hasn't been bought. */
 function unpaid(look: Look, owned: Set<string>) {
@@ -204,22 +232,22 @@ export default function Wardrobe() {
   const total = toPay.reduce((sum, item) => sum + item.price, 0);
   const changed = JSON.stringify(look) !== JSON.stringify(saved);
 
-  const items: { id: string; name: string; price: number }[] =
-    shownTab === "skin"
-      ? Object.entries(SKINS).map(([id, s]) => ({
-          id,
-          name: s.name,
-          price: s.price,
-        }))
-      : shownTab === "colour"
-        ? []
-        : Object.entries(CATALOG[shownTab] as Record<string, PartDef>).map(
-            ([id, p]) => ({
-              id,
-              name: p.name,
-              price: p.price,
-            }),
-          );
+  // The slot cut into rows of four, so the list builds only the rows in
+  // view (each card is a whole dressed mascot on its own canvas) and
+  // reuses them as you scroll; empty until the screen has first shown.
+  const rows = useMemo<Row[]>(() => {
+    if (!ready) return [];
+    if (shownTab === "colour") return [{ kind: "swatches", key: "swatches" }];
+    const items = itemsOf(shownTab);
+    const out: Row[] = [];
+    for (let i = 0; i < items.length; i += PER_ROW)
+      out.push({
+        kind: "cards",
+        key: `cards:${i / PER_ROW}`,
+        items: items.slice(i, i + PER_ROW),
+      });
+    return out;
+  }, [ready, shownTab]);
   // an empty slot is wearing its "none"
   const wearingId =
     shownTab === "skin"
@@ -227,6 +255,47 @@ export default function Wardrobe() {
       : shownTab === "colour"
         ? look.colour
         : (look.wear[shownTab as Slot] ?? "none");
+
+  const renderRow = useCallback(
+    ({ item: row, index }: { item: Row; index: number }) =>
+      row.kind === "swatches" ? (
+        <View style={styles.swatches}>
+          {Object.entries(COLOURS).map(([name, colour]) => (
+            <Pressable
+              key={name}
+              onPress={() => onPick("colour", colour)}
+              style={[
+                styles.swatch,
+                { backgroundColor: colour },
+                look.colour === colour && styles.swatchOn,
+              ]}
+            />
+          ))}
+        </View>
+      ) : (
+        <View style={[styles.row, index > 0 && styles.rowGap]}>
+          {/* Keyed by place in the row, not by item: a row the list
+              reuses for other items keeps its cards and canvases and only
+              hands them new props. A card holds no state of its own (its
+              preview is worked out from its props), so nothing of the
+              item before shows through. */}
+          {row.items.map((item, column) => (
+            <ItemCard
+              key={column}
+              look={cardsLook}
+              tab={shownTab}
+              id={item.id}
+              name={item.name}
+              price={item.price}
+              owned={owned.has(keyOf(shownTab, item.id))}
+              wearing={wearingId === item.id}
+              onPick={onPick}
+            />
+          ))}
+        </View>
+      ),
+    [cardsLook, shownTab, owned, wearingId, look.colour, onPick],
+  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: TABLE.table[1] }}>
@@ -278,35 +347,17 @@ export default function Wardrobe() {
       </ScrollView>
 
       {/* what's in the slot, on you */}
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.grid}>
-        {!ready
-          ? null
-          : shownTab === "colour"
-            ? Object.entries(COLOURS).map(([name, colour]) => (
-                <Pressable
-                  key={name}
-                  onPress={() => onPick("colour", colour)}
-                  style={[
-                    styles.swatch,
-                    { backgroundColor: colour },
-                    look.colour === colour && styles.swatchOn,
-                  ]}
-                />
-              ))
-            : items.map((item) => (
-                <ItemCard
-                  key={item.id}
-                  look={cardsLook}
-                  tab={shownTab}
-                  id={item.id}
-                  name={item.name}
-                  price={item.price}
-                  owned={owned.has(keyOf(shownTab, item.id))}
-                  wearing={wearingId === item.id}
-                  onPick={onPick}
-                />
-              ))}
-      </ScrollView>
+      {/* One list for every slot: switching slots swaps its rows, and the
+          scroll stays where it was, as the single ScrollView before it
+          did. renderRow changes whenever what a card shows does (the look,
+          what you own), which re-renders the rows in view. */}
+      <FlashList
+        data={rows}
+        keyExtractor={(row) => row.key}
+        getItemType={(row) => row.kind}
+        renderItem={renderRow}
+        contentContainerStyle={styles.grid}
+      />
 
       {/* keep the look: buy what you're trying on first */}
       <View style={styles.footer}>
@@ -369,13 +420,12 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.semiBold,
     fontSize: 13,
   },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
+  // Only padding here: the list places its rows itself, so the gaps live
+  // in the rows.
+  grid: { paddingHorizontal: 16, paddingBottom: 16 },
+  row: { flexDirection: "row", gap: 10 },
+  rowGap: { paddingTop: 10 },
+  swatches: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   card: {
     width: "22.6%",
     borderRadius: 14,

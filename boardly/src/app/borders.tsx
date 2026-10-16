@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { FlatList, Pressable, StyleSheet, View } from "react-native";
+import { FlashList } from "@shopify/flash-list";
+import { Pressable, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { BackIcon, Emblem } from "@/components/icons";
@@ -310,14 +311,11 @@ export default function BordersScreen() {
       <Frame tone="wood" style={styles.list}>
         {/* only the rows in view are built: a screen of borders all at
             once held hundreds of MB */}
-        <FlatList
+        <FlashList
           data={ROWS}
           keyExtractor={(row) => row.key}
+          getItemType={(row) => row.kind}
           showsVerticalScrollIndicator={false}
-          initialNumToRender={6}
-          maxToRenderPerBatch={4}
-          windowSize={5}
-          removeClippedSubviews
           renderItem={({ item: row }) =>
             row.kind === "head" ? (
               <SectionTitle
