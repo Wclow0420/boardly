@@ -96,6 +96,9 @@ class Avalon(BaseGame):
         Badge("avalon.hitman", RARE,
               lambda o: o.won and o.role == "assassin"
               and (o.facts or {}).get("reason") == "assassination"),
+        # the Handler steers the agents home and the Hitman misses them
+        Badge("avalon.handler", RARE,
+              lambda o: o.won and not o.abandoned and o.role == "merlin"),
         Badge("avalon.spymaster", WINS),
     ]
 

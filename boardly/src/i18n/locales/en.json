@@ -223,171 +223,186 @@
     "title": "How to play",
     "close": "Got it",
     "tictactoe": {
-      "intro": "Take turns placing your mark on the 3×3 board.",
-      "sections": [
-        {
-          "title": "How to win",
-          "items": [
-            "Get three of your marks in a row — across, down or diagonally.",
-            "If the board fills up with no line, it's a draw."
-          ]
-        }
-      ]
+      "intro": "The classic: two players take turns on a 3 × 3 board.",
+      "overview": {
+        "win": "Get three of your marks in a row to win. A full board with no line is a draw.",
+        "length": "2 players · about a minute."
+      },
+      "play": {
+        "lead": "Taking turns, one mark at a time.",
+        "steps": {
+          "first": {
+            "title": "Crosses go first",
+            "detail": "The first player places crosses, the second noughts."
+          },
+          "turn": {
+            "title": "Take turns",
+            "detail": "Tap an empty square to place your mark. Marks never move."
+          },
+          "line": {
+            "title": "Three in a row wins",
+            "detail": "Across, down or corner to corner."
+          },
+          "draw": {
+            "title": "Full board, no line",
+            "detail": "All nine squares filled and no line: a draw."
+          }
+        },
+        "note": "Take the centre or a corner, and always block two in a row. Best of all: make two threats at once — a fork — so only one can be blocked."
+      }
     },
     "avalon": {
       "intro": "The agents try to complete three operations. Moles hide among them and try to make three operations fail.",
-      "pages": {
-        "overview": {
-          "title": "Overview",
-          "intro": "A team game of hidden identities. Agents try to complete operations; moles hide among them and sabotage.",
-          "items": [
-            "Each player is secretly an Agent or a Mole. Moles know each other; most agents know nobody.",
-            "The game lasts up to five operations. Agents need three to succeed; moles need three to fail.",
-            "Agents who reach three successes still have to survive the Hitman's guess at the Handler.",
-            "Moles also win if five proposed teams in a row are rejected.",
-            "Roles are dealt at random and depend on the number of players (see Setup)."
-          ]
+      "overview": {
+        "lead": "A team game of hidden roles: agents against the moles hiding among them.",
+        "win": "Agents win by completing three operations. Moles win by making three fail.",
+        "shot": "Even if the agents succeed, the Hitman gets one shot at the Handler, and a hit steals the win.",
+        "size": "{{min}}–{{max}} players, about 30 minutes."
+      },
+      "teams": {
+        "lead": "Every player is secretly on one of two sides.",
+        "good": {
+          "name": "Agents",
+          "text": "Most of the table, and nearly all of them know nothing. They win when three operations succeed and the Hitman then misses the Handler."
         },
-        "round": {
-          "title": "Each round",
-          "items": [
-            "Leader: the player with the crown proposes a team of the size shown on the track.",
-            "Vote: everyone approves or rejects. Votes are revealed together once all are in.",
-            "A strict majority approves the team. A tie is a rejection.",
-            "Rejected: the crown passes to the next player, who proposes a new team. Five rejections in a row and the moles win.",
-            "Approved: each team member secretly plays Success or Fail — hold the card for 2 seconds. Agents can only play Success; moles may play either.",
-            "The cards are revealed without names. One Fail fails the operation (Operation 4 needs two with 7 or more players).",
-            "The crown moves on and the next operation begins."
-          ]
-        },
-        "roles": {
-          "title": "Roles",
-          "intro": "Eight roles in total. Which ones are in a game depends on the player count — see Setup."
-        },
-        "setup": {
-          "title": "Setup",
-          "intro": "Roles in play and team size for each of the five operations, by number of players."
-        },
-        "ending": {
-          "title": "The ending",
-          "items": [
-            "Three failed operations: the moles win at once.",
-            "Three successful operations: the moles are revealed and may talk it over. The Hitman then names one agent as the Handler.",
-            "If the Hitman is right, the moles steal the win. If wrong, the agents win.",
-            "When the game ends, everyone's role is shown."
-          ]
-        },
-        "more": {
-          "title": "More rules",
-          "items": [
-            "Discussion happens out loud. Anyone may lie about anything — but never show your screen.",
-            "Your role card is face down until you tap it. Tap again to hide it.",
-            "Team votes are public once revealed and stay in History. Operation cards are never linked to a player — only the number of Fails is shown.",
-            "Handler: hint, don't announce. The more obvious you are, the easier the Hitman's job.",
-            "A mole on a team doesn't have to play Fail. Playing Success can build trust.",
-            "If a player leaves mid-game, the game ends for everyone and all roles are revealed."
-          ]
+        "evil": {
+          "name": "Moles",
+          "text": "They know each other (except the Wildcard). They win with three failed operations, {{rejections}} rejected teams in a row, or the Hitman finding the Handler."
         }
       },
-      "roleFacts": {
-        "merlin": {
-          "knows": "Every mole, except the Sleeper.",
-          "note": "Stay hidden. If the agents win three operations, the Hitman wins the game by naming you."
-        },
-        "percival": {
-          "knows": "Who the Handler and the Decoy are — but not which is which.",
-          "note": "Work out the real Handler and shield them."
-        },
-        "servant": {
-          "knows": "Nothing."
-        },
-        "assassin": {
-          "knows": "The other moles, except the Wildcard.",
-          "note": "If the agents win three operations, you name one agent as the Handler. Guess right and the moles win."
-        },
-        "morgana": {
-          "knows": "The other moles, except the Wildcard.",
-          "note": "The Bodyguard sees you as a possible Handler."
-        },
-        "mordred": {
-          "knows": "The other moles, except the Wildcard.",
-          "note": "The Handler can't see you."
-        },
-        "oberon": {
-          "knows": "Nothing — and the other moles don't know you either.",
-          "note": "The Handler does see you."
-        },
-        "minion": {
-          "knows": "The other moles, except the Wildcard."
-        }
+      "tags": {
+        "perGame": "{{n}} per game",
+        "from": "From {{n}} players",
+        "only": "Only with {{counts}} players"
       },
-      "labels": {
-        "knows": "Knows",
-        "note": "Note",
-        "teams": "Teams",
-        "players": "{{count}} players",
-        "split": "{{agents}} agents · {{moles}} moles",
-        "twoFails": "* This operation needs two Fail cards to fail."
+      "roles": {
+        "lead": "Who you might be. Only you see your card; some roles also see others.",
+        "merlin": "Sees every mole except the Sleeper. Guide the agents with hints: if the Hitman names you at the end, the moles win.",
+        "percival": "Sees the Handler and the Decoy, but can't tell which is which. Find the real Handler and protect them.",
+        "servant": "Knows nothing. Watch the votes and the results to find the moles.",
+        "assassin": "Knows the other moles (not the Wildcard). If the agents win three operations, takes one shot at the Handler.",
+        "morgana": "Knows the other moles (not the Wildcard). Looks like the Handler to the Bodyguard.",
+        "mordred": "Knows the other moles (not the Wildcard), and the Handler can't see the Sleeper.",
+        "oberon": "A mole alone: doesn't know the other moles, and they don't know the Wildcard. The Handler does see the Wildcard.",
+        "minion": "Knows the other moles (not the Wildcard). Sabotage without getting caught."
+      },
+      "play": {
+        "lead": "Up to five operations. Each one goes like this:",
+        "role": {
+          "title": "Look at your role",
+          "detail": "At the start, tap your card to see who you are and whom you know. Keep it secret."
+        },
+        "team": {
+          "title": "The leader picks a team",
+          "detail": "The leader picks as many players as the operation needs. Everyone sees the picks. Talk it over."
+        },
+        "vote": {
+          "title": "Everyone votes",
+          "detail": "Approve or reject, all at once. More than half must approve; a tie rejects."
+        },
+        "rejected": {
+          "title": "Rejected? Next leader",
+          "detail": "The leader's crown moves one seat and a new team is picked. {{rejections}} rejected teams in a row and the moles win."
+        },
+        "operation": {
+          "title": "The team plays its cards",
+          "detail": "Each member secretly holds Success or Fail for 2 seconds. Agents can only play Success; moles may play either."
+        },
+        "verdict": {
+          "title": "The verdict",
+          "detail": "The cards are shown with no names. One Fail sinks the operation (Operation 4 needs two with 7 or more players). Then the next leader picks."
+        },
+        "end": {
+          "title": "Three of a kind ends it",
+          "detail": "Three failed operations: the moles win. Three successes: on to the Hitman's shot."
+        },
+        "shot": {
+          "title": "The Hitman's shot",
+          "detail": "The moles are revealed and talk it over. The Hitman holds to name one agent: the Handler means the moles win; anyone else, the agents win."
+        },
+        "talk": "Talk out loud; anyone may lie. Votes are public, but nobody ever learns who played a Fail.",
+        "tip": "Handler: hint, don't announce. Moles: playing Success can earn trust."
+      },
+      "counts": {
+        "lead": "Who is in the game and how big each operation's team is, by number of players.",
+        "teams": "Sides and operation teams",
+        "op": "Op {{n}}",
+        "twoFails": "* This operation needs two Fail cards to fail.",
+        "roles": "Roles in play"
       }
     },
     "coup": {
-      "intro": "Everyone runs two stalls — two hidden cards. Bluff, challenge and block until you are the last player with a card left. The deck has 15 cards: 3 each of Boss, Enforcer, Pickpocket, Fixer and Auntie.",
-      "pages": {
-        "overview": {
-          "title": "Overview",
-          "intro": "Everyone runs a crew of two hidden cards. Bluff, challenge and block until you're the last player with a card left.",
-          "items": [
-            "Setup: each player gets 2 face-down cards and $2. The deck has 15 cards — 3 each of Boss, Enforcer, Pickpocket, Fixer and Auntie.",
-            "On your turn you take exactly one action. Some actions need a role — but you may claim a role you don't have.",
-            "After you announce an action, the other players may challenge your claim or block the action.",
-            "A card you lose is turned face up. Lose both and you're out.",
-            "The last player with a card wins.",
-            "Everyone's cash and lost cards are public. Face-down cards and the deck are secret."
-          ]
+      "intro": "A bluffing card game: claim any role, call out lies, and be the last player with a card left.",
+      "overview": {
+        "lead": "A bluffing card game: be the last player with a card left.",
+        "cards": "Everyone gets two secret cards and {{cash}}. Each card is a role, and each role has a power.",
+        "win": "Claim any role, even one you don't hold. If someone calls your bluff and you're caught, you lose a card. Lose both and you're out.",
+        "size": "{{min}}–{{max}} players, about 15 minutes."
+      },
+      "roles": {
+        "lead": "Five roles, three cards of each. You may claim any of them, whether you hold it or not.",
+        "duke": "The money maker. Collects rent and stops anyone borrowing.",
+        "assassin": "Pays to rough up a player, who loses a card.",
+        "captain": "Takes $2 from another player, and stops others pickpocketing you.",
+        "ambassador": "Swaps cards with the deck to change roles in secret, and stops pickpocketing.",
+        "contessa": "Has no action of her own, but saves you from being roughed up."
+      },
+      "tags": {
+        "does": "Does: {{action}}",
+        "blocks": "Blocks: {{action}}",
+        "cost": "Costs {{cash}}",
+        "free": "Free",
+        "claims": "Claims {{role}}",
+        "noClaim": "No role needed",
+        "unblockable": "Can't be blocked",
+        "anyoneBlocks": "Anyone blocks with {{roles}}",
+        "targetBlocks": "Target blocks with {{roles}}"
+      },
+      "play": {
+        "lead": "Players take turns in order. Each turn goes like this:",
+        "act": {
+          "title": "Choose one action",
+          "detail": "Lay your chip on an action on the felt. With {{forced}} or more you must Shut Down."
         },
-        "roles": {
-          "title": "Roles",
-          "intro": "Five roles, three copies of each. A role gives you a special action, lets you block something, or both."
+        "claim": {
+          "title": "Claim its role, if it has one",
+          "detail": "An action with a role says you hold that card. You may be bluffing."
         },
-        "actions": {
-          "title": "Actions",
-          "intro": "Take one per turn. \"Needs\" is the role you must claim — truthfully or not."
+        "challenge": {
+          "title": "Anyone may challenge",
+          "detail": "Everyone else lets it go or challenges. Caught bluffing: you lose a card and the action is off. Telling the truth: the challenger loses a card, and your shown card is swapped for a new one."
         },
-        "challenges": {
-          "title": "Challenges",
-          "items": [
-            "Whenever a player claims a role — to take an action or to block one — any other player may challenge.",
-            "Everyone else chooses Challenge or Allow. The first challenge settles it.",
-            "If it was a bluff: the bluffer loses a card. A bluffed action doesn't happen; a bluffed block fails and the action goes through.",
-            "If it was true: the challenger loses a card. The proven card is shuffled back into the deck and replaced with a new one, so the hand stays secret.",
-            "Day Job, Borrow and Shut Down claim no role, so they can't be challenged.",
-            "Once you tap Allow, you can't challenge that claim any more."
-          ]
+        "block": {
+          "title": "Some actions can be blocked",
+          "detail": "A block claims a role too, so it can be challenged the same way. Actions shows who blocks what."
         },
-        "blocks": {
-          "title": "Blocks",
-          "items": [
-            "Borrow can be blocked by any player claiming Boss.",
-            "Pickpocket can be blocked only by its target, claiming Pickpocket or Fixer.",
-            "Rough Up can be blocked only by its target, claiming Auntie.",
-            "A block is a claim, so anyone may challenge it. If the block was a bluff, the blocker loses a card and the action still happens.",
-            "A successful block cancels the action. Money already paid is not returned.",
-            "Day Job, Collect Rent, Swap and Shut Down can't be blocked."
-          ]
+        "resolve": {
+          "title": "Nobody stopped it? It happens",
+          "detail": "Take the money, swap the cards, or make your target lose a card. Then it's the next player's turn."
         },
-        "more": {
-          "title": "More rules",
-          "items": [
-            "With $10 or more at the start of your turn, you must Shut Down someone.",
-            "Rough Up costs $3 up front. You get it back only if you're caught bluffing the Enforcer — not if the action is blocked.",
-            "Double loss: bluff Auntie against a Rough Up and get challenged, and you lose one card for the bluff and one for the Rough Up.",
-            "With two cards, you choose which one to lose. With one card left there's no choice.",
-            "When you're out, your cash is gone and you only watch.",
-            "Two players: whoever goes first starts with $1 instead of $2.",
-            "If a player leaves mid-game, the game ends for everyone with no winner.",
-            "Tap your cards to flip them face down when someone might peek."
-          ]
-        }
+        "lose": {
+          "title": "Losing a card",
+          "detail": "You pick which of your cards to turn face up. It stays out for good."
+        },
+        "win": {
+          "title": "Last one standing wins",
+          "detail": "Lose both cards and you're out. The last player with a face-down card wins."
+        },
+        "doubleLoss": "Rough Up's {{cost}} is spent even if it's blocked. Bluff Auntie against it and get caught, and you lose both cards at once.",
+        "secret": "Only you can see your cards. Tap them to hide them when someone might peek."
+      },
+      "actions": {
+        "lead": "One action per turn. An action that claims a role can be challenged.",
+        "forced": "With {{forced}} or more at the start of your turn, you must Shut Down someone."
+      },
+      "counts": {
+        "lead": "Every game uses the same {{cards}} cards: three of each role.",
+        "dealt": "Cards dealt",
+        "deck": "Left in the deck",
+        "cash": "Starting cash",
+        "first": "First player's cash",
+        "two": "With 2 players, whoever goes first starts with {{first}} instead of {{cash}}.",
+        "leave": "If a player leaves mid-game, the game ends with no winner."
       },
       "effects": {
         "income": "Take $1 from the bank.",
@@ -397,303 +412,458 @@
         "exchange": "Draw 2 cards from the deck, then return any 2. Changes your roles in secret.",
         "assassinate": "Choose a player; they lose a card.",
         "coup": "Choose a player; they lose a card. Nothing can stop it."
-      },
-      "labels": {
-        "action": "Action",
-        "blocks": "Blocks",
-        "cost": "Cost",
-        "needs": "Needs",
-        "blockedBy": "Blocked by",
-        "noAction": "No action of its own",
-        "blocksNothing": "Nothing",
-        "free": "Free",
-        "anyone": "No role — anyone can do it",
-        "needsRole": "{{role}} (claim it)",
-        "byAnyone": "(any player)",
-        "byTarget": "(the target only)",
-        "noBlock": "Can't be blocked"
       }
     },
     "overview": "Overview",
     "manor": {
-      "intro": "A rich old man has his relatives over for the night. Some are intruders in disguise who want him dead before dawn. The rest must keep him alive until 6 AM.",
-      "sections": [
-        {
-          "title": "Sides",
-          "items": [
-            "Household: the Butler, the Guard and the Guests. Intruders: 1 with 4 players, 2 with 5–6, 3 with 7–8.",
-            "Intruders know each other. The Butler always knows where the old man was at the start of each hour. The Guard carries the flashlight.",
-            "With 4 players, the lone intruder starts holding the knife."
-          ]
+      "intro": "A rich old man has his relatives over for the night. Some of them are intruders in disguise.",
+      "overview": {
+        "win": "The intruders win if they hit him twice before dawn. The household wins if he is alive at 6 AM, or every intruder is locked up.",
+        "length": "{{min}}–{{max}} players · {{hours}} hours of night · about 30 minutes."
+      },
+      "teams": {
+        "lead": "Two sides. Nobody knows who is who — except the intruders, who know each other.",
+        "household": {
+          "name": "Household",
+          "text": "The Butler, the Guard and the Guests. Keep the old man alive until 6 AM, or lock up every intruder."
         },
-        {
-          "title": "Each hour",
-          "items": [
-            "The night runs from 10 PM to 6 AM: 8 hours. Everyone starts in the Grand Hall; the old man starts in the Bedroom.",
-            "Move: secretly stay, or go one room up, down, left or right. Intruders can slip into any room. Nobody can stay in the Security Room two hours in a row.",
-            "Act: Secretly pick one action. It's dark — you know whether someone else is in your room and whether the old man is there, but not who, how many, or what they do."
-          ]
-        },
-        {
-          "title": "Actions",
-          "items": [
-            "Guard: protect the old man. Attack (intruders with a weapon): hurts him if attackers outnumber guards.",
-            "Take a weapon: the knife (Kitchen), candlestick (Library) or poison (Wine Cellar). You carry one item; taking another swaps it.",
-            "Fix a camera (Library, Bedroom, Kitchen, Foyer, Garden); intruders can break one. You only see whether a camera is on from its own room or from the Security Room — nobody is told when it changes.",
-            "Watch the monitors (Security Room): see who working cameras saw this hour and whether the old man came or went — not what anyone did.",
-            "Search: pat down someone at random — you only learn whether they carry something. The Guard learns who it was and what they carry.",
-            "Flashlight (Guard): see who is in your room and what each of them does this hour. Escort: the old man follows you next hour.",
-            "Once a game, an intruder can hide their weapon for an hour: searches find nothing on them."
-          ]
-        },
-        {
-          "title": "Meetings",
-          "items": [
-            "After midnight, after 3 AM and after every scream, the household talks it over and votes.",
-            "A majority locks a player up for the rest of the night. Their role stays secret."
-          ]
-        },
-        {
-          "title": "How it ends",
-          "items": [
-            "Intruders win if the old man is hit twice. The first hit makes him scream — everyone learns the room, not who.",
-            "The household wins if every intruder is locked up, or the old man is alive at dawn.",
-            "At dawn the intruders get one last chance: their ringleader names the Butler. Get it right and the intruders win."
-          ]
+        "intruders": {
+          "name": "Intruders",
+          "text": "Hit the old man twice before dawn. If he survives, name the Butler at dawn and you still win."
         }
-      ]
+      },
+      "roles": {
+        "lead": "Your role is secret. You see it when the night begins.",
+        "perGame_one": "{{count}} per game",
+        "perGame_other": "{{count}} per game",
+        "range": "{{from}}–{{to}}, by player count",
+        "butler": "Always knows which room the old man was in when the hour began. Guide the household, quietly: if the intruders name you at dawn, they win.",
+        "guard": "Carries the flashlight: see who is in your room and what each of them does. Your searches show who you patted down and what they carry.",
+        "guest": "No special power. Guard the old man, fix cameras, search, and work out who the intruders are.",
+        "intruder": "Knows the other intruders. Slips into any room each hour, attacks with a weapon, breaks cameras. Once a game, can hide a weapon from searches."
+      },
+      "play": {
+        "lead": "The night runs from 10 PM to 6 AM. Every hour has two secret steps.",
+        "steps": {
+          "start": {
+            "title": "Night falls",
+            "detail": "Everyone starts in the Grand Hall, the old man in the Bedroom. Look at your role."
+          },
+          "move": {
+            "title": "Move",
+            "detail": "Secretly stay, or go one room up, down, left or right. Intruders may go to any room."
+          },
+          "act": {
+            "title": "Act",
+            "detail": "Secretly pick one action for your room (see Actions). Everything happens at once."
+          },
+          "dark": {
+            "title": "It's dark",
+            "detail": "You only learn whether someone else is in your room and whether the old man is — not who, or what they did. Your notebook keeps what you learned."
+          },
+          "owner": {
+            "title": "The old man wanders",
+            "detail": "Each hour he steps to a room next door, or stays — unless someone escorted him."
+          },
+          "meet": {
+            "title": "Talk and vote",
+            "detail": "At the meetings (see Special events), share what you saw — or lie — and vote someone locked up."
+          },
+          "dawn": {
+            "title": "Dawn",
+            "detail": "If he is still alive at 6 AM, the intruders get one last guess at the Butler."
+          }
+        },
+        "note": "Nobody may stay in the Security Room two hours in a row."
+      },
+      "actions": {
+        "lead": "Pick one each hour. What you can do depends on your room and your role.",
+        "tags": {
+          "ownerHere": "Old man here",
+          "intruders": "Intruders",
+          "weapon": "Needs a weapon",
+          "guard": "Guard",
+          "security": "Security Room",
+          "broken": "Broken camera here",
+          "working": "Working camera here",
+          "someone": "Someone else here",
+          "once": "Once a game",
+          "itemHere": "Weapon here"
+        },
+        "guard": "Each guard stops one attacker.",
+        "attack": "Hurts him if attackers outnumber guards. Every hit makes him scream.",
+        "escort": "He follows you next hour instead of wandering.",
+        "takeName": "Take a weapon",
+        "take": "Pick up the weapon lying in your room. You carry one thing; taking another leaves yours behind.",
+        "fix": "Turn a broken camera on. It records who comes and goes.",
+        "break": "Turn a working camera off. Nobody is told.",
+        "watch": "See who each working camera saw this hour, and whether the old man came or went — not what anyone did.",
+        "search": "Pat down someone at random in your room: you only feel whether they carry something. The Guard sees who it was and what.",
+        "flashlight": "See who is in your room and what each of them does this hour.",
+        "wait": "Do nothing this hour.",
+        "hideName": "Hide your weapon",
+        "hide": "Along with your action: searches find nothing on you this hour."
+      },
+      "rooms": {
+        "lead": "Nine rooms on a 3 × 3 floor plan. You step to the room next door, never diagonally.",
+        "camera": "📷 Camera",
+        "next": "Next door: {{rooms}}",
+        "hall": "Everyone starts here.",
+        "bedroom": "The old man starts here.",
+        "security": "Watch the monitors here and see every camera. No staying two hours in a row.",
+        "note": "Every camera starts the night broken. You only see a camera's state from its own room or from the Security Room."
+      },
+      "events": {
+        "lead": "Moments that stop the night.",
+        "scream": {
+          "name": "A scream",
+          "text": "When the old man is hit, everyone hears which room — not who did it. A meeting follows. A second hit kills him."
+        },
+        "meeting": {
+          "name": "Household meeting",
+          "text": "After midnight, after 3 AM and after every scream. Everyone still free votes; a majority locks a player up for the rest of the night, their role kept secret. Lock up every intruder and the household wins."
+        },
+        "dawn": {
+          "name": "Dawn",
+          "text": "At 6 AM the intruders are revealed. Their ringleader names one player as the Butler: right, and the intruders win; wrong, and the household wins."
+        }
+      },
+      "counts": {
+        "lead": "More players, more intruders.",
+        "note": "With {{min}} players the lone intruder starts the night holding the knife."
+      }
     },
     "liarsdice": {
-      "intro": "The bar classic. Everyone shakes 5 dice and looks only at their own. Take turns bidding how many of one face are on the whole table — until someone calls a lie.",
-      "sections": [
-        {
-          "title": "Bidding",
-          "items": [
-            "A bid is \"N × face\": at least N dice on the table show that face, counting everyone's dice.",
-            "The opening bid must be more than the number of players (2 players: at least 3).",
-            "Each bid must be higher: more dice, or the same number of a higher face. Faces rank 2 < 3 < 4 < 5 < 6 < 1.",
-            "Scattered (散骰): if your five dice all show different faces, you may show them to the table and shake again — any time before your first bid of the round."
-          ]
+      "intro": "The bar classic: everyone shakes five dice under a cup and looks only at their own.",
+      "overview": {
+        "calls": "Take turns calling how many dice of one face are on the whole table, each call higher than the last — until someone calls it a lie.",
+        "win": "Lose a call and you drink. Knockout: {{cups}} cups and you're out, and the last one standing wins. Endless: the fewest cups win when the table stops.",
+        "length": "{{min}}–{{max}} players · about 15 minutes."
+      },
+      "play": {
+        "lead": "A round, from the shake to the drink.",
+        "steps": {
+          "shake": {
+            "title": "Everyone shakes",
+            "detail": "Five dice each, under your cup. Look only at your own."
+          },
+          "call": {
+            "title": "The first call",
+            "detail": "\"4 × fives\" means at least four 5s on the whole table, counting everyone's dice. Call more dice than there are players."
+          },
+          "raise": {
+            "title": "Raise, or call a lie",
+            "detail": "Next player: call higher — more dice, or as many of a higher face — or open the last call. Faces rank 2 < 3 < 4 < 5 < 6 < 1."
+          },
+          "reveal": {
+            "title": "Lift the cups and count",
+            "detail": "Enough dice: whoever called the lie drinks. Too few: the bidder drinks."
+          },
+          "again": {
+            "title": "Shake again",
+            "detail": "The loser starts the next round."
+          }
         },
-        {
-          "title": "Wild 1s and zhai",
-          "items": [
-            "The opening bid picks the round: zhai (斋) — 1s count only as 1s — or kaizhai (开斋) — 1s are wild and count as any face. Calling 1s is always zhai.",
-            "A zhai round can break the fast (开斋, also called 飞): 1s become wild again, but you must call at least double the dice (after 3 × 4 zhai, at least 6). An opening zhai bid may be as low as the number of players.",
-            "Once a round is kaizhai it stays kaizhai: nobody can go back to zhai, so nobody can call 1s.",
-            "Five of a kind (豹子): a cup whose five dice all count for the bid counts as six. With wild 1s, two 1s + three 3s are six 3s; under zhai they're just three 3s, while five real 3s still count as six."
-          ]
+        "onesHeading": "Wild 1s",
+        "kaizhai": {
+          "name": "Kaizhai (开斋): 1s are wild",
+          "text": "1s count as any face. A first call without zhai makes the round kaizhai."
         },
-        {
-          "title": "Calling a lie",
-          "items": [
-            "Open (开): on your turn, instead of bidding, call the last bid a lie. Everyone's dice are revealed and counted. If there are enough, the caller drinks 1 cup; if not, the bidder does.",
-            "Split (劈): anyone — not just the player up — can split the last bid at any time. The loser drinks 2 cups.",
-            "Counter-split (反劈): the player who was split can counter. Then the loser drinks 4."
-          ]
+        "zhai": {
+          "name": "Zhai (斋): 1s are just 1s",
+          "text": "Tick zhai on the first call and 1s count only as 1s. A zhai first call may be as low as the number of players. Calling 1s is always zhai."
         },
-        {
-          "title": "Winning",
-          "items": [
-            "After each call everyone still in shakes again, and the loser starts the next round.",
-            "Knockout: 5 cups and you're drunk — out. The last player standing wins.",
-            "Endless: nobody is ever out; cups just add up. When more than half the table votes to stop, the fewest cups win.",
-            "The host picks the mode in the lobby."
-          ]
-        }
-      ]
+        "fly": {
+          "name": "Breaking the fast (飞)",
+          "text": "In a zhai round, the next call may make 1s wild again — at double the dice (after 3 × fours zhai, at least 6). From then on the round stays kaizhai: no more zhai, no more 1s."
+        },
+        "leopard": {
+          "name": "Five of a kind (豹子)",
+          "text": "A cup whose five dice all count for the call counts as six. With wild 1s, two 1s and three 3s are six 3s."
+        },
+        "winHeading": "Winning",
+        "knockout": {
+          "name": "Knockout",
+          "text": "{{cups}} cups and you're drunk — out. The last one standing wins."
+        },
+        "endless": {
+          "name": "Endless",
+          "text": "Nobody is ever out; cups add up. When more than half the table votes to stop, the fewest cups win."
+        },
+        "note": "The host picks the mode in the lobby."
+      },
+      "actions": {
+        "lead": "On your turn you call or open. Anyone may split, any time.",
+        "call": {
+          "name": "Call",
+          "text": "Name a count and a face, higher than the last call. Tick zhai on the first call to make 1s count only as 1s."
+        },
+        "open": {
+          "name": "Open (开)",
+          "text": "Call the last call a lie. Everyone lifts their cup. Enough dice: you drink. Too few: the bidder drinks."
+        },
+        "split": {
+          "name": "Split (劈)",
+          "text": "No need to wait for your turn: call the last call a lie at any moment (just not your own). The bidder then accepts or counters."
+        },
+        "counter": {
+          "name": "Counter-split (反劈)",
+          "text": "Been split, and sure of your call? Counter, and the stakes double."
+        },
+        "reshake": {
+          "name": "Reshake (散骰)",
+          "text": "All five dice different? Show them to the table and shake again."
+        },
+        "stop": {
+          "name": "Vote to stop",
+          "text": "Any time. When more than half the table votes, the game ends and the fewest cups win."
+        },
+        "tags": {
+          "yourTurn": "Your turn",
+          "anyone": "Anyone, any time",
+          "bidder": "The one split",
+          "beforeFirst": "Before your first call",
+          "endless": "Endless mode",
+          "drinks_one": "Loser drinks {{count}} cup",
+          "drinks_other": "Loser drinks {{count}} cups"
+        },
+        "note": "The loser of a call starts the next round."
+      },
+      "counts": {
+        "lead": "More players, more dice — and a bigger first call. The table shows the smallest first call allowed.",
+        "dice": "Dice on the table",
+        "opening": "First call",
+        "zhai": "Zhai first call",
+        "note": "Once someone is knocked out, the first call counts only the players still in."
+      }
     },
     "nightwatch": {
       "intro": "The manor is haunted. Over five nights the watchers must light the seal lamp to lock the ghosts away — but some of them are possessed and quietly make the seal fail.",
-      "roles": {
-        "title": "Roles",
-        "intro": "Eight roles. Which ones are in a game depends on the number of players. Evil players know each other, and the evil player in the lowest seat is also the assassin.",
-        "everyGame": "every game",
-        "fromPlayers": "{{count}}+ players",
-        "twoFrom": "two with {{count}}+"
+      "overview": {
+        "win": "The watchers win when three missions succeed — unless the assassin then names the Prophet. The ghosts win when three missions fail.",
+        "secret": "Your role is secret, and so is where you stand. Talk, work it out, and lie if you must.",
+        "length": "{{min}}–{{max}} players · one mission a night."
       },
-      "sections": [
-        {
-          "title": "Sides",
-          "items": [
-            "Good: Prophet, Apprentice, Tracker, Keeper (6+), Watchers (8+). Evil: Double, Hermit, Possessed (7+, two with 10).",
-            "5 players: 3 good, 2 evil · 6: 4/2 · 7: 4/3 · 8: 5/3 · 9: 6/3 · 10: 6/4.",
-            "Evil players know each other. The evil player in the lowest seat is also the assassin.",
-            "Prophet: knows who is evil, except the Hermit. Apprentice: sees the Prophet and the Double, but not which is which.",
-            "Tracker (twice a game): on the patrol, follow a player to the room they really reach, however far. Keeper (once a game): before the patrol, lock one door for the night — only the door is announced, never who locked it.",
-            "Double (twice a game): on the patrol, pick a real room and a decoy room, both ones you could reach. People in the decoy's room see you; in the real room nobody does, but you still use its function there. The decoy counts as a person in its room, but not for the Garden; the Kitchen hears the decoy's room; in the Dining Room the decoy passes for good."
-          ]
+      "teams": {
+        "lead": "Two hidden sides. Nobody knows who is who — except the ghosts, who know each other.",
+        "and": ", ",
+        "size": "{{min}}–{{max}} a game",
+        "good": {
+          "name": "The watchers",
+          "tag": "Good",
+          "text": "{{roles}}. They win when three missions succeed and the assassin then misses the Prophet."
         },
-        {
-          "title": "The house",
-          "items": [
-            "3×3 rooms: Bell Tower, Study, Chapel / Gallery, Hall, Dining Room / Cellar, Kitchen, Garden. You move up, down, left or right — never diagonally.",
-            "Everyone starts in the Hall. Where you are is secret: after moving you only see who shares your room. Where others are is only what they tell you.",
-            "Each night's mission room is drawn at random — never the Hall, never the same room twice in a row. The next night's room is announced a night early."
-          ]
-        },
-        {
-          "title": "Each night",
-          "items": [
-            "Announcement: tonight's mission room and team size, the next night's room, and from night 2 a night event.",
-            "Patrol (secret, all at once): stay, or walk one room. Then you see who is in your room.",
-            "Rooms: use your room's function. It doesn't work in tonight's mission room or the Hall, or in a room whose function you used last night (being sent on a mission or moved to the Hall doesn't count as using it).",
-            "Discussion: anonymous letters are shown first. Then talk — lying is allowed.",
-            "Team: the leader (by seat; the Bell Tower cuts in) names exactly the team size. Everyone votes in public; more than half approves. Otherwise the next leader tries, with no new patrol. Five rejected teams in one night and evil wins.",
-            "Mission: the team walks to the mission room — two rooms at most (secret doors and the Cellar passage count). If anyone can't make it, the mission fails at once and the app names who didn't arrive. Otherwise each plays Success or Fail in secret (good can only play Success); only the number of fails is shown.",
-            "One fail card fails a mission — except the 4th mission with 7 or more players, which needs two. The team stays in the mission room; the next patrol starts from where everyone is."
-          ]
-        },
-        {
-          "title": "Room functions"
-        },
-        {
-          "title": "Night events"
-        },
-        {
-          "title": "How it ends",
-          "items": [
-            "Evil wins with three failed missions, or five rejected teams in one night.",
-            "When three missions succeed, evil is revealed and may talk it over; the assassin then names the Prophet. Right, and evil wins. Wrong, and good wins."
-          ]
+        "evil": {
+          "name": "The ghosts",
+          "tag": "Evil",
+          "text": "{{roles}}. They know each other. They win with three failed missions, five rejected teams in one night, or by naming the Prophet at the end."
         }
-      ],
+      },
+      "roles": {
+        "lead": "Your role is dealt in secret. Which roles are in play depends on the number of players.",
+        "everyGame": "Every game",
+        "from": "From {{count}} players",
+        "two": "Two from {{count}}",
+        "prophet": "Knows every ghost, except the Hermit. Guide the others quietly: if the watchers win, the assassin hunts you.",
+        "apprentice": "Sees two players: one is the Prophet, the other the Double. You can't tell which.",
+        "tracker": "Twice a game, on the patrol, follow a player instead of walking: you end up in the room they really reach, however far.",
+        "keeper": "Once a game, at the announcement, lock one door for the night. Everyone hears which door, never who locked it.",
+        "watcher": "No power. Patrol, listen and vote well.",
+        "double": "Twice a game, on the patrol, leave a decoy in another room you could reach. People there see you; in your real room nobody does.",
+        "hermit": "The Prophet can't see you.",
+        "possessed": "No power. Blend in and make the seal fail.",
+        "assassin": "The ghost in the lowest seat is also the assassin, who gets the last chance at the end.",
+        "decoy": "The Double's decoy counts as a person in its room (not for the Garden), the Kitchen hears the decoy's room, and in the Dining Room the decoy passes as good. The Apprentice sees the Double as a possible Prophet."
+      },
+      "play": {
+        "lead": "Everyone starts in the Hall. Each of the {{nights}} nights goes like this:",
+        "announce": {
+          "title": "Announcement",
+          "detail": "Tonight's mission room and team size, and the next night's room. From night 2, a night event too."
+        },
+        "patrol": {
+          "title": "Patrol, in secret",
+          "detail": "Stay, or walk one room up, down, left or right. Then you see who shares your room. Nobody else knows where you are."
+        },
+        "room": {
+          "title": "Use your room",
+          "detail": "Each room does something (see Rooms). Not in tonight's mission room or the Hall, and not the same room two nights running."
+        },
+        "talk": {
+          "title": "Talk",
+          "detail": "The Gallery's anonymous letters are read first. Then discuss. Lying is allowed."
+        },
+        "team": {
+          "title": "Team and vote",
+          "detail": "The leader (in seat order; the Bell Tower cuts in) names exactly the team size. Everyone votes in public: more than half must approve, or the next leader tries."
+        },
+        "mission": {
+          "title": "Mission",
+          "detail": "The team walks to the mission room, two rooms at most. Each plays Success or Fail in secret; watchers can only play Success."
+        },
+        "cards": "One Fail breaks the seal (two on night 4 with 7+ players). Only the number of Fails is shown. If anyone on the team can't reach the room, the mission fails at once. The team stays there for the next patrol.",
+        "lastTitle": "The last chance",
+        "last": "When three missions succeed, the ghosts are revealed and talk it over. Then the assassin names the Prophet: right, and the ghosts win; wrong, and the watchers win.",
+        "rejected": "Five rejected teams in one night and the ghosts win."
+      },
       "rooms": {
-        "intro": "After the patrol you use the function of the room you're in. A room that needs an exact number of people won't work with any other number. Tonight's mission room and the Hall have no function, and a room's function can't be used two rounds running (going on a mission or being moved to the Hall doesn't count as using it).",
-        "belltower": "Ring the bell: you lead this round (you cut in, then the order carries on).",
-        "study": "Read the record: pick one of last night's team and learn whether they played success or fail.",
-        "chapel": "Pray: tonight's mission loses one fail card. It works once a game, and isn't used up if there was no fail to take back. Only those in the Chapel that night learn whether it worked. Anyone who enters later can open the book on the lectern: whether anyone prayed on each past night and what came of it (not who).",
-        "gallery": "Anonymous letter: write one sentence, shown when discussion starts with no name on it.",
-        "hall": "Crossroads: no function, but it's one step from four rooms.",
-        "dining": "Share a drink: the two of you each learn the other's side.",
-        "cellar": "Secret passage: if you're named for tonight's mission you reach the mission room from here at any distance; if not, next patrol you can go to any room.",
-        "kitchen": "Eavesdrop: pick a player and learn which room they ended up in after this patrol.",
-        "garden": "Lookout: learn how many people are in each room this round (not who)."
+        "lead": "The house is 3 × 3 rooms. You walk up, down, left or right — never diagonally.",
+        "mission": "Each night's mission room is drawn at random (never the Hall, never twice in a row). The next one is announced a night early.",
+        "use": "After the patrol, use your room. A room that needs an exact number of people works with no other number.",
+        "needs": {
+          "one": "Alone",
+          "two": "Exactly 2",
+          "any": "Any number",
+          "none": "No function"
+        },
+        "fn": {
+          "belltower": "Ring the bell",
+          "study": "Read the record",
+          "chapel": "Pray",
+          "gallery": "Anonymous letter",
+          "hall": "Crossroads",
+          "dining": "Share a drink",
+          "cellar": "Secret passage",
+          "kitchen": "Eavesdrop",
+          "garden": "Lookout"
+        },
+        "text": {
+          "belltower": "You lead this round: you cut in, then the order carries on.",
+          "study": "Pick one of last night's team and learn whether they played Success or Fail.",
+          "chapel": "Tonight's mission loses one Fail card. It works once a game, and isn't used up if there was no Fail. Only those in the Chapel learn if it worked; anyone who comes later can read in the book whether someone prayed each night (not who).",
+          "gallery": "Write one sentence. It's shown, with no name, when the talk starts.",
+          "hall": "No function, but it's one step from four rooms.",
+          "dining": "The two of you each learn the other's side.",
+          "cellar": "If you're on tonight's team, you reach the mission room from here at any distance. If not, next patrol you can go to any room.",
+          "kitchen": "Pick a player and learn which room they ended up in after this patrol.",
+          "garden": "Learn how many people are in each room tonight — but not who they are."
+        }
       },
       "events": {
-        "intro": "From night 2, one night event is flipped at each announcement, for everyone to see.",
-        "blackout": "After this patrol you can't see who shares your room — only whether anyone does.",
-        "collapse": "A random room is sealed for good: nobody can enter it again, and anyone inside is moved to the Hall. It is never tonight's or the next night's mission room.",
-        "secretDoor": "Two random diagonal rooms are joined for good: you can walk straight between them.",
-        "storm": "Nobody can move on this patrol, and the Tracker can't follow anyone.",
-        "insomnia": "Everyone may walk up to two rooms on this patrol.",
-        "echo": "The Gallery may post two anonymous letters this round.",
-        "fog": "The team can only walk one room to the mission this round, not two.",
-        "calm": "Nothing happens."
+        "lead": "From night 2, one event is turned at each announcement for everyone to see — so {{count}} of these {{total}} come up in a game.",
+        "tonight": "Tonight only",
+        "lasting": "For good",
+        "text": {
+          "blackout": "After the patrol you can't see who shares your room — only whether anyone does.",
+          "collapse": "A random room caves in: nobody can enter it again, and anyone inside moves to the Hall. Never tonight's or the next night's mission room.",
+          "secretDoor": "Two random diagonal rooms are joined: you can walk straight between them.",
+          "storm": "Nobody can move on the patrol, and the Tracker can't follow anyone.",
+          "insomnia": "Everyone may walk up to two rooms on the patrol.",
+          "echo": "The Gallery may post two anonymous letters.",
+          "fog": "The team can walk only one room to the mission, not two.",
+          "calm": "Nothing happens."
+        }
       },
       "counts": {
-        "title": "Player counts",
-        "intro": "5 to 10 players. The count sets how many are good and evil, which roles are dealt, and how big each night's team is:",
-        "players": "Players",
-        "good": "Good",
-        "evil": "Evil",
-        "night": "N{{n}}",
-        "votes": "Votes",
-        "star": "* This night's mission needs 2 Fail cards to fail.",
-        "table": "{{n}} players"
-      },
-      "countNotes": {
-        "items": [
-          "N1–N5: how many go on that night's mission; the leader names exactly that many.",
-          "Votes: approvals a team needs to set out (more than half the table).",
-          "Five teams rejected in a row on one night and evil wins, at any count.",
-          "The evil player in the lowest seat is also the assassin, who names the Prophet if three missions succeed."
-        ]
+        "lead": "{{min}} to {{max}} players. The table sets the sides, the roles dealt and each night's team:",
+        "night": "Night {{n}} team",
+        "votes": "Votes to approve",
+        "star": "* That night's mission needs two Fail cards to fail.",
+        "dealt": "Roles dealt",
+        "note": "Five rejected teams in one night and the ghosts win, at any table size."
       }
     },
     "shelter": {
       "intro": "Winter has come and the town is gone. You've barricaded yourselves into an old house and must last 6 days until the rescue convoy arrives. Everyone starts on the same side — but on the 2nd or 3rd night the sickness takes one of you. From then on they want the shelter to starve, and nobody knows who it is.",
-      "clashes": {
-        "items": [
-          "Day: everyone at a place plays one card face down; they're shuffled and turned over. The Infected can slip in Sabotage −2 — everyone sees it, nobody knows whose.",
-          "Night: everyone secretly guards the storeroom, guards the door or sleeps; the Infected at the same time steals, opens the door or sleeps. Meet a guard and you're seen; miss them and it works.",
-          "Morning: only a guard saw the Infected. When they say so, everyone has to decide whether to believe them.",
-          "Guards are tired the next day and draw 1 card — the harder you guard, the less food you find."
-        ],
-        "0": "Day: everyone at a place plays one card face down; they're shuffled and turned over. The Infected can play a Mould −2 that looks exactly like the real mould in the decks — nobody can tell bad luck from sabotage."
+      "overview": {
+        "lead": "Winter. You're shut in an old house, scavenging by day and guarding the food by night, waiting {{days}} days for the rescue convoy.",
+        "turn": "Everyone starts as a Survivor — but on the 2nd or 3rd night one of you secretly turns Infected and starts starving the shelter.",
+        "win": "The Survivors win if enough of them are standing when the convoy comes, or if they send every Infected out. The Infected win if the shelter starves.",
+        "length": "{{min}}–{{max}} players. Every day you talk, scavenge and keep watch."
       },
-      "roles": {
-        "title": "Roles",
-        "intro": "Everyone starts as a Survivor. The Infected turns in secret partway through.",
-        "survivor": [
-          "Goal: last until the rescue on day 6, or send every Infected out.",
-          "By day, scavenge; at night, guard the storeroom, guard the door or sleep.",
-          "Guarding where the Infected strikes shows you who it is."
-        ],
-        "infected": [
-          "On the 2nd or 3rd night a random Survivor is infected (with 6+, a second one two nights later).",
-          "Goal: empty the storeroom, make Survivors fall, or leave too few standing when the rescue comes.",
-          "By day you can play Mould (sabotage) −2, which turns over as ordinary mould; at night steal a third of the storeroom (at least 2) or open the door to a zombie.",
-          "With 5 players the Infected can Sneak once: that night they succeed even if guarded, unseen.",
-          "Two Infected don't know each other."
-        ]
-      },
-      "places": {
-        "title": "Places & posts",
-        "intro": "By day everyone secretly picks a place, draws 2 cards (1 when tired or weak) and plays 1 face down. Cards are drawn at random from the decks below.",
-        "always": "Every game",
-        "fivePlus": "5+ players",
-        "farm": "The steady place: mostly food, but some come back empty or mouldy.",
-        "market": "The most food, but plenty of it rots, and zombies roam. Anyone bitten can't go out the next day.",
-        "hospital": "Medicine: at dawn, each one treats an injured or weak player."
-      },
-      "posts": {
-        "title": "The three posts at night",
-        "intro": "At night everyone secretly taps one spot in the house. The Infected sees the same three spots, meaning something else.",
-        "store": {
-          "survivor": "Guard the storeroom: if someone comes to steal, you see who. One guard to a post — the first to choose it; anyone later goes back to bed. Tired tomorrow.",
-          "infected": "Steal: if nobody guards it, take a third of the storeroom (at least 2) and eat it. The fuller the storeroom, the more you take."
+      "teams": {
+        "lead": "Two sides — but at the start everyone is on the same one.",
+        "survivors": {
+          "name": "Survivors",
+          "tag": "Good",
+          "text": "Everyone, until the cough. They win if enough Survivors are still standing after supper on night {{days}} (see Player counts), or as soon as every Infected has been sent out."
         },
-        "door": {
-          "survivor": "Guard the door: if someone comes to open it, you see who. One guard to a post. Tired tomorrow.",
-          "infected": "Open the door: if nobody guards it, a zombie gets in, the storeroom loses 1 and a sleeper is hurt."
-        },
-        "sleep": {
-          "survivor": "Sleep: rest, and draw 2 cards tomorrow.",
-          "infected": "Pretend to sleep: do nothing, and can't be seen."
+        "infected": {
+          "name": "The Infected",
+          "tag": "Evil",
+          "size": "{{min}}–{{max}} a game",
+          "text": "They win if the storeroom runs out and enough people go hungry (a famine), if the Survivors standing are no more than the Infected, or if too few Survivors are left when the convoy comes."
         }
       },
-      "flow": {
-        "title": "Each day",
-        "items": [
-          "Morning (after the first cough): talk about the night, then vote. More than half of those standing on one name sends them out, and their role is shown.",
-          "Day: everyone secretly picks a place (farm, market, and the hospital with 5+). The injured stay home.",
-          "Cards: draw 2, play 1 face down. Cards at one place are shuffled and turned over; their total goes into the storeroom.",
-          "Night: everyone secretly taps the storeroom, the door or a bed. One guard to a post (the first to choose it). The Infected succeeds where nobody guards; meeting a guard fails and gets them seen.",
-          "Supper: everyone standing eats 1 from the storeroom. Short? Someone goes hungry: one night weak (1 card tomorrow), two nights running and they fall.",
-          "The fallen can do nothing but watch.",
-          "At the start of the 2nd or 3rd night the app announces a cough. With 6+, a second cough comes two nights later."
-        ]
+      "roles": {
+        "lead": "Everyone starts as a Survivor. The Infected is chosen in secret partway through.",
+        "survivor": {
+          "name": "Survivor",
+          "tag": "Everyone at the start",
+          "text": "By day, scavenge at a place and play a card into the haul. At night, guard the storeroom or the door, or sleep. Guard where the Infected strikes and you see who it is."
+        },
+        "infected": {
+          "name": "Infected",
+          "tag": "Turns on night 2 or 3",
+          "text": "A random Survivor turns at nightfall, and only they know. By day you may play Sabotage, which turns over as ordinary Mould (−2). At night, steal from the storeroom or open the door (see Actions)."
+        },
+        "second": "With {{count}}+ players a second Survivor turns two nights after the first. The two Infected don't know each other.",
+        "sneak": "With {{count}} players the Infected can Sneak once: that night's strike works even past a guard, and nobody sees who it was."
+      },
+      "play": {
+        "lead": "{{days}} days. Each day goes like this:",
+        "vote": {
+          "title": "Morning vote",
+          "detail": "From the day after the cough: talk about the night, then vote. More than half of those standing on one name sends them out, and their role is shown."
+        },
+        "search": {
+          "title": "Pick a place",
+          "detail": "In secret: the farm, the market, or the hospital ({{count}}+ players). Anyone injured stays home."
+        },
+        "play": {
+          "title": "Play a card",
+          "detail": "Draw 2 cards from your place (1 if tired or weak) and play 1 face down. Each place's cards are shuffled and shown; their total goes into the storeroom."
+        },
+        "night": {
+          "title": "Night posts",
+          "detail": "Everyone secretly picks the storeroom, the door or bed (see Actions)."
+        },
+        "supper": {
+          "title": "Supper",
+          "detail": "Everyone standing eats 1 food. If it runs short, someone goes hungry: weak tomorrow (1 card). Hungry two nights running and they fall."
+        },
+        "cough": "The cough: at nightfall on night 2 or 3 the app announces that someone has turned — never who.",
+        "out": "The fallen and those sent out can only watch. Sending out a Survivor doesn't end the game: one fewer to scavenge, but one fewer mouth too."
+      },
+      "actions": {
+        "lead": "At night everyone secretly picks one of three posts. The Infected sees the same three, but each means something else.",
+        "tired": "Tired tomorrow",
+        "store": {
+          "survivor": "Guard it: catch anyone who comes to steal.",
+          "infected": "Steal: if nobody guards it, take a third of the storeroom (at least 2)."
+        },
+        "door": {
+          "survivor": "Guard it: catch anyone who comes to open it.",
+          "infected": "Open it: if nobody guards it, a zombie gets in. The storeroom loses 1 and a sleeper is hurt (stays home tomorrow)."
+        },
+        "sleep": {
+          "survivor": "Rest, and draw 2 cards tomorrow.",
+          "infected": "Pretend to sleep: do nothing, and nobody can see you."
+        },
+        "guard": "One guard to a post: the first to choose it; anyone later goes back to bed. A strike that meets a guard fails, and the guard sees who it was."
+      },
+      "places": {
+        "title": "Places",
+        "lead": "By day everyone picks a place in secret. Each has its own deck, drawn at random.",
+        "always": "Every game",
+        "from": "From {{count}} players",
+        "farm": "The steady place: mostly food, but some comes back empty or mouldy.",
+        "market": "The most food, but plenty of it rots, and zombies roam.",
+        "hospital": "Less food, but medicine: at dawn, each one treats an injured or weak player.",
+        "cards": "Play a Zombie and you're bitten: you stay home tomorrow. Mould takes food away — and the Infected's Sabotage looks exactly like it."
       },
       "counts": {
-        "title": "Player counts",
-        "intro": "4 to 8 players. The count sets the number of Infected, the starting food and the win thresholds:",
-        "players": "Players",
+        "lead": "{{min}} to {{max}} players. The table sets the Infected, the food and what each side needs:",
         "infected": "Infected",
-        "survivors": "Survivors",
         "food": "Start food",
         "rescue": "Rescue needs",
         "famine": "Famine at",
-        "votes": "Votes"
-      },
-      "countNotes": {
-        "items": [
-          "Rescue needs: Survivors still standing after supper on night 6.",
-          "Famine at: if the storeroom runs out and this many go hungry, the Infected win.",
-          "Votes: needed with everyone standing. It drops as people fall or are sent out (always more than half of those standing).",
-          "5 players: the hospital opens and the Infected can Sneak once.",
-          "6–8 players: 2 Infected; the second turns two nights after the first, and they don't know each other. Both must be sent out to win that way."
-        ]
-      },
-      "winning": {
-        "title": "Winning",
-        "items": [
-          "Survivors win: after supper on night 6, at least the 'rescue needs' number are standing; or every Infected has been sent out.",
-          "The Infected win: the storeroom runs out and the 'famine at' number go hungry.",
-          "The Infected win: at any time, Survivors standing are no more than Infected standing.",
-          "The Infected win: when the rescue comes, too few Survivors are standing.",
-          "Sending out a Survivor doesn't end the game: one fewer to scavenge, but one fewer mouth too."
-        ]
+        "votes": "Votes to send out",
+        "hospital": "Hospital",
+        "sneak": "Sneak once",
+        "rescueNote": "Rescue needs: Survivors still standing after supper on night {{days}}.",
+        "famineNote": "Famine at: if the storeroom is empty and this many go hungry, the Infected win.",
+        "votesNote": "Votes are counted with everyone standing; the number drops as people fall or are sent out (always more than half of those standing)."
       }
     },
     "sections": {
@@ -2183,8 +2353,13 @@
       },
       "hitman": {
         "name": "Hitman",
-        "desc_one": "As the assassin, take out the right target.",
-        "desc_other": "As the assassin, take out the right target {{count}} times."
+        "desc_one": "As the Hitman, find the Handler.",
+        "desc_other": "As the Hitman, find the Handler {{count}} times."
+      },
+      "handler": {
+        "name": "Unseen Handler",
+        "desc_one": "Win as the Handler.",
+        "desc_other": "Win as the Handler {{count}} times."
       },
       "spymaster": {
         "name": "Spymaster",
@@ -2219,6 +2394,21 @@
         "name": "Kingpin",
         "desc_one": "Win a game of Hustle.",
         "desc_other": "Win {{count}} games of Hustle."
+      },
+      "untouchable": {
+        "name": "Untouchable",
+        "desc_one": "Win with both your cards still face down.",
+        "desc_other": "Win {{count}} games with both your cards still face down."
+      },
+      "smooth": {
+        "name": "Smooth Talker",
+        "desc_one": "Win after bluffing without ever being caught.",
+        "desc_other": "Win {{count}} games bluffing without ever being caught."
+      },
+      "sharpEye": {
+        "name": "Sharp Eye",
+        "desc_one": "Catch someone bluffing.",
+        "desc_other": "Catch someone bluffing in {{count}} games."
       }
     },
     "liarsdice": {
@@ -2226,6 +2416,16 @@
         "name": "Master Bluffer",
         "desc_one": "Win a game of Liar's Dice.",
         "desc_other": "Win {{count}} games of Liar's Dice."
+      },
+      "sober": {
+        "name": "Stone Sober",
+        "desc_one": "Win a game of Liar's Dice without drinking a cup.",
+        "desc_other": "Win {{count}} games of Liar's Dice without drinking a cup."
+      },
+      "counter": {
+        "name": "Counterpunch",
+        "desc_one": "Win a counter-split (反劈).",
+        "desc_other": "Win a counter-split (反劈) in {{count}} games."
       }
     },
     "tictactoe": {
@@ -2233,6 +2433,11 @@
         "name": "Grid Master",
         "desc_one": "Win a game of Tic-Tac-Toe.",
         "desc_other": "Win {{count}} games of Tic-Tac-Toe."
+      },
+      "fork": {
+        "name": "The Fork",
+        "desc_one": "Win Tic-Tac-Toe with two threats at once.",
+        "desc_other": "Win {{count}} games of Tic-Tac-Toe with two threats at once."
       }
     },
     "celebrate": {

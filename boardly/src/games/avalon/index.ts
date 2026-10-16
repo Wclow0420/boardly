@@ -28,6 +28,7 @@ export const avalon: GameDefinition<AvalonState> = {
     "avalon.firstOp": { glyph: G.star, emoji: "★", loop: "pulse" },
     "avalon.mole": { glyph: G.mask, emoji: "🎭", loop: "bob" },
     "avalon.hitman": { glyph: G.target, emoji: "🎯", loop: "spin" },
+    "avalon.handler": { glyph: G.star, emoji: "🎧", loop: "pulse" },
     "avalon.spymaster": { glyph: G.crown, emoji: "🕵", loop: "pulse" },
   },
   badgeFrames: BADGE_FRAMES,

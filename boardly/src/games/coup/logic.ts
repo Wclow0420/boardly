@@ -86,14 +86,32 @@ export interface ActionSpec {
   needsTarget: boolean;
   /** Roles that block this action. */
   blockers: Role[];
+  /** Anyone at the table may block it, not just the target. */
+  anyoneBlocks?: boolean;
 }
 
 export const COUP_COST = 7;
 export const FORCED_COUP_AT = 10;
 
+// --- Setup, mirrored from the backend engine (COPIES_PER_ROLE,
+// STARTING_COINS and the two-player rule in initial_state). Used by the
+// rules pages.
+
+export const PLAYER_COUNTS = [2, 3, 4, 5, 6] as const;
+export const COPIES_PER_ROLE = 3;
+export const CARDS_EACH = 2;
+export const STARTING_COINS = 2;
+/** Cards in the deck at the start. */
+export const DECK_SIZE = 5 * COPIES_PER_ROLE;
+
+/** Cash the first player starts with: one less with two players. */
+export function firstPlayerCoins(numPlayers: number): number {
+  return numPlayers === 2 ? STARTING_COINS - 1 : STARTING_COINS;
+}
+
 export const ACTIONS: ActionSpec[] = [
   { type: "income", cost: 0, claim: null, needsTarget: false, blockers: [] },
-  { type: "foreignAid", cost: 0, claim: null, needsTarget: false, blockers: ["duke"] },
+  { type: "foreignAid", cost: 0, claim: null, needsTarget: false, blockers: ["duke"], anyoneBlocks: true },
   { type: "tax", cost: 0, claim: "duke", needsTarget: false, blockers: [] },
   { type: "steal", cost: 0, claim: "captain", needsTarget: true, blockers: ["captain", "ambassador"] },
   { type: "exchange", cost: 0, claim: "ambassador", needsTarget: false, blockers: [] },

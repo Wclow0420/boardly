@@ -26,6 +26,9 @@ export const coup: GameDefinition<CoupState> = {
     state.phase !== "finished" && taskFor(state, mySeat) !== null,
   badges: {
     "coup.kingpin": { glyph: G.coins, emoji: "🪙", loop: "spin" },
+    "coup.untouchable": { glyph: G.star, emoji: "🛡", loop: "pulse" },
+    "coup.smooth": { glyph: G.mask, emoji: "🎭", loop: "sway" },
+    "coup.sharpEye": { glyph: G.target, emoji: "🔍", loop: "bob" },
   },
   badgeFrames: BADGE_FRAMES,
 };

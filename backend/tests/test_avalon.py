@@ -461,3 +461,31 @@ def test_leaving_mid_game_ends_it_and_reveals_roles(client, make_user):
     assert payload["session"]["winnerUserIds"] == []
     assert payload["session"]["state"]["winReason"] == "abandoned"
     assert sorted(payload["session"]["state"]["roles"]) == sorted(ROLE_SETS[5])
+
+
+# --------------------------------------------------------------- badges
+
+
+def test_badges_match_each_sides_wins_and_the_feats():
+    from types import SimpleNamespace
+
+    def row(state, seat):
+        out = game.player_outcome(state, seat)
+        won = seat in game.get_result(state)["winnerSeats"]
+        return SimpleNamespace(won=won, abandoned=False, **out)
+
+    badge = {b.key: b for b in game.badges}
+    assert list(badge) == [
+        "avalon.firstOp", "avalon.mole", "avalon.hitman", "avalon.handler", "avalon.spymaster",
+    ]
+    missed = game.apply_move(good_wins_three(), 3, {"type": "assassinate", "target": 1})
+    found = game.apply_move(good_wins_three(), 3, {"type": "assassinate", "target": 0})
+    # seat 0 is the Handler, 3 the Hitman
+    assert badge["avalon.firstOp"].match(row(missed, 2))
+    assert badge["avalon.handler"].match(row(missed, 0))
+    assert not badge["avalon.handler"].match(row(missed, 1))
+    assert not badge["avalon.handler"].match(row(found, 0))
+    assert badge["avalon.mole"].match(row(found, 4))
+    assert badge["avalon.hitman"].match(row(found, 3))
+    assert not badge["avalon.hitman"].match(row(found, 4))
+    assert not badge["avalon.hitman"].match(row(missed, 3))

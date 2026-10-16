@@ -483,3 +483,84 @@ def test_a_coup_on_two_cards_shows_who_is_choosing():
     assert view["losing"] == {"seat": 2, "why": "coup"}
     state = do(state, 2, "reveal", card=1)
     assert state["log"][-1] == {"t": "lose", "seat": 2, "role": "captain", "why": "coup"}
+
+
+# --------------------------------------------------------------- badges
+
+
+def _row(state, seat, won=None):
+    """The outcome row a finished game would store for `seat`."""
+    from types import SimpleNamespace
+
+    facts = game.player_outcome(state, seat)["facts"]
+    won = state["winner"] == seat if won is None else won
+    return SimpleNamespace(won=won, abandoned=False, side=None, role=None, facts=facts)
+
+
+def _badge(key):
+    return next(b for b in game.badges if b.key == key)
+
+
+def test_hustle_has_a_full_badge_set():
+    keys = [b.key for b in game.badges]
+    assert keys == ["coup.kingpin", "coup.untouchable", "coup.smooth", "coup.sharpEye"]
+
+
+def test_an_unchallenged_bluff_is_counted_but_never_shown():
+    state = act(table(THREE, turn=1), 1, "tax")  # seat 1 has no duke
+    state = all_pass(state, [0, 2])
+    assert state["bluffs"] == [0, 1, 0]
+    assert "bluffs" not in game.view_for(state, 1)
+    # an honest claim that goes through is no bluff
+    state = all_pass(act(state, 2, "exchange"), [0, 1])
+    assert state["bluffs"] == [0, 1, 0]
+
+
+def test_a_bluffed_block_nobody_doubts_is_counted():
+    state = act(table(THREE), 0, "foreignAid")
+    state = do(state, 2, "block", role="duke")  # seat 2 has no duke
+    state = all_pass(state, [0, 1])
+    assert state["bluffs"] == [0, 0, 1]
+
+
+def test_outcome_facts_count_cards_bluffs_and_callouts():
+    state = act(table(THREE, turn=1), 1, "tax")
+    state = do(state, 2, "challenge")  # caught
+    state = do(state, 1, "reveal", card=0)
+    assert game.player_outcome(state, 1)["facts"] == {
+        "cardsLeft": 1, "bluffs": 0, "caught": 1, "callouts": 0,
+    }
+    assert game.player_outcome(state, 2)["facts"]["callouts"] == 1
+    # the test table, like older games, has no bluff count: still fine
+    assert "bluffs" not in state
+    assert game.player_outcome(state, 0)["facts"]["bluffs"] == 0
+
+
+def test_untouchable_and_smooth_talker():
+    # seat 0 bluffs a Boss, gets away with it, then shuts the last player down
+    state = table(["captain,captain", "duke,contessa"], coins=[5, 2])
+    state["players"][1]["cards"][0]["revealed"] = True
+    state = all_pass(act(state, 0, "tax"), [1])  # +$3, a bluff
+    state = act(state, 1, "income")
+    state = act(state, 0, "coup", 1)
+    assert state["winner"] == 0
+    winner = _row(state, 0)
+    assert _badge("coup.kingpin").match(winner)
+    assert _badge("coup.untouchable").match(winner)
+    assert _badge("coup.smooth").match(winner)
+    assert not _badge("coup.sharpEye").match(winner)
+    loser = _row(state, 1)
+    assert not any(_badge(k).match(loser) for k in ("coup.kingpin", "coup.untouchable", "coup.smooth"))
+
+
+def test_caught_once_is_no_smooth_talker_and_the_catcher_has_a_sharp_eye():
+    state = act(table(THREE, turn=1), 1, "tax")
+    state = do(state, 2, "challenge")
+    state = do(state, 1, "reveal", card=0)
+    state["bluffs"] = [0, 2, 0]
+    assert not _badge("coup.smooth").match(_row(state, 1, won=True))
+    assert not _badge("coup.untouchable").match(_row(state, 1, won=True))
+    assert _badge("coup.sharpEye").match(_row(state, 2, won=False))
+    walked_out = _row(state, 2, won=False)
+    walked_out.abandoned = True
+    assert not _badge("coup.sharpEye").match(walked_out)

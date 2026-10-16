@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { Emblem, InfoIcon } from "@/components/icons";
+import { BackIcon, ChevronRightIcon, Emblem, InfoIcon } from "@/components/icons";
 import { AppText, Button, Chip, IconButton } from "@/components/ui";
 import { getGame } from "@/games/registry";
 import type { RulesPage } from "@/games/types";
@@ -278,7 +278,8 @@ export function RulesSheet({
             ]}
           >
             <Button
-              label="‹"
+              label=""
+              leftIcon={<BackIcon size={16} />}
               variant="secondary"
               size="sm"
               disabled={index === 0}
@@ -309,7 +310,8 @@ export function RulesSheet({
               />
             ) : (
               <Button
-                label="›"
+                label=""
+                leftIcon={<ChevronRightIcon size={16} />}
                 size="sm"
                 onPress={() => goTo(index + 1)}
                 style={styles.arrow}

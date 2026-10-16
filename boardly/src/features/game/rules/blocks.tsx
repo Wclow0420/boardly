@@ -140,7 +140,7 @@ export function RuleNote({ children }: { children: ReactNode }) {
   const { colors } = useTheme();
   return (
     <View style={[styles.note, { borderColor: colors.primarySoftBorder, backgroundColor: colors.primarySoft }]}>
-      <Emblem emoji="💡" size={16} />
+      <Emblem emoji="★" size={16} />
       <AppText style={[styles.small, styles.grow, { color: colors.text }]}>{children}</AppText>
     </View>
   );
