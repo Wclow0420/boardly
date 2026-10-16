@@ -276,9 +276,17 @@ otherwise.
   A player's card shows just four badges: the ones they pick in the
   badge hall (`app/badges.tsx`, opened through the meeple like the
   wardrobe; saved by `PUT /auth/me/showcase`), or their four best.
-- **Player counts** get their own rules page: a table built from the
-  game's count tables in `logic.ts` (sides, roles, team sizes, win
-  thresholds) plus notes — see `CountsPage` in both games' `rules.tsx`.
+- **How to play follows one standard** (`features/game/rules/`): each
+  page in `rulePages` names its `section` — overview (概括), teams (阵营),
+  roles (角色), play (玩法), actions (行动), rooms (房间), events (特殊事件),
+  counts (人数规则) — and the popup names it and puts it in that order
+  for every game; a game has only the sections it needs. Write the pages
+  with the shared pieces in `rules/blocks.tsx` (RuleLead, RuleSteps,
+  RuleCard, CountsTable, RuleNote…), plain words, short lines: a new
+  player must be able to play after the How to play page. The counts
+  table is built from the game's tables in `logic.ts`, never typed.
+  Check every page (and in Chinese) at `boardly-dev://dev/rules?game=<key>`;
+  `&measure=1` times the opening (under 250 ms).
 - **Game text** goes through the game's own `GameText`/`GameButton`
   (see `nightwatch/GameText.tsx`): emoji become the game's vector icons
   (`icons.tsx`) and place names take their colour. Give every room or
