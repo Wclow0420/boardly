@@ -72,10 +72,10 @@ const SAMPLES: Record<string, { state: NightwatchState; deal?: boolean }> = {
     state: S({ phase: "assassinate", myRole: "double", known: [{ seat: 4, as: "evil" }], assassinSeat: 0 }),
   },
   won: {
-    state: S({ phase: "finished", winner: "good", winReason: "missions", roles: ["prophet", "tracker", "double", "apprentice", "hermit"] }),
+    state: S({ phase: "finished", winner: "good", winReason: "missions", assassinTarget: 2, roles: ["prophet", "tracker", "double", "apprentice", "hermit"] }),
   },
   lost: {
-    state: S({ phase: "finished", winner: "evil", winReason: "assassination", roles: ["prophet", "tracker", "double", "apprentice", "hermit"] }),
+    state: S({ phase: "finished", winner: "evil", winReason: "assassination", assassinTarget: 0, roles: ["prophet", "tracker", "double", "apprentice", "hermit"] }),
   },
 };
 const NAMES = ["You", "Ming", "Hua", "Qiang", "Mei"].map((username, seat) => ({ seat, userId: `u${seat}`, username, borderId: null, avatarUrl: null }));
