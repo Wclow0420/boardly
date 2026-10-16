@@ -18,7 +18,10 @@ export function bakedSvg(key: string, w: number, h: number, markup: () => string
   const k = `${key}|${Math.round(w)}x${Math.round(h)}`;
   if (images.has(k)) return images.get(k)!;
   const scale = Math.max(2, PixelRatio.get());
-  const svg = Skia.SVG.MakeFromString(markup());
+  // the markup's own size would win over the size asked for: say w × h
+  const svg = Skia.SVG.MakeFromString(
+    markup().replace(/^(\s*<svg\b[^>]*?)\swidth="[^"]*"\s+height="[^"]*"/, `$1 width="${w}" height="${h}"`),
+  );
   const surface = Skia.Surface.Make(Math.ceil(w * scale), Math.ceil(h * scale));
   let image: SkImage | null = null;
   if (svg && surface) {

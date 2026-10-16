@@ -1538,6 +1538,27 @@
       "teams": "Teams & votes",
       "mission": "Mission",
       "private": "Only you know"
+    },
+    "rite": {
+      "pick": "Tap a lantern to choose",
+      "holdApprove": "Hold to approve",
+      "holdReject": "Hold to reject",
+      "holdSuccess": "Hold to play Success",
+      "holdFail": "Hold to play Fail",
+      "voted": "{{done}} of {{total}} have voted",
+      "played": "{{done}} of {{total}} cards played",
+      "approved": "Team approved",
+      "rejected": "Team rejected",
+      "succeeded": "Mission succeeded",
+      "failed": "Mission failed",
+      "fails_one": "{{count}} fail card",
+      "fails_other": "{{count}} fail cards",
+      "noFails": "No fail cards",
+      "missing": "The team never made it to the {{room}}",
+      "continue": "Continue",
+      "goodOnly": "Watchers can only light the gold lantern.",
+      "holdName": "Hold to name {{name}}",
+      "pickProphet": "Tap the one you think is the Prophet"
     }
   },
   "profile": {

@@ -1,6 +1,6 @@
 import type { MascotLook } from "@/api/client";
 import type { BadgeArt, BadgeStyle } from "@/components/badges/types";
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 import type { ImageSourcePropType } from "react-native";
 
 import type { ColorScheme } from "@/theme";
@@ -36,6 +36,20 @@ export interface GameBoardProps<TState = Record<string, unknown>> {
   sessionId?: string;
   /** Send a game-specific move to the backend. */
   onMove: (move: Record<string, unknown>) => void;
+  /** For a board that fills the whole screen (layout "stage"): the
+   *  screen's own controls and what follows a finished game. */
+  stage?: StageChrome;
+}
+
+export interface StageChrome {
+  /** Leave (asks first while the game is running). */
+  onBack: () => void;
+  /** Open "How to play". */
+  onRules?: () => void;
+  /** The last move failed. */
+  error?: string | null;
+  /** After the game: coins, badges, play again, back home. */
+  afterGame?: ReactNode;
 }
 
 /** A game's own look. The game screen switches to the dark palette
@@ -74,8 +88,10 @@ export interface GameDefinition<TState = Record<string, unknown>> {
   currentSeat: (state: TState) => number;
   /** "custom": the Board draws its own players, status and result —
    *  for games that aren't a simple alternating-turn board. The shared
-   *  screen then only provides the header and the exit button. */
-  layout?: "custom";
+   *  screen then only provides the header and the exit button.
+   *  "stage": the Board fills the whole screen and draws its own header
+   *  too, given the screen's controls in `stage`. */
+  layout?: "custom" | "stage";
   /** Pages of the "How to play" popup. Without them the popup is built
    *  from the plain text under rules.<key> in the locale files. */
   rulePages?: RulesPage[];

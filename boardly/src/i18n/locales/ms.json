@@ -1535,6 +1535,27 @@
       "teams": "Pasukan & undian",
       "mission": "Misi",
       "private": "Hanya anda tahu"
+    },
+    "rite": {
+      "pick": "Ketik sebuah tanglung untuk memilih",
+      "holdApprove": "Tahan untuk setuju",
+      "holdReject": "Tahan untuk tolak",
+      "holdSuccess": "Tahan untuk main Berjaya",
+      "holdFail": "Tahan untuk main Gagal",
+      "voted": "{{done}} daripada {{total}} sudah mengundi",
+      "played": "{{done}} daripada {{total}} kad dimainkan",
+      "approved": "Pasukan diluluskan",
+      "rejected": "Pasukan ditolak",
+      "succeeded": "Misi berjaya",
+      "failed": "Misi gagal",
+      "fails_one": "{{count}} kad gagal",
+      "fails_other": "{{count}} kad gagal",
+      "noFails": "Tiada kad gagal",
+      "missing": "Pasukan tidak sempat tiba di {{room}}",
+      "continue": "Teruskan",
+      "goodOnly": "Penjaga hanya boleh menyalakan tanglung emas.",
+      "holdName": "Tahan untuk namakan {{name}}",
+      "pickProphet": "Ketik orang yang anda rasa Peramal"
     }
   },
   "profile": {

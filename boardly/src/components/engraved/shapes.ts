@@ -80,6 +80,7 @@ export const JEWELS = {
   sapphire: ["#D8EEFF", "#2E7AE0", "#0A2A6A"],
   emerald: ["#C8FFD8", "#1E9A54", "#06401E"],
   diamond: ["#FFFFFF", "#BFE6FF", "#4A7AB0"],
+  amber: ["#FFE7B0", "#F28B4B", "#7A2A08"],
 } as const;
 export type Jewel = keyof typeof JEWELS;
 

@@ -64,3 +64,15 @@ jest.mock("@/components/tabletop/cards/PlayingCard", () => ({
   CardFront: ({ children }) => children ?? null,
   PlayingCard: ({ children }) => children ?? null,
 }));
+// Anything drawn straight on Skia (the game stage's arch, curtain and
+// lanterns, the popups' gilt panels) draws nothing in tests: every
+// component is empty and every factory gives nothing back.
+jest.mock("@shopify/react-native-skia", () => {
+  const nothing = new Proxy(() => null, { get: () => nothing, apply: () => null });
+  return new Proxy(
+    { __esModule: true, vec: (x, y) => ({ x, y }), Skia: nothing, BlendMode: {}, BlurStyle: {} },
+    { get: (target, key) => (key in target ? target[key] : () => null) },
+  );
+});
+// The game stage sizes itself round the notch
+jest.mock("react-native-safe-area-context", () => require("react-native-safe-area-context/jest/mock").default);

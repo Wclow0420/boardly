@@ -11,7 +11,7 @@ import { Emblem } from "@/components/icons";
 import { CardBack, CardFront, FRONT, type BackStyle, type FrontStyle } from "@/components/tabletop/cards/PlayingCard";
 import { fontFamily } from "@/theme";
 import { GameText as AppText } from "./GameText";
-import { ROLE_EMOJI, sideOf, type NightwatchState } from "./logic";
+import { ROLE_EMOJI, sideOf, type NightwatchState, type Role } from "./logic";
 
 /** Every card of the game shares this back. */
 export const MANOR_BACK: BackStyle = {
@@ -133,3 +133,28 @@ const styles = StyleSheet.create({
   desc: { fontFamily: fontFamily.medium, color: "#3A2408", textAlign: "center" },
   known: { fontFamily: fontFamily.semiBold, textAlign: "center" },
 });
+
+/** A small face-up role card, for the end of the game: the role's
+ *  emblem in its window, in its side's colours. */
+export function MiniRoleCard({ role, width }: { role: Role; width: number }) {
+  const evil = sideOf(role) === "evil";
+  const s = width / 100;
+  return (
+    <CardFront width={width} front={evil ? EVIL_FRONT : GOOD_FRONT}>
+      <View
+        style={[
+          styles.centre,
+          {
+            position: "absolute",
+            left: FRONT.window.x * s,
+            top: FRONT.window.y * s,
+            width: FRONT.window.w * s,
+            height: FRONT.window.h * s,
+          },
+        ]}
+      >
+        <Emblem emoji={ROLE_EMOJI[role]} size={FRONT.window.h * s * 0.72} />
+      </View>
+    </CardFront>
+  );
+}

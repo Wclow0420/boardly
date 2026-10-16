@@ -1530,6 +1530,27 @@
       "teams": "组队与投票",
       "mission": "任务",
       "private": "只有你知道"
+    },
+    "rite": {
+      "pick": "点一盏灯来选择",
+      "holdApprove": "按住以同意",
+      "holdReject": "按住以反对",
+      "holdSuccess": "按住打出成功",
+      "holdFail": "按住打出失败",
+      "voted": "{{done}}/{{total}} 人已投票",
+      "played": "{{done}}/{{total}} 张牌已打出",
+      "approved": "队伍通过",
+      "rejected": "队伍被否决",
+      "succeeded": "任务成功",
+      "failed": "任务失败",
+      "fails_one": "{{count}} 张失败牌",
+      "fails_other": "{{count}} 张失败牌",
+      "noFails": "没有失败牌",
+      "missing": "队伍没能赶到{{room}}",
+      "continue": "继续",
+      "goodOnly": "守夜人只能点亮金灯。",
+      "holdName": "按住指认{{name}}",
+      "pickProphet": "点你认为是先知的人"
     }
   },
   "profile": {

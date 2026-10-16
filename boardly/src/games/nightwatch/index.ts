@@ -45,7 +45,7 @@ export const nightwatch: GameDefinition<NightwatchState> = {
   maxPlayers: 10,
   Board: NightwatchBoard,
   currentSeat,
-  layout: "custom",
+  layout: "stage",
   rulePages: NIGHTWATCH_RULES,
   skin: {
     colors: SKIN_COLORS,

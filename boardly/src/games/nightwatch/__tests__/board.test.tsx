@@ -54,7 +54,7 @@ it("walks announce → patrol → room → news and every panel", async () => {
 
   const waiting = { ...room, ready: [true, false, false, false, false], myOrder: {} };
   await view.rerender(board(waiting));
-  expect(screen.getByText(/Team size each night/)).toBeTruthy();
+  expect(screen.getByText(/Everyone is using their room/)).toBeTruthy();
   const expected: Record<string, RegExp> = { Map: /Bell Tower/, Notebook: /Only you can see this/, Record: /Mission in the Cellar/, Role: /Prophet/, Watchers: /p3/ };
   for (const label of Object.keys(expected)) {
     await fireEvent.press(screen.getByLabelText(label));

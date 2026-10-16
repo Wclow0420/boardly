@@ -20,10 +20,7 @@ function Art({ markup, keyOf, width }: { markup: () => string; keyOf: string; wi
   const s = width / CARD_W;
   const w = (CARD_W + 2 * PAD) * s;
   const h = (CARD_H + 2 * PAD) * s;
-  // the markup is drawn in its viewBox; say the size it should fill
-  const image = bakedSvg(keyOf, w, h, () =>
-    markup().replace(/^<svg([^>]*?) width="[^"]*" height="[^"]*"/, `<svg$1 width="${w}" height="${h}"`),
-  );
+  const image = bakedSvg(keyOf, w, h, markup);
   return (
     <Canvas style={{ position: "absolute", left: -PAD * s, top: -PAD * s, width: w, height: h }} pointerEvents="none">
       {image ? <SkImage image={image} x={0} y={0} width={w} height={h} /> : null}
