@@ -46,6 +46,13 @@ real food count, with tappable night posts: `shelterScenes.ts`,
 - One clock per scene: `useIsoClock(paused)`. Pass `paused` when a
   popup covers the scene, the app is in the background
   (`AppState`), or reduce motion is on — the canvas then stops drawing.
+- Everything is drawn engraved automatically (gradients lit from the
+  upper left, ink outlines, a shine, grain on `GRAINED` tones); a Shape
+  can carry its own `grad`. Detailed furniture lives in `furniture.ts`
+  and the pieces the room files export (Seal the Manor's rooms are one
+  file each in `games/nightwatch/rooms/`); `shell(base, { panelled })`
+  gives panelled walls with a gilded rail, or plain ones. Look a game's
+  rooms over with `node scripts/room-sheet.mjs <game> <png>`.
 - Shaders share `noise.ts`. Keep `effects.tsx` and `weather.tsx` from
   importing each other (a cycle blanks the canvas with an SkSL error).
 - Also shared: `pawn`/`pawnTop`/`SPOTS` (room.ts), `IsoPicture` (a

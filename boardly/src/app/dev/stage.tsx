@@ -2,9 +2,9 @@
 // hanging over the scene with the night's seals, the room as large as the
 // screen allows, the tools down its side (just their emblems), and the
 // main button on a plinth. A design to look at before the game uses it.
-// Open with boardly-dev://dev/stage.
+// Open with boardly-dev://dev/stage (?room=hall for another room).
 
-import { Redirect, useRouter } from "expo-router";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
@@ -54,6 +54,9 @@ export default function StagePreview() {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const [active, setActive] = useState(true);
+  const { room: roomParam } = useLocalSearchParams<{ room?: string }>();
+  const room = Math.max(0, ROOMS.indexOf((roomParam ?? "kitchen") as (typeof ROOMS)[number]));
+  const roomTitle = ROOMS[room][0].toUpperCase() + ROOMS[room].slice(1);
   const skin = GAMES.nightwatch?.skin;
   if (!__DEV__) return <Redirect href="/" />;
 
@@ -68,7 +71,7 @@ export default function StagePreview() {
         {/* the scene, as large as the screen allows */}
         <View style={[styles.scene, { top: insets.top + 156, bottom: plinthH + 4 }]}>
           <RoomScene
-            room={ROOMS.indexOf("kitchen")}
+            room={room}
             active={active}
             onTouch={() => setActive(false)}
             touchLabel="Use the room"
@@ -102,7 +105,7 @@ export default function StagePreview() {
             drop={insets.top + 26}
             width={Math.min(280, width - 120)}
             title="Night 3 of 5"
-            subtitle="Patrol · you're in the Kitchen"
+            subtitle={`Patrol · you're in the ${roomTitle}`}
             enamel={["#2C3A68", "#141C3A", "#0A0F24"]}
             seals={[
               { kind: "won" },
@@ -141,7 +144,7 @@ export default function StagePreview() {
         {/* the plinth and the main move */}
         <View style={styles.bottom}>
           <AppText style={styles.hint} numberOfLines={2}>
-            Seal the Kitchen, or keep watch at its door.
+            {`Seal the ${roomTitle}, or keep watch at its door.`}
           </AppText>
           <Plinth width={width} height={plinthH}>
             <Button label="Your move · Patrol" size="lg" style={styles.main} onPress={() => setActive(true)} />

@@ -4,11 +4,12 @@
 // isometric builders produce) and handed to an <IsoLayer>; effects
 // from ./effects sit between layers, in the same units.
 
-import { useMemo, useState, type ReactNode } from "react";
-import { View, type StyleProp, type ViewStyle } from "react-native";
+import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { PixelRatio, View, type StyleProp, type ViewStyle } from "react-native";
 import {
   Canvas,
   Group,
+  Image,
   PaintStyle,
   Picture,
   Skia,
@@ -33,6 +34,10 @@ export interface IsoCanvasProps {
   children: ReactNode;
 }
 
+/** The canvas a layer is drawn in: its size in the picture's units and
+ *  how many points each unit takes on screen. */
+const CanvasSize = createContext<{ width: number; height: number; scale: number } | null>(null);
+
 /** A canvas as wide as its place on the page, scaled so its children
  *  draw in the picture's units. */
 export function IsoCanvas({ width, height, style, children }: IsoCanvasProps) {
@@ -43,9 +48,11 @@ export function IsoCanvas({ width, height, style, children }: IsoCanvasProps) {
       onLayout={(event) => setScale(event.nativeEvent.layout.width / width)}
     >
       {scale > 0 ? (
-        <Canvas style={{ flex: 1 }}>
-          <Group transform={[{ scale }]}>{children}</Group>
-        </Canvas>
+        <CanvasSize.Provider value={{ width, height, scale }}>
+          <Canvas style={{ flex: 1 }}>
+            <Group transform={[{ scale }]}>{children}</Group>
+          </Canvas>
+        </CanvasSize.Provider>
       ) : null}
     </View>
   );
@@ -76,9 +83,12 @@ function gradientOf(shape: IsoShape) {
 }
 
 /** Shapes drawn in order, the first at the back. They are recorded
- *  once into a single picture, so a layer of hundreds of shapes costs
- *  one draw a frame however much moves around it. */
+ *  once into a single picture and, inside an IsoCanvas, painted once
+ *  into an image at the screen's density: a layer of hundreds of
+ *  engraved shapes then costs one image a frame however much moves
+ *  around it. */
 export function IsoLayer({ shapes }: { shapes: IsoShape[] }) {
+  const size = useContext(CanvasSize);
   const picture = useMemo(() => {
     const recorder = Skia.PictureRecorder();
     // far more than any picture needs; a recording is only as big as what is drawn
@@ -114,5 +124,19 @@ export function IsoLayer({ shapes }: { shapes: IsoShape[] }) {
     return recorder.finishRecordingAsPicture();
   }, [shapes]);
 
+  const image = useMemo(() => {
+    if (!size || size.scale <= 0) return null;
+    const density = size.scale * Math.min(PixelRatio.get(), 2.5);
+    const surface = Skia.Surface.Make(Math.ceil(size.width * density), Math.ceil(size.height * density));
+    if (!surface) return null;
+    const canvas = surface.getCanvas();
+    canvas.scale(density, density);
+    canvas.drawPicture(picture);
+    surface.flush();
+    return surface.makeImageSnapshot();
+  }, [picture, size]);
+
+  if (image && size)
+    return <Image image={image} x={0} y={0} width={size.width} height={size.height} />;
   return <Picture picture={picture} />;
 }

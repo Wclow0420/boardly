@@ -130,8 +130,9 @@ export function LightPool({ x, y, radius, color, flatten = 1, strength = 0.5, cl
     return strength * (1 + 0.24 * Math.sin(t * 7.3) + 0.16 * Math.sin(t * 13.7 + 1.3));
   });
   return (
-    <Group transform={[{ scaleY: flatten }]} origin={vec(x, y)} blendMode="screen">
-      <Circle cx={x} cy={y} r={radius} opacity={opacity}>
+    // the blend on the circle itself: on the group it would cost a layer a frame
+    <Group transform={[{ scaleY: flatten }]} origin={vec(x, y)}>
+      <Circle cx={x} cy={y} r={radius} opacity={opacity} blendMode="screen">
         <RadialGradient c={vec(x, y)} r={radius} colors={[color, `${color}00`]} />
       </Circle>
     </Group>
@@ -147,8 +148,8 @@ export function Firefly({ x, y, clock }: { x: number; y: number } & Timed) {
     return [{ translateX: Math.sin(t * 0.5) * 3 }, { translateY: Math.sin(t * 0.8) * 2 }];
   });
   return (
-    <Group transform={drift} blendMode="screen">
-      <Circle cx={x} cy={y} r={4} opacity={glow}>
+    <Group transform={drift}>
+      <Circle cx={x} cy={y} r={4} opacity={glow} blendMode="screen">
         <RadialGradient c={vec(x, y)} r={4} colors={["#FFE9A8", "#FFE9A800"]} />
       </Circle>
     </Group>

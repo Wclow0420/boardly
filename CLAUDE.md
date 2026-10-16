@@ -63,6 +63,34 @@ Then draw it with the same craft, and give it life the borders' way
   - Still badges are one recorded picture each, shared by every copy.
   - Show the top of the page first and mount the rest a frame at a
     time.
+- Animated scenes (the game rooms) hold 60 fps the same way:
+  - Every still layer of a scene is painted once into an image
+    (`IsoLayer` does it inside an `IsoCanvas`); replaying hundreds of
+    gradient shapes each frame dropped a room to ~35 fps.
+  - Never put `blendMode` or `opacity` on a Skia `Group` that redraws
+    every frame: it costs an offscreen layer a frame. Put it on the
+    shape itself.
+  - Characters on top of a scene (mascots) are still canvases moved by
+    native view transforms (`MascotFigure`), not canvases redrawn each
+    frame. `transformOrigin` takes numbers (`[x, y, 0]`); a "12px 30px"
+    string made the views vanish.
+  - Measure each room on `boardly-dev://dev/stage?room=<name>`; when a
+    number looks wrong, relaunch the app first (stacked screens and a
+    stale bundle both skew it).
+
+## Rooms and 3D pieces
+
+The game rooms are drawn like the borders: the iso kit
+(`components/iso`) engraves every part by itself (each face a gradient
+of its colour lit from the upper left, an ink outline, a line of light,
+grain on wood), and the rooms are full of detailed pieces: panelled
+cabinets with brass knobs, carved posts with iron straps, stained glass,
+gilt frames, turned candlesticks. Reuse what exists before drawing new
+(`components/iso/furniture.ts`, and the pieces each room file exports:
+`games/nightwatch/rooms/*.ts`, `games/shelter/scenes/pieces.ts`). Look
+at rooms with `node scripts/room-sheet.mjs nightwatch <png> [room…]`
+(or `shelter`). A set of rooms can be redrawn by parallel agents, one
+room file each, keeping each room's working object (`prop`) in place.
 
 ## The craft
 
