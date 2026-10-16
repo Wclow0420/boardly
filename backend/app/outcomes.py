@@ -99,7 +99,7 @@ def _iso(when):
     return when.isoformat() if when else None
 
 
-def player_card(user_id) -> dict:
+def player_card(user_id, chosen=None) -> dict:
     rows = (
         SessionPlayer.query.filter_by(user_id=user_id)
         .order_by(SessionPlayer.finished_at)
@@ -154,8 +154,30 @@ def player_card(user_id) -> dict:
         "lastGameAt": _iso(played[-1].finished_at) if played else None,
         "games": by_game,
         "badges": badges,
+        # the four the card shows (`chosen` by the player, else the best)
+        "showcase": showcase(badges, chosen),
         "tiers": list(TIERS),
     }
+
+
+# How many badges a player card shows
+SHOWCASE_SIZE = 4
+
+
+def showcase(badges, chosen) -> list:
+    """The badges a card shows: the ones the player picked (in the order
+    picked), or, if they never picked, their four best (highest level,
+    then most recently reached)."""
+    earned = {b["key"]: b for b in badges if b["tier"]}
+    picked = [k for k in dict.fromkeys(chosen or []) if k in earned]
+    if picked:
+        return picked[:SHOWCASE_SIZE]
+    best = sorted(
+        earned.values(),
+        key=lambda b: (TIERS.index(b["tier"]), b["unlocked"][b["tier"]]),
+        reverse=True,
+    )
+    return [b["key"] for b in best[:SHOWCASE_SIZE]]
 
 
 def has_badge(user_id, key, tier="bronze") -> bool:

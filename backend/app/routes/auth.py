@@ -19,7 +19,7 @@ from app.auth import issue_tokens, require_auth, user_from_token
 from app.extensions import db, limiter, socketio
 from app.mascot import MASCOT_PRICES, clean_look, look_items, owns_item
 from app.models import Avatar, Friendship, Room, RoomPlayer, User
-from app.outcomes import player_card
+from app.outcomes import SHOWCASE_SIZE, player_card
 from app.utils import api_error
 
 auth_bp = Blueprint("auth", __name__)
@@ -117,6 +117,28 @@ def update_me():
         return api_error("border_locked", "Unlock this border first", 403)
 
     me.border_id = border_id
+    db.session.commit()
+    return {"user": me.to_self_dict()}
+
+
+@auth_bp.put("/me/showcase")
+@require_auth
+def set_showcase():
+    """Body: {"badges": ["<key>", ...]} — the badges (up to four, earned)
+    to show on my card, in order. An empty list shows the four best."""
+    me = g.current_user
+    keys = (request.get_json(silent=True) or {}).get("badges")
+    if (
+        not isinstance(keys, list)
+        or len(keys) > SHOWCASE_SIZE
+        or not all(isinstance(k, str) for k in keys)
+        or len(set(keys)) != len(keys)
+    ):
+        return api_error("invalid_request", f"Pick up to {SHOWCASE_SIZE} badges", 400)
+    earned = {b["key"] for b in player_card(me.id)["badges"] if b["tier"]}
+    if any(k not in earned for k in keys):
+        return api_error("badge_locked", "Earn a badge before showing it", 403)
+    me.showcase_badges = keys
     db.session.commit()
     return {"user": me.to_self_dict()}
 
@@ -313,7 +335,7 @@ def my_stats():
     me = g.current_user
     return {
         "stats": {
-            **player_card(me.id),
+            **player_card(me.id, me.showcase_badges),
             "friends": len(presence.friend_ids(me.id)),
         }
     }

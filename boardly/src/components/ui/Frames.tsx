@@ -41,6 +41,15 @@ const PLAQUE_BOTTOM = 3;
 
 const GOLD_INK = INKS.gold.ink;
 
+/** How light a colour is, 0..1 ("#rrggbb" or "rgb(r,g,b)"). */
+function lightness(color: string) {
+  const parts = color.startsWith("#")
+    ? [1, 3, 5].map((i) => parseInt(color.slice(i, i + 2), 16))
+    : (color.match(/\d+/g) ?? []).slice(0, 3).map(Number);
+  const [r = 0, g = 0, b = 0] = parts;
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
+
 /** A page's title: an ivory plaque in a gold bezel, scrolls curling off
  *  both ends and a sapphire on top. Sized to its text. */
 export function TitlePlaque({
@@ -106,6 +115,8 @@ export function SectionTitle({
   const id = useSvgId();
   const color = colors[0];
   const enamel = [shade(color, 0.35), color, shade(color, -0.35)];
+  // on a pale enamel (ivory, cream) the name is cut in dark ink instead
+  const pale = lightness(color) > 0.7;
   const rule = ruleBox.w > 30 ? sectionRule(ruleBox.w - 2) : null;
   return (
     <View style={[styles.sectionRow, style]}>
@@ -138,7 +149,7 @@ export function SectionTitle({
             />
           </Svg>
         ) : null}
-        <AppText style={styles.tabText} numberOfLines={1}>
+        <AppText style={[styles.tabText, pale && styles.tabTextDark]} numberOfLines={1}>
           {label}
         </AppText>
       </View>
@@ -249,6 +260,7 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 1,
   },
+  tabTextDark: { color: "#3A2408", textShadowColor: "rgba(255,255,255,0.4)" },
   rule: { flex: 1, height: 16, minWidth: 30 },
   frame: {
     borderRadius: FRAME_RADIUS,

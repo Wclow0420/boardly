@@ -128,6 +128,11 @@ function RootNavigator() {
               <Stack.Screen name="game/[code]" />
               <Stack.Screen name="join/[code]" />
               <Stack.Screen name="borders" />
+              {/* opened through the meeple, like the wardrobe */}
+              <Stack.Screen
+                name="badges"
+                options={{ animation: "none", gestureEnabled: false }}
+              />
               {/* the wardrobe brings its own way in and out (MeepleReveal);
                   only its back button closes it */}
               <Stack.Screen

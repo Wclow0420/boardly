@@ -1977,6 +1977,14 @@
       "nextLevel": "Tahap seterusnya",
       "topLevel": "Tahap tertinggi dicapai",
       "toLevel": "{{n}} lagi ke {{level}}"
+    },
+    "hall": {
+      "title": "Lencana",
+      "showcase": "Pameran",
+      "hint": "Kad anda menunjukkan empat ini. Ketik mana-mana lencana yang diperoleh untuk menunjukkannya.",
+      "showOff": "Tunjuk pada kad saya",
+      "takeOff": "Buang dari kad saya",
+      "emptySlot": "Kosong"
     }
   },
   "mascot": {

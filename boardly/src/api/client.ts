@@ -126,6 +126,9 @@ export interface AuthUser {
   mascot?: MascotLook;
   /** Mascot items you have bought ("hat:crown"). Your own account only. */
   ownedMascot?: string[];
+  /** The badges you picked to show on your card (empty: the four best).
+   *  Your own account only. */
+  showcaseBadges?: string[];
   /** A bot the server plays. */
   isBot?: boolean;
 }
@@ -237,7 +240,10 @@ export interface FriendCard {
   wins: number;
   bestStreak: number;
   favourite: string | null;
+  /** Only the badges they show on their card (up to four). */
   badges: BadgeRecord[];
+  /** How many badges they have earned in all. */
+  badgeCount: number;
   together: Together | null;
   presence: "online" | "inGame" | "offline" | null;
   playing: string | null;
@@ -297,6 +303,8 @@ export interface UserStats {
   favourite: string | null;
   games: GameRecord[];
   badges: BadgeRecord[];
+  /** The keys of the (up to four) badges my card shows. */
+  showcase: string[];
   /** When the latest finished game ended (ISO); levels reached at
    *  exactly this time were reached in it. */
   lastGameAt: string | null;
@@ -338,6 +346,14 @@ export const api = {
       request<{ user: AuthUser }>("/auth/me/mascot/buy", {
         method: "POST",
         body: JSON.stringify({ look }),
+      }),
+
+    /** The badges (up to four, earned) to show on my card; [] for the
+     *  four best. */
+    setShowcase: (badges: string[]) =>
+      request<{ user: AuthUser }>("/auth/me/showcase", {
+        method: "PUT",
+        body: JSON.stringify({ badges }),
       }),
 
     setBorder: (borderId: string) =>

@@ -105,3 +105,29 @@ def test_faction_games_say_which_side_each_player_was_on():
     state = {**state, "roles": ["infected", "survivor", "survivor", "survivor"]}
     assert shelter.player_outcome(state, 0)["side"] == "evil"
     assert shelter.player_outcome(state, 1)["side"] == "good"
+
+
+def test_the_card_shows_the_four_best_badges_or_the_ones_picked(client, make_user):
+    alice, bob, room = _finished_game(client, make_user)
+    _finish(client, room, alice, bob)
+    card = _card(client, alice)
+    earned = [b["key"] for b in card["badges"] if b["tier"]]
+    assert set(card["showcase"]) <= set(earned) and len(card["showcase"]) == min(4, len(earned))
+
+    # only earned badges, at most four, each once
+    put = lambda keys: client.put(
+        "/api/v1/auth/me/showcase", json={"badges": keys}, headers=alice["headers"]
+    )
+    assert put(["shelter.lastWinter"]).status_code == 403
+    assert put(earned[:1] * 2).status_code == 400
+    assert put(earned[:1]).status_code == 200
+    # once picked, the card shows just the picks
+    assert _card(client, alice)["showcase"] == earned[:1]
+
+    # a friend's view of the card holds just those, without progress
+    seen = client.get(
+        f"/api/v1/friends/{alice['id']}/card", headers=bob["headers"]
+    ).get_json()["card"]
+    assert seen["badges"][0]["key"] == earned[0]
+    assert all("progress" not in b for b in seen["badges"])
+    assert seen["badgeCount"] == len(earned)

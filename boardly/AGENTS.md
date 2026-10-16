@@ -253,6 +253,9 @@ otherwise.
   locked, the light sweep and glints, the four-level sheet, the stamp
   when a level is reached) is shared: never draw your own. Check them
   all at `boardly-dev://dev/badges` (`?game=<key>` for one style).
+  A player's card shows just four badges: the ones they pick in the
+  badge hall (`app/badges.tsx`, opened through the meeple like the
+  wardrobe; saved by `PUT /auth/me/showcase`), or their four best.
 - **Player counts** get their own rules page: a table built from the
   game's count tables in `logic.ts` (sides, roles, team sizes, win
   thresholds) plus notes — see `CountsPage` in both games' `rules.tsx`.

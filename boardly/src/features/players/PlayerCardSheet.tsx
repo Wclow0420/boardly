@@ -1,17 +1,16 @@
 // Someone's player card, pulled out like a drawer: who they are and the
 // title their rarest badge gives them, their numbers on wooden tokens,
-// what we've played together, the badges they've earned (alive), and
+// what we've played together, the four badges they show, and
 // what I can do — which depends on how we know each other: add them,
 // answer their request, invite a friend to my table, or let them go.
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { forwardRef, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { ApiError, api, type MascotLook } from "@/api/client";
-import { Badge, TIER_GLOW } from "@/components/badges/Badge";
-import { useIsoClock } from "@/components/iso";
+import { TIER_GLOW } from "@/components/badges/Badge";
 import { Meeple } from "@/components/tabletop/Meeple";
 import {
   AppText,
@@ -21,8 +20,8 @@ import {
   GorhomBottomSheetModal,
   Skeleton,
 } from "@/components/ui";
-import { badgeArt } from "@/features/badges/art";
-import { sortBadges, titleBadge } from "@/features/badges/order";
+import { titleBadge } from "@/features/badges/order";
+import { ShowcaseRow } from "@/features/badges/ShowcaseRow";
 import { badgeText } from "@/features/badges/strings";
 import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
 import { meepleColor } from "@/features/friends/seat";
@@ -79,7 +78,6 @@ function Body({
   const { t } = useTranslation();
   const gameName = useGameName();
   const queryClient = useQueryClient();
-  const clock = useIsoClock(false);
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
 
   const query = useQuery({
@@ -242,43 +240,11 @@ function Body({
         </View>
       ) : null}
 
-      {/* their badges, rarest first */}
+      {/* the four badges they show */}
       {card && !bot ? (
         <View style={styles.badges}>
-          <AppText variant="caption" style={styles.label}>
-            {`${t("friends.card.badges")} · ${card.badges.length}`}
-          </AppText>
           {card.badges.length ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.badgeRow}
-            >
-              {sortBadges(card.badges).map((badge, i) => {
-                const { art, face, frames } = badgeArt(badge.key, badge.gameType);
-                return (
-                  <View key={badge.key} style={styles.badge}>
-                    <Badge
-                      art={art}
-                      face={face}
-                      frames={frames}
-                      tier={badge.tier ?? "bronze"}
-                      size={70}
-                      clock={clock}
-                      phase={i * 0.9}
-                    />
-                    <AppText
-                      variant="tiny"
-                      align="center"
-                      numberOfLines={2}
-                      style={styles.badgeName}
-                    >
-                      {badgeText(t, badge.key).name}
-                    </AppText>
-                  </View>
-                );
-              })}
-            </ScrollView>
+            <ShowcaseRow badges={card.badges} count={card.badgeCount} />
           ) : (
             <AppText variant="tiny" style={styles.muted}>
               {t("friends.card.noBadges")}
@@ -395,9 +361,6 @@ const styles = StyleSheet.create({
   },
   badges: { gap: 8 },
   label: { color: TABLE.creamMuted, fontFamily: fontFamily.semiBold },
-  badgeRow: { gap: 4 },
-  badge: { width: 76, alignItems: "center" },
-  badgeName: { color: TABLE.cream, marginTop: -6 },
   actions: { flexDirection: "row", gap: 10 },
   grow: { flex: 1 },
 });

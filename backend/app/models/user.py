@@ -32,6 +32,9 @@ class User(db.Model):
     mascot = db.Column(JSONB, nullable=True)
     # Keys of the paid mascot items they have bought ("hat:crown")
     owned_mascot = db.Column(JSONB, nullable=False, default=list, server_default="[]")
+    # Up to four badge keys they picked to show on their card (empty: the
+    # four best are shown)
+    showcase_badges = db.Column(JSONB, nullable=False, default=list, server_default="[]")
     # Bumped to sign out every device (password change, account deletion):
     # tokens carry the version they were issued for.
     token_version = db.Column(db.Integer, nullable=False, default=0, server_default="0")
@@ -69,4 +72,5 @@ class User(db.Model):
             "coins": self.coins,
             "ownedBorders": list(self.owned_borders or []),
             "ownedMascot": list(self.owned_mascot or []),
+            "showcaseBadges": list(self.showcase_badges or []),
         }

@@ -1,26 +1,23 @@
 // The profile is the player's card: who they are and the title their
-// rarest badge gives them, their numbers as tokens, every badge (alive,
-// on one clock), and how they do in each game. Settings sit behind the
-// gear.
+// best badge gives them, their numbers on gold medallions, the four
+// badges they show (the way into the badge hall), and how they do in
+// each game. Settings sit behind the gear.
 
 import { useQuery } from "@tanstack/react-query";
-import { useIsFocused, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "expo-router";
+import { useRef } from "react";
 import {
-  AppState,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
 } from "react-native";
 import { useTranslation } from "react-i18next";
-import { useReducedMotion, useSharedValue } from "react-native-reanimated";
 
 import { Emblem } from "@/components/icons";
 import { api } from "@/api/client";
 import { TIER_GLOW } from "@/components/badges/Badge";
 import { GearEmblem } from "@/components/engraved";
-import { useIsoClock } from "@/components/iso";
 import {
   AppText,
   AvatarStage,
@@ -33,11 +30,10 @@ import {
   TableBackdrop,
 } from "@/components/ui";
 import { useSession } from "@/context/SessionContext";
-import { BadgeGrid } from "@/features/badges/BadgeGrid";
-import { NextBadge } from "@/features/badges/NextBadge";
-import { levelId, nextBadge, titleBadge } from "@/features/badges/order";
+import { ShowcaseRow } from "@/features/badges/ShowcaseRow";
+import { titleBadge } from "@/features/badges/order";
 import { badgeText } from "@/features/badges/strings";
-import { useSeenBadges } from "@/features/badges/useSeenBadges";
+import { useMeepleTransition } from "@/features/mascot/MeepleTransition";
 import { CoinPill } from "@/features/coins/CoinPill";
 import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
 import { useEquippedBorder } from "@/features/cosmetics/store";
@@ -72,34 +68,11 @@ export default function ProfileScreen() {
     enabled: user !== null,
   });
   const card = statsQuery.data;
+  // into the badge hall through the meeple, like the wardrobe
+  const go = useMeepleTransition();
 
-  // One clock for every badge; it stops when nobody is looking
-  const focused = useIsFocused();
-  const reduceMotion = useReducedMotion();
-  const [active, setActive] = useState(AppState.currentState === "active");
-  useEffect(() => {
-    const watch = AppState.addEventListener("change", (s) =>
-      setActive(s === "active"),
-    );
-    return () => watch.remove();
-  }, []);
-  const clock = useIsoClock(!focused || !active || reduceMotion);
-  const still = useSharedValue(0);
-
-  // Badges earned since this device last showed them stamp down, once
-  const { seen, markSeen } = useSeenBadges(user?.id);
-  const fresh = useMemo(() => {
-    if (!card || !seen || !focused) return new Set<string>();
-    return new Set(
-      card.badges
-        .filter((b) => b.tier && !seen.has(levelId(b.key, b.tier)))
-        .map((b) => levelId(b.key, b.tier!)),
-    );
-  }, [card, seen, focused]);
-  const onStamped = useCallback((keys: string[]) => markSeen(keys), [markSeen]);
 
   const title = card ? titleBadge(card.badges) : null;
-  const next = card ? nextBadge(card.badges) : null;
   const earned = card?.badges.filter((b) => b.tier).length ?? 0;
   const tokens = [
     { label: t("profile.gamesPlayed"), value: card?.gamesPlayed },
@@ -215,38 +188,17 @@ export default function ProfileScreen() {
                 </View>
               ))}
             </View>
-            {next ? (
-              <View style={styles.next}>
-                <NextBadge badge={next} clock={still} />
-              </View>
-            ) : null}
-          </Frame>
-
-          {/* Badges */}
-          <SectionTitle
-            label={t("profile.card.badges")}
-            colors={TABLE.ribbonRed}
-            style={{ marginTop: spacing.xl }}
-            right={
-              card ? (
-                <AppText variant="tiny" style={styles.count}>
-                  {t("profile.card.unlocked", {
-                    n: earned,
-                    total: card.badges.length,
-                  })}
-                </AppText>
-              ) : null
-            }
-          />
-          <Frame tone="blue" stitched style={styles.badges}>
             {card ? (
-              <BadgeGrid
-                badges={card.badges}
-                clock={clock}
-                still={still}
-                fresh={fresh}
-                onStamped={onStamped}
-              />
+              <View style={styles.next}>
+                <ShowcaseRow
+                  badges={card.showcase
+                    .map((k) => card.badges.find((b) => b.key === k))
+                    .filter((b) => b !== undefined)}
+                  count={earned}
+                  total={card.badges.length}
+                  onOpen={() => go(() => router.push("/badges"))}
+                />
+              </View>
             ) : null}
           </Frame>
 

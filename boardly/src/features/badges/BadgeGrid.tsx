@@ -4,7 +4,7 @@
 // to the next. A level reached since this device last looked stamps
 // down onto the card, once. Tapping a badge shows its four levels.
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import Animated, {
@@ -38,6 +38,7 @@ export function BadgeGrid({
   still,
   fresh,
   onStamped,
+  action,
 }: {
   badges: BadgeRecord[];
   clock: SharedValue<number>;
@@ -46,6 +47,8 @@ export function BadgeGrid({
   /** Levels reached that this device hasn't shown yet (levelId). */
   fresh: Set<string>;
   onStamped: (ids: string[]) => void;
+  /** Something to do with an open badge (show it on my card). */
+  action?: (badge: BadgeRecord, close: () => void) => ReactNode;
 }) {
   const [open, setOpen] = useState<BadgeRecord | null>(null);
   const sorted = useMemo(() => sortBadges(badges), [badges]);
@@ -86,7 +89,13 @@ export function BadgeGrid({
             }}
           />
         ))}
-      <BadgeDetail badge={open} clock={clock} still={still} onClose={() => setOpen(null)} />
+      <BadgeDetail
+        badge={open}
+        clock={clock}
+        still={still}
+        onClose={() => setOpen(null)}
+        action={open && action ? action(open, () => setOpen(null)) : null}
+      />
     </View>
   );
 }
@@ -204,11 +213,14 @@ export function BadgeDetail({
   clock,
   still,
   onClose,
+  action,
 }: {
   badge: BadgeRecord | null;
   clock: SharedValue<number>;
   still: SharedValue<number>;
   onClose: () => void;
+  /** Under it all: something to do with it. */
+  action?: ReactNode;
 }) {
   const { t, i18n } = useTranslation();
   const gameName = useGameName();
@@ -287,6 +299,7 @@ export function BadgeDetail({
             {`★  ${t("badges.celebrate.topLevel")}`}
           </AppText>
         )}
+        {action ? <View style={styles.action}>{action}</View> : null}
       </View>
     </Popup>
   );
@@ -323,6 +336,7 @@ const styles = StyleSheet.create({
   rungGoal: { fontFamily: fontFamily.bold, fontSize: 14, marginTop: -2 },
   rungWhen: { color: TABLE.creamMuted },
   toGo: { color: "#F2B630", fontFamily: fontFamily.semiBold },
+  action: { alignSelf: "stretch", marginTop: 8 },
   barWrap: { alignSelf: "stretch", alignItems: "center", gap: 6, marginTop: 4 },
   bar: {
     alignSelf: "stretch",

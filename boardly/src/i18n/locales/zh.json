@@ -1972,6 +1972,14 @@
       "nextLevel": "下一级",
       "topLevel": "已达最高等级",
       "toLevel": "距{{level}}还差 {{n}}"
+    },
+    "hall": {
+      "title": "徽章",
+      "showcase": "展示柜",
+      "hint": "你的名片会展示这四枚。点任一枚已获得的徽章即可展示。",
+      "showOff": "展示在名片上",
+      "takeOff": "从名片上取下",
+      "emptySlot": "空位"
     }
   },
   "mascot": {

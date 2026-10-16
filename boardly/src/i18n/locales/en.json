@@ -1980,6 +1980,14 @@
       "nextLevel": "Next level",
       "topLevel": "Top level reached",
       "toLevel": "{{n}} to {{level}}"
+    },
+    "hall": {
+      "title": "Badges",
+      "showcase": "Showcase",
+      "hint": "Your card shows these four. Tap any badge you've earned to show it.",
+      "showOff": "Show on my card",
+      "takeOff": "Take off my card",
+      "emptySlot": "Empty"
     }
   },
   "mascot": {

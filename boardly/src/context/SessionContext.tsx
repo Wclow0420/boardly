@@ -38,6 +38,8 @@ interface SessionContextValue {
   dressMascot: (look: MascotLook, buy: boolean) => Promise<void>;
   /** Changes the profile border everyone sees around this player. */
   setBorder: (borderId: string) => Promise<void>;
+  /** The badges my card shows (up to four; [] for the best four). */
+  setShowcase: (badges: string[]) => Promise<void>;
   /** Sets the profile picture (base64 JPEG/PNG/WebP), or null to remove it. */
   setAvatar: (image: string | null) => Promise<void>;
   /** Permanently deletes the account, then signs out. */
@@ -149,6 +151,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setUser(updated);
   }, []);
 
+  const setShowcase = useCallback(async (badges: string[]) => {
+    const { user: updated } = await api.auth.setShowcase(badges);
+    setUser(updated);
+  }, []);
+
   const setAvatar = useCallback(async (image: string | null) => {
     const { user: updated } =
       image === null
@@ -177,6 +184,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       buyBorder,
       dressMascot,
       setBorder,
+      setShowcase,
       setAvatar,
       deleteAccount,
     }),
@@ -191,6 +199,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       buyBorder,
       dressMascot,
       setBorder,
+      setShowcase,
       setAvatar,
       deleteAccount,
     ]
