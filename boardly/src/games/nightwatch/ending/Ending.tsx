@@ -7,7 +7,7 @@
 // again), handed in by the game screen.
 
 import { Canvas, Group, Image as SkImage, Rect, Shader } from "@shopify/react-native-skia";
-import { useEffect, useMemo, type ReactNode } from "react";
+import { useContext, useEffect, useMemo, type ReactNode } from "react";
 import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import Animated, {
   Easing,
@@ -32,6 +32,7 @@ import { AURA, LIGHT, rgb } from "../lantern/fx";
 import { Burst } from "../lantern/Lantern";
 import { sideOf, type NightwatchState } from "../logic";
 import { MiniRoleCard } from "../RoleCardFace";
+import { StageInsets } from "../ManorStage";
 import { sealArt } from "./sealArt";
 import { shader } from "@/components/iso/shaders";
 
@@ -52,6 +53,7 @@ export function Ending({
   paused: boolean;
 }) {
   const { t } = useTranslation();
+  const insets = useContext(StageInsets);
   const { width } = useWindowDimensions();
   const onScreen = useOnScreen();
   const clock = useIsoClock(paused || !onScreen);
@@ -110,7 +112,11 @@ export function Ending({
   }));
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      contentContainerStyle={{ paddingTop: insets.top, paddingBottom: insets.bottom + 10 }}
+      scrollIndicatorInsets={{ top: insets.top, bottom: insets.bottom }}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={{ height: STAGE_H }}>
         <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
           {aura ? (
@@ -188,7 +194,6 @@ const shadow = {
 };
 
 const styles = StyleSheet.create({
-  scroll: { paddingBottom: 30 },
   verdict: { alignItems: "center", paddingHorizontal: 24, gap: 4 },
   title: { fontFamily: fontFamily.bold, fontSize: 26, lineHeight: 32, letterSpacing: 1.5, textTransform: "uppercase", textAlign: "center", ...shadow },
   reason: { fontFamily: fontFamily.medium, fontSize: 13.5, lineHeight: 19, color: "#F1E6D2", textAlign: "center", ...shadow },

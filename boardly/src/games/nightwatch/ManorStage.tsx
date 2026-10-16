@@ -7,7 +7,7 @@
 // lanterns, the last chance) takes the middle and sends the tools away.
 
 import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, useState, type ReactNode } from "react";
+import { createContext, useEffect, useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -90,6 +90,7 @@ export function ManorStage({
   onRules,
   onMap,
   away = false,
+  bleed = false,
   paused = false,
 }: {
   state: NightwatchState;
@@ -113,6 +114,10 @@ export function ManorStage({
   onMap: () => void;
   /** A moment has the stage: the tags and tools step aside. */
   away?: boolean;
+  /** The middle runs the screen's full height, under the arch and the
+   *  plinth (a long scroll, like the ending's): it's handed the room to
+   *  leave at either end through `StageInsets`. */
+  bleed?: boolean;
   paused?: boolean;
 }) {
   const { t } = useTranslation();
@@ -159,7 +164,13 @@ export function ManorStage({
       <View style={[styles.stage, { top: archH - CURTAIN_UP, bottom: plinthH - CURTAIN_DOWN }]}>
         <StageCurtain sceneKey={sceneKey} onSwap={(key) => setAside({ key, bottom: null })}>
           <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-            <View style={[styles.centre, { top: CURTAIN_UP + 26, bottom: CURTAIN_DOWN + 34 }]}>{centre}</View>
+            {bleed ? (
+              <View style={[styles.centre, { top: CURTAIN_UP - archH, bottom: CURTAIN_DOWN - plinthH }]}>
+                <StageInsets.Provider value={{ top: archH + 26, bottom: plinthH + 34 }}>{centre}</StageInsets.Provider>
+              </View>
+            ) : (
+              <View style={[styles.centre, { top: CURTAIN_UP + 26, bottom: CURTAIN_DOWN + 34 }]}>{centre}</View>
+            )}
             {live ? (
               <Animated.View style={[styles.tags, { top: CURTAIN_UP - 8 }, tagsOut]} pointerEvents={away ? "none" : "box-none"}>
                 <RoomTag
@@ -258,6 +269,10 @@ const styles = StyleSheet.create({
   bottom: { position: "absolute", left: 0, right: 0, bottom: 0, alignItems: "center" },
   hint: { position: "absolute", left: 0, right: 0, alignItems: "center", paddingHorizontal: 26, gap: 2 },
 });
+
+/** For a middle that bleeds under the arch and the plinth: how far its
+ *  content should start from the top and stop from the bottom. */
+export const StageInsets = createContext({ top: 0, bottom: 0 });
 
 export const stageText = StyleSheet.create({
   hint: {

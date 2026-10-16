@@ -909,6 +909,7 @@ export function NightwatchBoard({
       centre={centre}
       tools={over ? undefined : tools}
       away={rite?.kind === "reveal" || lineup || over}
+      bleed={over && !rite && !council}
       hint={hint}
       bottom={bottom}
       onBack={stage?.onBack}
