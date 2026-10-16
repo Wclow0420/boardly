@@ -43,6 +43,7 @@ const RARITY_TILE: Record<
   rare: { fill: ["#2C5A8E", "#16304F"], edge: "#5FA8F0", shine: "#9CCBFF" },
   epic: { fill: ["#5E2F94", "#2C1650"], edge: "#C084FC", shine: "#E2C2FF" },
   legendary: { fill: ["#9A6A1C", "#4A2C08"], edge: "#F7C948", shine: "#FFF0B0" },
+  mythic: { fill: ["#8E1430", "#2A0610"], edge: "#FF5A7A", shine: "#FFC2CF" },
 };
 
 /** Each section's ribbon. */
@@ -51,6 +52,7 @@ const SECTION_RIBBON: Record<SectionKey, [string, string]> = {
   rare: ["#3A78C2", "#25507F"],
   epic: ["#8A4ACF", "#5E2F94"],
   legendary: ["#E9B334", "#B07A12"],
+  mythic: ["#D8344F", "#8E1430"],
   earned: ["#2E8A78", "#1C5E52"],
 };
 
@@ -61,7 +63,7 @@ const earnedOnly = (border: ProfileBorder) =>
 /** The shop's sections: each rarity, cheapest first, then the borders that
  *  can only be earned. */
 const SECTIONS: { key: SectionKey; borders: ProfileBorder[] }[] = [
-  ...(["common", "rare", "epic", "legendary"] as BorderRarity[]).map((rarity) => ({
+  ...(["common", "rare", "epic", "legendary", "mythic"] as BorderRarity[]).map((rarity) => ({
     key: rarity as SectionKey,
     borders: BORDERS.filter((b) => b.rarity === rarity && !earnedOnly(b)).sort(byPrice),
   })),
@@ -166,7 +168,7 @@ export default function BordersScreen() {
               {earnedBy
                 ? `🏅 ${badgeText(t, earnedBy).name}`
                 : selected.price > 0
-                  ? selected.price
+                  ? selected.price.toLocaleString()
                   : t("borders.free")}
             </AppText>
           </View>
@@ -179,7 +181,7 @@ export default function BordersScreen() {
               : !selectedOwned && earnedBy
                 ? t("borders.earnWith", { badge: badgeText(t, earnedBy).name })
                 : !selectedOwned
-                  ? t("borders.unlock", { price: selected.price })
+                  ? t("borders.unlock", { price: selected.price.toLocaleString() })
                   : t("borders.equip")
           }
           leftIcon={
@@ -201,7 +203,7 @@ export default function BordersScreen() {
           </AppText>
         ) : !selectedOwned && shortBy > 0 ? (
           <AppText variant="caption" color="textMuted" align="center">
-            {t("borders.notEnough", { count: shortBy })}
+            {t("borders.notEnough", { count: shortBy, amount: shortBy.toLocaleString() })}
           </AppText>
         ) : null}
         {failed ? (

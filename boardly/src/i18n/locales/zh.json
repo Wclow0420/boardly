@@ -1634,10 +1634,11 @@
       "common": "普通",
       "rare": "稀有",
       "epic": "史诗",
-      "legendary": "传说"
+      "legendary": "传说",
+      "mythic": "神话"
     },
     "unlock": "{{price}} 金币解锁",
-    "notEnough": "还差 {{count}} 金币",
+    "notEnough": "还差 {{amount}} 金币",
     "locked": "未解锁",
     "earnWith": "获得徽章解锁：{{badge}}",
     "owned": "已拥有",

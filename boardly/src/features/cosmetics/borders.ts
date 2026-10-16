@@ -16,7 +16,7 @@
 
 import type { GlowConfig } from "react-native-animated-glow";
 
-export type BorderRarity = "common" | "rare" | "epic" | "legendary";
+export type BorderRarity = "common" | "rare" | "epic" | "legendary" | "mythic";
 
 interface BorderBase {
   id: string;
@@ -76,6 +76,7 @@ export const RARITY_COLORS: Record<BorderRarity, string> = {
   rare: "#5FA8F0",
   epic: "#C084FC",
   legendary: "#F7C948",
+  mythic: "#FF5A7A",
 };
 
 export const BORDERS: ProfileBorder[] = [
@@ -118,7 +119,7 @@ export const BORDERS: ProfileBorder[] = [
     price: 600,
   },
 
-  // ── Epic / legendary: animated glows ────────────────────────────────
+  // ── Epic: animated glows ────────────────────────────────────────────
   {
     id: "golden-aura",
     name: "Sunburst",
@@ -132,40 +133,40 @@ export const BORDERS: ProfileBorder[] = [
     name: "Emerald Grove",
     kind: "art",
     art: "emerald-grove",
-    rarity: "legendary",
-    price: 1000,
+    rarity: "epic",
+    price: 2200,
   },
   {
     id: "ripple",
     name: "Moonpool",
     kind: "art",
     art: "moonpool",
-    rarity: "legendary",
-    price: 1000,
+    rarity: "epic",
+    price: 2400,
   },
   {
     id: "vaporwave",
     name: "Stained Glass",
     kind: "art",
     art: "stained-glass",
-    rarity: "legendary",
-    price: 1200,
+    rarity: "epic",
+    price: 3000,
   },
   {
     id: "ember",
     name: "Brazier",
     kind: "art",
     art: "brazier",
-    rarity: "legendary",
-    price: 1200,
+    rarity: "epic",
+    price: 2800,
   },
   {
     id: "frost",
     name: "Snowflake",
     kind: "art",
     art: "snowflake",
-    rarity: "legendary",
-    price: 1200,
+    rarity: "epic",
+    price: 2600,
   },
 
   // ── Art borders: illustrations drawn and animated round the avatar ──
@@ -286,7 +287,7 @@ export const BORDERS: ProfileBorder[] = [
     name: "Imperial Dragon",
     kind: "art",
     art: "imperial-dragon",
-    rarity: "legendary",
+    rarity: "mythic",
     price: 12000,
   },
   {
@@ -294,7 +295,7 @@ export const BORDERS: ProfileBorder[] = [
     name: "Celestial Throne",
     kind: "art",
     art: "celestial-throne",
-    rarity: "legendary",
+    rarity: "mythic",
     price: 15000,
   },
   {
@@ -302,7 +303,7 @@ export const BORDERS: ProfileBorder[] = [
     name: "Archangel",
     kind: "art",
     art: "archangel",
-    rarity: "legendary",
+    rarity: "mythic",
     price: 16000,
   },
   {
@@ -310,7 +311,7 @@ export const BORDERS: ProfileBorder[] = [
     name: "Phoenix Reborn",
     kind: "art",
     art: "phoenix-reborn",
-    rarity: "legendary",
+    rarity: "mythic",
     price: 18000,
   },
   {
@@ -318,7 +319,7 @@ export const BORDERS: ProfileBorder[] = [
     name: "Void Emperor",
     kind: "art",
     art: "void-emperor",
-    rarity: "legendary",
+    rarity: "mythic",
     price: 25000,
   },
   {
@@ -326,7 +327,7 @@ export const BORDERS: ProfileBorder[] = [
     name: "Clockwork Grand Master",
     kind: "art",
     art: "clockwork",
-    rarity: "legendary",
+    rarity: "mythic",
     price: 12000,
   },
   {
@@ -334,7 +335,7 @@ export const BORDERS: ProfileBorder[] = [
     name: "Kraken's Deep",
     kind: "art",
     art: "krakens-deep",
-    rarity: "legendary",
+    rarity: "mythic",
     price: 14000,
   },
   {
@@ -342,7 +343,7 @@ export const BORDERS: ProfileBorder[] = [
     name: "The Grand Board",
     kind: "art",
     art: "grand-board",
-    rarity: "legendary",
+    rarity: "mythic",
     price: 20000,
   },
   {
@@ -350,7 +351,7 @@ export const BORDERS: ProfileBorder[] = [
     name: "Lunar New Year",
     kind: "art",
     art: "lunar-new-year",
-    rarity: "legendary",
+    rarity: "mythic",
     price: 12000,
   },
   {
@@ -358,7 +359,7 @@ export const BORDERS: ProfileBorder[] = [
     name: "Cherry Blossom Shrine",
     kind: "art",
     art: "cherry-shrine",
-    rarity: "legendary",
+    rarity: "mythic",
     price: 10000,
   },
   {

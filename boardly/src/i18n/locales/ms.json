@@ -1639,10 +1639,11 @@
       "common": "Biasa",
       "rare": "Jarang",
       "epic": "Epik",
-      "legendary": "Legenda"
+      "legendary": "Legenda",
+      "mythic": "Mitos"
     },
     "unlock": "Buka dengan {{price}}",
-    "notEnough": "Perlu {{count}} syiling lagi",
+    "notEnough": "Perlu {{amount}} syiling lagi",
     "locked": "Berkunci",
     "earnWith": "Dapatkan: {{badge}}",
     "owned": "Dimiliki",
