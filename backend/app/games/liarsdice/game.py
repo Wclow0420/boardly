@@ -65,6 +65,7 @@ Moves:
 import random
 
 from app.games.base import BaseGame, GameError, Badge, QUICK_WINS, RARE
+from app.games.liarsdice.bot import liarsdice as bot_policy
 
 DICE_EACH = 5
 KNOCKOUT_CUPS = 5
@@ -119,6 +120,7 @@ class LiarsDice(BaseGame):
         ),
     ]
     options = {"mode": ["knockout", "endless"]}
+    has_bots = True
 
     def __init__(self, rng: random.Random | None = None):
         self.rng = rng or random.SystemRandom()
@@ -393,6 +395,9 @@ class LiarsDice(BaseGame):
         if state["phase"] == "finished":
             return state
         return {**state, "phase": "finished", "winner": None, "winners": None}
+
+    def bot_move(self, view, seat, rng):
+        return bot_policy(view, seat, rng)
 
     # ------------------------------------------------------------- view
 

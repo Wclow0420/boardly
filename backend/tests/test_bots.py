@@ -52,7 +52,9 @@ def test_only_the_host_and_never_beyond_the_seats(client, make_user):
     assert _add(client, alice, room, 1).status_code == 400
 
 
-def test_not_for_games_without_bots(client, make_user):
+def test_not_for_games_without_bots(client, make_user, monkeypatch):
+    # every game has bots now: take them away from one
+    monkeypatch.setattr(type(get_game("tictactoe")), "has_bots", False)
     alice = make_user("alice")
     room = _table(client, alice, "tictactoe")
     assert room["botsAvailable"] is False

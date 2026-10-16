@@ -11,6 +11,7 @@ Move shape: {"cell": 0-8}
 """
 
 from app.games.base import BaseGame, GameError, Badge, QUICK_WINS, RARE
+from app.games.tictactoe.bot import tictactoe as bot_policy
 
 WIN_LINES = [
     (0, 1, 2), (3, 4, 5), (6, 7, 8),  # rows
@@ -30,6 +31,7 @@ class TicTacToe(BaseGame):
     tile_color = "#E3F0FF"
     category = "classic"
     tag = "classic"
+    has_bots = True
 
     badges = [
         # every win
@@ -52,8 +54,10 @@ class TicTacToe(BaseGame):
         if seat != state["currentSeat"]:
             raise GameError("Not your turn")
 
+        if not isinstance(move, dict):
+            raise GameError("Invalid move")
         cell = move.get("cell")
-        if not isinstance(cell, int) or not 0 <= cell <= 8:
+        if type(cell) is not int or not 0 <= cell <= 8:
             raise GameError("Move must include a cell between 0 and 8")
         if state["board"][cell] is not None:
             raise GameError("Cell is already taken")
@@ -90,6 +94,9 @@ class TicTacToe(BaseGame):
                 board[move["cell"]] = state["symbols"][move["seat"]]
             fork = self._threats(board, symbol) >= 2
         return {"role": symbol, "facts": {"fork": fork}}
+
+    def bot_move(self, view, seat, rng):
+        return bot_policy(view, seat, rng)
 
     def get_result(self, state: dict) -> dict | None:
         board = state["board"]
