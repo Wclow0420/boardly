@@ -17,7 +17,7 @@ import type { Jewel } from "@/components/engraved/shapes";
 import { Emblem } from "@/components/icons";
 import { AppText, BezelOverlay, IconButton, useBox } from "@/components/ui";
 import { fontFamily, useTheme } from "@/theme";
-import { POPUP_RADIUS, popupPanel } from "./popupArt";
+import { POPUP_RADIUS, POPUP_RIM, popupPanel } from "./popupArt";
 
 /** A game's own colours for its popups. */
 export interface PopupLook {
@@ -101,19 +101,23 @@ function Card({ look, children }: { look: PopupLook; children: ReactNode }) {
   const [{ w, h }, onLayout] = useBox();
   return (
     <View style={[styles.card, w === 0 && { backgroundColor: colors.card }]} onLayout={onLayout}>
-      {w > 0 ? <Panel w={w} h={h} look={look} /> : null}
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.body}
-      >
-        {children}
-      </ScrollView>
+      {w > 0 ? <Panel w={w} h={h} look={look} layer="back" /> : null}
+      {/* what scrolls stays inside the frame and passes under its gold */}
+      <View style={styles.inside}>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.body}
+        >
+          {children}
+        </ScrollView>
+      </View>
+      {w > 0 ? <Panel w={w} h={h} look={look} layer="front" /> : null}
     </View>
   );
 }
 
-function Panel({ w, h, look }: { w: number; h: number; look: PopupLook }) {
+function Panel({ w, h, look, layer }: { w: number; h: number; look: PopupLook; layer: "back" | "front" }) {
   const { colors } = useTheme();
   const fill = [colors.card, colors.background] as const;
   const glow = look.glow ?? PLAIN.glow!;
@@ -122,10 +126,14 @@ function Panel({ w, h, look }: { w: number; h: number; look: PopupLook }) {
   // reaches: the top of the panel is drawn down to just above the card's
   // foot, and the panel's own foot (its corners) pinned to the card's
   const bh = Math.ceil(h / 64) * 64;
-  const image = bakedSvg(`gamepopup|${fill.join()}|${glow}|${jewel}`, w, bh, () => popupPanel(w, bh, fill, glow, jewel));
+  const image = bakedSvg(`gamepopup|${layer}|${fill.join()}|${glow}|${jewel}`, w, bh, () =>
+    popupPanel(w, bh, fill, glow, jewel, layer),
+  );
   const foot = Math.min(72, h / 2);
   return (
-    <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
+    // a canvas takes touches whatever it's told: the view lets them through
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+    <Canvas style={StyleSheet.absoluteFill}>
       {image ? (
         <>
           <Group clip={rect(0, 0, w, h - foot)}>
@@ -137,6 +145,7 @@ function Panel({ w, h, look }: { w: number; h: number; look: PopupLook }) {
         </>
       ) : null}
     </Canvas>
+    </View>
   );
 }
 
@@ -153,7 +162,13 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 8 },
   },
-  body: { paddingTop: 38, paddingBottom: 24, paddingHorizontal: 22 },
+  inside: {
+    flexShrink: 1,
+    margin: POPUP_RIM,
+    borderRadius: POPUP_RADIUS - POPUP_RIM,
+    overflow: "hidden",
+  },
+  body: { paddingTop: 32, paddingBottom: 20, paddingHorizontal: 16 },
   signRow: { position: "absolute", left: 0, right: 0, top: -21, alignItems: "center" },
   sign: {
     minWidth: 170,
