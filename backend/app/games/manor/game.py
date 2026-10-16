@@ -56,6 +56,7 @@ Moves:
 import random
 
 from app.games.base import BaseGame, GameError, Badge, FEAT, RARE, WINS, won_as
+from app.games.manor.bot import manor as bot_policy
 
 ROOMS = [
     "study", "library", "bedroom",
@@ -116,6 +117,7 @@ class Manor(BaseGame):
     tile_color = "#E9E2F7"
     category = "faction"
     tag = "faction"
+    has_bots = True
 
     badges = [
         Badge("manor.dawn", FEAT, lambda o: o.won and o.side == "good" and (o.facts or {}).get("reason") == "dawn"),
@@ -608,6 +610,9 @@ class Manor(BaseGame):
         if state["phase"] == "finished":
             return state
         return self._finish(state, None, "abandoned")
+
+    def bot_move(self, view, seat, rng):
+        return bot_policy(view, seat, rng)
 
     # ------------------------------------------------------------- view
 
