@@ -16,7 +16,7 @@ import { useTranslation } from "react-i18next";
 
 import { Emblem } from "@/components/icons";
 import { TIER_GLOW } from "@/components/badges/Badge";
-import { GearEmblem } from "@/components/engraved";
+import { FrameEmblem, GearEmblem } from "@/components/engraved";
 import {
   AppText,
   AvatarStage,
@@ -86,8 +86,7 @@ export default function ProfileScreen() {
   ];
 
   const openSetting = (key: SettingKey) => {
-    if (key === "borders") router.push("/borders");
-    else if (key === "language") languageSheetRef.current?.present();
+    if (key === "language") languageSheetRef.current?.present();
     else if (key === "password") passwordSheetRef.current?.present();
     else if (key === "privacy" || key === "terms") openLegalPage(key);
     else if (key === "logout") logout();
@@ -197,6 +196,21 @@ export default function ProfileScreen() {
                 />
               </View>
             ) : null}
+            {/* how the card looks: the border now; later its background
+                and a title (drawn last, so nothing on the card covers it) */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("profile.style")}
+              hitSlop={6}
+              onPress={() => {
+                tapHaptic();
+                router.push("/borders");
+              }}
+              style={({ pressed }) => [styles.style, pressed && styles.pressed]}
+            >
+              <FrameEmblem size={26} />
+              <AppText style={styles.styleText}>{t("profile.style")}</AppText>
+            </Pressable>
           </Frame>
 
           {/* By game */}
@@ -254,6 +268,9 @@ const styles = StyleSheet.create({
   },
   editIcon: { fontSize: 12, lineHeight: 15 },
   who: { flex: 1, gap: 1 },
+  style: { position: "absolute", top: 10, right: 12, zIndex: 2, alignItems: "center" },
+  pressed: { opacity: 0.6, transform: [{ scale: 0.94 }] },
+  styleText: { fontFamily: fontFamily.semiBold, fontSize: 10, lineHeight: 13, color: TABLE.cream },
   username: { fontFamily: fontFamily.bold, fontSize: 19, color: TABLE.cream },
   title: { fontFamily: fontFamily.semiBold, fontSize: 13, letterSpacing: 0.3 },
   coins: { alignSelf: "flex-start", marginTop: 6 },

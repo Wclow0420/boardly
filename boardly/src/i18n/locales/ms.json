@@ -1605,7 +1605,8 @@
       "newBadge": "Lencana baharu!",
       "unlocked": "{{n}} daripada {{total}} diperoleh",
       "noGames": "Habiskan satu permainan untuk mula merekod."
-    }
+    },
+    "style": "Gaya"
   },
   "legal": {
     "privacy": "Dasar Privasi",

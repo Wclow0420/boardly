@@ -1,4 +1,4 @@
-// The profile's settings, behind the gear: borders, language, password,
+// The profile's settings, behind the gear: language, password,
 // the legal pages, logging out and deleting the account. Picking one
 // closes this sheet and hands the choice back (some open sheets of their
 // own).
@@ -13,7 +13,6 @@ import type { ComponentType } from "react";
 import {
   BinEmblem,
   DoorEmblem,
-  FrameEmblem,
   GlobeEmblem,
   KeyEmblem,
   LockEmblem,
@@ -34,7 +33,6 @@ import { TABLE, fontFamily } from "@/theme";
 import { tapHaptic } from "@/utils/haptics";
 
 export type SettingKey =
-  | "borders"
   | "language"
   | "password"
   | "privacy"
@@ -64,7 +62,6 @@ export const SettingsSheet = forwardRef<
     value?: string;
     danger?: boolean;
   }[] = [
-    { key: "borders", Emblem: FrameEmblem, label: t("profile.borders") },
     {
       key: "language",
       Emblem: GlobeEmblem,

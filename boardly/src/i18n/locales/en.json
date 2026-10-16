@@ -1608,7 +1608,8 @@
       "newBadge": "New badge!",
       "unlocked": "{{n}} of {{total}} earned",
       "noGames": "Finish a game to start your record."
-    }
+    },
+    "style": "Style"
   },
   "legal": {
     "privacy": "Privacy Policy",

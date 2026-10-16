@@ -1600,7 +1600,8 @@
       "newBadge": "新徽章！",
       "unlocked": "已获得 {{n}} / {{total}}",
       "noGames": "玩完一局就会开始记录。"
-    }
+    },
+    "style": "装扮"
   },
   "legal": {
     "privacy": "隐私政策",
