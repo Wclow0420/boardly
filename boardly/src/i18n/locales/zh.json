@@ -1975,11 +1975,16 @@
     },
     "hall": {
       "title": "徽章",
-      "showcase": "展示柜",
-      "hint": "你的名片会展示这四枚。点任一枚已获得的徽章即可展示。",
+      "showcase": "你的展示柜",
+      "hint": "好友会在你的名片上看到这四枚。点一枚已获得的徽章即可换上。",
       "showOff": "展示在名片上",
       "takeOff": "从名片上取下",
-      "emptySlot": "空位"
+      "emptySlot": "选一枚",
+      "toTier": "{{n}}/{{goal}} 达{{tier}}",
+      "collection": "收藏",
+      "collectionHint": "按游戏列出所有徽章。每枚有四个等级，达成目标即可升级。",
+      "levels": "已达等级",
+      "earned": "已获得"
     }
   },
   "mascot": {

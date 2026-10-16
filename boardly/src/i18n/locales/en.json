@@ -1983,11 +1983,16 @@
     },
     "hall": {
       "title": "Badges",
-      "showcase": "Showcase",
-      "hint": "Your card shows these four. Tap any badge you've earned to show it.",
+      "showcase": "Your showcase",
+      "hint": "Friends see these four on your card. Tap a badge you've earned to swap it in.",
       "showOff": "Show on my card",
       "takeOff": "Take off my card",
-      "emptySlot": "Empty"
+      "emptySlot": "Pick a badge",
+      "toTier": "{{n}}/{{goal}} to {{tier}}",
+      "collection": "Collection",
+      "collectionHint": "Every badge, by game. Each has four levels: reach the goal to climb.",
+      "levels": "Levels reached",
+      "earned": "Earned"
     }
   },
   "mascot": {

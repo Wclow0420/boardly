@@ -1980,11 +1980,16 @@
     },
     "hall": {
       "title": "Lencana",
-      "showcase": "Pameran",
-      "hint": "Kad anda menunjukkan empat ini. Ketik mana-mana lencana yang diperoleh untuk menunjukkannya.",
+      "showcase": "Pameran anda",
+      "hint": "Rakan melihat empat ini pada kad anda. Ketik lencana yang diperoleh untuk menukarnya.",
       "showOff": "Tunjuk pada kad saya",
       "takeOff": "Buang dari kad saya",
-      "emptySlot": "Kosong"
+      "emptySlot": "Pilih lencana",
+      "toTier": "{{n}}/{{goal}} ke {{tier}}",
+      "collection": "Koleksi",
+      "collectionHint": "Semua lencana, mengikut permainan. Setiap satu ada empat tahap: capai sasaran untuk naik.",
+      "levels": "Tahap dicapai",
+      "earned": "Diperoleh"
     }
   },
   "mascot": {

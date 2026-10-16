@@ -1,9 +1,11 @@
-// The badge hall: a velvet room with a gilded frame. At the top, the
-// showcase, the (up to four) badges my card shows on lit pedestals;
-// under it, how many badges stand at each level; then every badge,
-// Boardly's own first and then each game's, on gold-framed boards. Tap a
-// badge for its four levels and to show it on my card (or take it off).
-// It opens and closes through the meeple, like the wardrobe.
+// The badge hall: a wooden room in a gilded frame. An iron header with
+// the hall's sign, a strip saying how many badges stand at each level,
+// then the showcase (the four badges friends see on my card, on lit
+// pedestals) and the collection: every badge on a framed card, Boardly's
+// own first and then each game's. Tap a badge for its four levels and to
+// show it on my card (or take it off). It opens and closes through the
+// meeple, like the wardrobe. The frame is drawn over the page and the
+// scrolling is clipped inside it.
 //
 // Only the four in the showcase move, and only while this is the screen
 // showing; the rest are still pictures.
@@ -13,7 +15,8 @@ import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BackHandler, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { SvgXml } from "react-native-svg";
 
 import { api, type BadgeRecord } from "@/api/client";
@@ -22,15 +25,20 @@ import { BOARDLY_FRAMES } from "@/components/badges/frames/boardly";
 import { TIERS } from "@/components/badges/types";
 import { BackIcon } from "@/components/icons";
 import { useIsoClock } from "@/components/iso";
-import { AppText, Button, Frame, IconButton, SectionTitle, TitlePlaque } from "@/components/ui";
+import { AppText, BezelOverlay, Button, IconButton, SectionTitle } from "@/components/ui";
 import { useSession } from "@/context/SessionContext";
 import { BadgeDetail, BadgeGrid } from "@/features/badges/BadgeGrid";
 import { BOARDLY_FACE } from "@/features/badges/art";
-import { hallBackdrop } from "@/features/badges/hall/art";
+import {
+  HALL_RADIUS,
+  HALL_RIM,
+  hallFrame,
+  hallHeader,
+  hallWall,
+} from "@/features/badges/hall/art";
 import { SHOWCASE_SIZE, Showcase } from "@/features/badges/hall/Showcase";
 import { levelId } from "@/features/badges/order";
 import { useSeenBadges } from "@/features/badges/useSeenBadges";
-import { lidColors } from "@/features/games/GameBox";
 import { useMeepleTransition } from "@/features/mascot/MeepleTransition";
 import { useGameName } from "@/games/names";
 import { useOnScreen } from "@/hooks/useOnScreen";
@@ -126,78 +134,135 @@ export default function BadgesScreen() {
       />
     ) : null;
 
-  const inner = width - 32;
-  const backdrop = useMemo(() => hallBackdrop(width, height), [width, height]);
+  const insets = useSafeAreaInsets();
+  // the frame's box, and the room inside its moulding
+  const box = {
+    left: 6,
+    top: insets.top + 2,
+    width: width - 12,
+    height: height - insets.top - 2 - Math.max(insets.bottom, 8),
+  };
+  const room = {
+    left: box.left + HALL_RIM - 1,
+    top: box.top + HALL_RIM - 1,
+    width: box.width - 2 * (HALL_RIM - 1),
+    height: box.height - 2 * (HALL_RIM - 1),
+  };
+  const HEAD = 104;
+  const art = useMemo(
+    () => ({
+      wall: hallWall(room.width, room.height),
+      head: hallHeader(room.width, HEAD),
+      frame: hallFrame(box.width, box.height),
+    }),
+    [room.width, room.height, box.width, box.height],
+  );
+  const inner = room.width - 24;
 
   return (
     <View style={styles.screen}>
-      <SvgXml xml={backdrop} width={width} height={height} style={StyleSheet.absoluteFill} />
-      <SafeAreaView edges={["top"]} style={styles.grow}>
-        <View style={styles.header}>
-          <IconButton accessibilityLabel={t("common.back")} onPress={close}>
-            <BackIcon size={20} />
+      <View style={[styles.room, room]}>
+        <SvgXml xml={art.wall} width={room.width} height={room.height} style={StyleSheet.absoluteFill} />
+        {/* the header: the iron plate and its sign */}
+        <View style={{ height: HEAD }}>
+          <SvgXml xml={art.head.svg} width={room.width} height={HEAD} style={StyleSheet.absoluteFill} />
+          <View
+            style={[
+              styles.sign,
+              { left: art.head.sign.x, top: art.head.sign.y, width: art.head.sign.w, height: art.head.sign.h },
+            ]}
+          >
+            <AppText style={styles.signText} numberOfLines={1} adjustsFontSizeToFit>
+              {t("badges.hall.title")}
+            </AppText>
+          </View>
+          {/* back: an iron stud in a gold rim, on the left rail */}
+          <IconButton
+            accessibilityLabel={t("common.back")}
+            onPress={close}
+            size={40}
+            style={[styles.back, { top: art.head.sign.y + art.head.sign.h / 2 - 20 }]}
+          >
+            <LinearGradient colors={["#5A606A", "#24282E"]} style={styles.backFace} />
+            <BezelOverlay r={20} t={3.2} />
+            <BackIcon size={18} />
           </IconButton>
-          <TitlePlaque label={t("badges.hall.title")} />
+        </View>
+
+        {/* the strip: badges at each level, and how many earned */}
+        <View style={styles.strip}>
+          <LinearGradient colors={["#3A2414", "#24160C"]} style={StyleSheet.absoluteFill} />
+          <BezelOverlay r={14} t={3} />
+          <AppText style={styles.stripLabel}>{t("badges.hall.levels")}</AppText>
+          {TIERS.map((tier) => (
+            <View key={tier} style={styles.tallyItem}>
+              <Badge
+                art={{ glyph: {}, emoji: "★", loop: "pulse" }}
+                face={BOARDLY_FACE}
+                frames={BOARDLY_FRAMES}
+                tier={tier}
+                size={30}
+                clock={still}
+                alive={false}
+              />
+              <AppText style={[styles.tallyN, { color: TIER_GLOW[tier] }]}>
+                {badges.filter((b) => b.tier === tier).length}
+              </AppText>
+            </View>
+          ))}
           <View style={styles.grow} />
-          <AppText style={styles.count}>
-            {t("profile.card.unlocked", { n: earned.length, total: badges.length })}
+          <AppText style={styles.stripCount}>
+            {`${earned.length}/${badges.length}`}
           </AppText>
         </View>
-        <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-          {/* how many stand at each level */}
-          <View style={styles.tally}>
-            {TIERS.map((tier) => (
-              <View key={tier} style={styles.tallyItem}>
-                <Badge
-                  art={{ glyph: {}, emoji: "★", loop: "pulse" }}
-                  face={BOARDLY_FACE}
-                  frames={BOARDLY_FRAMES}
-                  tier={tier}
-                  size={46}
-                  clock={still}
-                  alive={false}
-                />
-                <AppText style={[styles.tallyN, { color: TIER_GLOW[tier] }]}>
-                  {badges.filter((b) => b.tier === tier).length}
-                </AppText>
-                <AppText variant="tiny" style={styles.tallyName}>
-                  {t(`badges.tiers.${tier}`)}
-                </AppText>
-              </View>
-            ))}
-          </View>
 
+        <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
           <SectionTitle label={t("badges.hall.showcase")} colors={TABLE.ribbonRed} />
-          <Showcase width={inner} badges={shown} clock={clock} onOpen={setOpen} />
-          <AppText variant="tiny" align="center" style={styles.hint}>
+          <AppText variant="tiny" style={styles.hint}>
             {t("badges.hall.hint")}
           </AppText>
+          <Showcase width={inner} badges={shown} clock={clock} onOpen={setOpen} />
 
+          <SectionTitle
+            label={t("badges.hall.collection")}
+            colors={TABLE.ribbonGold}
+            style={styles.collection}
+          />
+          <AppText variant="tiny" style={styles.hint}>
+            {t("badges.hall.collectionHint")}
+          </AppText>
           {groups.map(([game, list]) => (
             <View key={game ?? "boardly"} style={styles.group}>
-              <SectionTitle
-                label={game ? gameName(game) : "Boardly"}
-                colors={game ? [lidColors(game)[0], lidColors(game)[1]] : TABLE.ribbonGold}
-                right={
-                  <AppText style={styles.groupCount}>
-                    {`${list.filter((b) => b.tier).length}/${list.length}`}
-                  </AppText>
-                }
+              <View style={styles.groupHead}>
+                <AppText style={styles.groupName}>{game ? gameName(game) : "Boardly"}</AppText>
+                <View style={styles.groupRule} />
+                <AppText style={styles.groupCount}>
+                  {`${list.filter((b) => b.tier).length}/${list.length}`}
+                </AppText>
+              </View>
+              <BadgeGrid
+                badges={list}
+                clock={clock}
+                still={still}
+                fresh={fresh}
+                onStamped={onStamped}
+                action={action}
+                columns={3}
+                cards
               />
-              <Frame tone="dark" style={styles.board}>
-                <BadgeGrid
-                  badges={list}
-                  clock={clock}
-                  still={still}
-                  fresh={fresh}
-                  onStamped={onStamped}
-                  action={action}
-                />
-              </Frame>
             </View>
           ))}
         </ScrollView>
-      </SafeAreaView>
+      </View>
+
+      {/* the gilded frame, over the page */}
+      <SvgXml
+        xml={art.frame}
+        width={box.width}
+        height={box.height}
+        style={[styles.frame, box]}
+        pointerEvents="none"
+      />
       <BadgeDetail
         badge={open}
         clock={clock}
@@ -210,21 +275,57 @@ export default function BadgesScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#2A0C1B" },
-  grow: { flex: 1 },
-  header: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 18, paddingTop: 6 },
-  count: { color: TABLE.cream, fontFamily: fontFamily.semiBold, fontSize: 12 },
-  body: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 48, gap: 10 },
-  tally: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingVertical: 4,
+  screen: { flex: 1, backgroundColor: "#140A04" },
+  room: {
+    position: "absolute",
+    overflow: "hidden",
+    borderRadius: HALL_RADIUS - HALL_RIM,
   },
-  tallyItem: { alignItems: "center" },
-  tallyN: { fontFamily: fontFamily.bold, fontSize: 18, lineHeight: 22, marginTop: -4 },
-  tallyName: { color: TABLE.creamMuted },
-  hint: { color: TABLE.creamMuted, marginTop: -2 },
-  group: { marginTop: 10 },
+  frame: { position: "absolute" },
+  grow: { flex: 1 },
+  sign: { position: "absolute", alignItems: "center", justifyContent: "center", paddingHorizontal: 12 },
+  signText: {
+    fontFamily: fontFamily.bold,
+    fontSize: 24,
+    lineHeight: 30,
+    letterSpacing: 2,
+    color: "#FFF2D0",
+    textShadowColor: "rgba(40,0,6,0.85)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 2,
+    textTransform: "uppercase",
+  },
+  back: { position: "absolute", left: 8 },
+  backFace: { position: "absolute", left: 0, top: 0, right: 0, bottom: 0, borderRadius: 20 },
+  strip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginHorizontal: 12,
+    marginTop: 8,
+    marginBottom: 2,
+    paddingHorizontal: 12,
+    height: 44,
+    borderRadius: 14,
+    overflow: "hidden",
+  },
+  stripLabel: { color: TABLE.creamMuted, fontFamily: fontFamily.semiBold, fontSize: 11, marginRight: 2 },
+  tallyItem: { flexDirection: "row", alignItems: "center" },
+  tallyN: { fontFamily: fontFamily.bold, fontSize: 14, marginLeft: -1 },
+  stripCount: { color: TABLE.cream, fontFamily: fontFamily.bold, fontSize: 14 },
+  body: { paddingHorizontal: 12, paddingTop: 12, paddingBottom: 48, gap: 8 },
+  hint: { color: TABLE.cream, opacity: 0.8, marginTop: -4, marginBottom: 2, textShadowColor: "rgba(0,0,0,0.6)", textShadowRadius: 2, textShadowOffset: { width: 0, height: 1 } },
+  collection: { marginTop: 14 },
+  group: { marginTop: 6, gap: 6 },
+  groupHead: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 4 },
+  groupName: {
+    color: "#FFE7B0",
+    fontFamily: fontFamily.bold,
+    fontSize: 14,
+    textShadowColor: "rgba(0,0,0,0.7)",
+    textShadowRadius: 2,
+    textShadowOffset: { width: 0, height: 1 },
+  },
+  groupRule: { flex: 1, height: 2, borderRadius: 1, backgroundColor: "rgba(226,176,74,0.55)" },
   groupCount: { color: TABLE.cream, fontFamily: fontFamily.semiBold, fontSize: 12 },
-  board: { paddingTop: 14, paddingHorizontal: 8 },
 });

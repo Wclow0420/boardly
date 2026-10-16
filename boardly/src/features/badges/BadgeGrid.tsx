@@ -21,7 +21,8 @@ import Animated, {
 import type { BadgeRecord } from "@/api/client";
 import { Badge, TIER_GLOW } from "@/components/badges/Badge";
 import { TIERS } from "@/components/badges/types";
-import { AppText } from "@/components/ui";
+import { AppText, BezelOverlay } from "@/components/ui";
+import { LinearGradient } from "expo-linear-gradient";
 import { Popup } from "@/features/game/Popup";
 import { useGameName } from "@/games/names";
 import { TABLE, fontFamily } from "@/theme";
@@ -39,6 +40,8 @@ export function BadgeGrid({
   fresh,
   onStamped,
   action,
+  columns = COLUMNS,
+  cards = false,
 }: {
   badges: BadgeRecord[];
   clock: SharedValue<number>;
@@ -49,12 +52,16 @@ export function BadgeGrid({
   onStamped: (ids: string[]) => void;
   /** Something to do with an open badge (show it on my card). */
   action?: (badge: BadgeRecord, close: () => void) => ReactNode;
+  /** How many to a row (four by default). */
+  columns?: number;
+  /** Each badge on its own framed card (the badge hall). */
+  cards?: boolean;
 }) {
   const [open, setOpen] = useState<BadgeRecord | null>(null);
   const sorted = useMemo(() => sortBadges(badges), [badges]);
-  // four to a row, across whatever room the grid is given
+  // so many to a row, across whatever room the grid is given
   const [gridWidth, setGridWidth] = useState(0);
-  const cell = Math.floor(gridWidth / COLUMNS);
+  const cell = Math.floor(gridWidth / columns);
 
   // the new levels stamp down one after another, then count as seen
   const stamping = useMemo(
@@ -74,13 +81,17 @@ export function BadgeGrid({
   }, [stamping, onStamped]);
 
   return (
-    <View style={styles.grid} onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}>
+    <View
+      style={[styles.grid, cards && styles.cardGrid]}
+      onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}
+    >
       {cell > 0 &&
         sorted.map((badge) => (
           <BadgeCell
             key={badge.key}
             badge={badge}
             size={cell}
+            card={cards}
             still={still}
             stampOrder={badge.tier ? stamping.indexOf(levelId(badge.key, badge.tier)) : -1}
             onPress={() => {
@@ -106,12 +117,15 @@ const STAMP_GAP = 650;
 function BadgeCell({
   badge,
   size,
+  card,
   still,
   stampOrder,
   onPress,
 }: {
   badge: BadgeRecord;
   size: number;
+  /** On a framed card of its own. */
+  card: boolean;
   still: SharedValue<number>;
   /** Its turn to stamp down, or -1 when it isn't new. */
   stampOrder: number;
@@ -166,13 +180,25 @@ function BadgeCell({
       onPress={onPress}
       style={({ pressed }) => [{ width: size }, styles.cell, pressed && styles.pressed]}
     >
+      <View style={card ? [styles.card, !badge.tier && styles.cardDim] : styles.bare}>
+      {card ? (
+        <>
+          <LinearGradient
+            colors={badge.tier ? ["#4A2E1A", "#2E1A0E"] : ["#2E2620", "#1E1812"]}
+            style={StyleSheet.absoluteFill}
+          />
+          <BezelOverlay r={12} t={3} metal={badge.tier === "silver" || badge.tier === "diamond" ? "silver" : "gold"} />
+          {/* the tag it hangs from */}
+          <View style={styles.clip} />
+        </>
+      ) : null}
       <Animated.View style={stamp}>
         <Badge
           art={art}
           face={face}
           frames={frames}
           tier={badge.tier ?? "bronze"}
-          size={size}
+          size={card ? size * 0.78 : size}
           clock={still}
           locked={!badge.tier}
           alive={false}
@@ -194,15 +220,27 @@ function BadgeCell({
       >
         {badgeText(t, badge.key).name}
       </AppText>
+      {/* how far to the next level, in that level's colour */}
       {next ? (
-        <AppText variant="tiny" align="center" style={styles.progress}>
-          {t("profile.card.progress", { n: badge.progress ?? 0, goal: goalOf(badge, next) })}
+        <AppText
+          variant="tiny"
+          align="center"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          style={[styles.progress, { color: TIER_GLOW[next] }]}
+        >
+          {t("badges.hall.toTier", {
+            n: badge.progress ?? 0,
+            goal: goalOf(badge, next),
+            tier: t(`badges.tiers.${next}`),
+          })}
         </AppText>
       ) : (
         <AppText variant="tiny" align="center" style={[styles.progress, { color: TIER_GLOW.diamond }]}>
-          {t("badges.tiers.diamond")}
+          {`★ ${t("badges.tiers.diamond")}`}
         </AppText>
       )}
+      </View>
     </Pressable>
   );
 }
@@ -308,6 +346,32 @@ export function BadgeDetail({
 const styles = StyleSheet.create({
   grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-start", rowGap: 6 },
   cell: { alignItems: "center", paddingBottom: 4 },
+  bare: { alignItems: "center", alignSelf: "stretch" },
+  cardGrid: { rowGap: 10 },
+  card: {
+    alignItems: "center",
+    alignSelf: "stretch",
+    marginHorizontal: 4,
+    paddingTop: 8,
+    paddingBottom: 8,
+    borderRadius: 12,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.45,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  cardDim: { opacity: 0.85 },
+  clip: {
+    position: "absolute",
+    top: 3,
+    width: 18,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "#1A0E06",
+    borderWidth: 1,
+    borderColor: "#C8902E",
+  },
   pressed: { opacity: 0.8 },
   name: { color: TABLE.cream, marginTop: -2, paddingHorizontal: 2, fontFamily: fontFamily.medium },
   dim: { color: TABLE.creamMuted, opacity: 0.75 },
