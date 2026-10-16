@@ -1,6 +1,6 @@
 import { Canvas, Group, Image as SkImage, rect } from "@shopify/react-native-skia";
 import { LinearGradient } from "expo-linear-gradient";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -17,7 +17,7 @@ import type { Jewel } from "@/components/engraved/shapes";
 import { Emblem } from "@/components/icons";
 import { AppText, BezelOverlay, IconButton, useBox } from "@/components/ui";
 import { fontFamily, useTheme } from "@/theme";
-import { popupPanel } from "./popupArt";
+import { POPUP_RADIUS, popupPanel } from "./popupArt";
 
 /** A game's own colours for its popups. */
 export interface PopupLook {
@@ -45,10 +45,17 @@ export interface PopupProps {
  *  trim: the game's dark card in a gilded moulding with jewelled
  *  corners, its title on an enamel sign over the top edge, a stud to
  *  close it. The panel is baked once per size. */
-export function Popup({ visible, title, onClose, children, look = PLAIN }: PopupProps) {
+export function Popup({ visible, title: titleNow, onClose, children: childrenNow, look: lookNow = PLAIN }: PopupProps) {
   const { t } = useTranslation();
   const { spacing } = useTheme();
-  const [{ w, h }, onLayout] = useBox();
+  // While it fades away, it keeps what it was showing: the board has
+  // already moved on (its panel closed, the title back to the phase), and
+  // the card emptying mid-fade flashed it to a new size.
+  const [shown, setShown] = useState({ title: titleNow, children: childrenNow, look: lookNow });
+  if (visible && (shown.title !== titleNow || shown.children !== childrenNow || shown.look !== lookNow)) {
+    setShown({ title: titleNow, children: childrenNow, look: lookNow });
+  }
+  const { title, children, look } = visible ? { title: titleNow, children: childrenNow, look: lookNow } : shown;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -63,16 +70,7 @@ export function Popup({ visible, title, onClose, children, look = PLAIN }: Popup
             style={[StyleSheet.absoluteFill, styles.dim]}
           />
           <View style={styles.wrap}>
-            <View style={styles.card} onLayout={onLayout}>
-              {w > 0 ? <Panel w={w} h={h} look={look} /> : null}
-              <ScrollView
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.body}
-              >
-                {children}
-              </ScrollView>
-            </View>
+            <Card look={look}>{children}</Card>
             {/* the title on its sign, over the top edge */}
             <View style={styles.signRow} pointerEvents="none">
               <View style={styles.sign}>
@@ -92,6 +90,26 @@ export function Popup({ visible, title, onClose, children, look = PLAIN }: Popup
         </View>
       </KeyboardAvoidingView>
     </Modal>
+  );
+}
+
+/** The card itself. It is made anew each time the popup opens, so it
+ *  measures itself afresh (not at the size of the last popup), and it is
+ *  dark from its first frame, before the gilt panel is drawn over it. */
+function Card({ look, children }: { look: PopupLook; children: ReactNode }) {
+  const { colors } = useTheme();
+  const [{ w, h }, onLayout] = useBox();
+  return (
+    <View style={[styles.card, w === 0 && { backgroundColor: colors.card }]} onLayout={onLayout}>
+      {w > 0 ? <Panel w={w} h={h} look={look} /> : null}
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.body}
+      >
+        {children}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -129,6 +147,7 @@ const styles = StyleSheet.create({
   wrap: { width: "100%", maxWidth: 440, maxHeight: "86%", marginTop: 14 },
   card: {
     flexShrink: 1,
+    borderRadius: POPUP_RADIUS,
     shadowColor: "#000",
     shadowOpacity: 0.6,
     shadowRadius: 14,
