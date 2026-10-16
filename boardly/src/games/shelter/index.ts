@@ -1,5 +1,6 @@
 import { GLYPHS } from "./icons";
 import type { GameDefinition } from "../types";
+import { BADGE_FRAMES } from "./badgeFrames";
 import { ShelterBoxArt } from "./BoxArt";
 import { ShelterBoard } from "./ShelterBoard";
 import { SHELTER_RULES } from "./rules";
@@ -60,4 +61,5 @@ export const shelter: GameDefinition<ShelterState> = {
     "shelter.fullLarder": { glyph: GLYPHS.food, emoji: "🍞", loop: "pulse" },
     "shelter.lastWinter": { glyph: GLYPHS.fire, emoji: "🔥", loop: "flicker" },
   },
+  badgeFrames: BADGE_FRAMES,
 };

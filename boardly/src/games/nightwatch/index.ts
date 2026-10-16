@@ -4,6 +4,7 @@ import type { GameDefinition } from "../types";
 import { NightwatchBoard } from "./NightwatchBoard";
 import { NIGHTWATCH_RULES } from "./rules";
 import { currentSeat, taskFor, type NightwatchState } from "./logic";
+import { BADGE_FRAMES } from "./badgeFrames";
 
 // Lamplight in a haunted house: ink-blue night, warm lantern red-gold.
 const SKIN_COLORS = {
@@ -60,4 +61,5 @@ export const nightwatch: GameDefinition<NightwatchState> = {
     "nightwatch.sharpEye": { glyph: GLYPHS.dagger, emoji: "🗡", loop: "sway" },
     "nightwatch.ghostbreaker": { glyph: GLYPHS.orb, emoji: "🔮", loop: "spin" },
   },
+  badgeFrames: BADGE_FRAMES,
 };

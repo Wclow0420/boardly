@@ -78,7 +78,12 @@ CLAUDE.md). Rarity is common → rare → epic → legendary → mythic
 (10,000+ coins); the shop sorts by it. Every new border's id
 and price go in `backend/app/cosmetics.py` too (`BORDER_PRICES`, or
 `EARNED_BORDERS` for one that comes with a badge). Check them all at
-`boardly-dev://dev/borders`.
+`boardly-dev://dev/borders`. A border draws well outside its avatar, so
+anything laid out after it would cover it: inside an `<AvatarStage>`
+(`components/ui`) bordered avatars are drawn in a top layer instead.
+Scrolling `Screen`s have one; a screen with its own ScrollView puts one
+inside its scroll content (profile, lobby). Leave room round the avatar
+for the wings and flames (lobby cards: 26 above, the name 24 below).
 
 # The house drawing style
 
@@ -203,26 +208,35 @@ otherwise.
   - `player_outcome(state, seat)` returns the player's `side`
     ("good"/"evil" — required in any game with hidden sides), `role`,
     and `facts` (anything a badge needs: the win reason, food left…).
-  - `badges = [Badge("<key>.<name>", tier, goal, match)]`. Ship at
-    least: a bronze first win (in faction games, one per side), one or
-    two silver/gold badges for the game's signature feats (the
-    assassin finding the Prophet, being rescued with a full larder),
-    and a legendary for 25 wins. `match` gets the outcome row (`won`,
-    `side`, `role`, `facts`); use `won_as(side)` and keep wins handed
-    over by a walk-out out of it. Badges counting the same thing with
-    bigger goals are levels of one `series` ("wins": 1 → 10 → 25):
-    give them the same series and the app shows the next level up.
+  - `badges = [Badge("<key>.<name>", goals, match)]`. Every badge is a
+    mission in four levels, bronze → silver → gold → diamond, reached
+    at its four `goals` (presets in `games/base.py`: `FEAT` 1/5/15/40
+    for winning on a side, `RARE` 1/3/8/20 for a signature feat — the
+    assassin finding the Prophet, rescued with a full larder —, `WINS`
+    3/10/25/60 for all wins, `QUICK_WINS` for short games). Ship one
+    per side's win (faction games), one or two signature feats, and
+    one for all wins. `match` gets the outcome row (`won`, `side`,
+    `role`, `facts`); use `won_as(side)` and keep wins handed over by a
+    walk-out out of it. A badge-earned border names the level that
+    brings it (`EARNED_BORDERS` in `backend/app/cosmetics.py`, and
+    `earnedBy`/`earnedAt` in the app).
   App (`src/games/<key>/index.ts`): a `badges` entry for every key —
-  `{ glyph, emoji, loop }`: `emoji` names the engraved emblem drawn
-  on the medal (any emoji `<Emblem>` draws; locked, it is struck in
-  iron), `glyph` the line icon from the game's `icons.tsx` or
-  `components/badges/glyphs.ts` as the fallback, and how it moves
-  (`flicker`, `sway`, `spin`, `bob`, `pulse`, `tumble`; pick what
-  suits the object). Name and description under
-  `badges.<key>.<name>.{name,desc}` in all three locales. The badge
-  itself (metal rim by tier, enamel in the game's colour, halo, light
-  sweep, sparkles, the stamp when earned) is shared: never draw your
-  own. Check them all at `boardly-dev://dev/badges`.
+  `{ glyph, emoji, loop }`: `emoji` names the engraved emblem on the
+  badge's disc (any emoji `<Emblem>` draws), `glyph` the line icon
+  fallback, and how it moves (`flicker`, `sway`, `spin`, `bob`,
+  `pulse`, `tumble`; pick what suits the object). And `badgeFrames`:
+  the game's own frame for each level (`src/games/<key>/badgeFrames.ts`,
+  a `BadgeStyle` of EmblemData in a 120 box; see
+  `components/badges/frames/boardly.ts` and `frames/kit.ts`), richer
+  at each level and in the game's style; no ribbons. Look a set over
+  with `node scripts/badge-sheet.mjs <file.ts> <out.png> BADGE_FRAMES
+  <tint>`. Name and ask under `badges.<key>.<name>.{name,desc_one,
+  desc_other}` in all three locales: the ask takes `{{count}}`, the
+  goal of the level being worked towards ("Win {{count}} games of
+  Shelter"). The badge itself (the frame, the emblem, iron while
+  locked, the light sweep and glints, the four-level sheet, the stamp
+  when a level is reached) is shared: never draw your own. Check them
+  all at `boardly-dev://dev/badges` (`?game=<key>` for one style).
 - **Player counts** get their own rules page: a table built from the
   game's count tables in `logic.ts` (sides, roles, team sizes, win
   thresholds) plus notes — see `CountsPage` in both games' `rules.tsx`.

@@ -1,5 +1,6 @@
 import { BADGE_GLYPHS as G } from "@/components/badges/glyphs";
 import type { GameDefinition } from "../types";
+import { BADGE_FRAMES } from "./badgeFrames";
 import { LiarsDiceBoard } from "./LiarsDiceBoard";
 import { currentSeat, taskFor, type LiarsDiceState } from "./logic";
 
@@ -52,4 +53,5 @@ export const liarsdice: GameDefinition<LiarsDiceState> = {
   badges: {
     "liarsdice.bluffer": { glyph: G.die, emoji: "🎲", loop: "tumble" },
   },
+  badgeFrames: BADGE_FRAMES,
 };

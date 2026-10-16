@@ -2,6 +2,7 @@ import { BADGE_GLYPHS as G } from "@/components/badges/glyphs";
 import type { GameDefinition } from "../types";
 import { BACKDROP, LOGO, SKIN_COLORS } from "./art";
 import { AvalonBoard } from "./AvalonBoard";
+import { BADGE_FRAMES } from "./badgeFrames";
 import { currentSeat, pendingAction, type AvalonState } from "./logic";
 import { AVALON_RULES } from "./rules";
 
@@ -29,4 +30,5 @@ export const avalon: GameDefinition<AvalonState> = {
     "avalon.hitman": { glyph: G.target, emoji: "🎯", loop: "spin" },
     "avalon.spymaster": { glyph: G.crown, emoji: "🕵", loop: "pulse" },
   },
+  badgeFrames: BADGE_FRAMES,
 };

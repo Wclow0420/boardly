@@ -1,6 +1,7 @@
 import { BADGE_GLYPHS as G } from "@/components/badges/glyphs";
 import type { GameDefinition } from "../types";
 import { BACKDROP, LOGO, SKIN_COLORS } from "./art";
+import { BADGE_FRAMES } from "./badgeFrames";
 import { CoupBoard } from "./CoupBoard";
 import { currentSeat, taskFor, type CoupState } from "./logic";
 import { COUP_RULES } from "./rules";
@@ -26,4 +27,5 @@ export const coup: GameDefinition<CoupState> = {
   badges: {
     "coup.kingpin": { glyph: G.coins, emoji: "🪙", loop: "spin" },
   },
+  badgeFrames: BADGE_FRAMES,
 };
