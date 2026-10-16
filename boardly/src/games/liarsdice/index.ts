@@ -43,7 +43,7 @@ export const liarsdice: GameDefinition<LiarsDiceState> = {
   maxPlayers: 10,
   Board: LiarsDiceBoard,
   currentSeat,
-  layout: "custom",
+  layout: "stage",
   skin: {
     colors: SKIN_COLORS,
     backdrop: ["#4A1414", "rgba(20,12,12,0)"],
