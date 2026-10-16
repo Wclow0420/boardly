@@ -1539,11 +1539,8 @@
     },
     "rite": {
       "pick": "Ketik sebuah tanglung untuk memilih",
-      "holdApprove": "Tahan untuk setuju",
-      "holdReject": "Tahan untuk tolak",
       "holdSuccess": "Tahan untuk main Berjaya",
       "holdFail": "Tahan untuk main Gagal",
-      "voted": "{{done}} daripada {{total}} sudah mengundi",
       "played": "{{done}} daripada {{total}} kad dimainkan",
       "approved": "Pasukan diluluskan",
       "rejected": "Pasukan ditolak",
@@ -1557,7 +1554,8 @@
       "goodOnly": "Penjaga hanya boleh menyalakan tanglung emas.",
       "holdName": "Tahan untuk namakan {{name}}",
       "pickProphet": "Ketik orang yang anda rasa Peramal",
-      "openLetter": "Ketik meterai untuk buka surat malam ini"
+      "openLetter": "Ketik meterai untuk buka surat malam ini",
+      "picking": "{{name}} sedang memilih {{size}} orang untuk misi"
     }
   },
   "profile": {

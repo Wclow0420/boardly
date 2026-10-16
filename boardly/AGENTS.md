@@ -289,9 +289,10 @@ otherwise.
   across the top (`features/game/stage/NightArch`), the scene in the
   middle with the tools down its side (`ToolButton`, no boxes), the
   main move on the `Plinth`. Every moment plays on the stage, not in a
-  popup: the letter of the night, the patrol's map, the team round the
-  table, the lanterns of the vote and the mission, the last chance's
-  spotlights, the ending's seal. Give each its own `sceneKey`: the red
+  popup: the letter of the night, the patrol's map, everyone on the
+  stage for the team and the vote (the leader's picks lit as they're
+  made, coins over heads that turn green or red) and for the last
+  chance, the lanterns of the mission, the ending's seal. Give each its own `sceneKey`: the red
   `StageCurtain` closes and opens between them (and holds the plinth's
   move until it's shut). A decision that matters is held, not tapped
   (`lantern/HoldButton`: fills, ticks harder in the hand, sends at the

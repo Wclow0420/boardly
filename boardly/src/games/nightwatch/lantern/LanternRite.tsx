@@ -1,5 +1,5 @@
-// The vote and the mission, played with lanterns in the middle of the
-// stage. Three views, all on one canvas with one clock:
+// The mission, played with lanterns in the middle of the stage (the
+// team's vote is on the lineup instead: StageLineup). Three views, all on one canvas with one clock:
 //
 //   choose — two lanterns hang side by side, the good one (gold, an
 //            emerald, a green flame) and the bad (black iron and thorns,

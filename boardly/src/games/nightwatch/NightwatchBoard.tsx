@@ -17,11 +17,11 @@ import { RoleCardBack, RoleCardFace } from "./RoleCardFace";
 import { NightMap } from "./NightMap";
 import { RoomScene, type ScenePerson } from "./RoomScene";
 import { ManorStage, stageText } from "./ManorStage";
-import { LastChance } from "./LastChance";
+import { StageLineup, type Light, type Mark } from "./StageLineup";
+import { VoteButtons } from "./VoteButtons";
 import { Ending } from "./ending/Ending";
 import { Letter } from "./announce/Letter";
 import { PatrolStage, patrolReady } from "./PatrolStage";
-import { TeamTable } from "./TeamTable";
 import { HoldButton } from "./lantern/HoldButton";
 import { LanternRite, RevealTitle, type RiteView, type Side } from "./lantern/LanternRite";
 import { ToolButton } from "@/features/game/stage/parts";
@@ -390,7 +390,6 @@ export function NightwatchBoard({
     hold.set(0);
   }, [step, hold]);
   const evil = state.myRole !== null && sideOf(state.myRole) === "evil";
-  const voting = state.phase === "vote";
   const missioning = state.phase === "mission";
   const picked: Side | null = current.side ?? (missioning && !evil ? "good" : null);
   const castIt = (side: Side) => {
@@ -398,13 +397,12 @@ export function NightwatchBoard({
     setLingering(true);
     if (linger.current) clearTimeout(linger.current);
     linger.current = setTimeout(() => setLingering(false), 1600);
-    onMove(voting ? { type: "vote", approve: side === "good" } : { type: "mission", card: side === "good" ? "success" : "fail" });
+    onMove({ type: "mission", card: side === "good" ? "success" : "fail" });
   };
   const allSeats = Array.from({ length: state.numPlayers }, (_, seat) => seat);
   // the night's letter, opened by breaking its seal
   const atLetter = task === "announce" && !revealing;
   const atPatrol = task === "patrol" && !revealing;
-  const atTable = task === "propose" && !revealing;
   const [opened, setOpened] = useState<string | null>(null);
   const letterOpen = opened === step;
   // the last chance: everyone on the bare stage, the assassin's blow
@@ -417,30 +415,56 @@ export function NightwatchBoard({
     if (linger.current) clearTimeout(linger.current);
     linger.current = setTimeout(() => onMove({ type: "assassinate", target: seat }), 1300);
   };
+  // The team and the vote: everyone on the stage. The leader's picks
+  // step into the light as they're made (shown to the table at once);
+  // a coin over each head as they vote; at the reveal the coins turn
+  // over, green or red.
+  const council =
+    (revealing && voteToShow !== null) || (!over && !revealing && (state.phase === "team" || state.phase === "vote"));
+  const draft = task === "propose" ? (current.team ?? state.team) : state.team;
+  const councilTeam = revealing && voteToShow ? voteToShow.team : state.phase === "team" ? draft : state.team;
+  const councilLights: Record<number, Light> = Object.fromEntries(
+    allSeats.map((seat) => [seat, councilTeam.includes(seat) ? "lit" : "soft"]),
+  );
+  const councilMarks: Record<number, Mark> =
+    revealing && voteToShow
+      ? Object.fromEntries(allSeats.map((seat) => [seat, voteToShow.votes[seat] ? "yes" : "no"]))
+      : state.phase === "vote"
+        ? Object.fromEntries(allSeats.filter((seat) => state.voted[seat]).map((seat) => [seat, "voted"]))
+        : {};
+  const pickTeam = (seat: number) => {
+    const next = toggleTeam(draft, seat, teamSize(state));
+    choose({ team: next });
+    onMove({ type: "pick", team: next });
+  };
+  // the last chance's lights: the named one in crimson, the rest low
+  const target = current.target ?? null;
+  const aimed = task === "assassinate" ? target : null;
+  const candidates = assassinTargets(state);
+  const lineupLights: Record<number, Light> = Object.fromEntries(
+    allSeats.map((seat) => [
+      seat,
+      seat === (struck ?? aimed)
+        ? "red"
+        : struck !== null || aimed !== null || (task === "assassinate" && !candidates.includes(seat))
+          ? "dim"
+          : "lit",
+    ]),
+  );
+
   let rite: RiteView | null = null;
-  if (revealing && voteToShow) {
-    rite = {
-      kind: "reveal",
-      key: `vote-${state.history.length}`,
-      // one colour for the whole table: all green when the team goes,
-      // all red when it's turned back
-      result: voteToShow.approved ? "good" : "bad",
-      seats: allSeats.map((seat) => ({ seat, name: nameOf(seat), done: true, tint: voteToShow.approved ? 1 : -1 })),
-    };
-  } else if (revealing && missionToShow) {
+  if (revealing && missionToShow) {
     rite = {
       kind: "reveal",
       key: `mission-${state.results.length}`,
       result: missionToShow.success ? "good" : "bad",
       seats: missionToShow.team.map((seat) => ({ seat, name: nameOf(seat), done: true, tint: 0 })),
     };
-  } else if (!over && (voting || missioning)) {
+  } else if (!over && missioning && !council) {
     if (onStage || (myCast !== null && lingering)) {
       rite = {
         kind: "choose",
-        labels: voting
-          ? { good: t("nightwatch.prompt.approve"), bad: t("nightwatch.prompt.reject") }
-          : { good: t("nightwatch.prompt.success"), bad: t("nightwatch.prompt.fail") },
+        labels: { good: t("nightwatch.prompt.success"), bad: t("nightwatch.prompt.fail") },
         locked: missioning && !evil ? "bad" : null,
         picked,
         cast: myCast,
@@ -452,10 +476,10 @@ export function NightwatchBoard({
     } else {
       rite = {
         kind: "gather",
-        seats: (voting ? allSeats : state.team).map((seat) => ({
+        seats: state.team.map((seat) => ({
           seat,
           name: nameOf(seat),
-          done: voting ? state.voted[seat] : state.missionPlayed.includes(seat),
+          done: state.missionPlayed.includes(seat),
           tint: 0,
         })),
       };
@@ -521,7 +545,7 @@ export function NightwatchBoard({
         onArrived={() => {
           if (arrival) pieces.mark({ walked: arrival.key });
         }}
-        paused={showing !== null || dealing || delivering || rite !== null || lineup || atLetter || atPatrol || atTable}
+        paused={showing !== null || dealing || delivering || rite !== null || lineup || council || atLetter || atPatrol}
       />
     ) : (
       map
@@ -547,22 +571,38 @@ export function NightwatchBoard({
       <RevealTitle title={revealText.title} detail={revealText.detail} good={rite.result === "good"} />
     ) : rite?.kind === "choose" ? (
       <AppText style={stageText.hint} numberOfLines={2}>
-        {voting
-          ? `${t("nightwatch.team.team", { names: names.namesOf(state.team) })} · ${t("nightwatch.team.leader", {
-              name: names.nameOf(state.leader ?? -1),
-            })}`
-          : t(evil ? "nightwatch.prompt.missionHintEvil" : "nightwatch.rite.goodOnly")}
+        {t(evil ? "nightwatch.prompt.missionHintEvil" : "nightwatch.rite.goodOnly")}
       </AppText>
     ) : rite?.kind === "gather" ? (
       <AppText style={stageText.strong}>
-        {t(voting ? "nightwatch.rite.voted" : "nightwatch.rite.played", {
+        {t("nightwatch.rite.played", {
           done: rite.seats.filter((seat) => seat.done).length,
           total: rite.seats.length,
         })}
       </AppText>
     ) : null;
 
-  const hint = rite ? (
+  const councilHint =
+    revealing && voteToShow && revealText ? (
+      <RevealTitle title={revealText.title} detail={revealText.detail} good={voteToShow.approved} />
+    ) : state.phase === "team" ? (
+      <AppText style={stageText.hint} numberOfLines={3}>
+        {task === "propose"
+          ? `👑  ${t("nightwatch.prompt.proposeHint", {
+              room: names.roomName(state.missionRoom),
+              steps: state.event === "fog" ? 1 : 2,
+            })}`
+          : `👑  ${t("nightwatch.rite.picking", { name: names.nameOf(state.leader ?? -1), size: teamSize(state) })}`}
+      </AppText>
+    ) : (
+      <AppText style={stageText.hint} numberOfLines={2}>
+        {`${t("nightwatch.prompt.vote")} ${t("nightwatch.team.team", { names: names.namesOf(state.team) })}`}
+      </AppText>
+    );
+
+  const hint = council ? (
+    councilHint
+  ) : rite ? (
     riteHint
   ) : atLetter ? null : atPatrol ? (
     <>
@@ -583,13 +623,6 @@ export function NightwatchBoard({
         )}
       </AppText>
     </>
-  ) : atTable ? (
-    <AppText style={stageText.hint} numberOfLines={3}>
-      {`👑  ${t("nightwatch.prompt.propose", { size: teamSize(state) })} · ${t("nightwatch.prompt.proposeHint", {
-        room: names.roomName(state.missionRoom),
-        steps: state.event === "fog" ? 1 : 2,
-      })}`}
-    </AppText>
   ) : lineup && task === "assassinate" ? (
     <AppText style={stageText.hint} numberOfLines={2}>
       {t("nightwatch.prompt.assassinateHint")}
@@ -612,16 +645,24 @@ export function NightwatchBoard({
     </>
   );
 
-  const target = current.target ?? null;
   const myEnd = state.roles?.[mySeat];
-  const bottom = atTable ? (
+  const bottom = council && revealing && voteToShow ? (
+    <Button label={t("nightwatch.rite.continue")} size="lg" style={styles.main} onPress={markReveal} />
+  ) : council && task === "propose" ? (
     <Button
-      label={`${t("nightwatch.prompt.send")} (${(current.team ?? []).length}/${teamSize(state)})`}
+      label={`${t("nightwatch.prompt.send")} (${draft.length}/${teamSize(state)})`}
       size="lg"
       style={styles.main}
-      disabled={(current.team ?? []).length !== teamSize(state)}
+      disabled={draft.length !== teamSize(state)}
       loading={busy}
-      onPress={() => send({ type: "propose", team: current.team })}
+      onPress={() => send({ type: "propose", team: draft })}
+    />
+  ) : council && task === "vote" ? (
+    <VoteButtons
+      approve={t("nightwatch.prompt.approve")}
+      reject={t("nightwatch.prompt.reject")}
+      disabled={busy}
+      onVote={(approve) => onMove({ type: "vote", approve })}
     />
   ) : atPatrol ? (
     <Button
@@ -672,19 +713,13 @@ export function NightwatchBoard({
   ) : rite?.kind === "reveal" ? (
     <Button label={t("nightwatch.rite.continue")} size="lg" style={styles.main} onPress={markReveal} />
   ) : rite?.kind === "choose" && myCast !== null ? (
-    <AppText style={stageText.strong}>
-      {t(voting ? (myCast === "good" ? "nightwatch.chosen.yes" : "nightwatch.chosen.no") : "nightwatch.chosen.card")}
-    </AppText>
+    <AppText style={stageText.strong}>{t("nightwatch.chosen.card")}</AppText>
   ) : rite?.kind === "choose" && myCast === null ? (
     picked ? (
       <HoldButton
         key={`${step}|${picked}`}
         label={t(
-          voting
-            ? picked === "good"
-              ? "nightwatch.rite.holdApprove"
-              : "nightwatch.rite.holdReject"
-            : picked === "good"
+          picked === "good"
               ? "nightwatch.rite.holdSuccess"
               : "nightwatch.rite.holdFail",
         )}
@@ -716,7 +751,7 @@ export function NightwatchBoard({
   );
 
   const centre =
-    over && !rite ? (
+    over && !rite && !council ? (
       <Ending
         state={state}
         mySeat={mySeat}
@@ -727,19 +762,22 @@ export function NightwatchBoard({
     ) : (
       <>
         {/* the room stays put under a moment, hidden and still */}
-        <View style={[styles.sceneBox, rite || lineup || atLetter || atPatrol || atTable ? styles.hidden : null]}>{scene}</View>
+        <View style={[styles.sceneBox, rite || lineup || council || atLetter || atPatrol ? styles.hidden : null]}>{scene}</View>
         {rite ? (
           <View style={[StyleSheet.absoluteFill, rite.kind !== "reveal" && styles.besideTools]}>
             <LanternRite view={rite} hold={hold} paused={showing !== null} />
           </View>
-        ) : atTable ? (
+        ) : council ? (
           <View style={[StyleSheet.absoluteFill, styles.besideTools]}>
-            <TeamTable
+            <StageLineup
               people={allSeats.map((seat) => ({ seat, name: nameOf(seat), look: lookOf(seat) }))}
-              team={current.team ?? []}
-              size={teamSize(state)}
-              busy={busy}
-              onToggle={(seat) => choose({ team: toggleTeam(current.team ?? [], seat, teamSize(state)) })}
+              lights={councilLights}
+              marks={councilMarks}
+              crown={revealing && voteToShow ? voteToShow.leader : state.leader}
+              selectable={
+                task === "propose" && !busy ? (draft.length >= teamSize(state) ? draft : allSeats) : []
+              }
+              onPick={pickTeam}
               paused={showing !== null}
             />
           </View>
@@ -771,20 +809,16 @@ export function NightwatchBoard({
           </View>
         ) : lineup ? (
           <View style={StyleSheet.absoluteFill}>
-            <LastChance
-              people={allSeats.map((seat) => ({
-                seat,
-                name: nameOf(seat),
-                look: lookOf(seat),
-                candidate: assassinTargets(state).includes(seat),
-              }))}
-              choosing={task === "assassinate"}
-              picked={task === "assassinate" ? (current.target ?? null) : null}
-              onPick={(target) => {
+            <StageLineup
+              people={allSeats.map((seat) => ({ seat, name: nameOf(seat), look: lookOf(seat) }))}
+              lights={lineupLights}
+              selectable={task === "assassinate" && struck === null ? candidates : []}
+              onPick={(seat) => {
                 hold.set(0);
-                choose({ target });
+                choose({ target: seat });
               }}
               hold={hold}
+              aim={aimed}
               struck={struck}
               paused={showing !== null}
             />
@@ -807,8 +841,8 @@ export function NightwatchBoard({
             ? "letter"
             : atPatrol
               ? "patrol"
-              : atTable
-                ? "table"
+              : council
+                ? "council"
             : lineup
               ? "lineup"
               : over

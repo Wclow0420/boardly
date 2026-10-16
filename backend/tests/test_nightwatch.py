@@ -558,6 +558,24 @@ def test_team_size_and_leader_checks():
         game.apply_move(state, 0, {"type": "propose", "team": [0, 0]})
 
 
+def test_the_leaders_picks_are_shown_as_they_go():
+    state = night(start())
+    state = game.apply_move(state, 0, {"type": "pick", "team": [3]})
+    assert game.view_for(state, 2)["team"] == [3]
+    state = game.apply_move(state, 0, {"type": "pick", "team": [3, 1]})
+    assert game.view_for(state, 4)["team"] == [1, 3]
+    with pytest.raises(GameError):
+        game.apply_move(state, 1, {"type": "pick", "team": [1]})
+    with pytest.raises(GameError):
+        game.apply_move(state, 0, {"type": "pick", "team": [0, 1, 2]})
+    with pytest.raises(GameError):
+        game.apply_move(state, 0, {"type": "pick", "team": [1, 1]})
+    state = game.apply_move(state, 0, {"type": "propose", "team": [0, 1]})
+    assert state["phase"] == "vote" and state["team"] == [0, 1]
+    with pytest.raises(GameError):
+        game.apply_move(state, 0, {"type": "pick", "team": [2]})
+
+
 def test_a_tie_rejects_and_five_rejections_lose():
     state = night(start())
     state = game.apply_move(state, 0, {"type": "propose", "team": [0, 1]})

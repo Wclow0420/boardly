@@ -61,7 +61,7 @@ export function StageCurtain({
       // the new scene settles in behind the curtain, then it opens
       shut.set(
         withDelay(
-          still ? 0 : 200,
+          still ? 0 : 340,
           withTiming(0, { duration: still ? 0 : 760, easing: Easing.out(Easing.cubic) }, (done) => {
             if (done) drop.set(withTiming(0, { duration: 380, easing: Easing.in(Easing.quad) }));
           }),

@@ -1542,11 +1542,8 @@
     },
     "rite": {
       "pick": "Tap a lantern to choose",
-      "holdApprove": "Hold to approve",
-      "holdReject": "Hold to reject",
       "holdSuccess": "Hold to play Success",
       "holdFail": "Hold to play Fail",
-      "voted": "{{done}} of {{total}} have voted",
       "played": "{{done}} of {{total}} cards played",
       "approved": "Team approved",
       "rejected": "Team rejected",
@@ -1560,7 +1557,8 @@
       "goodOnly": "Watchers can only light the gold lantern.",
       "holdName": "Hold to name {{name}}",
       "pickProphet": "Tap the one you think is the Prophet",
-      "openLetter": "Tap the seal to open tonight's letter"
+      "openLetter": "Tap the seal to open tonight's letter",
+      "picking": "{{name}} is picking {{size}} for the mission"
     }
   },
   "profile": {

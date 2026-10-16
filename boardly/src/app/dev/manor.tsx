@@ -1,7 +1,7 @@
 // Development only: Seal the Manor's board in every moment of a game,
 // with sample states, to look at on a device without playing. Open with
-// boardly-dev://dev/manor?sample=<name> (start, evil, announce, patrol,
-// room, team, vote, mission, assassin, won, lost).
+// boardly-dev://dev/manor?sample=<name> (the `dev` tab on the left lists
+// them; add &perf=1 for the frame rate).
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
@@ -60,6 +60,20 @@ const S = (over: Record<string, unknown>) => ({ ...base, ...over }) as unknown a
 const proposal = (approved: boolean, team: number[], votes: boolean[]) => ({ round: 2, leader: 3, bell: false, team, votes, approved });
 const result = (success: boolean, fails: number) => ({ round: 2, room: 2, team: [0, 3], missing: [], fails, success });
 
+/** A full table of ten. */
+const T = (over: Record<string, unknown>) =>
+  S({
+    numPlayers: 10,
+    missionSizes: [3, 4, 4, 5, 5],
+    failsRequired: [1, 1, 1, 2, 1],
+    ready: Array(10).fill(true),
+    voted: Array(10).fill(false),
+    rolesInGame: ["prophet", "apprentice", "tracker", "keeper", "watcher", "watcher", "double", "hermit", "possessed", "possessed"],
+    history: [],
+    ...over,
+  });
+const TEN_VOTES = [true, false, true, true, false, false, true, false, true, true];
+
 /** Each moment, whether the role card is still to be dealt in it, and
  *  whether the lanterns are still to reveal its last vote or mission. */
 const SAMPLES: Record<string, { state: NightwatchState; deal?: boolean; reveal?: "vote" | "mission" }> = {
@@ -72,6 +86,7 @@ const SAMPLES: Record<string, { state: NightwatchState; deal?: boolean; reveal?:
   patrol: { state: S({ phase: "patrol", ready: [false, false, true, false, false] }) },
   room: { state: S({ phase: "room", myRoom: 5, myFn: "dining", ready: [false, false, false, false, false] }) },
   team: { state: S({ phase: "team", leader: 0 }) },
+  picking: { state: S({ phase: "team", leader: 3, team: [1, 3] }) },
   vote: { state: S({ phase: "vote", leader: 3, team: [0, 3] }) },
   voted: { state: S({ phase: "vote", leader: 3, team: [0, 3], voted: [true, true, false, true, false], myVote: true }) },
   approved: {
@@ -83,6 +98,17 @@ const SAMPLES: Record<string, { state: NightwatchState; deal?: boolean; reveal?:
     reveal: "vote",
   },
   mission: { state: S({ phase: "mission", team: [0, 3], missionPlayed: [] }) },
+  team10: { state: T({ phase: "team", leader: 0, team: [2, 5] }) },
+  vote10: { state: T({ phase: "vote", leader: 4, team: [0, 2, 6, 9], voted: [true, false, true, true, false, true, false, true, false, false] }) },
+  rejected10: {
+    state: T({ phase: "team", leader: 5, rejections: 1, history: [{ round: 2, leader: 4, bell: false, team: [0, 2, 6, 9], votes: TEN_VOTES.map((v, i) => (i % 3 ? v : !v)), approved: false }] }),
+    reveal: "vote",
+  },
+  playing10: { state: T({ phase: "mission", team: [1, 3, 5, 7], missionPlayed: [3, 7] }) },
+  assassin10: { state: T({ phase: "assassinate", myRole: "double", known: [{ seat: 6, as: "evil" }], assassinSeat: 0, evilSeats: [0, 6, 8, 9] }) },
+  won10: {
+    state: T({ phase: "finished", winner: "good", winReason: "missions", assassinTarget: 2, roles: ["double", "prophet", "tracker", "keeper", "watcher", "watcher", "hermit", "apprentice", "possessed", "possessed"] }),
+  },
   evilMission: { state: S({ phase: "mission", team: [0, 3], missionPlayed: [], myRole: "double", known: [{ seat: 4, as: "evil" }] }) },
   playing: { state: S({ phase: "mission", team: [1, 3], missionPlayed: [3] }) },
   succeeded: { state: S({ phase: "announce", round: 3, ready: [false, true, true, false, true], results: [...base.results, result(true, 0)] }), reveal: "mission" },
@@ -105,13 +131,13 @@ const LOOKS: { skin: string; colour: string; wear: Record<string, string> }[] = 
   { skin: "glossy", colour: "#3AA65A", wear: {} },
   { skin: "glossy", colour: "#8A5AD0", wear: { hat: "beanie" } },
 ];
-const NAMES = ["You", "Ming", "Hua", "Qiang", "Mei"].map((username, seat) => ({
+const NAMES = ["You", "Ming", "Hua", "Qiang", "Mei", "Wei", "Lan", "Jun", "Fang", "Kai"].map((username, seat) => ({
   seat,
   userId: `u${seat}`,
   username,
   borderId: null,
   avatarUrl: null,
-  mascot: LOOKS[seat],
+  mascot: LOOKS[seat % LOOKS.length],
 }));
 
 /** Frames drawn in the last second, counted on the UI thread. */
@@ -175,7 +201,7 @@ function ManorSamples() {
           state={SAMPLES[sample].state}
           mySeat={0}
           isMyTurn={false}
-          players={NAMES}
+          players={NAMES.slice(0, SAMPLES[sample].state.numPlayers)}
           busy={false}
           finished={false}
           onMove={() => {}}

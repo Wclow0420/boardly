@@ -25,6 +25,10 @@ import { ROOMS, ROOM_COLOR, missionTrack, teamSize, type NightwatchState } from 
 
 /** How tall the plinth is above the home bar. */
 export const PLINTH_H = 128;
+/** How far the curtain reaches up behind the arch and down behind the
+ *  plinth, past the stage between them. */
+const CURTAIN_UP = 14;
+const CURTAIN_DOWN = 12;
 
 /** A room's name on a small enamel tag in its colour. */
 function RoomTag({
@@ -123,10 +127,10 @@ export function ManorStage({
     result ? "" : `${state.missionSizes[r]}${state.failsRequired[r] > 1 ? "★" : ""}`,
   );
   const archH = archLayout(width, insets.top, state.rounds).h;
-  // the lines and the move under the stage change with the scene, once
-  // the curtain has closed on the old one
-  const [aside, setAside] = useState<{ key: string; hint: ReactNode; bottom: ReactNode }>(() => ({ key: sceneKey, hint, bottom }));
-  if (aside.key === sceneKey && (aside.hint !== hint || aside.bottom !== bottom)) setAside({ key: sceneKey, hint, bottom });
+  // the move on the plinth changes with the scene, once the curtain has
+  // closed on the old one
+  const [aside, setAside] = useState<{ key: string; bottom: ReactNode }>(() => ({ key: sceneKey, bottom }));
+  if (aside.key === sceneKey && aside.bottom !== bottom) setAside({ key: sceneKey, bottom });
   const settled = aside.key === sceneKey;
   const plinthH = PLINTH_H + insets.bottom;
 
@@ -150,16 +154,45 @@ export function ManorStage({
       <LinearGradient colors={["#1A2238", "#0E1220", "#0B0E16"]} style={StyleSheet.absoluteFill} />
       <Glow size={520} color="#F28B4B" style={{ top: height * 0.24, left: width * 0.5 - 260 }} />
 
-      <View style={[styles.centre, { top: archH + 26, bottom: plinthH + 34 }]}>
-        <StageCurtain sceneKey={sceneKey} onSwap={(key) => setAside({ key, hint: null, bottom: null })}>
-          {centre}
+      {/* everything between the arch and the plinth is behind the curtain:
+          the tags, the scene, the tools and the lines under it */}
+      <View style={[styles.stage, { top: archH - CURTAIN_UP, bottom: plinthH - CURTAIN_DOWN }]}>
+        <StageCurtain sceneKey={sceneKey} onSwap={(key) => setAside({ key, bottom: null })}>
+          <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+            <View style={[styles.centre, { top: CURTAIN_UP + 26, bottom: CURTAIN_DOWN + 34 }]}>{centre}</View>
+            {live ? (
+              <Animated.View style={[styles.tags, { top: CURTAIN_UP - 8 }, tagsOut]} pointerEvents={away ? "none" : "box-none"}>
+                <RoomTag
+                  kind={t("nightwatch.bar.mission")}
+                  room={state.missionRoom}
+                  name={roomName(state.missionRoom)}
+                  detail={`· ${teamSize(state)}`}
+                  onPress={onMap}
+                />
+                {state.nextMissionRoom !== null ? (
+                  <RoomTag
+                    kind={t("nightwatch.bar.next")}
+                    room={state.nextMissionRoom}
+                    name={roomName(state.nextMissionRoom)}
+                    onPress={onMap}
+                  />
+                ) : null}
+              </Animated.View>
+            ) : null}
+            {tools ? (
+              <Animated.View
+                style={[styles.tools, { top: CURTAIN_UP + 46 }, toolsOut]}
+                pointerEvents={away ? "none" : "box-none"}
+              >
+                {tools}
+              </Animated.View>
+            ) : null}
+            <View style={[styles.hint, { bottom: CURTAIN_DOWN + 2 }]} pointerEvents="box-none">
+              {hint}
+            </View>
+          </View>
         </StageCurtain>
       </View>
-      {tools ? (
-        <Animated.View style={[styles.tools, { top: archH + 46 }, toolsOut]} pointerEvents={away ? "none" : "box-none"}>
-          {tools}
-        </Animated.View>
-      ) : null}
 
       <View style={styles.top} pointerEvents="box-none">
         <NightArch
@@ -171,25 +204,6 @@ export function ManorStage({
           labels={labels}
           paused={paused}
         />
-        {live ? (
-          <Animated.View style={[styles.tags, tagsOut]} pointerEvents={away ? "none" : "box-none"}>
-            <RoomTag
-              kind={t("nightwatch.bar.mission")}
-              room={state.missionRoom}
-              name={roomName(state.missionRoom)}
-              detail={`· ${teamSize(state)}`}
-              onPress={onMap}
-            />
-            {state.nextMissionRoom !== null ? (
-              <RoomTag
-                kind={t("nightwatch.bar.next")}
-                room={state.nextMissionRoom}
-                name={roomName(state.nextMissionRoom)}
-                onPress={onMap}
-              />
-            ) : null}
-          </Animated.View>
-        ) : null}
       </View>
       {onBack ? (
         <Stud label={t("common.back")} onPress={onBack} side="left">
@@ -203,9 +217,6 @@ export function ManorStage({
       ) : null}
 
       <View style={styles.bottom} pointerEvents="box-none">
-        <View style={styles.hint} pointerEvents="box-none">
-          {settled ? hint : aside.hint}
-        </View>
         <Plinth width={width} height={plinthH}>
           {settled ? bottom : aside.bottom}
         </Plinth>
@@ -223,10 +234,11 @@ const shadow = {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#0B0E16", overflow: "hidden" },
+  stage: { position: "absolute", left: 0, right: 0 },
   centre: { position: "absolute", left: 0, right: 0, justifyContent: "center" },
   tools: { position: "absolute", right: 4, gap: 12 },
   top: { position: "absolute", left: 0, right: 0, top: 0, alignItems: "center" },
-  tags: { flexDirection: "row", gap: 8, marginTop: -8, paddingHorizontal: 12 },
+  tags: { position: "absolute", left: 0, right: 0, flexDirection: "row", justifyContent: "center", gap: 8, paddingHorizontal: 12 },
   tag: {
     flexDirection: "row",
     alignItems: "center",
@@ -244,7 +256,7 @@ const styles = StyleSheet.create({
   corner: { position: "absolute" },
   stud: { position: "absolute", left: 0, top: 0, right: 0, bottom: 0, borderRadius: 20 },
   bottom: { position: "absolute", left: 0, right: 0, bottom: 0, alignItems: "center" },
-  hint: { alignSelf: "stretch", alignItems: "center", paddingHorizontal: 26, marginBottom: 2, gap: 2 },
+  hint: { position: "absolute", left: 0, right: 0, alignItems: "center", paddingHorizontal: 26, gap: 2 },
 });
 
 export const stageText = StyleSheet.create({

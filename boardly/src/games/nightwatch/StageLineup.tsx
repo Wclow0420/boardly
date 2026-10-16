@@ -1,10 +1,16 @@
-// The last chance: the room is gone and the curtain opens on a bare
-// stage. Everyone walks out as their own mascot, one after another, to a
-// place in a row, each under a spotlight from above. The assassin taps
-// the one they think is the Prophet — that light turns crimson and the
-// rest dim — and holds the button: red light gathers on them, and when
-// it's full the blow falls: a slash of light, a burst, and the mascot
-// topples into shadow. Everyone else watches the lights flicker.
+// Everyone on a bare stage: each player walks out as their own mascot,
+// one after another, to a place in a row (two rows at a big table), each
+// under a spotlight from above. The same stage serves three moments:
+//
+//   the team — the leader (a crown over their head) taps players: each
+//              one picked steps into a full spotlight, and everyone at
+//              the table sees it as it happens;
+//   the vote — the team stands lit; a gold coin appears over each player
+//              who has voted (never which way), and at the reveal every
+//              coin turns over: green ✓ or red ✕;
+//   the last chance — the assassin taps the one they think is the
+//              Prophet (that light turns crimson), holds, and the blow
+//              falls: a slash of light, a burst, the mascot topples.
 
 import {
   Canvas,
@@ -16,22 +22,26 @@ import {
   RadialGradient,
   vec,
 } from "@shopify/react-native-skia";
-import { useEffect } from "react";
+import { LinearGradient } from "expo-linear-gradient";
+import { useEffect, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
+  ZoomIn,
   useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
   withDelay,
+  withRepeat,
   withSequence,
   withTiming,
   type SharedValue,
 } from "react-native-reanimated";
 
 import { bakedSvg } from "@/components/badges/bake";
+import { Emblem } from "@/components/icons";
 import { useIsoClock } from "@/components/iso";
-import { useBox } from "@/components/ui";
+import { BezelOverlay, useBox } from "@/components/ui";
 import { MascotFigure } from "@/features/mascot/MascotStage";
 import type { Look } from "@/features/mascot/dress";
 import { useOnScreen } from "@/hooks/useOnScreen";
@@ -44,9 +54,13 @@ export interface Standing {
   seat: number;
   name: string;
   look: Look;
-  /** The assassin may name them. */
-  candidate: boolean;
 }
+
+/** How a spotlight shines on someone: full, low (waiting to be picked),
+ *  nearly out (not in it), or crimson (named). */
+export type Light = "lit" | "soft" | "dim" | "red";
+/** Over someone's head: a coin face down (they've voted), or turned up. */
+export type Mark = "voted" | "yes" | "no";
 
 /** The boards of the stage, w × h: planks running back, a gilt edge
  *  along the front. */
@@ -71,23 +85,32 @@ ${planks}
 </svg>`;
 }
 
-export function LastChance({
+export function StageLineup({
   people,
-  choosing,
-  picked,
+  lights,
+  selectable = [],
   onPick,
+  crown = null,
+  marks = {},
   hold,
-  struck,
+  aim = null,
+  struck = null,
   paused,
 }: {
   people: Standing[];
-  /** I am the assassin, choosing. */
-  choosing: boolean;
-  picked: number | null;
-  onPick: (seat: number) => void;
-  hold: SharedValue<number>;
+  /** Each seat's light (lit when left out). */
+  lights: Record<number, Light>;
+  /** Seats that can be tapped. */
+  selectable?: number[];
+  onPick?: (seat: number) => void;
+  /** The leader. */
+  crown?: number | null;
+  marks?: Record<number, Mark>;
+  /** While held, red light streams to `aim`. */
+  hold?: SharedValue<number>;
+  aim?: number | null;
   /** The one named: the blow falls on them. */
-  struck: number | null;
+  struck?: number | null;
   paused: boolean;
 }) {
   const [{ w, h }, onLayout] = useBox();
@@ -98,10 +121,13 @@ export function LastChance({
       {w > 0 ? (
         <Stage
           people={people}
-          choosing={choosing}
-          picked={picked}
+          lights={lights}
+          selectable={selectable}
           onPick={onPick}
+          crown={crown}
+          marks={marks}
           hold={hold}
+          aim={aim}
           struck={struck}
           clock={clock}
           paused={paused}
@@ -115,35 +141,61 @@ export function LastChance({
 
 function Stage({
   people,
-  choosing,
-  picked,
+  lights,
+  selectable,
   onPick,
+  crown,
+  marks,
   hold,
+  aim,
   struck,
   clock,
   paused,
   w,
   h,
-}: Omit<Parameters<typeof LastChance>[0], never> & { clock: SharedValue<number>; w: number; h: number }) {
-  const floorH = Math.min(170, h * 0.36);
+}: {
+  people: Standing[];
+  lights: Record<number, Light>;
+  selectable: number[];
+  onPick?: (seat: number) => void;
+  crown: number | null;
+  marks: Record<number, Mark>;
+  hold?: SharedValue<number>;
+  aim: number | null;
+  struck: number | null;
+  clock: SharedValue<number>;
+  paused: boolean;
+  w: number;
+  h: number;
+}) {
+  const floorH = Math.min(people.length > 5 ? 200 : 170, h * 0.42);
   const floorTop = h - floorH;
   const floor = bakedSvg("manor-stage-floor", w, floorH, () => floorArt(w, floorH));
   // one row, or two when the table is big (the back row smaller, higher)
-  const rows = people.length > 5 ? [people.slice(0, Math.ceil(people.length / 2)), people.slice(Math.ceil(people.length / 2))] : [people];
+  const rows =
+    people.length > 5
+      ? [people.slice(0, Math.ceil(people.length / 2)), people.slice(Math.ceil(people.length / 2))]
+      : [people];
+  // a big table stands in two rows: the back one further up the boards
+  // and smaller, each of them in a gap of the row in front
   const places = rows.flatMap((row, r) => {
     const back = rows.length > 1 && r === 0;
-    const size = Math.min(back ? 66 : 84, (w * 0.92) / (row.length + 0.4));
-    const y = back ? floorTop + floorH * 0.3 : h - 40;
+    const across = w * 0.92;
+    const size = back ? Math.min(54, across / (row.length + 1.2)) : Math.min(84, across / (row.length + 0.4));
+    const y = back ? h - 136 : h - 58;
     return row.map((person, i) => ({
       ...person,
-      x: w * 0.04 + ((i + 0.5) * (w * 0.92)) / row.length,
+      x: w * 0.04 + (back ? ((i + 1) * across) / (row.length + 1) : ((i + 0.5) * across) / row.length),
       y,
       size,
       order: r * 10 + i,
     }));
   });
-  const target = places.find((p) => p.seat === (struck ?? picked));
-  const flow = useDerivedValue(() => (picked !== null && struck === null ? Math.min(1, hold.value * 1.5) : 0), [picked, struck]);
+  const target = places.find((p) => p.seat === (struck ?? aim));
+  const flow = useDerivedValue(
+    () => (hold && aim !== null && struck === null ? Math.min(1, hold.value * 1.5) : 0),
+    [aim, struck],
+  );
   const burst = useSharedValue(0);
   useEffect(() => {
     if (struck === null) return;
@@ -152,6 +204,8 @@ function Stage({
     const thud = setTimeout(heavyHaptic, 180);
     return () => clearTimeout(thud);
   }, [struck, burst]);
+  // coins turned up together are turned one after another
+  const revealOrder = places.filter((p) => marks[p.seat] === "yes" || marks[p.seat] === "no").map((p) => p.seat);
 
   return (
     <>
@@ -165,13 +219,7 @@ function Stage({
             size={p.size}
             clock={clock}
             seed={p.seat}
-            mode={
-              p.seat === struck || (struck === null && p.seat === picked)
-                ? "red"
-                : (choosing && !p.candidate) || (picked !== null && p.seat !== picked) || (struck !== null && p.seat !== struck)
-                  ? "dim"
-                  : "lit"
-            }
+            mode={lights[p.seat] ?? "lit"}
           />
         ))}
         {target ? (
@@ -192,24 +240,28 @@ function Stage({
           from={p.order % 2 ? w + 60 : -60}
           delay={p.order * 160}
           paused={paused}
-          dim={(choosing && !p.candidate) || (picked !== null && p.seat !== picked) || (struck !== null && p.seat !== struck)}
+          light={lights[p.seat] ?? "lit"}
           struck={p.seat === struck}
-          selectable={choosing && p.candidate && struck === null}
-          selected={p.seat === picked}
-          onPick={() => onPick(p.seat)}
+          selectable={selectable.includes(p.seat)}
+          crowned={p.seat === crown}
+          mark={marks[p.seat]}
+          markDelay={Math.max(0, revealOrder.indexOf(p.seat)) * 220}
+          onPick={() => onPick?.(p.seat)}
         />
       ))}
       {target && struck !== null ? (
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
           <Canvas style={StyleSheet.absoluteFill}>
-          <Slash x={target.x} y={target.y - target.size * 0.75} size={target.size * 1.6} go={burst} />
-          <Burst x={target.x} y={target.y - target.size * 0.7} go={burst} color="#FF2E44" size={w * 0.35} />
+            <Slash x={target.x} y={target.y - target.size * 0.75} size={target.size * 1.6} go={burst} />
+            <Burst x={target.x} y={target.y - target.size * 0.7} go={burst} color="#FF2E44" size={w * 0.35} />
           </Canvas>
         </View>
       ) : null}
     </>
   );
 }
+
+const LEVEL: Record<Light, number> = { lit: 1, soft: 0.3, dim: 0.16, red: 1 };
 
 /** A cone of light from above onto a pool on the floor. */
 function Spotlight({
@@ -225,17 +277,19 @@ function Spotlight({
   size: number;
   clock: SharedValue<number>;
   seed: number;
-  mode: "lit" | "dim" | "red";
+  mode: Light;
 }) {
-  const level = useSharedValue(mode === "dim" ? 0.25 : 1);
+  const level = useSharedValue(LEVEL[mode]);
   const red = useSharedValue(mode === "red" ? 1 : 0);
   useEffect(() => {
-    level.set(withTiming(mode === "dim" ? 0.22 : 1, { duration: 400 }));
+    level.set(withTiming(LEVEL[mode], { duration: 350 }));
     red.set(withTiming(mode === "red" ? 1 : 0, { duration: 400 }));
   }, [mode, level, red]);
   // a stage light's faint unsteadiness
   const flicker = useDerivedValue(
-    () => level.value * (0.88 + 0.08 * Math.sin(clock.value * 5.3 + seed * 1.7) + 0.04 * Math.sin(clock.value * 17 + seed)),
+    () =>
+      level.value *
+      (0.88 + 0.08 * Math.sin(clock.value * 5.3 + seed * 1.7) + 0.04 * Math.sin(clock.value * 17 + seed)),
   );
   const warm = useDerivedValue(() => flicker.value * (1 - red.value));
   const crimson = useDerivedValue(() => flicker.value * red.value);
@@ -273,6 +327,61 @@ function Slash({ x, y, size, go }: { x: number; y: number; size: number; go: Sha
   );
 }
 
+const COIN = 28;
+const FACE = {
+  voted: ["#FFF2B8", "#E2B04A", "#9A6B1E"],
+  yes: ["#7AE8A0", "#22A058", "#0E5228"],
+  no: ["#FF7A86", "#C2203A", "#5A0612"],
+} as const;
+
+/** A coin over someone's head: gold face down once they've voted; when
+ *  the vote is shown it turns over, green ✓ or red ✕. */
+function Coin({ mark, delay }: { mark: Mark; delay: number }) {
+  const turn = useSharedValue(mark === "voted" ? 0 : 0);
+  const shown = mark === "voted" ? "voted" : mark;
+  useEffect(() => {
+    if (mark === "voted") {
+      turn.set(0);
+      return;
+    }
+    turn.set(withDelay(500 + delay, withTiming(1, { duration: 420, easing: Easing.inOut(Easing.quad) })));
+  }, [mark, delay, turn]);
+  const back = useAnimatedStyle(() => ({
+    opacity: turn.value < 0.5 ? 1 : 0,
+    transform: [{ scaleX: Math.max(0.02, Math.abs(Math.cos(turn.value * Math.PI))) }],
+  }));
+  const front = useAnimatedStyle(() => ({
+    opacity: turn.value >= 0.5 ? 1 : 0,
+    transform: [{ scaleX: Math.max(0.02, Math.abs(Math.cos(turn.value * Math.PI))) }, { scale: 1 + 0.15 * Math.sin(turn.value * Math.PI) }],
+  }));
+  return (
+    <Animated.View entering={ZoomIn.duration(260)} style={styles.coin}>
+      <Animated.View style={[StyleSheet.absoluteFill, back]}>
+        <CoinFace colors={FACE.voted}>
+          <Emblem emoji="🏮" size={14} />
+        </CoinFace>
+      </Animated.View>
+      {shown !== "voted" ? (
+        <Animated.View style={[StyleSheet.absoluteFill, front]}>
+          <CoinFace colors={FACE[shown]}>
+            <AppText style={styles.coinMark}>{shown === "yes" ? "✓" : "✕"}</AppText>
+          </CoinFace>
+        </Animated.View>
+      ) : null}
+    </Animated.View>
+  );
+}
+
+function CoinFace({ colors, children }: { colors: readonly string[]; children: ReactNode }) {
+  return (
+    <View style={styles.coinFace}>
+      <LinearGradient colors={colors as unknown as [string, string, string]} style={StyleSheet.absoluteFill} />
+      <BezelOverlay r={COIN / 2} t={2.5} />
+      {children}
+    </View>
+  );
+}
+
 /** A mascot walking out to its place, waddling, then standing; toppling
  *  over into shadow when struck. */
 function Walker({
@@ -280,35 +389,48 @@ function Walker({
   from,
   delay,
   paused,
-  dim,
+  light,
   struck,
   selectable,
-  selected,
+  crowned,
+  mark,
+  markDelay,
   onPick,
 }: {
   person: Standing & { x: number; y: number; size: number };
   from: number;
   delay: number;
   paused: boolean;
-  dim: boolean;
+  light: Light;
   struck: boolean;
   selectable: boolean;
-  selected: boolean;
+  crowned: boolean;
+  mark?: Mark;
+  markDelay: number;
   onPick: () => void;
 }) {
   const { x, y, size } = person;
   const height = size * 1.3;
+  const shadeOf = (l: Light) => (l === "dim" ? 0.45 : l === "soft" ? 0.8 : 1);
   const walk = useSharedValue(0);
   const fall = useSharedValue(0);
-  const shade = useSharedValue(dim ? 0.45 : 1);
+  const shade = useSharedValue(shadeOf(light));
+  const bob = useSharedValue(0);
   useEffect(() => {
     walk.set(withDelay(delay, withTiming(1, { duration: 1300, easing: Easing.out(Easing.quad) })));
-  }, [walk, delay]);
+    bob.set(withRepeat(withSequence(withTiming(1, { duration: 1000 }), withTiming(0, { duration: 1000 })), -1));
+  }, [walk, bob, delay]);
   useEffect(() => {
-    shade.set(withTiming(dim ? 0.45 : 1, { duration: 400 }));
-  }, [dim, shade]);
+    shade.set(withTiming(shadeOf(light), { duration: 350 }));
+  }, [light, shade]);
   useEffect(() => {
-    if (struck) fall.set(withDelay(260, withSequence(withTiming(0.15, { duration: 120 }), withTiming(1, { duration: 520, easing: Easing.in(Easing.quad) }))));
+    if (struck)
+      fall.set(
+        withDelay(
+          260,
+          withSequence(withTiming(0.15, { duration: 120 }), withTiming(1, { duration: 520, easing: Easing.in(Easing.quad) })),
+        ),
+      );
   }, [struck, fall]);
   const style = useAnimatedStyle(() => {
     const p = walk.value;
@@ -322,19 +444,35 @@ function Walker({
       ],
     };
   });
+  const float = useAnimatedStyle(() => ({ transform: [{ translateY: -bob.value * 3 }] }));
   return (
     <Animated.View style={[styles.walker, { width: size, height, transformOrigin: [size / 2, height, 0] }, style]}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={person.name}
-        accessibilityState={{ selected, disabled: !selectable }}
+        accessibilityState={{ selected: light === "lit" || light === "red", disabled: !selectable }}
         disabled={!selectable}
         onPress={onPick}
+        hitSlop={6}
         style={StyleSheet.absoluteFill}
       >
         <MascotFigure look={person.look} width={size} seed={String(person.seat)} paused={paused} />
       </Pressable>
-      <AppText numberOfLines={1} style={[styles.name, { width: size + 20, left: -10 }, selected && styles.picked]}>
+      {crowned ? (
+        <Animated.View style={[styles.over, { top: -size * 0.32 }, float]} pointerEvents="none">
+          <Emblem emoji="👑" size={Math.max(16, size * 0.28)} />
+        </Animated.View>
+      ) : null}
+      {mark ? (
+        // held up in front of them
+        <View style={[styles.over, { top: height * 0.5 - COIN / 2, transform: [{ scale: Math.min(1.15, Math.max(0.75, size / 72)) }] }]} pointerEvents="none">
+          <Coin mark={mark} delay={markDelay} />
+        </View>
+      ) : null}
+      <AppText
+        numberOfLines={1}
+        style={[styles.name, { width: size + 20, left: -10 }, light === "red" && styles.named, light === "lit" && styles.picked]}
+      >
         {person.name}
       </AppText>
     </Animated.View>
@@ -343,6 +481,25 @@ function Walker({
 
 const styles = StyleSheet.create({
   walker: { position: "absolute", left: 0, top: 0 },
+  over: { position: "absolute", left: 0, right: 0, alignItems: "center", gap: 2 },
+  coin: { width: COIN, height: COIN },
+  coinFace: {
+    width: COIN,
+    height: COIN,
+    borderRadius: COIN / 2,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  coinMark: {
+    fontFamily: fontFamily.bold,
+    fontSize: 16,
+    lineHeight: 19,
+    color: "#FFFFFF",
+    textShadowColor: "rgba(0,0,0,0.6)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
   name: {
     position: "absolute",
     bottom: -16,
@@ -355,5 +512,6 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
-  picked: { color: "#FF8A94", fontFamily: fontFamily.bold },
+  picked: { color: "#FFD58A", fontFamily: fontFamily.bold },
+  named: { color: "#FF8A94", fontFamily: fontFamily.bold },
 });
