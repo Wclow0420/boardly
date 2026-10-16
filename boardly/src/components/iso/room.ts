@@ -374,8 +374,11 @@ export function wainscot(top = 0.25): Shape[] {
   return shapes;
 }
 
-/** Plinth, the two thick back walls with their doors, floor and trim. */
-export function shell(base: Tones = STONE): Shape[] {
+/** Plinth, the two thick back walls with their doors, floor and trim.
+ *  `panelled` (the default) dresses the walls with panelling under a
+ *  gilded rail and a gilded cornice; plain walls (a cabin, a cellar) get
+ *  a simple dark rail instead. */
+export function shell(base: Tones = STONE, { panelled = true }: { panelled?: boolean } = {}): Shape[] {
   const ink = paint();
   const floor = flat(0, 1, 0, 1, 0, ink.floor);
   return [
@@ -394,8 +397,9 @@ export function shell(base: Tones = STONE): Shape[] {
     // skirting, panelling under a gilded rail, and a gilded cornice
     onX(0, 0, 1, 0, 0.04, tone(ink.lit, -0.3)),
     onY(0, 0, 1, 0, 0.04, tone(ink.tile, -0.3)),
-    ...wainscot(),
-    ...band(0.72, 0.76, [GOLD[0], GOLD[1], GOLD[2]], 0.55),
+    ...(panelled
+      ? [...wainscot(), ...band(0.72, 0.76, [GOLD[0], GOLD[1], GOLD[2]], 0.55)]
+      : band(0.72, 0.745, [tone(ink.lit, -0.1), tone(ink.lit, -0.25), tone(ink.lit, -0.4)], 0.25)),
     ...(exits.left ? wallDoor("x", exits.left) : []),
     ...(exits.right ? wallDoor("y", exits.right) : []),
     ...mats(),
