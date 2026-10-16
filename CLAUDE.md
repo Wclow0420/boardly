@@ -92,7 +92,7 @@ is the model; copy its helpers (`bake`, `put`, `lazy`, `own`, `begin`,
 
 - **Bake what doesn't move.** Draw every still part (engraving, gold,
   jewels, shadows, blurred glows) once, on first use, into an image
-  (`bake`, at about 2.4× the art scale so it stays crisp to ~130pt).
+  (`bake`, at 1.2× the screen's pixel ratio so it stays crisp to ~130pt).
   Each frame then draws that image, not hundreds of paths.
 - **One picture per layer per frame.** Each layer is one
   `useDerivedValue` that records a `Skia.PictureRecorder` picture and
