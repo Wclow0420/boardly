@@ -17,11 +17,12 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { BackIcon, ChevronRightIcon, Emblem, InfoIcon } from "@/components/icons";
-import { AppText, Button, Chip, IconButton } from "@/components/ui";
+import { AppText, Button, IconButton } from "@/components/ui";
 import { getGame } from "@/games/registry";
 import type { RulesPage } from "@/games/types";
 import { useTheme } from "@/theme";
 import { GiltCard } from "./Popup";
+import { RuleTabs } from "./rules/RuleTabs";
 import { RULE_SECTIONS, SECTION_EMBLEM, type RuleSection } from "./rules/standard";
 import { RulesText } from "./RulesText";
 
@@ -204,26 +205,14 @@ export function RulesSheet({
             </IconButton>
           </View>
 
-          <View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{
-                paddingHorizontal: spacing.xl,
-                paddingVertical: spacing.md,
-                gap: spacing.sm,
-              }}
-            >
-              {pages.map((page, i) => (
-                <Chip
-                  key={page.key}
-                  label={page.emoji ? `${page.emoji} ${page.title}` : page.title}
-                  selected={i === index}
-                  onPress={() => goTo(i)}
-                />
-              ))}
-            </ScrollView>
-          </View>
+          <RuleTabs
+            labels={pages.map((page) => (page.emoji ? `${page.emoji} ${page.title}` : page.title))}
+            index={index}
+            onPick={goTo}
+            padX={spacing.xl}
+            padY={spacing.md}
+            gap={spacing.sm}
+          />
 
           <View
             style={styles.grow}
