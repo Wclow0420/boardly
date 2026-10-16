@@ -9,6 +9,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/theme";
+import { AvatarStage } from "./AvatarStage";
 
 export interface ScreenProps {
   children: ReactNode;
@@ -70,7 +71,8 @@ export function Screen({
         contentInsetAdjustmentBehavior="never"
         style={styles.scroll}
       >
-        {children}
+        {/* bordered avatars draw over everything on the page */}
+        <AvatarStage>{children}</AvatarStage>
       </ScrollView>
     </View>
   );

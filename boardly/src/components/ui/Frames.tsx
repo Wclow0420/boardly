@@ -20,6 +20,7 @@ import { Texture } from "./Texture";
 import {
   Bezel,
   BezelOverlay,
+  LightSweep,
   Gradient,
   MetalParts,
   SetJewel,
@@ -76,6 +77,7 @@ export function TitlePlaque({
         </Svg>
       ) : null}
       <View style={styles.plaqueFace}>
+        <LightSweep r={9} every={6} />
         <AppText style={styles.plaqueText} numberOfLines={1} adjustsFontSizeToFit>
           {label}
         </AppText>
@@ -197,9 +199,8 @@ export function Frame({
       {stitched ? (
         <View pointerEvents="none" style={[styles.stitch, { borderColor: t.inner }]} />
       ) : null}
-      {children}
-      {/* over the content, so a picture running to the edge sits in the frame */}
       <BezelOverlay r={FRAME_RADIUS} t={FRAME_RIM} ornate={ornate} />
+      {children}
     </LinearGradient>
   );
 }

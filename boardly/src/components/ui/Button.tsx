@@ -13,7 +13,7 @@ import { shade, useTheme } from "@/theme";
 import { tapHaptic } from "@/utils/haptics";
 import { AppText } from "./AppText";
 import { Texture } from "./Texture";
-import { BezelOverlay } from "./Trim";
+import { BezelOverlay, LightSweep } from "./Trim";
 
 export type ButtonVariant = "primary" | "secondary" | "tertiary" | "danger";
 export type ButtonSize = "lg" | "md" | "sm";
@@ -161,6 +161,12 @@ export function Button({
             t={size === "sm" ? 2.8 : 3.5}
             metal={look[variant].metal}
           />
+          {/* the gold ones catch the light now and then */}
+          {look[variant].metal === "gold" && !disabled ? (
+            <LightSweep
+              r={(face.borderRadius as number | undefined) ?? shape.borderRadius}
+            />
+          ) : null}
           {content}
         </LinearGradient>
       )}

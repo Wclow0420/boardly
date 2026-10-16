@@ -7,7 +7,11 @@ jest.mock("@react-native-async-storage/async-storage", () =>
 
 // Skia draws natively; tests render the screens around the canvas.
 jest.mock("react-native-worklets", () => require("react-native-worklets/src/mock"));
-jest.mock("react-native-reanimated", () => require("react-native-reanimated/mock"));
+jest.mock("react-native-reanimated", () => ({
+  ...require("react-native-reanimated/mock"),
+  // the mock leaves this out; the light sweeps ask it
+  useReducedMotion: () => false,
+}));
 jest.mock("@/components/iso", () => ({
   IsoCanvas: () => null,
   IsoClip: () => null,

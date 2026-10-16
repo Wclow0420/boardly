@@ -23,6 +23,7 @@ import { GearEmblem } from "@/components/engraved";
 import { useIsoClock } from "@/components/iso";
 import {
   AppText,
+  AvatarStage,
   Medallion,
   Frame,
   GorhomBottomSheetModal,
@@ -133,128 +134,132 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        <View style={styles.header}>
-          <TitlePlaque label={t("profile.title")} />
-          <IconButton
-            accessibilityLabel={t("profile.settings")}
-            onPress={() => {
-              tapHaptic();
-              settingsRef.current?.present();
-            }}
-          >
-            <GearEmblem size={32} />
-          </IconButton>
-        </View>
-
-        {/* The player card */}
-        <Frame tone="wood" style={styles.card}>
-          <View style={styles.identity}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("profile.photo.title")}
+        {/* bordered avatars draw over everything on the page */}
+        <AvatarStage>
+          <View style={styles.header}>
+            <TitlePlaque label={t("profile.title")} />
+            <IconButton
+              accessibilityLabel={t("profile.settings")}
               onPress={() => {
                 tapHaptic();
-                photoSheetRef.current?.present();
+                settingsRef.current?.present();
               }}
             >
-              <AvatarBorder
-                name={user?.username ?? "?"}
-                size={64}
-                borderId={borderId}
-                avatarUrl={user?.avatarUrl}
-                mascot={user?.mascot}
-              />
-              <View style={styles.editBadge}>
-                <Emblem emoji="📷" size={16} />
-              </View>
-            </Pressable>
-            <View style={styles.who}>
-              <AppText numberOfLines={1} style={styles.username}>
-                {user?.username ?? ""}
-              </AppText>
-              <AppText
-                numberOfLines={1}
-                style={[
-                  styles.title,
-                  {
-                    color: title
-                      ? TIER_METAL[title.tier].glow
-                      : TABLE.creamMuted,
-                  },
-                ]}
+              <GearEmblem size={32} />
+            </IconButton>
+          </View>
+
+          {/* The player card */}
+          <Frame tone="wood" style={styles.card}>
+            <View style={styles.identity}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t("profile.photo.title")}
+                onPress={() => {
+                  tapHaptic();
+                  photoSheetRef.current?.present();
+                }}
               >
-                {title
-                  ? badgeText(t, title.key).name
-                  : t("profile.card.newcomer")}
-              </AppText>
-              <View style={styles.coins}>
-                <CoinPill amount={user?.coins ?? 0} />
-              </View>
-            </View>
-          </View>
-          <View style={styles.tokens}>
-            {tokens.map((token) => (
-              <View key={token.label} style={styles.tokenWrap}>
-                <Medallion size={TOKEN}>
-                  <AppText style={styles.tokenValue}>
-                    {token.value ?? "–"}
-                  </AppText>
-                </Medallion>
-                <AppText
-                  variant="tiny"
-                  align="center"
-                  numberOfLines={2}
-                  style={styles.tokenLabel}
+                <AvatarBorder
+                  name={user?.username ?? "?"}
+                  size={64}
+                  borderId={borderId}
+                  avatarUrl={user?.avatarUrl}
+                  mascot={user?.mascot}
                 >
-                  {token.label}
+                  <View style={styles.editBadge}>
+                    <Emblem emoji="📷" size={16} />
+                  </View>
+                </AvatarBorder>
+              </Pressable>
+              <View style={styles.who}>
+                <AppText numberOfLines={1} style={styles.username}>
+                  {user?.username ?? ""}
                 </AppText>
+                <AppText
+                  numberOfLines={1}
+                  style={[
+                    styles.title,
+                    {
+                      color: title
+                        ? TIER_METAL[title.tier].glow
+                        : TABLE.creamMuted,
+                    },
+                  ]}
+                >
+                  {title
+                    ? badgeText(t, title.key).name
+                    : t("profile.card.newcomer")}
+                </AppText>
+                <View style={styles.coins}>
+                  <CoinPill amount={user?.coins ?? 0} />
+                </View>
               </View>
-            ))}
-          </View>
-          {next ? (
-            <View style={styles.next}>
-              <NextBadge badge={next} clock={still} />
             </View>
-          ) : null}
-        </Frame>
+            <View style={styles.tokens}>
+              {tokens.map((token) => (
+                <View key={token.label} style={styles.tokenWrap}>
+                  <Medallion size={TOKEN}>
+                    <AppText style={styles.tokenValue}>
+                      {token.value ?? "–"}
+                    </AppText>
+                  </Medallion>
+                  <AppText
+                    variant="tiny"
+                    align="center"
+                    numberOfLines={2}
+                    style={styles.tokenLabel}
+                  >
+                    {token.label}
+                  </AppText>
+                </View>
+              ))}
+            </View>
+            {next ? (
+              <View style={styles.next}>
+                <NextBadge badge={next} clock={still} />
+              </View>
+            ) : null}
+          </Frame>
 
-        {/* Badges */}
-        <SectionTitle
-          label={t("profile.card.badges")}
-          colors={TABLE.ribbonRed}
-          style={{ marginTop: spacing.xl }}
-          right={
-            card ? (
-              <AppText variant="tiny" style={styles.count}>
-                {t("profile.card.unlocked", {
-                  n: earned,
-                  total: card.badges.length,
-                })}
-              </AppText>
-            ) : null
-          }
-        />
-        <Frame tone="blue" stitched style={styles.badges}>
-          {card ? (
-            <BadgeGrid
-              badges={card.badges}
-              clock={clock}
-              still={still}
-              fresh={fresh}
-              onStamped={onStamped}
-            />
-          ) : null}
-        </Frame>
+          {/* Badges */}
+          <SectionTitle
+            label={t("profile.card.badges")}
+            colors={TABLE.ribbonRed}
+            style={{ marginTop: spacing.xl }}
+            right={
+              card ? (
+                <AppText variant="tiny" style={styles.count}>
+                  {t("profile.card.unlocked", {
+                    n: earned,
+                    total: card.badges.length,
+                  })}
+                </AppText>
+              ) : null
+            }
+          />
+          <Frame tone="blue" stitched style={styles.badges}>
+            {card ? (
+              <BadgeGrid
+                badges={card.badges}
+                clock={clock}
+                still={still}
+                fresh={fresh}
+                onStamped={onStamped}
+              />
+            ) : null}
+          </Frame>
 
-        {/* By game */}
-        <SectionTitle
-          label={t("profile.card.byGame")}
-          colors={TABLE.ribbonGreen}
-          style={{ marginTop: spacing.xl }}
-        />
-        <Frame tone="wood" style={styles.games}>
-          {card ? <GameRecords games={card.games} /> : null}
-        </Frame>
+          {/* By game */}
+          <SectionTitle
+            label={t("profile.card.byGame")}
+            colors={TABLE.ribbonGreen}
+            style={{ marginTop: spacing.xl }}
+          />
+          <Frame tone="wood" style={styles.games}>
+            {card ? <GameRecords games={card.games} /> : null}
+          </Frame>
+        </AvatarStage>
       </ScrollView>
 
       <SettingsSheet ref={settingsRef} onPick={openSetting} />

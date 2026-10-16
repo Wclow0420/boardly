@@ -32,16 +32,18 @@ export function Card({ children, onPress, padding, radius, style }: CardProps) {
     ...theme.shadows.card,
   };
 
-  const texture = <Texture radius={r} />;
-  // over the content, so a picture running to the edge sits in the frame
-  const rim = <BezelOverlay r={r} t={CARD_RIM} />;
+  const texture = (
+    <>
+      <Texture radius={r} />
+      <BezelOverlay r={r} t={CARD_RIM} />
+    </>
+  );
 
   if (!onPress) {
     return (
       <View style={[cardStyle, style]}>
         {texture}
         {children}
-        {rim}
       </View>
     );
   }
@@ -56,7 +58,6 @@ export function Card({ children, onPress, padding, radius, style }: CardProps) {
     >
       {texture}
       {children}
-      {rim}
     </Pressable>
   );
 }

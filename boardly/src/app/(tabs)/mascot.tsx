@@ -10,7 +10,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Emblem } from "@/components/icons";
-import { AppText, BezelOverlay, Frame, TitlePlaque, Texture } from "@/components/ui";
+import {
+  AppText,
+  BezelOverlay,
+  Frame,
+  LightSweep,
+  TitlePlaque,
+  Texture,
+} from "@/components/ui";
 import { useSession } from "@/context/SessionContext";
 import { CoinPill } from "@/features/coins/CoinPill";
 import { asLook } from "@/features/mascot/dress";
@@ -55,6 +62,7 @@ export default function MascotTab() {
           <LinearGradient colors={TABLE.button} style={styles.wardrobeFill}>
             <Texture radius={16} />
             <BezelOverlay r={16} t={4} />
+            <LightSweep r={16} />
             <Emblem emoji="👗" size={40} />
             <AppText style={styles.wardrobeText}>{t("mascot.open")}</AppText>
           </LinearGradient>

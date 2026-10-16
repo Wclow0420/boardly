@@ -3,8 +3,18 @@
 // engraved/trim.ts for the shapes). Nothing here moves, so it costs
 // nothing per frame.
 
-import { useCallback, useId, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
+import { LinearGradient as Fade } from "expo-linear-gradient";
 import { StyleSheet, View, type LayoutChangeEvent } from "react-native";
+import Animated, {
+  Easing,
+  cancelAnimation,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from "react-native-reanimated";
 import Svg, {
   Circle,
   Defs,
@@ -17,6 +27,7 @@ import Svg, {
 
 import { INKS, JEWELS, MATERIALS, type Jewel } from "@/components/engraved/shapes";
 import { bezel, cornerScrolls } from "@/components/engraved/trim";
+import { useOnScreen } from "@/hooks/useOnScreen";
 
 export type Metal = "gold" | "silver";
 
@@ -207,6 +218,67 @@ export function BezelOverlay({
             </>
           ) : null}
         </Svg>
+      ) : null}
+    </View>
+  );
+}
+
+/** How long one sweep takes to cross, of each cycle. */
+const CROSS = 0.22;
+
+/** A band of light that crosses a piece every `every` seconds, like the
+ *  sweep across a border's metal. On the native thread (a transform, no
+ *  drawing), only while its screen is showing and motion is allowed.
+ *  Put it over the piece, clipped to its corners `r`. */
+export function LightSweep({
+  r,
+  every = 4.5,
+  phase,
+}: {
+  r: number;
+  every?: number;
+  /** Where in the cycle it starts (0..1), so neighbours don't flash at
+   *  once. */
+  phase?: number;
+}) {
+  const [{ w, h }, onLayout] = useBox();
+  const still = useReducedMotion();
+  const onScreen = useOnScreen();
+  const [start] = useState(() => phase ?? Math.random());
+  const cycle = useSharedValue(start);
+  const moving = !still && onScreen && w > 0;
+  useEffect(() => {
+    if (!moving) return;
+    cycle.value = start;
+    cycle.value = withRepeat(
+      withTiming(start + 1, { duration: every * 1000, easing: Easing.linear }),
+      -1,
+    );
+    return () => cancelAnimation(cycle);
+  }, [moving, every, start, cycle]);
+  const band = Math.max(18, h * 0.7);
+  const style = useAnimatedStyle(() => {
+    const p = (cycle.value % 1) / CROSS;
+    const x = p < 1 ? -band * 2 + p * (w + band * 3) : w + band * 2;
+    return { transform: [{ translateX: x }, { rotate: "22deg" }] };
+  });
+  return (
+    <View
+      pointerEvents="none"
+      style={[StyleSheet.absoluteFill, { borderRadius: r, overflow: "hidden" }]}
+      onLayout={onLayout}
+    >
+      {moving ? (
+        <Animated.View
+          style={[{ position: "absolute", top: -h, width: band, height: h * 3 }, style]}
+        >
+          <Fade
+            colors={["#FFFFFF00", "#FFFFFF70", "#FFFFFF00"]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </Animated.View>
       ) : null}
     </View>
   );

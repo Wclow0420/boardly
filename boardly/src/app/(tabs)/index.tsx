@@ -10,6 +10,7 @@ import {
   AppText,
   BezelOverlay,
   GorhomBottomSheetModal,
+  LightSweep,
   IconButton,
   Screen,
   SkeletonCard,
@@ -122,6 +123,7 @@ export default function HomeScreen() {
       </View>
       <LinearGradient colors={HOME.button} style={styles.startButton}>
         <BezelOverlay r={22} t={3.2} />
+        <LightSweep r={22} />
         <AppText style={styles.startText}>{t("home.start")}</AppText>
         <ChevronRightIcon size={12} color="#FFFFFF" strokeWidth={2.6} />
       </LinearGradient>
