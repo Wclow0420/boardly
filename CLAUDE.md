@@ -126,6 +126,28 @@ is the model; copy its helpers (`bake`, `put`, `lazy`, `own`, `begin`,
   on screens you've left stop; below 42pt a border stands still. They
   are a backstop, not a substitute for a cheap border.
 
+## Badge frames specifically
+
+Every badge has four levels, and each level wears a frame
+(`components/badges/frames/`; a game's own in
+`src/games/<key>/badgeFrames.ts`). Draw them like the borders:
+
+- A 120 × 120 box, the emblem's disc (`m: "tint"`, r 25–28) at the
+  centre left clear, everything inside 4–116, readable at 60pt.
+- One idea per game that carries through all four levels (a board, a
+  clock, an agency seal, a barrel hoop, gothic tracery), each level
+  clearly richer: bronze a simple token in bronze; silver adds a
+  wreath or a second ring; gold adds a crest, a jewel and the game's
+  big motif (candles, wings, cards); diamond is platinum on a star of
+  crystal (`rays`) with set diamonds and a cut gem (`gem`) on top.
+- No ribbons or hanging tails, no creature heads, no plain rings.
+- `sweep` is the rim the light crosses; `glints` sit on the lit upper
+  left and on the jewels.
+- Look before wiring it in: `node scripts/badge-sheet.mjs <file>
+  <png> BADGE_FRAMES <tint>` shows each level large, small and locked
+  in iron. Three or four rounds. A set of games can be drawn by
+  parallel agents, one game each, with this brief; review every sheet.
+
 ## Icons specifically
 
 - Use a 48 × 48 box with the drawing filling about 4–44, in 2–6

@@ -178,6 +178,22 @@ needs a person.
 What made Seal the Manor feel good; follow it unless the design says
 otherwise.
 
+**A new game is not done without** (each is explained below):
+- its badges as four-level missions on the server (`Badge(key, goals,
+  match)`, bronze → silver → gold → diamond) and `player_outcome`;
+- a `badges` entry (`{ glyph, emoji, loop }`) for every badge key and
+  its own `badgeFrames` (`src/games/<key>/badgeFrames.ts`): four
+  frames in the game's style, richer at each level, looked over with
+  `scripts/badge-sheet.mjs` and at `boardly-dev://dev/badges?game=<key>`;
+- badge names and counted asks (`desc_one`/`desc_other` with
+  `{{count}}`) in `en`, `zh` and `ms`;
+- its icons as engraved emblems (`src/games/<key>/emblems`), box art,
+  a rules page with a player-count table, a Journal for its history,
+  and a dev preview page;
+- the app's own pieces for its menus and sheets (`TitlePlaque`,
+  `SectionTitle`, `Frame`, `Button`; bordered avatars inside an
+  `AvatarStage`), never plain borders or ribbons.
+
 - **Secrecy first.** Never show anything that leaks another player's
   hidden choice — e.g. only the player's own walk into a room is
   animated; everyone else is already standing there.
