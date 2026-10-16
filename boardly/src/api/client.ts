@@ -206,6 +206,8 @@ export interface GameSessionInfo {
   winnerUserId: string | null;
   /** Every winner (team games have several); empty for no winner. */
   winnerUserIds: string[];
+  /** Moves made so far: of two copies, the higher is the newer. */
+  version?: number;
 }
 
 export type FriendRelation = "friend" | "incoming" | "outgoing" | "none";

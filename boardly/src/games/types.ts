@@ -34,8 +34,9 @@ export interface GameBoardProps<TState = Record<string, unknown>> {
   finished: boolean;
   /** Identifies this game, for notes a board keeps on the device. */
   sessionId?: string;
-  /** Send a game-specific move to the backend. */
-  onMove: (move: Record<string, unknown>) => void;
+  /** Send a game-specific move to the backend. `quiet`: a move that only
+   *  shows the table something (no waiting on it: `busy` stays false). */
+  onMove: (move: Record<string, unknown>, options?: { quiet?: boolean }) => void;
   /** For a board that fills the whole screen (layout "stage"): the
    *  screen's own controls and what follows a finished game. */
   stage?: StageChrome;

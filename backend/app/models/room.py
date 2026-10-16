@@ -35,7 +35,9 @@ class Room(db.Model):
 
     host = db.relationship("User", foreign_keys=[host_id])
     rematch_room = db.relationship("Room", remote_side=[id])
-    players = db.relationship("RoomPlayer", back_populates="room", cascade="all, delete-orphan")
+    players = db.relationship(
+        "RoomPlayer", back_populates="room", cascade="all, delete-orphan", lazy="selectin"
+    )
     sessions = db.relationship("GameSession", back_populates="room", cascade="all, delete-orphan")
 
     def to_dict(self):
@@ -75,7 +77,7 @@ class RoomPlayer(db.Model):
     )
 
     room = db.relationship("Room", back_populates="players")
-    user = db.relationship("User")
+    user = db.relationship("User", lazy="selectin")
 
     def to_dict(self):
         return {

@@ -47,4 +47,6 @@ class GameSession(db.Model):
                 str(self.winner_user_id) if self.winner_user_id else None
             ),
             "winnerUserIds": self.winner_user_ids or [],
+            # counts the moves made: a client keeps the highest it has seen
+            "version": (self.state or {}).get("_v", 0),
         }

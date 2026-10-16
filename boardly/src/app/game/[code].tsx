@@ -70,6 +70,9 @@ function GameScreenBody({
   const room = roomQuery.data;
   const session = room?.session ?? null;
   const makeMove = useMakeMove(roomCode, room);
+  // moves that only show something to the table (a leader's picks so
+  // far): sent without holding the board up
+  const quietMove = useMakeMove(roomCode, room);
   const rematch = useRematch(room);
   const leaveRoom = useLeaveRoom(room?.id);
   const leaveSheetRef = useRef<GorhomBottomSheetModal>(null);
@@ -296,7 +299,7 @@ function GameScreenBody({
       busy={makeMove.isPending}
       sessionId={String(session.id)}
       finished={!inProgress}
-      onMove={(move) => makeMove.mutate(move)}
+      onMove={(move, options) => (options?.quiet ? quietMove : makeMove).mutate(move)}
     />
   );
 

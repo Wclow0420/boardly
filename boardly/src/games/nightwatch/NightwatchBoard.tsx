@@ -438,16 +438,30 @@ export function NightwatchBoard({
           : "soft",
     ]),
   );
+  // my vote shows the moment I cast it, before the server has answered
+  const [cast0, setCastVote] = useState<{ step: string; approve: boolean } | null>(null);
+  // a vote that failed to send is taken back, so it can be cast again
+  const castVote = cast0?.step === step && !(stage?.error && !busy && !state.voted[mySeat]) ? cast0 : null;
+  const iVoted = state.phase === "vote" && (state.voted[mySeat] || castVote?.step === step);
   const councilPlates: Record<number, Plate> =
     revealing && voteToShow
       ? Object.fromEntries(allSeats.map((seat) => [seat, voteToShow.votes[seat] ? "yes" : "no"]))
       : state.phase === "vote"
-        ? Object.fromEntries(allSeats.filter((seat) => state.voted[seat]).map((seat) => [seat, "voted"]))
+        ? Object.fromEntries(
+            allSeats.filter((seat) => state.voted[seat] || (seat === mySeat && iVoted)).map((seat) => [seat, "voted"]),
+          )
         : {};
+  // the leader's picks light up at once; the table is told the latest of
+  // them a moment later, in the background
+  const pickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (pickTimer.current) clearTimeout(pickTimer.current);
+  }, []);
   const pickTeam = (seat: number) => {
     const next = toggleTeam(draft, seat, teamSize(state));
     choose({ team: next });
-    onMove({ type: "pick", team: next });
+    if (pickTimer.current) clearTimeout(pickTimer.current);
+    pickTimer.current = setTimeout(() => onMove({ type: "pick", team: next }, { quiet: true }), 160);
   };
   // the last chance's lights: the named one in crimson, the rest low
   const target = current.target ?? null;
@@ -678,14 +692,22 @@ export function NightwatchBoard({
       style={styles.main}
       disabled={draft.length !== teamSize(state)}
       loading={busy}
-      onPress={() => send({ type: "propose", team: draft })}
+      onPress={() => {
+        if (pickTimer.current) clearTimeout(pickTimer.current);
+        send({ type: "propose", team: draft });
+      }}
     />
+  ) : council && task === "vote" && castVote?.step === step ? (
+    <AppText style={stageText.strong}>{t(castVote.approve ? "nightwatch.chosen.yes" : "nightwatch.chosen.no")}</AppText>
   ) : council && task === "vote" ? (
     <VoteButtons
       approve={t("nightwatch.prompt.approve")}
       reject={t("nightwatch.prompt.reject")}
       disabled={busy}
-      onVote={(approve) => onMove({ type: "vote", approve })}
+      onVote={(approve) => {
+        setCastVote({ step, approve });
+        onMove({ type: "vote", approve });
+      }}
     />
   ) : atPatrol ? (
     <Button
@@ -810,7 +832,7 @@ export function NightwatchBoard({
               plates={councilPlates}
               crown={revealing && voteToShow ? voteToShow.leader : state.leader}
               selectable={
-                task === "propose" && !busy ? (draft.length >= teamSize(state) ? draft : allSeats) : []
+                task === "propose" ? (draft.length >= teamSize(state) ? draft : allSeats) : []
               }
               onPick={pickTeam}
               paused={showing !== null}

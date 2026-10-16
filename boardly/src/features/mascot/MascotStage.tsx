@@ -51,6 +51,46 @@ function bakeLayer(picture: SkPicture, scale: number): SkImage | null {
   return surface.makeImageSnapshot();
 }
 
+/** What a look is, as a string: two looks that read the same are the same
+ *  look, even when the server sends them as new objects every update. */
+export const lookKey = (look: Look) =>
+  `${look.skin}|${look.colour}|${Object.entries(look.wear)
+    .filter(([, id]) => id)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([slot, id]) => `${slot}:${id}`)
+    .join(",")}`;
+
+type Baked = { back: SkImage | null; body: SkImage | null; eyes: SkImage | null; hat: SkImage | null; hand: SkImage | null };
+
+/** Baked figures, by look and size, shared by every copy on screen and
+ *  kept across screens and games — the oldest let go past a limit, so a
+ *  long evening of rematches doesn't fill the memory. */
+const BAKED = new Map<string, Baked>();
+const KEEP = 48;
+function bakedFigure(look: Look, scale: number): Baked {
+  const key = `${lookKey(look)}@${scale.toFixed(3)}`;
+  const hit = BAKED.get(key);
+  if (hit) {
+    // most recently used goes to the back of the line
+    BAKED.delete(key);
+    BAKED.set(key, hit);
+    return hit;
+  }
+  const dressed = dressLayers(look);
+  const bake = (data: Parameters<typeof recordEmblem>[0]) =>
+    data.length ? bakeLayer(recordEmblem(data, undefined, BOX), scale) : null;
+  const made = {
+    back: bake(dressed.back),
+    body: bake(dressed.body),
+    eyes: bake(dressed.eyes),
+    hat: bake(dressed.hat),
+    hand: bake(dressed.hand),
+  };
+  BAKED.set(key, made);
+  while (BAKED.size > KEEP) BAKED.delete(BAKED.keys().next().value!);
+  return made;
+}
+
 /** A number from a string, so each mascot keeps its own rhythm. */
 const seedOf = (text: string) => {
   let h = 0;
@@ -76,18 +116,9 @@ export function MascotFigure({
 }) {
   const still = useReducedMotion() || paused;
   const scale = width / BOX[0];
-  const layers = useMemo(() => {
-    const dressed = dressLayers(look);
-    const bake = (data: Parameters<typeof recordEmblem>[0]) =>
-      bakeLayer(recordEmblem(data, undefined, BOX), scale);
-    return {
-      back: bake(dressed.back),
-      body: bake(dressed.body),
-      eyes: bake(dressed.eyes),
-      hat: bake(dressed.hat),
-      hand: bake(dressed.hand),
-    };
-  }, [look, scale]);
+  const key = lookKey(look);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the key is the look
+  const layers = useMemo(() => bakedFigure(look, scale), [key, scale]);
 
   const offset = seedOf(seed) * 10;
   const t = useSharedValue(offset);
@@ -133,11 +164,13 @@ export function MascotFigure({
     transform: [{ scaleX: 1 + Math.sin(t.get() * 3) * 0.035 }],
   }));
 
-  const layer = (image: SkImage | null, style?: object, origin?: [number, number, number]) => (
+  // nothing worn in a slot: no canvas for it
+  const layer = (image: SkImage | null, style?: object, origin?: [number, number, number]) =>
+    image ? (
     <Animated.View style={[StyleSheet.absoluteFill, origin ? { transformOrigin: origin } : null, style]}>
       <StillLayer image={image} width={area.width} height={area.height} />
     </Animated.View>
-  );
+    ) : null;
 
   return (
     // the canvases spill past the box on every side; the box is the layout
