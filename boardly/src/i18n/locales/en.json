@@ -16,7 +16,9 @@
       "minutes": "{{n}}m ago",
       "hours": "{{n}}h ago",
       "days": "{{n}}d ago"
-    }
+    },
+    "holdCue": "Press and hold",
+    "holdNudge": "Hold until it fills"
   },
   "updates": {
     "title": "Update Ready",

@@ -14,6 +14,7 @@ import { useDerivedValue, useSharedValue, withSpring, withTiming } from "react-n
 import { bakedSvg } from "@/components/badges/bake";
 import { useIsoClock } from "@/components/iso";
 import { AppText } from "@/components/ui";
+import { PlayerName } from "@/features/game/stage/PlayerName";
 import { useOnScreen } from "@/hooks/useOnScreen";
 import { fontFamily } from "@/theme";
 import { crestArt, crestLayout, studArt, MARK_LIGHT, type Mark } from "./art";
@@ -110,13 +111,11 @@ export function Crest({
         ) : null}
       </Canvas>
       {L.medallions.map((md, i) => (
-        <AppText
+        <PlayerName
           key={i}
-          numberOfLines={1}
+          name={names[i]}
           style={[styles.name, { left: md.x - 56, top: md.y + md.r + 4 }, lit === i && styles.nameLit]}
-        >
-          {names[i]}
-        </AppText>
+        />
       ))}
       <View style={[styles.plaque, { left: L.plaque.x, top: L.plaque.y + 6, width: L.plaque.w }]}>
         <AppText style={styles.title} numberOfLines={1}>

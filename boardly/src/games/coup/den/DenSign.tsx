@@ -14,6 +14,7 @@ import { useDerivedValue } from "react-native-reanimated";
 import { bakedSvg } from "@/components/badges/bake";
 import { useIsoClock } from "@/components/iso";
 import { AppText } from "@/components/ui";
+import { PlayerName } from "@/features/game/stage/PlayerName";
 import { useOnScreen } from "@/hooks/useOnScreen";
 import { fontFamily } from "@/theme";
 import { LANTERN_H, LANTERN_W, TILE_H, TILE_W, denArt, denLayout, lanternArt, tileArt, type TileKind } from "./denArt";
@@ -126,17 +127,15 @@ export const DenSign = memo(function DenSign({
                 {`$${tile.coins}`}
               </AppText>
             ) : null}
-            <AppText
+            <PlayerName
+              name={tile.name}
               style={[
                 styles.name,
                 { left: p.x + TILE_W / 2 - p.slot / 2, top: p.y + TILE_H + 3, width: p.slot },
                 i === at && styles.nameLit,
                 tile.hidden === 0 && styles.nameOut,
               ]}
-              numberOfLines={1}
-            >
-              {tile.name}
-            </AppText>
+            />
           </View>
         );
       })}

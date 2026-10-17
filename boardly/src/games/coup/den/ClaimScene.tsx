@@ -3,7 +3,8 @@
 // role's colour, and how the room is answering — a bar filling as people
 // let it go, a seal on each of their name plates. Whoever may challenge
 // or block answers on the plinth; a block that could be either of two
-// roles is chosen here first.
+// roles is chosen here first. While I answer, my own cards sit here too
+// (so I needn't open them to decide), and a block I truly hold is ticked.
 
 import { memo, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -26,6 +27,7 @@ export const ClaimScene = memo(function ClaimScene({
   total,
   progressLabel,
   chips,
+  hand,
   lineup,
 }: {
   /** "Ming says" */
@@ -41,6 +43,8 @@ export const ClaimScene = memo(function ClaimScene({
   progressLabel: string;
   /** Roles to block as, when there's a choice. */
   chips?: { roles: Role[]; picked: Role; label: (role: Role) => string; onPick: (role: Role) => void };
+  /** My cards still face down, while I'm the one answering. */
+  hand?: { label: string; roles: Role[]; name: (role: Role) => string };
   lineup: ReactNode;
 }) {
   const tint = role ? ROLE_TINT[role] : "#FFD27A";
@@ -76,6 +80,21 @@ export const ClaimScene = memo(function ClaimScene({
           {progressLabel}
         </AppText>
       </Animated.View>
+      {hand && hand.roles.length ? (
+        <Animated.View entering={FadeIn.delay(200).duration(360)} style={styles.hand}>
+          <AppText style={styles.handLabel} numberOfLines={1}>
+            {hand.label}
+          </AppText>
+          {hand.roles.map((r, i) => (
+            <View key={i} style={[styles.handCard, { borderColor: ROLE_TINT[r] }]}>
+              <Emblem emoji={ROLE_EMOJI[r]} size={16} />
+              <AppText style={styles.handName} numberOfLines={1}>
+                {hand.name(r)}
+              </AppText>
+            </View>
+          ))}
+        </Animated.View>
+      ) : null}
       {chips ? (
         <View style={styles.chips}>
           {chips.roles.map((r) => (
@@ -93,6 +112,7 @@ export const ClaimScene = memo(function ClaimScene({
               <AppText style={styles.chipText} numberOfLines={1}>
                 {chips.label(r)}
               </AppText>
+              {hand?.roles.includes(r) ? <Emblem emoji="✓" size={14} /> : null}
             </Pressable>
           ))}
         </View>
@@ -109,6 +129,19 @@ const shadow = {
 };
 
 const styles = StyleSheet.create({
+  hand: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6, paddingHorizontal: 18, marginTop: 8 },
+  handLabel: { fontFamily: fontFamily.semiBold, fontSize: 12, lineHeight: 16, color: "#C8B8A8", ...shadow },
+  handCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    height: 26,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    backgroundColor: "#1C0C0E",
+  },
+  handName: { fontFamily: fontFamily.bold, fontSize: 12, lineHeight: 16, color: "#FFF2D8" },
   wrap: { flex: 1 },
   placard: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 18, paddingTop: 10 },
   card: { transform: [{ rotate: "-7deg" }] },

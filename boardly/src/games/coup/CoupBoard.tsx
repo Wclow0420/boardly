@@ -18,6 +18,7 @@ import { Journal } from "@/features/game/Journal";
 import { Popup, type PopupLook } from "@/features/game/Popup";
 import { stageText } from "@/features/game/stage/GameStage";
 import { ToolButton } from "@/features/game/stage/parts";
+import { shortName } from "@/features/game/stage/PlayerName";
 import type { Light, Plate, Standing } from "@/features/game/stage/StageLineup";
 import { asLook } from "@/features/mascot/dress";
 import { fontFamily } from "@/theme";
@@ -393,6 +394,11 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
             ? { roles: blockRoles, picked: blockAs, label: (r) => t("coup.claim.blockAs", { role: roleName(r) }), onPick: (r) => choose({ block: r }) }
             : undefined
         }
+        hand={
+          answering && me
+            ? { label: t("coup.tools.hand"), roles: me.cards.flatMap((c) => (c.role && !c.revealed ? [c.role] : [])), name: roleName }
+            : undefined
+        }
         lineup={lineup({
           lights: lightsOf((s) =>
             s === claim.seat ? "lit" : !claim.block && s === a.target ? "red" : claim.block && s === a.actor ? "red" : out(s) ? "dim" : "soft",
@@ -587,11 +593,11 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
     ? state.winner !== null
       ? state.winner === mySeat
         ? t("coup.end.youWin")
-        : t("coup.den.won", { name: nameOf(state.winner) })
+        : t("coup.den.won", { name: shortName(nameOf(state.winner)) })
       : t("coup.result.none")
     : state.turn === mySeat
       ? t("coup.den.yourTurn")
-      : t("coup.den.turn", { name: nameOf(state.turn) });
+      : t("coup.den.turn", { name: shortName(nameOf(state.turn)) });
   const subtitle = t("coup.den.subtitle", { n: Math.max(1, turnCount(state)), left: aliveCount(state), total: state.numPlayers });
 
   const tools = (

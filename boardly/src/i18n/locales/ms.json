@@ -16,7 +16,9 @@
       "minutes": "{{n}} min lalu",
       "hours": "{{n}} jam lalu",
       "days": "{{n}} hari lalu"
-    }
+    },
+    "holdCue": "Tekan dan tahan",
+    "holdNudge": "Tahan sampai penuh"
   },
   "updates": {
     "title": "Kemas Kini Sedia",

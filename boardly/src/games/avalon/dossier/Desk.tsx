@@ -49,6 +49,7 @@ import { Emblem } from "@/components/icons";
 import { useIsoClock } from "@/components/iso";
 import { shader } from "@/components/iso/shaders";
 import { AppText, BezelOverlay, useBox } from "@/components/ui";
+import { PlayerName } from "@/features/game/stage/PlayerName";
 import { Burst, Motes } from "@/features/game/stage/light";
 import { useOnScreen } from "@/hooks/useOnScreen";
 import { fontFamily } from "@/theme";
@@ -589,13 +590,11 @@ function Gather({
         </AppText>
       </View>
       {envs.map((e) => (
-        <AppText
+        <PlayerName
           key={e.seat}
-          numberOfLines={1}
+          name={e.name}
           style={[styles.name, { left: e.x - 36, top: e.y + ENV_H * es + 1, opacity: e.done ? 1 : 0.6 }]}
-        >
-          {e.name}
-        </AppText>
+        />
       ))}
     </>
   );

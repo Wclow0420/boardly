@@ -29,7 +29,8 @@ export default function RulesPreview() {
     });
   };
   useEffect(() => {
-    show(game);
+    const id = requestAnimationFrame(() => show(game));
+    return () => cancelAnimationFrame(id);
     // once, on arrival
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -1,15 +1,20 @@
 // The button you hold to cast your vote or play your card: an enamel bar
 // in a gold bezel that fills with light while held, ticking faster and
 // harder in the hand as it fills; let go early and it drains away. It
-// shares its `progress` (0..1) with the lantern being filled.
+// shares its `progress` (0..1) with the lantern being filled. A line under
+// the label says to hold it, and a quick tap (someone who didn't know)
+// shakes it and says to keep holding.
 
 import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
   cancelAnimation,
   useAnimatedStyle,
+  useSharedValue,
+  withSequence,
   withTiming,
   type SharedValue,
 } from "react-native-reanimated";
@@ -59,8 +64,15 @@ export function HoldButton({
   disabled?: boolean;
   onDone: () => void;
 }) {
+  const { t } = useTranslation();
   const look = ENAMEL[tone];
   const done = useRef(false);
+  const [nudged, setNudged] = useState(false);
+  const nudge = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shake = useSharedValue(0);
+  useEffect(() => () => {
+    if (nudge.current) clearTimeout(nudge.current);
+  }, []);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const stopTicks = () => {
@@ -102,6 +114,21 @@ export function HoldButton({
   };
   const release = () => {
     if (done.current) return;
+    // let go before a third: they tapped it, not knowing to hold
+    if (progress.get() < 0.35) {
+      moveHaptic();
+      shake.set(
+        withSequence(
+          withTiming(-7, { duration: 60 }),
+          withTiming(7, { duration: 90 }),
+          withTiming(-4, { duration: 80 }),
+          withTiming(0, { duration: 70 }),
+        ),
+      );
+      setNudged(true);
+      if (nudge.current) clearTimeout(nudge.current);
+      nudge.current = setTimeout(() => setNudged(false), 2600);
+    }
     stopTicks();
     cancelAnimation(progress);
     progress.set(
@@ -111,7 +138,7 @@ export function HoldButton({
 
   const fill = useAnimatedStyle(() => ({ width: `${progress.value * 100}%` }));
   const press = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 - 0.03 * Math.min(1, progress.value * 4) }],
+    transform: [{ translateX: shake.value }, { scale: 1 - 0.03 * Math.min(1, progress.value * 4) }],
   }));
 
   return (
@@ -149,6 +176,9 @@ export function HoldButton({
           >
             {label}
           </AppText>
+          <AppText style={[styles.cue, { color: look.text }, nudged && styles.cueNudged]} numberOfLines={1}>
+            {nudged ? t("common.holdNudge") : t("common.holdCue")}
+          </AppText>
         </View>
       </Animated.View>
     </Pressable>
@@ -165,11 +195,13 @@ const styles = StyleSheet.create({
   },
   off: { opacity: 0.5 },
   fill: { position: "absolute", left: 0, top: 0, bottom: 0, opacity: 0.75 },
-  face: { alignItems: "center", paddingHorizontal: 18 },
+  face: { alignItems: "center", paddingHorizontal: 10 },
   label: {
     fontFamily: fontFamily.bold,
     fontSize: 18,
     lineHeight: 23,
     letterSpacing: 0.5,
   },
+  cue: { fontFamily: fontFamily.semiBold, fontSize: 11, lineHeight: 14, opacity: 0.72 },
+  cueNudged: { opacity: 1, fontFamily: fontFamily.bold },
 });

@@ -9,7 +9,7 @@
 // ManorStage for a game using it.
 
 import { LinearGradient } from "expo-linear-gradient";
-import { createContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -134,6 +134,13 @@ export function GameStage({
   useEffect(() => {
     gone.set(withTiming(away ? 1 : 0, { duration: 450 }));
   }, [away, gone]);
+  // and once the curtain has shut on a new scene they're set again from
+  // what that scene says, so a slide cut short can't leave the tools (and
+  // the player's own cards behind them) hidden for the rest of the game
+  const awayRef = useRef(away);
+  useEffect(() => {
+    awayRef.current = away;
+  }, [away]);
   const toolsOut = useAnimatedStyle(() => ({
     opacity: 1 - gone.value,
     transform: [{ translateX: gone.value * 80 }],
@@ -152,7 +159,10 @@ export function GameStage({
           curtain: what's under the header, the middle, the tools and the
           lines over the plinth */}
       <View style={[styles.stage, { top: headerHeight - CURTAIN_UP, bottom: plinthH - CURTAIN_DOWN }]}>
-        <StageCurtain sceneKey={sceneKey} jewel={look.jewel} onSwap={(key) => setAside({ key, bottom: null })}>
+        <StageCurtain sceneKey={sceneKey} jewel={look.jewel} onSwap={(key) => {
+            setAside({ key, bottom: null });
+            gone.set(withTiming(awayRef.current ? 1 : 0, { duration: 250 }));
+          }}>
           <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
             {bleed ? (
               <View style={[styles.centre, { top: CURTAIN_UP - headerHeight, bottom: CURTAIN_DOWN - plinthH }]}>

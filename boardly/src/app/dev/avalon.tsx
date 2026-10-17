@@ -246,7 +246,7 @@ const LOOKS: { skin: string; colour: string; wear: Record<string, string> }[] = 
   { skin: "glossy", colour: "#3AA65A", wear: {} },
   { skin: "glossy", colour: "#8A5AD0", wear: { hat: "crown" } },
 ];
-const NAMES = ["You", "Ming", "Hua", "Qiang", "Mei", "Wei", "Lan", "Jun", "Fang", "Kai"].map((username, seat) => ({
+const NAMES = ["You", "🤖 Ming", "Christopher Wellington", "Qiang", "MeiMei_1999", "🤖 Wei", "Lan", "Jun", "Fang", "Kai"].map((username, seat) => ({
   seat,
   userId: `u${seat}`,
   username,

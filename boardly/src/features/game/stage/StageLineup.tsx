@@ -60,6 +60,7 @@ import { heavyHaptic } from "@/utils/haptics";
 import { Burst, Motes } from "./light";
 import { floorArt, rigArt, RIG_Y } from "./lineupArt";
 import { shader } from "@/components/iso/shaders";
+import { PlayerName } from "./PlayerName";
 
 export interface Standing {
   seat: number;
@@ -492,9 +493,7 @@ function NamePlate({
             <AppText style={styles.mark}>{shown === "yes" ? "✓" : "✕"}</AppText>
           </Animated.View>
         ) : null}
-        <AppText numberOfLines={1} style={[styles.name, bright && styles.nameBright]}>
-          {name}
-        </AppText>
+        <PlayerName name={name} style={[styles.name, bright && styles.nameBright]} />
       </View>
     </Animated.View>
   );

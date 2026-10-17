@@ -23,6 +23,7 @@ import Animated, {
 
 import { bakedSvg } from "@/components/badges/bake";
 import { AppText, BezelOverlay } from "@/components/ui";
+import { PlayerName } from "@/features/game/stage/PlayerName";
 import { StageInsets } from "@/features/game/stage/GameStage";
 import { Burst } from "@/features/game/stage/light";
 import { StageLineup, type Light, type Standing } from "@/features/game/stage/StageLineup";
@@ -136,12 +137,11 @@ export function Ending({
         </View>
         {tally.map((p) => (
           <View key={p.seat} style={styles.line}>
-            <AppText
+            <PlayerName
+              name={p.name}
+              align="left"
               style={[styles.who, winners.includes(p.seat) && styles.winner, p.seat === mySeat && styles.me]}
-              numberOfLines={1}
-            >
-              {p.name}
-            </AppText>
+            />
             <AppText style={[styles.count, out(p.seat) && styles.drunk]}>
               {maxCups !== null ? `🍺 ${cups[p.seat]}/${maxCups}` : `🍺 ${cups[p.seat]}`}
             </AppText>

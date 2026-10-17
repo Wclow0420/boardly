@@ -16,7 +16,9 @@
       "minutes": "{{n}} 分钟前",
       "hours": "{{n}} 小时前",
       "days": "{{n}} 天前"
-    }
+    },
+    "holdCue": "按住不放",
+    "holdNudge": "按住，直到填满"
   },
   "updates": {
     "title": "更新已就绪",

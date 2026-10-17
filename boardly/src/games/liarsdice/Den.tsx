@@ -14,6 +14,7 @@ import { useDerivedValue, useSharedValue, withSequence, withTiming } from "react
 import { bakedSvg } from "@/components/badges/bake";
 import { useIsoClock } from "@/components/iso";
 import { AppText } from "@/components/ui";
+import { PlayerName } from "@/features/game/stage/PlayerName";
 import { useOnScreen } from "@/hooks/useOnScreen";
 import { fontFamily } from "@/theme";
 import { denArt, denLayout, steinArt } from "./art";
@@ -100,9 +101,7 @@ export function Den({
         const s = L.steins[i];
         return (
           <View key={i} style={[styles.under, { left: s.x - s.each / 2, top: L.shelfY + 3, width: s.each }]}>
-            <AppText style={[styles.name, i === waiting && styles.nameLit, p.out && styles.nameOut]} numberOfLines={1}>
-              {p.name}
-            </AppText>
+            <PlayerName name={p.name} style={[styles.name, styles.wide, i === waiting && styles.nameLit, p.out && styles.nameOut]} />
             <AppText style={[styles.count, p.out && styles.nameOut]} numberOfLines={1}>
               {maxCups !== null ? `${p.cups}/${maxCups}` : String(p.cups)}
             </AppText>
@@ -131,6 +130,7 @@ const shadow = {
 
 const styles = StyleSheet.create({
   under: { position: "absolute", alignItems: "center" },
+  wide: { alignSelf: "stretch" },
   name: { fontFamily: fontFamily.semiBold, fontSize: 9.5, lineHeight: 12, color: "#E8D2B4", ...shadow },
   nameLit: { color: "#FFE7A8", fontFamily: fontFamily.bold },
   nameOut: { color: "#C87A80" },
