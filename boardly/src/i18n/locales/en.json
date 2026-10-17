@@ -81,7 +81,29 @@
       "party": "Party",
       "faction": "Factions"
     },
-    "openTable": "Open a table"
+    "openTable": "Open a table",
+    "lift": {
+      "ride": "Ride",
+      "up": "Ride up a floor",
+      "down": "Ride down a floor",
+      "players": "Players",
+      "all": "All",
+      "more": "More players",
+      "fewer": "Fewer players",
+      "anyCount": "Any number of players",
+      "toFloor": "Floor {{n}}: {{name}}",
+      "floorOf": "Floor {{n}}, {{name}}. Swipe up or down to ride.",
+      "playersRange": "{{min}}–{{max}} players",
+      "playersExact": "{{count}} players",
+      "notFor": "not for {{count}}",
+      "stepOut": "Step out · Open a table",
+      "coming": "The lift is on its way",
+      "loading": "Calling at every floor…",
+      "taglines": {
+        "tictactoe": "Three in a row takes the parlour"
+      },
+      "rules": "Rules"
+    }
   },
   "gameNames": {
     "tictactoe": "Tic-Tac-Toe",

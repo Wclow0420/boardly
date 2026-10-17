@@ -81,7 +81,29 @@
       "party": "Parti",
       "faction": "Pihak"
     },
-    "openTable": "Buka meja"
+    "openTable": "Buka meja",
+    "lift": {
+      "ride": "Lif",
+      "up": "Naik satu tingkat",
+      "down": "Turun satu tingkat",
+      "players": "Pemain",
+      "all": "Semua",
+      "more": "Tambah pemain",
+      "fewer": "Kurang pemain",
+      "anyCount": "Berapa pun pemain",
+      "toFloor": "Tingkat {{n}}: {{name}}",
+      "floorOf": "Tingkat {{n}}, {{name}}. Leret ke atas atau ke bawah untuk menaiki lif.",
+      "playersRange": "{{min}}–{{max}} pemain",
+      "playersExact": "{{count}} pemain",
+      "notFor": "bukan untuk {{count}}",
+      "stepOut": "Keluar · Buka meja",
+      "coming": "Lif sedang dalam perjalanan",
+      "loading": "Berhenti di setiap tingkat…",
+      "taglines": {
+        "tictactoe": "Tiga sebaris menguasai bilik tamu"
+      },
+      "rules": "Peraturan"
+    }
   },
   "gameNames": {
     "tictactoe": "Tic-Tac-Toe",

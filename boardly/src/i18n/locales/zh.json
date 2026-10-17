@@ -81,7 +81,29 @@
       "party": "聚会",
       "faction": "阵营"
     },
-    "openTable": "开一桌"
+    "openTable": "开一桌",
+    "lift": {
+      "ride": "乘梯",
+      "up": "上一层",
+      "down": "下一层",
+      "players": "人数",
+      "all": "不限",
+      "more": "加一人",
+      "fewer": "减一人",
+      "anyCount": "不限人数",
+      "toFloor": "{{n}} 楼：{{name}}",
+      "floorOf": "{{n}} 楼，{{name}}。上下滑动乘电梯。",
+      "playersRange": "{{min}}–{{max}} 人",
+      "playersExact": "{{count}} 人",
+      "notFor": "不适合 {{count}} 人",
+      "stepOut": "出电梯 · 开一桌",
+      "coming": "电梯就要到了",
+      "loading": "正在一层层停靠…",
+      "taglines": {
+        "tictactoe": "三子连成一线，客厅里称王"
+      },
+      "rules": "规则"
+    }
   },
   "gameNames": {
     "tictactoe": "井字棋",
