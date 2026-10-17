@@ -78,6 +78,31 @@ Then draw it with the same craft, and give it life the borders' way
     number looks wrong, relaunch the app first (stacked screens and a
     stale bundle both skew it).
 
+## The Games tab and the lobby: the lift and its floors
+
+The owner picked these over a space-ship hatch (off-theme: keep every page
+in the app's own world and palette).
+- **Games tab = a brass lift** (`features/games/lift/`): a floor dial
+  (needle rides with you; tap a floor to go there), a folding brass gate
+  and, through it, each game's floor (its room from the game's own art,
+  its lead role breathing in front). One game per floor, swipe a floor at
+  a time with a stop, lurch and ding; a players count dims what doesn't
+  fit; last floor remembered. Keep the gate OPEN (5 pickets, tall
+  diamonds, slim straps): a dense gate hid the floor and was rejected.
+- **The lobby = that game's floor** (`features/lobby/floor/`), seen flat
+  on like the lift's floors (not iso): the lift's landing sign
+  ("3F · Hustle", floor = the game's place in the lift), the table code
+  plate + QR to join; the room with the lift door on the left wall (new
+  players walk out of it once per device); everyone as their mascot on
+  the floor, two staggered rows (6: 4 front, 2 behind in the gaps, the
+  door kept clear); a lamp lit with a beam and a pool over each ready
+  player; dashed spots to invite; the house rules on the room's board,
+  with what this count means (`tableNotes` in the GameDefinition); one
+  status line; bots and a held start on the plinth.
+- **Every game draws its own room** (`floor/rooms/<key>.ts`, Hustle's den
+  in `rooms.ts` is the model): its wall, its board for the house rules,
+  its table and pieces, its own lamp. Never ship the plain fallback room.
+
 ## Rooms and 3D pieces
 
 The game rooms are drawn like the borders: the iso kit

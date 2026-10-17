@@ -15,32 +15,18 @@ import { EMBLEMS as SPIES } from "@/components/engraved/emoji/spies";
 import { linear, moulding, radial } from "@/components/engraved/panel";
 import { INKS, MATERIALS, curl, shade } from "@/components/engraved/shapes";
 import { rrect } from "@/components/engraved/trim";
-import type { PopupLook } from "@/features/game/Popup";
 import type { LandingLook } from "@/features/games/lift/art";
 import { LANTERN_H, LANTERN_W, lanternArt, tileArt, TILE_H, TILE_W } from "@/games/coup/den/denArt";
 import { boardsArt, doorArt, lit, skirting, svg } from "./art";
 import type { RoomLayout } from "./layout";
+import { GAME_ROOMS } from "./rooms/index";
+import type { RoomLook } from "./roomTypes";
 
 const f = (n: number) => +n.toFixed(2);
 const INK = INKS.gold.ink;
 const VEIN = INKS.gold.vein;
 
-export interface RoomLook {
-  /** The lamps' light, for the glows and pools. */
-  light: string;
-  /** The room's still art, w × h (the door, the wall, the board, the
-   *  table, the floor), for the lift's `floor` of `floors`. */
-  art: (R: RoomLayout, floor: number, floors: number) => string;
-  /** A lamp over a spot, lit and out, w × h (hung from the middle of
-   *  its top edge). */
-  lamp: { lit: () => string; out: () => string; w: number; h: number };
-  /** What's set out on the table for each player, w × h. */
-  piece?: { art: () => string; w: number; h: number };
-  /** The board's ink: its title and its line. */
-  board: { title: string; text: string };
-  /** The popups opened from the room. */
-  popup: PopupLook;
-}
+export type { RoomLook } from "./roomTypes";
 
 // ------------------------------------------------------------- Hustle
 
@@ -281,7 +267,8 @@ ${moulding(B.x, B.y, B.w, B.h, 6, 5, "pbm")}
   };
 }
 
-const rooms = new Map<string, RoomLook>([["coup", DEN]]);
+// Each game's own room lives in rooms/<key>.ts (registered in rooms/index.ts)
+const rooms = new Map<string, RoomLook>([["coup", DEN], ...GAME_ROOMS]);
 
 /** The room for a game: its own, or a plain one in the colours of its
  *  landing in the lift. */
