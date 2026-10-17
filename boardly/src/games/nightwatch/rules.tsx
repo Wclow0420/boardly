@@ -42,6 +42,7 @@ import {
 } from "./logic";
 import { EMOJI_ICON, GameIcon } from "./icons";
 import { MANOR_HEIGHT, MANOR_WIDTH, floorPoint, manorShapes } from "./manorShapes";
+import { RolePortrait } from "./RolePortrait";
 import { RoomPicture } from "./RoomPicture";
 
 const R = "rules.nightwatch";
@@ -95,8 +96,7 @@ function TeamsPage() {
       {(["good", "evil"] as const).map((side) => (
         <RuleCard
           key={side}
-          emoji={side === "good" ? "🏮" : "👻"}
-          picture={gameIcon(side === "good" ? "🏮" : "👻", tint(side))}
+          picture={<RolePortrait role={side === "good" ? "watcher" : "possessed"} size={50} />}
           name={t(`${R}.teams.${side}.name`)}
           tint={tint(side)}
           tags={[t(`${R}.teams.${side}.tag`), t(`${R}.teams.size`, sideRange(side))]}
@@ -128,8 +128,7 @@ function RolesPage() {
           {(side === "good" ? GOOD_ROLES : EVIL_ROLES).map((role) => (
             <RuleCard
               key={role}
-              emoji={ROLE_EMOJI[role]}
-              picture={gameIcon(ROLE_EMOJI[role], tint(side))}
+              picture={<RolePortrait role={role} size={50} />}
               name={t(`nightwatch.roles.${role}.name`)}
               tint={tint(side)}
               tags={tags(role)}
