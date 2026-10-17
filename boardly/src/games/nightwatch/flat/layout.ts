@@ -106,10 +106,13 @@ export type FlatLayout = ReturnType<typeof flatLayout>;
 /** Where the name plate of each way out hangs (its middle) and how wide,
  *  in the box: over a back door on its lintel, on an iron bracket out of
  *  the side wall over an archway. */
+/** A way out's plate is at least this wide: room for "Dining Room". */
+const PLATE_MIN = 92;
+
 export function exitPlate(L: FlatLayout, side: Side) {
   if (side === "left" || side === "right") {
     const D = L.doors[side];
-    const w = Math.max(D.w + 12, 78);
+    const w = Math.max(D.w + 12, PLATE_MIN);
     // kept on the back wall, clear of the corners
     const x = Math.min(Math.max(D.x + D.w / 2, L.bx0 + w / 2 - 6), L.bx1 - w / 2 + 6);
     return { x, y: D.y - 11, w, h: 18 };
@@ -119,7 +122,7 @@ export function exitPlate(L: FlatLayout, side: Side) {
   const wx = A.wall === "left" ? L.bx0 : L.bx1;
   const [sx] = L.at(wx, 0, z);
   const sy = L.ceil + 36;
-  const w = 78;
+  const w = PLATE_MIN;
   const reach = 10;
   return {
     x: A.wall === "left" ? sx + reach + w / 2 : sx - reach - w / 2,
