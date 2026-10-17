@@ -57,7 +57,7 @@ function RolesPage() {
         return (
           <RuleCard
             key={role}
-            picture={<RolePortrait role={role} size={58} />}
+            picture={<RolePortrait role={role} size={50} />}
             name={t(`coup.roles.${role}.name`)}
             tint={ROLE_TINT[role]}
             tags={[
