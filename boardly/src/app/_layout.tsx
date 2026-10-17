@@ -26,7 +26,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import {
   AppIntro,
   useIntroAppStyle,
-  useIntroScale,
+  useIntroFlight,
 } from "@/components/AppIntro";
 import { WebFrame } from "@/components/ui";
 import { BorderClockProvider } from "@/features/cosmetics/art";
@@ -104,8 +104,8 @@ function RootNavigator() {
   }, [status, router, invitePath]);
 
   // Phones open by flying in through the logo; the app zooms along
-  const introScale = useIntroScale();
-  const appStyle = useIntroAppStyle(introScale);
+  const introFlight = useIntroFlight();
+  const appStyle = useIntroAppStyle(introFlight);
   const signedIn = status === "signedIn";
 
   // The intro keeps one place in this list whatever the status, so it is
@@ -153,7 +153,7 @@ function RootNavigator() {
       )}
       {signedIn ? <FriendsRealtime /> : null}
       {Platform.OS === "web" ? null : (
-        <AppIntro ready={status !== "loading"} scale={introScale} />
+        <AppIntro ready={status !== "loading"} flight={introFlight} />
       )}
     </>
   );

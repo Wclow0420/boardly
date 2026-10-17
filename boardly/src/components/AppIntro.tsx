@@ -52,40 +52,52 @@ const DIP = 0.88;
 
 const splash = require("../../assets/images/splash-icon.png");
 
-/** The meeple's size, shared with the app so it can zoom along. It rests
- *  at THROUGH (the app at 1): React keeps the value it first rendered
- *  with and may put it back on a later render, so that value must be the
- *  resting one, or the app sticks a little zoomed in. */
-export function useIntroScale() {
-  return useSharedValue(THROUGH);
+/** The flight, shared with the app so it can zoom along: the meeple's
+ *  size, and whether we're flying at all. The app only ever zooms while
+ *  `flying` is 1; once the intro is over (or gave up, or was cut short by
+ *  the app going to the background) it is 0 and the app is at its own
+ *  size whatever the size was left at. Both start at their resting
+ *  values, since React may put back the first style it rendered. */
+export interface IntroFlight {
+  scale: SharedValue<number>;
+  flying: SharedValue<number>;
 }
 
-/** The app's own zoom while we fly in: a little close, settling to 1. */
-export function useIntroAppStyle(scale: SharedValue<number>) {
+export function useIntroFlight(): IntroFlight {
+  const scale = useSharedValue(THROUGH);
+  const flying = useSharedValue(0);
+  return { scale, flying };
+}
+
+/** The app's own zoom while we fly in: a little close, settling to 1;
+ *  at 1 always once we're through. */
+export function useIntroAppStyle({ scale, flying }: IntroFlight) {
   return useAnimatedStyle(() => ({
     flex: 1,
     transform: [
       {
-        scale: interpolate(
-          scale.value,
-          [DIP, THROUGH],
-          [1.12, 1],
-          Extrapolation.CLAMP,
-        ),
+        scale:
+          flying.value === 1
+            ? interpolate(scale.value, [DIP, THROUGH], [1.12, 1], Extrapolation.CLAMP)
+            : 1,
       },
     ],
   }));
 }
 
+/** The longest the way in may take before the app is simply shown. */
+const GIVE_UP_MS = 4000;
+
 export function AppIntro({
   ready,
-  scale,
+  flight,
 }: {
   /** The app underneath is ready to be seen. */
   ready: boolean;
-  /** The meeple's size, shared so the app can zoom along. */
-  scale: SharedValue<number>;
+  /** Shared with the app so it can zoom along. */
+  flight: IntroFlight;
 }) {
+  const { scale, flying } = flight;
   const { width, height } = useWindowDimensions();
   const image = useImage(splash);
   const still = useReducedMotion();
@@ -126,9 +138,12 @@ export function AppIntro({
     started.current = true;
     const finish = () => {
       // whatever happened on the way, the app ends at its own size
+      flying.set(0);
       scale.set(THROUGH);
       setDone(true);
     };
+    // and never later than this, whatever happens to the animation
+    setTimeout(finish, GIVE_UP_MS);
     if (still || !shown) {
       // no flight: the night simply lifts
       scale.set(THROUGH);
@@ -139,6 +154,7 @@ export function AppIntro({
       );
       return;
     }
+    flying.set(1);
     // a breath on the splash, so the hand-off isn't a jump, then lift off
     // (not cleared: once started, the copy must always go)
     setTimeout(() => setHeld(false), 300);
@@ -163,7 +179,7 @@ export function AppIntro({
         ),
       ),
     );
-  }, [ready, still, shown, gaveUp, scale, fade, depth]);
+  }, [ready, still, shown, gaveUp, scale, flying, fade, depth]);
 
   const x = (width - SPLASH_WIDTH) / 2;
   const y = (height - SPLASH_WIDTH) / 2;
