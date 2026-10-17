@@ -156,7 +156,7 @@ export function FloorLobby({
   const everyoneReady = people.every((p) => p.ready || p.host);
   const canStart = waiting && people.length >= min && everyoneReady;
   const status = starting ? { text: t("lobby.floor.starting"), ready: true } : lobbyStatus(people, min, t);
-  const notes = tableNotes(room.gameType, Math.max(people.length, min), t);
+  const notes = tableNotes(room, Math.max(people.length, min), t);
   const summary = rulesSummary(room, notes, t);
 
   // the latest handlers, so the room needn't redraw when they change

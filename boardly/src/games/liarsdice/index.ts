@@ -71,7 +71,7 @@ export const liarsdice: GameDefinition<LiarsDiceState> = {
   badgeFrames: BADGE_FRAMES,
   // what this many at the bar means: the dice under the cups, where each
   // way of calling starts, what a lost call costs, when you're out
-  tableNotes: (players, t) => {
+  tableNotes: (players, t, settings) => {
     const [one, zhai, fei] = thresholds(players);
     const rule: Record<Calling, string> = {
       jijiji: t("liarsdice.openRule.jijiji", { one, zhai, fei }),
@@ -84,7 +84,8 @@ export const liarsdice: GameDefinition<LiarsDiceState> = {
         text: t("liarsdice.table.dice", { count: players * DICE_EACH, each: DICE_EACH }),
         short: t("liarsdice.table.diceShort", { count: players * DICE_EACH }),
       },
-      ...CALLINGS.map((calling) => ({
+      // the way this table calls (all three if it isn't known)
+      ...CALLINGS.filter((calling) => !settings?.calling || settings.calling === calling).map((calling) => ({
         emoji: "🎯",
         text: t("liarsdice.table.calling", { name: t(`gameOptions.liarsdice.calling.${calling}.name`), rule: rule[calling] }),
       })),

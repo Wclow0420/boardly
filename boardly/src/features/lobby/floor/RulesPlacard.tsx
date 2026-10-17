@@ -25,9 +25,11 @@ import type { RoomLook } from "./rooms";
 
 type T = (key: string, options?: Record<string, unknown>) => string;
 
-/** What the number at the table means for a game (none for most yet). */
-export function tableNotes(gameKey: string, players: number, t: T): TableNote[] {
-  return getGame(gameKey)?.tableNotes?.(players, t) ?? [];
+/** What the number at the table, with the host's settings, means for its
+ *  game. */
+export function tableNotes(room: RoomInfo, players: number, t: T): TableNote[] {
+  const settings = Object.fromEntries(roomSettings(room).map((s) => [s.name, s.current]));
+  return getGame(room.gameType)?.tableNotes?.(players, t, settings) ?? [];
 }
 
 /** The line on the board: the host's choices, or the game's own few
@@ -110,7 +112,7 @@ export function HouseRulesPopup({
   const count = room.players.length;
   const min = room.game?.minPlayers ?? 2;
   const max = room.game?.maxPlayers ?? 2;
-  const notes = tableNotes(room.gameType, Math.max(count, min), t);
+  const notes = tableNotes(room, Math.max(count, min), t);
   const base = `gameOptions.${room.gameType}`;
   const editable = isHost && room.status === "waiting";
   return (

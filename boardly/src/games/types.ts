@@ -126,7 +126,12 @@ export interface GameDefinition<TState = Record<string, unknown>> {
    *  house rules (Hustle: the coins and cards each, the deck). Each line
    *  is already in the reader's language (`t`); `short` ones are put
    *  together on the house rules board when the game has no settings. */
-  tableNotes?: (players: number, t: (key: string, options?: Record<string, unknown>) => string) => TableNote[];
+  tableNotes?: (
+    players: number,
+    t: (key: string, options?: Record<string, unknown>) => string,
+    /** The host's settings for this table (each setting's current choice). */
+    settings?: Record<string, string>,
+  ) => TableNote[];
 }
 
 /** One line of a game's table notes. */
