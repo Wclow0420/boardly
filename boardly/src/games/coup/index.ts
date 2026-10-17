@@ -3,7 +3,17 @@ import type { GameDefinition } from "../types";
 import { BACKDROP, LOGO, SKIN_COLORS } from "./art";
 import { BADGE_FRAMES } from "./badgeFrames";
 import { CoupBoard } from "./CoupBoard";
-import { currentSeat, taskFor, type CoupState } from "./logic";
+import {
+  CARDS_EACH,
+  COPIES_PER_ROLE,
+  DECK_SIZE,
+  FORCED_COUP_AT,
+  STARTING_COINS,
+  currentSeat,
+  firstPlayerCoins,
+  taskFor,
+  type CoupState,
+} from "./logic";
 import { COUP_RULES } from "./rules";
 
 export const coup: GameDefinition<CoupState> = {
@@ -31,4 +41,28 @@ export const coup: GameDefinition<CoupState> = {
     "coup.sharpEye": { glyph: G.target, emoji: "🔍", loop: "bob" },
   },
   badgeFrames: BADGE_FRAMES,
+  tableNotes: (players, t) => [
+    {
+      emoji: "🪙",
+      text:
+        firstPlayerCoins(players) < STARTING_COINS
+          ? t("coup.table.coinsTwo", { count: STARTING_COINS, first: firstPlayerCoins(players) })
+          : t("coup.table.coins", { count: STARTING_COINS }),
+      short: t("coup.table.coinsShort", { count: STARTING_COINS }),
+    },
+    {
+      emoji: "🕴",
+      text: t("coup.table.cards", { count: CARDS_EACH }),
+      short: t("coup.table.cardsShort", { count: CARDS_EACH }),
+    },
+    {
+      emoji: "🔄",
+      text: t("coup.table.deck", {
+        size: DECK_SIZE,
+        copies: COPIES_PER_ROLE,
+        left: Math.max(0, DECK_SIZE - CARDS_EACH * players),
+      }),
+    },
+    { emoji: "🔒", text: t("coup.table.forced", { count: FORCED_COUP_AT }) },
+  ],
 };

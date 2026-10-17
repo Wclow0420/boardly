@@ -218,6 +218,28 @@
       "full": "Semua kerusi sudah diisi.",
       "bot": "Bot",
       "remove": "Buang {{name}}"
+    },
+    "floor": {
+      "sign": "Tingkat {{floor}} · {{game}}",
+      "copied": "Disalin!",
+      "copyHint": "Salin kod meja",
+      "qrTitle": "Imbas untuk sertai",
+      "qrHint": "Halakan kamera telefon ke kod ini untuk sertai meja ini.",
+      "houseRules": "Peraturan meja",
+      "count": "{{current}}/{{max}} duduk",
+      "atCount": "Untuk {{count}} pemain",
+      "classic": "Peraturan klasik",
+      "bots": "Bot",
+      "you": "anda",
+      "two": "{{a}} dan {{b}}",
+      "three": "{{a}}, {{b}} dan {{c}}",
+      "more": "{{a}}, {{b}} dan {{count}} lagi",
+      "needMore_one": "Perlu {{count}} pemain lagi untuk mula",
+      "needMore_other": "Perlu {{count}} pemain lagi untuk mula",
+      "waitingOn": "Menunggu {{names}} bersedia",
+      "canStart": "Semua sudah bersedia: tekan lama untuk mula",
+      "waitingHost": "Semua sudah bersedia. Menunggu {{host}} memulakan",
+      "starting": "Lampu dipadam: permainan bermula…"
     }
   },
   "table": {
@@ -1323,6 +1345,15 @@
       "abandoned": "Meja bersurai sebelum ada pemenang.",
       "reason_one": "Yang terakhir berdiri selepas {{count}} giliran.",
       "reason_other": "Yang terakhir berdiri selepas {{count}} giliran."
+    },
+    "table": {
+      "coins": "Setiap orang mula dengan ${{count}}",
+      "coinsTwo": "Setiap orang mula dengan ${{count}}; pemain pertama dengan ${{first}}",
+      "coinsShort": "${{count}} seorang",
+      "cards": "{{count}} kad seorang, tertutup: hilang kedua-duanya dan anda keluar",
+      "cardsShort": "{{count}} kad",
+      "deck": "Dek {{size}} kad: {{copies}} bagi setiap watak, tinggal {{left}} selepas diagih",
+      "forced": "Dengan ${{count}} atau lebih anda mesti Tutup Kedai"
     }
   },
   "manor": {

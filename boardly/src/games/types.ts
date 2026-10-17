@@ -122,4 +122,18 @@ export interface GameDefinition<TState = Record<string, unknown>> {
   /** Whether the game is waiting on this player — drives the
    *  "Your move" badge in the header of skinned games. */
   needsMe?: (state: TState, mySeat: number) => boolean;
+  /** What the number at the table means for this game, for the lobby's
+   *  house rules (Hustle: the coins and cards each, the deck). Each line
+   *  is already in the reader's language (`t`); `short` ones are put
+   *  together on the house rules board when the game has no settings. */
+  tableNotes?: (players: number, t: (key: string, options?: Record<string, unknown>) => string) => TableNote[];
+}
+
+/** One line of a game's table notes. */
+export interface TableNote {
+  /** An emoji with an engraved emblem, shown before the line. */
+  emoji: string;
+  text: string;
+  /** A few words for the house rules board. */
+  short?: string;
 }

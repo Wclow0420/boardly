@@ -11,6 +11,18 @@ import { useTheme } from "@/theme";
 import { tapHaptic } from "@/utils/haptics";
 import { useSetRoomOptions } from "./hooks";
 
+/** The game's settings at this table: each one's name, its choices and
+ *  the one the host has picked (the first until they pick). Shared with
+ *  the floor lobby's house rules. */
+export function roomSettings(room: RoomInfo) {
+  const choices = room.game?.options ?? {};
+  return Object.keys(choices).map((name) => ({
+    name,
+    choices: choices[name],
+    current: room.options?.[name] ?? choices[name][0],
+  }));
+}
+
 export function GameSettings({
   room,
   code,
@@ -23,9 +35,8 @@ export function GameSettings({
   const { t } = useTranslation();
   const { colors, spacing } = useTheme();
   const setOptions = useSetRoomOptions(room.id, code);
-  const choices = room.game?.options ?? {};
-  const names = Object.keys(choices);
-  if (names.length === 0) return null;
+  const settings = roomSettings(room);
+  if (settings.length === 0) return null;
 
   const base = `gameOptions.${room.gameType}`;
   const editable = isHost && room.status === "waiting";
@@ -33,15 +44,14 @@ export function GameSettings({
   return (
     <Card style={{ marginBottom: spacing.lg }}>
       <AppText variant="label">{`⚙️  ${t("lobby.settings")}`}</AppText>
-      {names.map((name) => {
-        const current = room.options?.[name] ?? choices[name][0];
+      {settings.map(({ name, choices, current }) => {
         return (
           <View key={name} style={{ marginTop: spacing.md }}>
             <AppText variant="caption" color="textMuted">
               {t(`${base}.${name}.title`)}
             </AppText>
             <View style={[styles.row, { marginTop: 6 }]}>
-              {choices[name].map((choice) => {
+              {choices.map((choice) => {
                 const selected = choice === current;
                 return (
                   <Pressable

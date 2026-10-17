@@ -218,6 +218,28 @@
       "full": "Every seat is taken.",
       "bot": "Bot",
       "remove": "Remove {{name}}"
+    },
+    "floor": {
+      "sign": "{{floor}}F · {{game}}",
+      "copied": "Copied!",
+      "copyHint": "Copies the table code",
+      "qrTitle": "Scan to join",
+      "qrHint": "Point a phone's camera at the code to join this table.",
+      "houseRules": "House rules",
+      "count": "{{current}}/{{max}} seated",
+      "atCount": "At {{count}} players",
+      "classic": "Classic rules",
+      "bots": "Bots",
+      "you": "you",
+      "two": "{{a}} and {{b}}",
+      "three": "{{a}}, {{b}} and {{c}}",
+      "more": "{{a}}, {{b}} and {{count}} more",
+      "needMore_one": "Need {{count}} more player to start",
+      "needMore_other": "Need {{count}} more players to start",
+      "waitingOn": "Waiting on {{names}} to be ready",
+      "canStart": "Everyone's ready: hold to start",
+      "waitingHost": "Everyone's ready. Waiting for {{host}} to start",
+      "starting": "The lamps go down: here we go…"
     }
   },
   "table": {
@@ -1325,6 +1347,15 @@
       "abandoned": "The table broke up before anyone won.",
       "reason_one": "Last one standing after {{count}} turn.",
       "reason_other": "Last one standing after {{count}} turns."
+    },
+    "table": {
+      "coins": "Everyone starts with ${{count}}",
+      "coinsTwo": "Everyone starts with ${{count}}; the first player with ${{first}}",
+      "coinsShort": "${{count}} each",
+      "cards": "{{count}} cards each, face down: lose both and you're out",
+      "cardsShort": "{{count}} cards",
+      "deck": "A deck of {{size}}: {{copies}} of each role, {{left}} left after the deal",
+      "forced": "With ${{count}} or more you must Shut Down"
     }
   },
   "manor": {

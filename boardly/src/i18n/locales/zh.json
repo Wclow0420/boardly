@@ -217,6 +217,28 @@
       "full": "座位已经坐满了。",
       "bot": "机器人",
       "remove": "移除 {{name}}"
+    },
+    "floor": {
+      "sign": "{{floor}}楼 · {{game}}",
+      "copied": "已复制！",
+      "copyHint": "复制桌号",
+      "qrTitle": "扫码加入",
+      "qrHint": "用手机相机扫一扫，加入这一桌。",
+      "houseRules": "本桌规则",
+      "count": "已坐 {{current}}/{{max}}",
+      "atCount": "{{count}} 人时",
+      "classic": "经典规则",
+      "bots": "机器人",
+      "you": "你",
+      "two": "{{a}} 和 {{b}}",
+      "three": "{{a}}、{{b}} 和 {{c}}",
+      "more": "{{a}}、{{b}} 等 {{count}} 人",
+      "needMore_one": "还差 {{count}} 人才能开始",
+      "needMore_other": "还差 {{count}} 人才能开始",
+      "waitingOn": "等待 {{names}} 准备",
+      "canStart": "全员已准备：长按开始",
+      "waitingHost": "全员已准备，等待 {{host}} 开始",
+      "starting": "熄灯，游戏开始…"
     }
   },
   "table": {
@@ -1322,6 +1344,15 @@
       "abandoned": "还没分出胜负牌局就散了。",
       "reason_one": "{{count}} 手之后最后一个站着的人。",
       "reason_other": "{{count}} 手之后最后一个站着的人。"
+    },
+    "table": {
+      "coins": "每人开局 {{count}} 块钱",
+      "coinsTwo": "每人开局 {{count}} 块钱，先手只有 {{first}} 块",
+      "coinsShort": "每人 {{count}} 块",
+      "cards": "每人 {{count}} 张暗牌：两张都翻开就出局",
+      "cardsShort": "{{count}} 张牌",
+      "deck": "牌堆 {{size}} 张：每个角色 {{copies}} 张，发完剩 {{left}} 张",
+      "forced": "手上有 {{count}} 块或更多时必须砸场"
     }
   },
   "manor": {
