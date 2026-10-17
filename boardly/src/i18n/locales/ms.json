@@ -1127,6 +1127,18 @@
       "succeeded": "Berjaya",
       "failed": "Gagal",
       "team": "Pasukan: {{names}}"
+    },
+    "table": {
+      "sides": "{{agents}} Ejen menentang {{moles}} Pengkhianat",
+      "sidesShort": "{{agents}} Ejen lwn {{moles}} Pengkhianat",
+      "agents": "Ejen: {{roles}}",
+      "moles": "Pengkhianat: {{roles}}",
+      "times": "{{name}} ×{{count}}",
+      "sep": ", ",
+      "teams": "Ejen dalam setiap operasi: {{sizes}}",
+      "twoFails": "Operasi ke-{{op}} hanya gagal dengan {{count}} kad gagal",
+      "oneFail": "Satu kad gagal sudah cukup menggagalkan operasi",
+      "rejections": "{{count}} pasukan ditolak berturut-turut: Pengkhianat menang"
     }
   },
   "coup": {
@@ -1568,6 +1580,18 @@
       "killed": "Datuk tua diserang dua kali.",
       "butlerFound": "Subuh tiba, tetapi penceroboh menemui Butler: {{butler}}.",
       "abandoned": "Seseorang meninggalkan meja."
+    },
+    "table": {
+      "intruders_one": "{{count}} penceroboh bersembunyi di antara anda; {{household}} isi rumah",
+      "intruders_other": "{{count}} penceroboh bersembunyi di antara anda; {{household}} isi rumah",
+      "intrudersShort_one": "{{count}} penceroboh",
+      "intrudersShort_other": "{{count}} penceroboh",
+      "roles": "Diagihkan: {{roles}}",
+      "night": "Malam berlangsung {{hours}} jam, dari {{from}} hingga {{to}}; {{hits}} serangan membunuh datuk tua",
+      "nightShort": "{{hours}} jam",
+      "knife": "Penceroboh tunggal memulakan malam dengan pisau",
+      "copies": "{{role}} ×{{n}}",
+      "join": ", "
     }
   },
   "liarsdice": {
@@ -1701,6 +1725,13 @@
       "double": "Kaizhai mesti berganda: sekurang-kurangnya {{min}} dadu",
       "kaizhai": "Pusingan kaizhai: 1 liar — tiada zhai, tiada 1",
       "nozhai": "1 sentiasa liar — panggil apa-apa muka kecuali 1"
+    },
+    "table": {
+      "dice": "{{count}} dadu di atas meja: {{each}} di bawah setiap cawan",
+      "diceShort": "{{count}} dadu",
+      "calling": "{{name}}: {{rule}}",
+      "drinks": "Panggilan kalah dibayar dengan cawan: buka {{open}}, belah {{split}}, balas {{counter}}",
+      "knockout": "Kalah keluar: {{count}} cawan dan anda keluar"
     }
   },
   "nightwatch": {
@@ -2061,6 +2092,16 @@
       "picking": "{{name}} sedang memilih {{size}} orang untuk misi",
       "toTeam": "Teruskan",
       "roomDone": "Kerja malam ini sudah selesai. Bila sedia, teruskan ke pasukan."
+    },
+    "table": {
+      "sides": "{{good}} pengawal menentang {{evil}} hantu, dan hantu saling mengenali",
+      "sidesShort": "{{good}} pengawal · {{evil}} hantu",
+      "watchers": "Pengawal menerima: {{roles}}",
+      "ghosts": "Hantu menerima: {{roles}}",
+      "teams": "Saiz pasukan misi, malam demi malam: {{sizes}}",
+      "twoFails": "Malam {{night}} perlukan dua kad Gagal untuk gagal",
+      "copies": "{{role}} ×{{n}}",
+      "join": ", "
     }
   },
   "profile": {
@@ -2359,6 +2400,18 @@
       "night": "Malam",
       "private": "Hanya anda tahu",
       "who": "Pergi: "
+    },
+    "table": {
+      "infectedOne": "Pada malam ke-2 atau ke-3, seorang daripada kamu diam-diam menjadi Terjangkit",
+      "infectedTwo": "{{count}} orang akan menjadi Terjangkit: yang pertama pada malam ke-2 atau ke-3, yang seterusnya dua malam kemudian",
+      "infectedShort": "{{count}} Terjangkit",
+      "food": "Stor bermula dengan {{count}} makanan, satu seorang",
+      "foodShort": "{{count}} makanan",
+      "rescue": "Konvoi tiba selepas {{days}} hari: perlu {{count}} Mangsa Selamat masih berdiri",
+      "famine": "Stor kosong dan {{count}} orang kelaparan: kebuluran, Terjangkit menang",
+      "sneak": "Dengan bilangan ini, Terjangkit boleh Menyelinap sekali",
+      "placesTwo": "Tempat untuk digeledah: {{a}} dan {{b}}",
+      "placesThree": "Tempat untuk digeledah: {{a}}, {{b}} dan {{c}}"
     }
   },
   "badges": {
@@ -2628,6 +2681,12 @@
       "full": "Kesemua sembilan petak penuh, tiada barisan.",
       "left": "Permainan tamat sebelum papan selesai."
     },
-    "continue": "Teruskan"
+    "continue": "Teruskan",
+    "table": {
+      "first": "Yang duduk dahulu bermain {{first}} dan bergerak dahulu; yang kedua bermain {{second}}",
+      "firstShort": "{{mark}} dahulu",
+      "line": "{{count}} sebaris di papan {{cells}} petak menang: melintang, menegak atau pepenjuru",
+      "lineShort": "{{count}} sebaris"
+    }
   }
 }

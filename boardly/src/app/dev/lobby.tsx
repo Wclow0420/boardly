@@ -63,6 +63,58 @@ const DICE = {
   tag: "party",
   options: { mode: ["knockout", "endless"], calling: ["jijiji", "classic", "nozhai"] },
 };
+const TTT = {
+  key: "tictactoe",
+  name: "Tic-Tac-Toe",
+  minPlayers: 2,
+  maxPlayers: 2,
+  emoji: "⭕",
+  tileColor: "#E3F0FF",
+  category: "classic",
+  tag: "classic",
+};
+const WATCH = {
+  key: "nightwatch",
+  name: "Seal the Manor",
+  minPlayers: 5,
+  maxPlayers: 10,
+  emoji: "🏮",
+  tileColor: "#F7E6D5",
+  category: "faction",
+  tag: "faction",
+};
+const MANOR = {
+  key: "manor",
+  name: "Midnight Manor",
+  minPlayers: 4,
+  maxPlayers: 8,
+  emoji: "🕯️",
+  tileColor: "#E9E2F7",
+  category: "faction",
+  tag: "faction",
+};
+const SHELTER = {
+  key: "shelter",
+  name: "Shelter",
+  minPlayers: 4,
+  maxPlayers: 8,
+  emoji: "🔥",
+  tileColor: "#DDE8F5",
+  category: "party",
+  tag: "party",
+};
+const AGENT = {
+  key: "avalon",
+  name: "Double Agent",
+  minPlayers: 5,
+  maxPlayers: 10,
+  emoji: "🕵",
+  tileColor: "#D8F0EC",
+  category: "party",
+  tag: "party",
+};
+/** Ten at the table, some with long names, the fifth a bot. */
+const TEN = ["Christopher Wellington", "MeiMei_1999_official", "Alexandria-Rose", "Qiang", "Ming", "Bartholomew Smythe", "Ada", "Ben", "Kai", "Lan"];
 
 const room = (code: string, players: RoomPlayerInfo[], over: Partial<RoomInfo> = {}): RoomInfo => ({
   id: `dev-${code}`,
@@ -91,6 +143,38 @@ interface Sample {
 }
 
 const SAMPLES: Record<string, Sample> = {
+  nightwatch5: {
+    room: room("WATCH5", ["Justin", "Ada", "Ben", "Mei", "Kai"].map((name, i) => person(i, name, i % 3 !== 2)), { gameType: "nightwatch", game: WATCH }),
+    me: "u0",
+    floor: 6,
+  },
+  nightwatch10: {
+    room: room("WATCH0", TEN.map((name, i) => person(i, name, i % 3 !== 2, i === 4)), { gameType: "nightwatch", game: WATCH }),
+    me: "u0",
+    floor: 6,
+  },
+  nightwatchRules: {
+    room: room("WATCHR", TEN.slice(0, 7).map((name, i) => person(i, name, true)), { gameType: "nightwatch", game: WATCH }),
+    me: "u0",
+    floor: 6,
+    popup: "rules",
+  },
+  manor4: {
+    room: room("MANOR4", ["Justin", "Ada", "Ben"].map((name, i) => person(i, name, i !== 2)), { gameType: "manor", game: MANOR }),
+    me: "u0",
+    floor: 4,
+  },
+  manor8: {
+    room: room("MANOR8", TEN.slice(0, 8).map((name, i) => person(i, name, i % 3 !== 2, i === 4)), { gameType: "manor", game: MANOR }),
+    me: "u0",
+    floor: 4,
+  },
+  manorRules: {
+    room: room("MANORR", TEN.slice(0, 4).map((name, i) => person(i, name, true)), { gameType: "manor", game: MANOR }),
+    me: "u1",
+    floor: 4,
+    popup: "rules",
+  },
   alone: { room: room("K7QX2P", [person(0, "Justin", true)]), me: "u0" },
   walkin: { room: room("W4LK1N", [person(0, "Justin", true), person(1, "Ada", false)]), me: "u1", seen: null },
   three: {
@@ -155,6 +239,65 @@ const SAMPLES: Record<string, Sample> = {
     }),
     me: "u1",
     floor: 5,
+    popup: "rules",
+  },
+  dice10: {
+    room: room(
+      "D1CE10",
+      ["Christopher Wellington", "MeiMei_1999_official", "Alexandria-Rose", "Qiang", "Ming", "Bartholomew Smythe", "Ada", "Ben", "Kai", "Lan"].map(
+        (name, i) => person(i, name, i % 3 !== 2, i === 4),
+      ),
+      { gameType: "liarsdice", game: DICE, options: { mode: "knockout", calling: "jijiji" } },
+    ),
+    me: "u0",
+    floor: 5,
+  },
+  ttt1: {
+    room: room("XO0001", [person(0, "Justin", true)], { gameType: "tictactoe", game: TTT }),
+    me: "u0",
+    floor: 1,
+  },
+  ttt2: {
+    room: room("XO0002", [person(0, "Justin", true), person(1, "Alexandria-Rose", false)], { gameType: "tictactoe", game: TTT }),
+    me: "u0",
+    floor: 1,
+  },
+  tttRules: {
+    room: room("XO0003", [person(0, "Justin", true), person(1, "Ada", true)], { gameType: "tictactoe", game: TTT }),
+    me: "u1",
+    floor: 1,
+    popup: "rules",
+  },
+  shelter5: {
+    room: room("SNOW05", ["Justin", "Ada", "Ben", "Mei", "Kai"].map((name, i) => person(i, name, i !== 2)), { gameType: "shelter", game: SHELTER }),
+    me: "u0",
+    floor: 7,
+  },
+  shelter8: {
+    room: room("SNOW08", TEN.slice(0, 8).map((name, i) => person(i, name, i % 3 !== 2, i === 4)), { gameType: "shelter", game: SHELTER }),
+    me: "u0",
+    floor: 7,
+  },
+  shelterRules: {
+    room: room("SNOW06", ["Justin", "Ada", "Ben", "Mei", "Kai"].map((name, i) => person(i, name, i !== 3)), { gameType: "shelter", game: SHELTER }),
+    me: "u1",
+    floor: 7,
+    popup: "rules",
+  },
+  avalon5: {
+    room: room("SPY005", ["Justin", "Ada", "Ben", "Mei"].map((name, i) => person(i, name, i !== 1)), { gameType: "avalon", game: AGENT }),
+    me: "u0",
+    floor: 2,
+  },
+  avalon10: {
+    room: room("SPY010", TEN.map((name, i) => person(i, name, i % 3 !== 2, i === 4)), { gameType: "avalon", game: AGENT }),
+    me: "u0",
+    floor: 2,
+  },
+  avalonRules: {
+    room: room("SPY007", TEN.slice(0, 7).map((name, i) => person(i, name, i % 2 === 0)), { gameType: "avalon", game: AGENT }),
+    me: "u1",
+    floor: 2,
     popup: "rules",
   },
 };

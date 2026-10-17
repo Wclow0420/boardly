@@ -4,7 +4,7 @@ import { BADGE_FRAMES } from "./badgeFrames";
 import { ShelterBoxArt } from "./BoxArt";
 import { ShelterBoard } from "./ShelterBoard";
 import { SHELTER_RULES } from "./rules";
-import { currentSeat, type ShelterState } from "./logic";
+import { COUNTS, DAYS, canSneak, currentSeat, placesFor, startFood, type ShelterState } from "./logic";
 
 // A winter night: cold blue-grey, the warm orange of the fire.
 const SKIN_COLORS = {
@@ -62,4 +62,30 @@ export const shelter: GameDefinition<ShelterState> = {
     "shelter.lastWinter": { glyph: GLYPHS.fire, emoji: "🔥", loop: "flicker" },
   },
   badgeFrames: BADGE_FRAMES,
+  tableNotes: (players, t) => {
+    const counts = Object.keys(COUNTS).map(Number);
+    const n = Math.min(Math.max(players, counts[0]), counts[counts.length - 1]);
+    const [infected, rescue, famine] = COUNTS[n];
+    const names = placesFor(n).map((p) => t(`shelter.places.${p}`));
+    const places =
+      names.length > 2
+        ? t("shelter.table.placesThree", { a: names[0], b: names[1], c: names[2] })
+        : t("shelter.table.placesTwo", { a: names[0], b: names[1] });
+    return [
+      {
+        emoji: "☣",
+        text: infected > 1 ? t("shelter.table.infectedTwo", { count: infected }) : t("shelter.table.infectedOne"),
+        short: t("shelter.table.infectedShort", { count: infected }),
+      },
+      {
+        emoji: "🍞",
+        text: t("shelter.table.food", { count: startFood(n) }),
+        short: t("shelter.table.foodShort", { count: startFood(n) }),
+      },
+      { emoji: "🚚", text: t("shelter.table.rescue", { days: DAYS, count: rescue }) },
+      { emoji: "⚰", text: t("shelter.table.famine", { count: famine }) },
+      { emoji: "🌾", text: places },
+      ...(canSneak(n) ? [{ emoji: "👣", text: t("shelter.table.sneak") }] : []),
+    ];
+  },
 };

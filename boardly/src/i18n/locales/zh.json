@@ -1126,6 +1126,18 @@
       "succeeded": "成功",
       "failed": "失败",
       "team": "队伍：{{names}}"
+    },
+    "table": {
+      "sides": "{{agents}} 名特工对 {{moles}} 名内鬼",
+      "sidesShort": "{{agents}} 特工对 {{moles}} 内鬼",
+      "agents": "特工方：{{roles}}",
+      "moles": "内鬼方：{{roles}}",
+      "times": "{{name}} ×{{count}}",
+      "sep": "、",
+      "teams": "每次任务出动人数：{{sizes}}",
+      "twoFails": "第 {{op}} 次任务要 {{count}} 张失败牌才会失败",
+      "oneFail": "一张失败牌就能让任务失败",
+      "rejections": "连续 {{count}} 次组队被否决：内鬼获胜"
     }
   },
   "coup": {
@@ -1567,6 +1579,18 @@
       "killed": "老爷爷被袭击了两次。",
       "butlerFound": "天亮了，但入侵者找出了管家：{{butler}}。",
       "abandoned": "有人离开了牌桌。"
+    },
+    "table": {
+      "intruders_one": "你们中间藏着 {{count}} 个入侵者，家人阵营 {{household}} 人",
+      "intruders_other": "你们中间藏着 {{count}} 个入侵者，家人阵营 {{household}} 人",
+      "intrudersShort_one": "{{count}} 个入侵者",
+      "intrudersShort_other": "{{count}} 个入侵者",
+      "roles": "发牌：{{roles}}",
+      "night": "这一夜共 {{hours}} 小时，从{{from}}到{{to}}；老爷爷被袭击 {{hits}} 次就会死",
+      "nightShort": "{{hours}} 小时",
+      "knife": "唯一的入侵者开局就带着刀",
+      "copies": "{{role}} ×{{n}}",
+      "join": "、"
     }
   },
   "liarsdice": {
@@ -1696,6 +1720,13 @@
       "double": "斋转开斋要翻倍：至少 {{min}} 个",
       "kaizhai": "已开斋：1 是万能 — 不能叫斋，也不能叫 1",
       "nozhai": "不玩斋：1 永远是万能，不能叫 1"
+    },
+    "table": {
+      "dice": "桌上共 {{count}} 颗骰子：每个骰盅 {{each}} 颗",
+      "diceShort": "{{count}} 颗骰子",
+      "calling": "{{name}}：{{rule}}",
+      "drinks": "叫输要喝：开 {{open}} 杯，劈 {{split}} 杯，反劈 {{counter}} 杯",
+      "knockout": "出局模式：喝满 {{count}} 杯就出局"
     }
   },
   "nightwatch": {
@@ -2056,6 +2087,16 @@
       "picking": "{{name}}正在挑选{{size}}人出任务",
       "toTeam": "继续",
       "roomDone": "今晚的事已做完。准备好了就去组队。"
+    },
+    "table": {
+      "sides": "{{good}} 名守夜人对 {{evil}} 只鬼魂，鬼魂互相认识",
+      "sidesShort": "{{good}} 守夜人 · {{evil}} 鬼魂",
+      "watchers": "守夜人阵营发：{{roles}}",
+      "ghosts": "鬼魂阵营发：{{roles}}",
+      "teams": "每夜任务人数：{{sizes}}",
+      "twoFails": "第 {{night}} 夜要 2 张失败牌任务才失败",
+      "copies": "{{role}} ×{{n}}",
+      "join": "、"
     }
   },
   "profile": {
@@ -2354,6 +2395,18 @@
       "night": "夜里",
       "private": "只有你知道",
       "who": "去的人："
+    },
+    "table": {
+      "infectedOne": "第 2 或第 3 夜，你们中有一人会悄悄变成感染者",
+      "infectedTwo": "{{count}} 人会变成感染者：第一个在第 2 或第 3 夜，第二个再过两夜",
+      "infectedShort": "{{count}} 名感染者",
+      "food": "储藏室开局有 {{count}} 份食物，每人一份",
+      "foodShort": "{{count}} 份食物",
+      "rescue": "{{days}} 天后救援车队到达：需要还有 {{count}} 名幸存者站着",
+      "famine": "储藏室空了且 {{count}} 人挨饿：饥荒，感染者获胜",
+      "sneak": "这个人数下，感染者可以潜行一次",
+      "placesTwo": "可搜索的地点：{{a}}和{{b}}",
+      "placesThree": "可搜索的地点：{{a}}、{{b}}和{{c}}"
     }
   },
   "badges": {
@@ -2623,6 +2676,12 @@
       "full": "九格下满，无人连线。",
       "left": "棋局未下完便结束了。"
     },
-    "continue": "继续"
+    "continue": "继续",
+    "table": {
+      "first": "先坐下的执{{first}}先走，后坐下的执{{second}}",
+      "firstShort": "{{mark}} 先手",
+      "line": "{{cells}} 格棋盘，{{count}} 子连成一线即胜：横、竖或斜线",
+      "lineShort": "{{count}} 子连线"
+    }
   }
 }

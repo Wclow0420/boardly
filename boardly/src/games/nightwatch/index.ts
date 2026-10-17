@@ -3,7 +3,17 @@ import { ManorBoxArt } from "./BoxArt";
 import type { GameDefinition } from "../types";
 import { NightwatchBoard } from "./NightwatchBoard";
 import { NIGHTWATCH_RULES } from "./rules";
-import { currentSeat, taskFor, type NightwatchState } from "./logic";
+import {
+  MISSION_SIZES,
+  PLAYER_COUNTS,
+  ROLE_SETS,
+  currentSeat,
+  failsNeeded,
+  sideOf,
+  taskFor,
+  type NightwatchState,
+  type Role,
+} from "./logic";
 import { BADGE_FRAMES } from "./badgeFrames";
 
 // Lamplight in a haunted house: ink-blue night, warm lantern red-gold.
@@ -62,4 +72,33 @@ export const nightwatch: GameDefinition<NightwatchState> = {
     "nightwatch.ghostbreaker": { glyph: GLYPHS.orb, emoji: "🔮", loop: "spin" },
   },
   badgeFrames: BADGE_FRAMES,
+  // what a table of this size means: the sides, the roles dealt to each,
+  // each night's team (from the tables in logic.ts)
+  tableNotes: (players, t) => {
+    const n = Math.min(Math.max(players, PLAYER_COUNTS[0]), PLAYER_COUNTS[PLAYER_COUNTS.length - 1]);
+    const dealt = ROLE_SETS[n];
+    const evil = dealt.filter((r) => sideOf(r) === "evil").length;
+    const good = n - evil;
+    const list = (side: "good" | "evil") =>
+      [...new Set(dealt.filter((r) => sideOf(r) === side))]
+        .map((role: Role) => {
+          const name = t(`nightwatch.roles.${role}.name`);
+          const copies = dealt.filter((r) => r === role).length;
+          return copies > 1 ? t("nightwatch.table.copies", { role: name, n: copies }) : name;
+        })
+        .join(t("nightwatch.table.join"));
+    const sizes = MISSION_SIZES[n];
+    const twice = sizes.findIndex((_, round) => failsNeeded(n, round) > 1);
+    return [
+      {
+        emoji: "🏮",
+        text: t("nightwatch.table.sides", { good, evil }),
+        short: t("nightwatch.table.sidesShort", { good, evil }),
+      },
+      { emoji: "🔮", text: t("nightwatch.table.watchers", { roles: list("good") }) },
+      { emoji: "👻", text: t("nightwatch.table.ghosts", { roles: list("evil") }) },
+      { emoji: "🕯", text: t("nightwatch.table.teams", { sizes: sizes.join(" · ") }) },
+      ...(twice >= 0 ? [{ emoji: "🗡", text: t("nightwatch.table.twoFails", { night: twice + 1 }) }] : []),
+    ];
+  },
 };

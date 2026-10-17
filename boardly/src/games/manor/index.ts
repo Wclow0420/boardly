@@ -2,7 +2,17 @@ import { BADGE_GLYPHS as G } from "@/components/badges/glyphs";
 import type { GameDefinition } from "../types";
 import { BADGE_FRAMES } from "./badgeFrames";
 import { ManorBoard } from "./ManorBoard";
-import { currentSeat, taskFor, type ManorState } from "./logic";
+import {
+  HOURS,
+  INTRUDERS_BY_COUNT,
+  OWNER_HP,
+  PLAYER_COUNTS,
+  ROLE_SETS,
+  currentSeat,
+  taskFor,
+  type ManorState,
+  type Role,
+} from "./logic";
 import { MANOR_RULES } from "./rules";
 
 // Candlelit night: deep plum, warm amber highlights.
@@ -59,4 +69,32 @@ export const manor: GameDefinition<ManorState> = {
     "manor.lord": { glyph: G.crown, emoji: "👑", loop: "spin" },
   },
   badgeFrames: BADGE_FRAMES,
+  // what a table of this size means: the intruders among you, the roles
+  // dealt, the night's length (from the tables in logic.ts)
+  tableNotes: (players, t) => {
+    const n = Math.min(Math.max(players, PLAYER_COUNTS[0]), PLAYER_COUNTS[PLAYER_COUNTS.length - 1]);
+    const dealt = ROLE_SETS[n];
+    const intruders = INTRUDERS_BY_COUNT[n];
+    const roles = [...new Set(dealt)]
+      .map((role: Role) => {
+        const name = t(`manor.roles.${role}.name`);
+        const copies = dealt.filter((r) => r === role).length;
+        return copies > 1 ? t("manor.table.copies", { role: name, n: copies }) : name;
+      })
+      .join(t("manor.table.join"));
+    return [
+      {
+        emoji: "🗡",
+        text: t("manor.table.intruders", { count: intruders, household: n - intruders }),
+        short: t("manor.table.intrudersShort", { count: intruders }),
+      },
+      { emoji: "🤵", text: t("manor.table.roles", { roles }) },
+      {
+        emoji: "🕰",
+        text: t("manor.table.night", { hours: HOURS, from: t("manor.hours.h0"), to: t(`manor.hours.h${HOURS}`), hits: OWNER_HP }),
+        short: t("manor.table.nightShort", { hours: HOURS }),
+      },
+      ...(intruders === 1 ? [{ emoji: "🔪", text: t("manor.table.knife") }] : []),
+    ];
+  },
 };

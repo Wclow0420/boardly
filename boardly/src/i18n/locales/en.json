@@ -1128,6 +1128,18 @@
       "succeeded": "Succeeded",
       "failed": "Failed",
       "team": "Team: {{names}}"
+    },
+    "table": {
+      "sides": "{{agents}} Agents against {{moles}} Moles",
+      "sidesShort": "{{agents}} Agents vs {{moles}} Moles",
+      "agents": "Agents: {{roles}}",
+      "moles": "Moles: {{roles}}",
+      "times": "{{name}} ×{{count}}",
+      "sep": ", ",
+      "teams": "Agents on each operation: {{sizes}}",
+      "twoFails": "Operation {{op}} only fails on {{count}} fail cards",
+      "oneFail": "A single fail card sinks an operation",
+      "rejections": "{{count}} teams turned down in a row: the Moles win"
     }
   },
   "coup": {
@@ -1570,6 +1582,18 @@
       "killed": "The old man was attacked twice.",
       "butlerFound": "Dawn broke, but the intruders found the Butler: {{butler}}.",
       "abandoned": "Someone left the table."
+    },
+    "table": {
+      "intruders_one": "{{count}} intruder hides among you; {{household}} of the household",
+      "intruders_other": "{{count}} intruders hide among you and know each other; {{household}} of the household",
+      "intrudersShort_one": "{{count}} intruder",
+      "intrudersShort_other": "{{count}} intruders",
+      "roles": "Dealt: {{roles}}",
+      "night": "The night runs {{hours}} hours, {{from}} to {{to}}; {{hits}} hits kill the old man",
+      "nightShort": "{{hours}} hours",
+      "knife": "The lone intruder starts the night holding the knife",
+      "copies": "{{role}} ×{{n}}",
+      "join": ", "
     }
   },
   "liarsdice": {
@@ -1703,6 +1727,13 @@
       "double": "Kaizhai must double: at least {{min}} dice",
       "kaizhai": "Kaizhai round: 1s are wild — no zhai, no 1s",
       "nozhai": "1s are always wild — call any face but 1"
+    },
+    "table": {
+      "dice": "{{count}} dice on the table: {{each}} under every cup",
+      "diceShort": "{{count}} dice",
+      "calling": "{{name}}: {{rule}}",
+      "drinks": "A lost call costs cups: open {{open}}, split {{split}}, counter-split {{counter}}",
+      "knockout": "Knockout: {{count}} cups and you're out"
     }
   },
   "nightwatch": {
@@ -2063,6 +2094,16 @@
       "picking": "{{name}} is picking {{size}} for the mission",
       "toTeam": "Continue",
       "roomDone": "The night's work is done. When you're ready, go on to the team."
+    },
+    "table": {
+      "sides": "{{good}} watchers against {{evil}} ghosts, and the ghosts know each other",
+      "sidesShort": "{{good}} watchers · {{evil}} ghosts",
+      "watchers": "Watchers dealt: {{roles}}",
+      "ghosts": "Ghosts dealt: {{roles}}",
+      "teams": "Mission teams, night by night: {{sizes}}",
+      "twoFails": "Night {{night}} needs two Fail cards to fail",
+      "copies": "{{role}} ×{{n}}",
+      "join": ", "
     }
   },
   "profile": {
@@ -2361,6 +2402,18 @@
       "night": "The night",
       "private": "Only you know",
       "who": "Went: "
+    },
+    "table": {
+      "infectedOne": "On night 2 or 3, one of you secretly turns Infected",
+      "infectedTwo": "{{count}} of you turn Infected: the first on night 2 or 3, the next two nights later",
+      "infectedShort": "{{count}} Infected",
+      "food": "The storeroom starts with {{count}} food, one each",
+      "foodShort": "{{count}} food",
+      "rescue": "The convoy comes after {{days}} days: it needs {{count}} Survivors still standing",
+      "famine": "Storeroom empty and {{count}} go hungry: a famine, and the Infected win",
+      "sneak": "At this table the Infected can Sneak once",
+      "placesTwo": "Places to search: {{a}} and {{b}}",
+      "placesThree": "Places to search: {{a}}, {{b}} and {{c}}"
     }
   },
   "badges": {
@@ -2630,6 +2683,12 @@
       "full": "All nine squares filled, and no line.",
       "left": "The game ended before the board was done."
     },
-    "continue": "Continue"
+    "continue": "Continue",
+    "table": {
+      "first": "The first to sit plays the {{first}} and moves first; the second plays the {{second}}",
+      "firstShort": "{{mark}} moves first",
+      "line": "{{count}} in a row on a board of {{cells}} wins: across, down or corner to corner",
+      "lineShort": "{{count}} in a row"
+    }
   }
 }
