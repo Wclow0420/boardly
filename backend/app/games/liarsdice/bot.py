@@ -8,6 +8,8 @@ chance of 1/3 when 1s are wild or 1/6 when they aren't (and a die for
 every other player who has bid the face this round, since they likely
 hold one). It raises with the likeliest legal bid, or calls the last
 bid a lie when that is less likely to hold than its own raise would be.
+What is legal comes from rules.py, under the table's way of calling
+(几几几, classic or no zhai), so it never bids what the engine refuses.
 
 It only answers when the game is waiting on it, so the driver
 (app/bots.py) never loops on it:
@@ -22,12 +24,9 @@ It only answers when the game is waiting on it, so the driver
 from functools import lru_cache
 from math import comb
 
+from app.games.liarsdice.rules import calling_of, face_rank, kinds, least_call
+
 DICE_EACH = 5
-
-
-def _rank(face: int) -> int:
-    """1 is the top face: 2 < 3 < 4 < 5 < 6 < 1."""
-    return 7 if face == 1 else face
 
 
 def _mine(hand: list[int], face: int, zhai: bool) -> int:
@@ -60,28 +59,19 @@ def _chance(view: dict, seat: int, quantity: int, face: int, zhai: bool) -> floa
 
 
 def _smallest_bids(view: dict) -> list[tuple[int, int, bool]]:
-    """For every face, zhai or not, the smallest bid the engine accepts
-    next, as (quantity, face, zhai). A bigger bid on the same face is
-    only less likely, so these are the only ones worth weighing."""
+    """For every face and kind (zhai or kaizhai), the smallest bid the
+    engine accepts next, as (quantity, face, zhai). A bigger bid on the
+    same face is only less likely, so these are the only ones worth
+    weighing."""
     total = sum(view["diceCount"])
     active = sum(1 for count in view["diceCount"] if count)
+    calling = calling_of(view)
     last = view["bid"]
     bids = []
     for face in range(1, 7):
-        for zhai in (False, True) if face != 1 else (True,):
-            if last is None:
-                # A zhai opening may call as many dice as there are players
-                quantity = active if zhai else active + 1
-            elif last["zhai"] and not zhai:
-                # Breaking the fast (开斋): double the dice, any face
-                quantity = 2 * last["quantity"]
-            elif zhai and not last["zhai"]:
-                continue  # once kaizhai, the round stays kaizhai
-            elif _rank(face) > _rank(last["face"]):
-                quantity = last["quantity"]
-            else:
-                quantity = last["quantity"] + 1
-            if 1 <= quantity <= total:
+        for zhai in kinds(calling, last, face):
+            quantity = least_call(calling, active, last, face, zhai, total)
+            if quantity is not None:
                 bids.append((quantity, face, zhai))
     return bids
 
@@ -109,6 +99,16 @@ def wants_to_stop(view: dict, seat: int) -> bool:
 
 def _opening(view: dict, seat: int, rng) -> dict:
     bids = [(q, f, z, _chance(view, seat, q, f, z)) for q, f, z in _smallest_bids(view)]
+    if calling_of(view) == "jijiji":
+        # 几几几 opens one of three ways: a few 1s, a zhai face, or a
+        # kaizhai face at FEI. Weigh each by how likely it holds, with a
+        # little taste so the table isn't predictable.
+        sure = [b for b in bids if b[3] >= 0.55]
+        if sure:
+            q, f, z, _ = max(sure, key=lambda b: b[3] + rng.uniform(0, 0.2))
+            return _bid(q, f, z)
+        q, f, z, _ = max(bids, key=lambda b: (b[3], -b[0]))
+        return _bid(q, f, z)
     # Now and then open zhai (斋), when the cup suits it
     zhai_first = rng.random() < 0.25
     pools = [[b for b in bids if b[2] == zhai_first], [b for b in bids if b[2] != zhai_first]]
@@ -136,7 +136,7 @@ def _raise_or_call(view: dict, seat: int, rng) -> dict:
     call = not raises
     if raises:
         # The likeliest raise, the smallest step among near-equals
-        best = min(raises, key=lambda b: (-round(b[3], 2), b[0], _rank(b[1])))
+        best = min(raises, key=lambda b: (-round(b[3], 2), b[0], face_rank(b[1])))
         # A bluff now and then: the smallest raise on another face
         if rng.random() < 0.12:
             least = min(b[0] for b in raises)

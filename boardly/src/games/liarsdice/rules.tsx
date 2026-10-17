@@ -15,11 +15,13 @@ import {
   RuleText,
 } from "@/features/game/rules/blocks";
 import type { RulesPage } from "../types";
-import { DICE_EACH, DRINKS, KNOCKOUT_CUPS, PLAYER_COUNTS, openingFor } from "./logic";
+import { DICE_EACH, DRINKS, KNOCKOUT_CUPS, PLAYER_COUNTS, openingFor, thresholds } from "./logic";
 
 const R = "rules.liarsdice";
 const MIN = PLAYER_COUNTS[0];
 const MAX = PLAYER_COUNTS[PLAYER_COUNTS.length - 1];
+/** The table the 几几几 card gives as its example. */
+const EXAMPLE = 3;
 
 function Overview() {
   const { t } = useTranslation();
@@ -61,8 +63,16 @@ function Play() {
       <RuleHeading>{t(`${R}.play.onesHeading`)}</RuleHeading>
       {card("kaizhai", "✨")}
       {card("zhai", "🎲")}
-      {card("fly", "⚡")}
       {card("leopard", "🐆")}
+      <RuleHeading>{t(`${R}.play.callingHeading`)}</RuleHeading>
+      {card("jijiji", "🍻", {
+        n: EXAMPLE,
+        one: thresholds(EXAMPLE)[0],
+        zhai: thresholds(EXAMPLE)[1],
+        fei: thresholds(EXAMPLE)[2],
+      })}
+      {card("classic", "⚡")}
+      {card("nozhai", "✨")}
       <RuleHeading>{t(`${R}.play.winHeading`)}</RuleHeading>
       {card("knockout", "🥴", { cups: KNOCKOUT_CUPS })}
       {card("endless", "⏳")}
@@ -103,8 +113,14 @@ function Counts() {
         counts={PLAYER_COUNTS}
         rows={[
           { label: t(`${R}.counts.dice`), values: PLAYER_COUNTS.map((n) => n * DICE_EACH) },
-          { label: t(`${R}.counts.opening`), values: PLAYER_COUNTS.map((n) => openingFor(n, false)) },
+          // 几几几: ONE / ZHAI / FEI
+          { label: t(`${R}.counts.jjOne`), values: PLAYER_COUNTS.map((n) => thresholds(n)[0]) },
+          { label: t(`${R}.counts.jjZhai`), values: PLAYER_COUNTS.map((n) => thresholds(n)[1]) },
+          { label: t(`${R}.counts.jjFei`), values: PLAYER_COUNTS.map((n) => thresholds(n)[2]) },
+          // classic's first calls, and no zhai's
           { label: t(`${R}.counts.zhai`), values: PLAYER_COUNTS.map((n) => openingFor(n, true)) },
+          { label: t(`${R}.counts.opening`), values: PLAYER_COUNTS.map((n) => openingFor(n, false)) },
+          { label: t(`${R}.counts.nozhai`), values: PLAYER_COUNTS.map((n) => openingFor(n, false)) },
         ]}
       />
       <RuleNote>{t(`${R}.counts.note`)}</RuleNote>

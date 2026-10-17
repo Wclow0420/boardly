@@ -551,7 +551,7 @@
           },
           "call": {
             "title": "Panggilan pertama",
-            "detail": "\"4 × lima\" bermaksud sekurang-kurangnya empat dadu 5 di seluruh meja, kira dadu semua orang. Panggil lebih banyak dadu daripada bilangan pemain."
+            "detail": "\"4 × lima\" bermaksud sekurang-kurangnya empat 5 di seluruh meja, mengira dadu semua orang. Serendah mana panggilan pertama bergantung pada cara panggil (di bawah)."
           },
           "raise": {
             "title": "Naikkan, atau kata tipu",
@@ -569,15 +569,11 @@
         "onesHeading": "1 joker",
         "kaizhai": {
           "name": "Kaizhai (开斋): 1 ialah joker",
-          "text": "1 dikira sebagai apa-apa nombor. Panggilan pertama tanpa zhai menjadikan pusingan kaizhai."
+          "text": "1 dikira sebagai mana-mana muka. Sebaik panggilan menjadi kaizhai, pusingan kekal kaizhai: tiada zhai lagi, tiada 1 lagi."
         },
         "zhai": {
           "name": "Zhai (斋): 1 hanya 1",
-          "text": "Tandakan zhai pada panggilan pertama dan 1 hanya dikira sebagai 1. Panggilan pertama zhai boleh serendah bilangan pemain. Panggil 1 sentiasa zhai."
-        },
-        "fly": {
-          "name": "Buka puasa (飞)",
-          "text": "Dalam pusingan zhai, panggilan seterusnya boleh jadikan 1 joker semula — dengan dua kali ganda dadu (selepas 3 × empat zhai, sekurang-kurangnya 6). Selepas itu pusingan kekal kaizhai: tiada zhai, tiada 1."
+          "text": "Panggilan zhai (斋) menjadikan 1 dikira sebagai 1 sahaja. Memanggil 1 sentiasa zhai."
         },
         "leopard": {
           "name": "Lima sama (豹子)",
@@ -592,13 +588,26 @@
           "name": "Tanpa had",
           "text": "Tiada siapa keluar; cawan terus dikira. Apabila lebih separuh meja mengundi berhenti, paling sedikit cawan menang."
         },
-        "note": "Hos memilih mod di lobi."
+        "note": "Hos memilih mod dan cara panggil di lobi.",
+        "callingHeading": "Cara panggil (叫法)",
+        "jijiji": {
+          "name": "Ji Ji Ji (几几几)",
+          "text": "Peraturan bar Hong Kong dan Makau, ikut pemain yang masih ada. Dengan {{n}} pemain: {{one}} dadu hanya boleh 1, dari {{zhai}} mana-mana muka zhai, dari {{fei}} kaizhai juga — tanpa berganda. Bilangan pemain ada setiap saiz meja."
+        },
+        "classic": {
+          "name": "Klasik (经典)",
+          "text": "Buka dengan lebih dadu daripada pemain, atau sama banyak jika zhai. Kaizhai selepas zhai perlu dua kali ganda (selepas 3 × empat zhai, sekurang-kurangnya 6)."
+        },
+        "nozhai": {
+          "name": "Tiada zhai (不玩斋)",
+          "text": "1 sentiasa liar dan tidak boleh dipanggil; setiap panggilan kaizhai. Buka dengan lebih dadu daripada pemain."
+        }
       },
       "actions": {
         "lead": "Pada giliran anda, panggil atau buka. Sesiapa boleh belah, bila-bila masa.",
         "call": {
           "name": "Panggil",
-          "text": "Sebut jumlah dan nombor, lebih tinggi daripada panggilan terakhir. Tandakan zhai pada panggilan pertama supaya 1 hanya dikira sebagai 1."
+          "text": "Sebut bilangan dan muka, lebih tinggi daripada panggilan lepas — zhai atau kaizhai, seperti dibenarkan cara panggil. Setiap butang menunjukkan panggilan tepatnya."
         },
         "open": {
           "name": "Buka (开)",
@@ -632,11 +641,15 @@
         "note": "Yang kalah memulakan pusingan seterusnya."
       },
       "counts": {
-        "lead": "Lebih ramai pemain, lebih banyak dadu — dan panggilan pertama lebih besar. Jadual menunjukkan panggilan pertama paling kecil.",
+        "lead": "Lebih ramai pemain, lebih banyak dadu — dan panggilan lebih besar. Jadual menunjukkan paling kecil setiap panggilan.",
         "dice": "Dadu di meja",
-        "opening": "Panggilan pertama",
-        "zhai": "Zhai pertama",
-        "note": "Apabila seseorang tersingkir, panggilan pertama hanya mengira pemain yang masih ada."
+        "opening": "Klasik kaizhai",
+        "zhai": "Klasik zhai",
+        "note": "Apabila seseorang tersingkir, jadual hanya mengira pemain yang masih ada.",
+        "jjOne": "Ji Ji Ji 1",
+        "jjZhai": "Ji Ji Ji zhai",
+        "jjFei": "Ji Ji Ji kaizhai",
+        "nozhai": "Tiada zhai"
       }
     },
     "nightwatch": {
@@ -1506,11 +1519,8 @@
     "bid_one": "{{count}} × {{face}}",
     "bid_other": "{{count}} × {{face}}",
     "zhai": "Zhai",
-    "zhaiName": "1 bukan joker",
-    "zhaiHint": "Bertanda: zhai — 1 hanya dikira sebagai 1. Tidak bertanda: kaizhai — 1 ialah joker, dan pusingan ini tidak boleh kembali ke zhai.",
-    "zhaiOnes": "Panggil 1 sentiasa zhai",
     "round": "Pusingan {{round}} · {{dice}} dadu di atas meja",
-    "opening": "Panggilan pertama: {{name}} · sekurang-kurangnya {{min}}, atau {{zhaiMin}} zhai",
+    "opening": "Panggilan pertama: {{name}}\n{{rule}}",
     "waiting": "{{name}} sedang berfikir…",
     "youreOut": "Anda sudah mabuk — tonton sahaja 🥴",
     "yourDice": "Dadu anda (ketik untuk tutup)",
@@ -1520,14 +1530,11 @@
     "youHave_other": "Anda ada {{count}} yang dikira untuk {{face}}",
     "hideHint": "Hanya anda yang nampak. 1 dikira sebagai apa-apa nombor kecuali pusingan zhai.",
     "calls": "Panggilan pusingan ini",
-    "yourTurn": "Giliran anda — lawan {{bid}}, atau buka",
     "yourOpening": "Giliran anda — mulakan panggilan",
     "call": "Panggil {{bid}}",
-    "mustRaise": "Panggil lebih banyak dadu, atau jumlah sama dengan nombor lebih tinggi (2 < 3 < 4 < 5 < 6 < 1)",
-    "mustOpen": "Mula dengan sekurang-kurangnya {{min}}",
     "open": "Buka",
     "split": "Belah",
-    "challengeHint": "Buka: yang kalah minum 1. Belah: yang kalah minum 2 — dan yang dibelah boleh balas untuk 4.",
+    "challengeHint": "Buka: kalah minum 1 · Belah: 2, atau 4 jika dibalas",
     "drunk": "Mabuk — keluar",
     "thinking": "berfikir",
     "lastRound": "Keputusan pusingan {{round}}",
@@ -1542,10 +1549,6 @@
     "youWin": "Anda menang! 🍻",
     "winner": "{{name}} menang!",
     "lastStanding": "Yang terakhir bertahan menang",
-    "breakZhai": "Buka puasa (开斋) — 1 jadi joker semula",
-    "breakHint": "Nyahtanda untuk buka puasa (开斋): 1 jadi joker semula, tetapi mesti panggil sekurang-kurangnya {{min}}.",
-    "breakingHint": "Buka puasa: panggil sekurang-kurangnya {{min}} dadu.",
-    "mustBreak": "Buka puasa perlukan sekurang-kurangnya {{min}} dadu",
     "broke": "buka puasa",
     "splitting": "{{name}} belah panggilan {{bidder}}!",
     "waitingAnswer": "{{name}} sedang memutuskan sama ada mahu balas…",
@@ -1566,7 +1569,6 @@
     "endVote": "Undi berhenti",
     "endCancel": "Teruskan",
     "kaizhai": "Kaizhai",
-    "lockedKaizhai": "Pusingan ini kaizhai: 1 ialah joker, dan tiada siapa boleh panggil zhai atau 1.",
     "leopard": "Lima sama +1",
     "reroll": "Bersepah — tunjuk dan goncang semula",
     "rerolled": "{{name}} goncang semula cawan bersepah (tunjuk {{dice}})",
@@ -1579,16 +1581,10 @@
       "reshake": "Berselerak — goncang semula",
       "callsTool": "Panggilan",
       "noCalls": "Belum ada panggilan pusingan ini.",
-      "called": "{{name}} memanggil",
+      "called": "{{name}} panggil",
       "splitBy": "{{name}} membelah panggilan {{bidder}}!",
-      "beat": "Atasi panggilan {{name}}",
-      "openMin": "Sekurang-kurangnya {{min}} — atau {{zhaiMin}} zhai",
-      "liarAs": "Tuduh tipu dengan",
-      "openCups": "Buka · 1 cawan",
-      "splitCups": "Belah · 2 cawan",
-      "callIt": "Panggil {{bid}}",
-      "holdOpen": "Tahan: Tipu!",
-      "holdSplit": "Tahan: Tipu! ×2",
+      "holdOpen": "Buka (开)",
+      "holdSplit": "Belah (劈)",
       "holdCounter": "Balas ×4",
       "holdSplitThem": "Tahan untuk belah {{name}} · 2 cawan",
       "liar": "Tipu!",
@@ -1612,7 +1608,7 @@
         "split": "{{name}} membelah panggilan anda",
         "counter": "{{name}} membelah panggilan anda — anda membalas!"
       },
-      "answerHold": "Terima: yang kalah minum 2. Tahan Balas: yang kalah minum 4.",
+      "answerHold": "Terima: kalah minum 2 · Tahan Balas: 4",
       "shake": {
         "tag": "Berselerak",
         "shake": "Goncang",
@@ -1627,6 +1623,27 @@
         "good": "Puas hati dengan dadu? Mulakan pusingan",
         "yourTurn": "Giliran anda — goncang dahulu"
       }
+    },
+    "openRule": {
+      "jijiji": "1 dari {{one}} · zhai dari {{zhai}} · kaizhai dari {{fei}}",
+      "classic": "zhai dari {{zhai}} · kaizhai dari {{kai}}",
+      "nozhai": "sekurang-kurangnya {{min}} · 1 sentiasa liar"
+    },
+    "youHaveBoth": "Anda ada {{zhai}} zhai · {{wild}} kaizhai",
+    "why": {
+      "onesZhai": "1 hanya zhai",
+      "total": "Cuma {{total}}",
+      "noZhai": "Tiada zhai",
+      "raise": "Terlalu rendah"
+    },
+    "callHint": {
+      "pick": "Pilih muka, tetapkan bilangan, ketik panggilan",
+      "onesZhai": "1 hanya dikira 1, jadi panggilan 1 sentiasa zhai",
+      "total": "Hanya ada {{total}} dadu di meja",
+      "fei": "Kaizhai dari {{fei}} dadu — 1 terus liar selepas itu",
+      "double": "Kaizhai mesti berganda: sekurang-kurangnya {{min}} dadu",
+      "kaizhai": "Pusingan kaizhai: 1 liar — tiada zhai, tiada 1",
+      "nozhai": "1 sentiasa liar — panggil apa-apa muka kecuali 1"
     }
   },
   "nightwatch": {
@@ -2121,6 +2138,21 @@
         "endless": {
           "name": "Tanpa had",
           "desc": "Tiada siapa keluar — terus minum. Undi untuk berhenti; paling sedikit cawan menang."
+        }
+      },
+      "calling": {
+        "title": "Cara panggil",
+        "jijiji": {
+          "name": "Ji Ji Ji",
+          "desc": "Peraturan bar HK / Makau: panggilan kecil 1, kemudian zhai, lalu kaizhai."
+        },
+        "classic": {
+          "name": "Klasik",
+          "desc": "Buka melebihi pemain; kaizhai selepas zhai berganda."
+        },
+        "nozhai": {
+          "name": "Tiada zhai",
+          "desc": "1 sentiasa liar dan tak boleh dipanggil."
         }
       }
     }

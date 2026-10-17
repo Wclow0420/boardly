@@ -1,5 +1,6 @@
 """Liar's Dice bots (app/games/liarsdice/bot.py): only legal moves, from
-their own view, and whole games end, in both modes at every size."""
+their own view, and whole games end, under every way of calling, in
+both modes, at every size."""
 
 import random
 
@@ -7,6 +8,7 @@ import pytest
 
 from app.games.liarsdice.bot import liarsdice as policy
 from app.games.liarsdice.game import LiarsDice
+from app.games.liarsdice.rules import CALLINGS, thresholds
 
 MAX_STEPS = 6000
 
@@ -27,10 +29,10 @@ def _step(game, state, rng):
     return state, bool(waiting)
 
 
-def _play(n, mode, seed):
+def _play(n, mode, seed, calling="jijiji"):
     game = LiarsDice(random.Random(seed))
     rng = random.Random(seed + 1000)
-    state = game.initial_state(n, mode=mode)
+    state = game.initial_state(n, mode=mode, calling=calling)
     kinds = set()
     for _ in range(MAX_STEPS):
         if state["phase"] == "finished":
@@ -44,15 +46,22 @@ def _play(n, mode, seed):
             kinds.add("reroll")
         if state["bids"] and state["bids"][0]["zhai"]:
             kinds.add("zhai")
-    raise AssertionError(f"never ended ({n}, {mode}, {seed})")
+        if state["bids"] and state["bids"][0]["face"] == 1:
+            kinds.add("ones")
+        if len(state["bids"]) > 1 and state["bids"][-2]["zhai"] and not state["bids"][-1]["zhai"]:
+            kinds.add("fei")
+        if state["bids"] and not state["bids"][0]["zhai"]:
+            kinds.add("kaizhai")
+    raise AssertionError(f"never ended ({n}, {mode}, {calling}, {seed})")
 
 
+@pytest.mark.parametrize("calling", CALLINGS)
 @pytest.mark.parametrize("mode", ["knockout", "endless"])
 @pytest.mark.parametrize("n", range(2, 11))
-def test_bots_finish_whole_games(n, mode):
+def test_bots_finish_whole_games(n, mode, calling):
     seen = set()
-    for seed in range(12):
-        state, kinds = _play(n, mode, seed)
+    for seed in range(8):
+        state, kinds = _play(n, mode, seed, calling)
         seen |= kinds
         if mode == "endless":
             assert len(state["endVotes"]) * 2 > n
@@ -71,6 +80,21 @@ def test_bots_use_every_move():
         for seed in range(15):
             seen |= _play(n, "knockout", seed)[1]
     assert {"open", "split", "counter", "reroll", "zhai"} <= seen
+
+
+def test_bots_open_every_way_under_jijiji():
+    """几几几: the bots open with 1s, zhai and kaizhai, and break zhai."""
+    seen = set()
+    for n in (2, 3, 5, 8):
+        for seed in range(10):
+            seen |= _play(n, "knockout", seed, "jijiji")[1]
+    assert {"ones", "zhai", "kaizhai", "fei"} <= seen
+
+
+def test_bots_never_go_zhai_without_zhai():
+    for n in (2, 4, 7):
+        for seed in range(6):
+            assert not {"zhai", "ones", "fei"} & _play(n, "knockout", seed, "nozhai")[1]
 
 
 def _view(**over):
@@ -115,17 +139,36 @@ def test_calls_an_impossible_bid_and_raises_a_sure_one():
         assert move["type"] == "bid"
 
 
-def test_its_bids_are_legal_from_any_bid():
+@pytest.mark.parametrize("calling", CALLINGS)
+@pytest.mark.parametrize("n", [2, 3, 6, 10])
+def test_its_bids_are_legal_from_any_bid(calling, n):
     game = LiarsDice(random.Random(3))
     rng = random.Random(3)
-    for seed in range(200):
-        state = game.initial_state(3, rng=random.Random(seed))
+    for seed in range(150):
+        state = game.initial_state(n, rng=random.Random(seed), calling=calling)
         state["turn"] = 0
-        q, f = rng.randint(3, 15), rng.randint(1, 6)
+        q, f = rng.randint(1, 5 * n), rng.randint(1, 6)
         zhai = f == 1 or rng.random() < 0.5
-        bid = _bid(q, f, zhai, seat=2)
+        if calling == "nozhai":
+            f, zhai = rng.randint(2, 6), False
+        bid = _bid(q, f, zhai, seat=n - 1)
         state = {**state, "bid": bid, "bids": [bid]}
         move = game.bot_move(game.view_for(state, 0), 0, rng)
+        game.apply_move(state, 0, move)  # a GameError fails the test
+
+
+@pytest.mark.parametrize("n", range(2, 11))
+def test_jijiji_openings_are_legal(n):
+    game = LiarsDice(random.Random(n))
+    rng = random.Random(n)
+    one, zhai, fei = thresholds(n)
+    for seed in range(60):
+        state = {**game.initial_state(n, rng=random.Random(seed)), "turn": 0}
+        move = game.bot_move(game.view_for(state, 0), 0, rng)
+        if move["type"] != "bid":
+            continue  # a 散骰 shaken again
+        q, f, z = move["quantity"], move["face"], move["zhai"] or move["face"] == 1
+        assert q >= one and (f == 1 or q >= zhai) and (z or q >= fei)
         game.apply_move(state, 0, move)
 
 
@@ -171,12 +214,14 @@ def test_a_person_splits_a_bot_and_the_bot_answers():
 ROOMS = "/api/v1/rooms"
 
 
-@pytest.mark.parametrize("mode", ["knockout", "endless"])
-def test_a_person_plays_with_bots_through_the_server(client, make_user, mode):
+@pytest.mark.parametrize("mode,calling", [("knockout", "jijiji"), ("endless", "classic"),
+                                          ("knockout", "nozhai")])
+def test_a_person_plays_with_bots_through_the_server(client, make_user, mode, calling):
     """The server's bot driver (app/bots.py, inline in tests) plays the
     bots after every move of the person, until the game is theirs again."""
     alice = make_user("alice")
-    room = client.post(ROOMS, json={"gameType": "liarsdice", "options": {"mode": mode}},
+    room = client.post(ROOMS, json={"gameType": "liarsdice",
+                                         "options": {"mode": mode, "calling": calling}},
                        headers=alice["headers"]).get_json()["room"]
     assert room["botsAvailable"] is True
     assert client.post(f"{ROOMS}/{room['id']}/bots", json={"count": 4},

@@ -1,7 +1,9 @@
 // Development only: Liar's Dice's stage in every moment, with sample
 // states, to look at on a device without a table of players. Open with
 // boardly-dev://dev/liarsdice?sample=<name> (the `dev` tab on the left
-// lists them; add &perf=1 for the frame rate).
+// lists them; add &perf=1 for the frame rate, &lang=zh for Chinese, and
+// &narrow=1 to see the plinth's calls as wide as on a 375pt phone,
+// &settings=1 for the lobby's settings card).
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
@@ -12,11 +14,15 @@ import { scheduleOnRN } from "react-native-worklets";
 
 import { AppText, Button } from "@/components/ui";
 import { RulesSheet } from "@/features/game/RulesSheet";
+import type { RoomInfo } from "@/api/client";
+import { GameSettings } from "@/features/lobby/GameSettings";
+import { CallGrid } from "@/games/liarsdice/CallScene";
 import { LiarsDiceBoard } from "@/games/liarsdice/LiarsDiceBoard";
-import type { Bid, LiarsDiceState, Reveal } from "@/games/liarsdice/logic";
+import { callPlan, startFace, type Bid, type LiarsDiceState, type Reveal } from "@/games/liarsdice/logic";
 import type { ShakeStep } from "@/games/liarsdice/ShakeScene";
 import { shakenKey } from "@/games/liarsdice/useShaken";
 import { GAMES } from "@/games/registry";
+import { useLocale } from "@/i18n/LocaleContext";
 import { ThemeScope, useTheme } from "@/theme";
 
 const HANDS = [
@@ -38,6 +44,7 @@ const bid = (quantity: number, face: number, zhai: boolean, seat: number): Bid =
 const S = (n: number, over: Partial<LiarsDiceState> = {}): LiarsDiceState => ({
   numPlayers: n,
   mode: "knockout",
+  calling: "classic",
   phase: "bidding",
   turn: 2,
   round: 4,
@@ -99,6 +106,26 @@ const SAMPLES: Record<string, { state: LiarsDiceState; reveal?: boolean; shake?:
   },
   shake2: { state: fresh(2, { turn: 1 }), shake: "open" },
   opening: { state: S(5, { turn: 0, bid: null, bids: [] }) },
+  // the calls on the plinth under each way of calling
+  jijiji3: { state: S(3, { calling: "jijiji", turn: 0, bid: null, bids: [], myDice: [1, 3, 4, 4, 6] }) },
+  jijiji10: { state: S(10, { calling: "jijiji", turn: 0, bid: null, bids: [] }) },
+  jijijiZhai: {
+    state: S(5, { calling: "jijiji", turn: 0, bid: bid(6, 4, true, 4), bids: [bid(5, 1, true, 3), bid(6, 4, true, 4)] }),
+  },
+  jijijiKai: {
+    state: S(5, { calling: "jijiji", turn: 0, bid: bid(8, 5, false, 4), bids: [bid(6, 3, true, 3), bid(8, 5, false, 4)] }),
+  },
+  jijijiTop: {
+    state: S(2, { calling: "jijiji", turn: 0, bid: bid(10, 5, true, 1), bids: [bid(10, 5, true, 1)], myDice: [1, 1, 6, 6, 3] }),
+  },
+  tableOpening: { state: S(5, { calling: "jijiji", turn: 2, bid: null, bids: [] }) },
+  classicOpen: { state: S(5, { calling: "classic", turn: 0, bid: null, bids: [] }) },
+  classicZhai: { state: S(5, { calling: "classic", turn: 0, bid: bid(5, 3, true, 4), bids: [bid(5, 3, true, 4)] }) },
+  nozhaiOpen: { state: S(5, { calling: "nozhai", turn: 0, bid: null, bids: [] }) },
+  nozhai: { state: S(5, { calling: "nozhai", turn: 0, bid: bid(7, 5, false, 4), bids: [bid(6, 3, false, 3), bid(7, 5, false, 4)] }) },
+  splitPending: {
+    state: S(5, { calling: "jijiji", phase: "split", bid: bid(6, 4, true, 0), bids: [bid(6, 4, true, 0)], split: { by: 3 } }),
+  },
   call: { state: S(5, { turn: 0, bid: bid(7, 5, false, 4), bids: [bid(6, 3, false, 3), bid(7, 5, false, 4)] }) },
   callZhai: { state: S(5, { turn: 0, bid: bid(4, 3, true, 4), bids: [bid(4, 3, true, 4)] }) },
   table: { state: S(5) },
@@ -177,7 +204,18 @@ export default function LiarsDicePreview() {
 
 function Samples() {
   const { colors, spacing } = useTheme();
-  const { sample: asked, perf } = useLocalSearchParams<{ sample?: string; perf?: string }>();
+  const { sample: asked, perf, lang, narrow, settings } = useLocalSearchParams<{
+    sample?: string;
+    perf?: string;
+    lang?: string;
+    narrow?: string;
+    settings?: string;
+  }>();
+  // &lang=zh (en, ms): look at a sample in another language
+  const { language, setLanguage } = useLocale();
+  useEffect(() => {
+    if ((lang === "en" || lang === "zh" || lang === "ms") && lang !== language) setLanguage(lang);
+  }, [lang, language, setLanguage]);
   const [sample, setSample] = useState(asked && SAMPLES[asked] ? asked : "table");
   // picking a sample (again) starts it afresh
   const [nonce, setNonce] = useState(0);
@@ -248,6 +286,12 @@ function Samples() {
           }}
         />
       ) : null}
+      {narrow === "1" ? <NarrowCalls state={state} /> : null}
+      {settings === "1" ? (
+        <View style={styles.settings}>
+          <GameSettings room={LOBBY} code={LOBBY.code} isHost={false} />
+        </View>
+      ) : null}
       <Pressable onPress={() => setPicking(true)} style={[styles.devTab, { borderColor: colors.primary }]}>
         <AppText variant="tiny">{perf === "1" ? `dev\n${fps}` : "dev"}</AppText>
       </Pressable>
@@ -275,7 +319,56 @@ function Samples() {
   );
 }
 
+/** A waiting Liar's Dice table, for the lobby's settings card. */
+const LOBBY: RoomInfo = {
+  id: "dev-room",
+  code: "DEVLD",
+  gameType: "liarsdice",
+  hostId: "u1",
+  status: "waiting",
+  players: [],
+  game: {
+    key: "liarsdice",
+    name: "Liar's Dice",
+    minPlayers: 2,
+    maxPlayers: 10,
+    emoji: "🎲",
+    tileColor: "#FFE0E0",
+    category: "party",
+    tag: "party",
+    options: { mode: ["knockout", "endless"], calling: ["jijiji", "classic", "nozhai"] },
+  },
+  options: { mode: "knockout", calling: "jijiji" },
+  rematchCode: null,
+};
+
+/** The plinth's calls at a 375pt phone's width (375 less the plinth's
+ *  40 each side), over the top of the page. */
+function NarrowCalls({ state }: { state: LiarsDiceState }) {
+  const open = useSharedValue(0);
+  const split = useSharedValue(0);
+  return (
+    <View style={styles.narrow} pointerEvents="box-none">
+      <View style={{ width: 375 - 80 }}>
+        <CallGrid
+          plan={callPlan(state, startFace(state))}
+          canLie={state.bid !== null}
+          busy={false}
+          openHold={open}
+          splitHold={split}
+          holdKey="narrow"
+          onCall={() => {}}
+          onOpen={() => {}}
+          onSplit={() => {}}
+        />
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  settings: { position: "absolute", top: 120, left: 0, right: 0, paddingHorizontal: 16 },
+  narrow: { position: "absolute", top: 300, left: 0, right: 0, alignItems: "center", backgroundColor: "rgba(0,0,0,0.7)", paddingVertical: 12 },
   devTab: {
     position: "absolute",
     left: 0,

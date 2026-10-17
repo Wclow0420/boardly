@@ -55,6 +55,7 @@ export function HoldButton({
   tone,
   progress,
   disabled = false,
+  compact = false,
   onDone,
 }: {
   label: string;
@@ -62,6 +63,8 @@ export function HoldButton({
   /** 0..1 while held; 1 once done. */
   progress: SharedValue<number>;
   disabled?: boolean;
+  /** A lower bar (48), for a grid of moves on the plinth. */
+  compact?: boolean;
   onDone: () => void;
 }) {
   const { t } = useTranslation();
@@ -154,7 +157,7 @@ export function HoldButton({
       onPressOut={release}
       style={styles.wrap}
     >
-      <Animated.View style={[styles.button, press, disabled && styles.off]}>
+      <Animated.View style={[styles.button, compact && styles.compact, press, disabled && styles.off]}>
         <LinearGradient
           colors={look.fill as unknown as [string, string, string]}
           style={StyleSheet.absoluteFill}
@@ -167,16 +170,16 @@ export function HoldButton({
             style={StyleSheet.absoluteFill}
           />
         </Animated.View>
-        <LightSweep r={16} />
-        <BezelOverlay r={16} t={4} />
+        <LightSweep r={compact ? 14 : 16} />
+        <BezelOverlay r={compact ? 14 : 16} t={compact ? 3.5 : 4} />
         <View style={styles.face} pointerEvents="none">
           <AppText
-            style={[styles.label, { color: look.text }]}
+            style={[styles.label, compact && styles.labelCompact, { color: look.text }]}
             numberOfLines={1}
           >
             {label}
           </AppText>
-          <AppText style={[styles.cue, { color: look.text }, nudged && styles.cueNudged]} numberOfLines={1}>
+          <AppText style={[styles.cue, compact && styles.cueCompact, { color: look.text }, nudged && styles.cueNudged]} numberOfLines={1}>
             {nudged ? t("common.holdNudge") : t("common.holdCue")}
           </AppText>
         </View>
@@ -193,6 +196,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     justifyContent: "center",
   },
+  compact: { height: 48, borderRadius: 14 },
   off: { opacity: 0.5 },
   fill: { position: "absolute", left: 0, top: 0, bottom: 0, opacity: 0.75 },
   face: { alignItems: "center", paddingHorizontal: 10 },
@@ -204,4 +208,6 @@ const styles = StyleSheet.create({
   },
   cue: { fontFamily: fontFamily.semiBold, fontSize: 11, lineHeight: 14, opacity: 0.72 },
   cueNudged: { opacity: 1, fontFamily: fontFamily.bold },
+  labelCompact: { fontSize: 15, lineHeight: 19, letterSpacing: 0.3 },
+  cueCompact: { fontSize: 10, lineHeight: 12 },
 });

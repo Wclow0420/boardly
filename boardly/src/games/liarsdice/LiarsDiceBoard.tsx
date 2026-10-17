@@ -11,8 +11,9 @@
 //   table  — everyone on the stage, cups down at their feet, the call on
 //            the slate over them; anyone but the bidder may split (劈) it,
 //            holding the button while red light streams to the bidder
-//   call   — my turn: my dice, the number and the face picked on the
-//            stage, the call made on the plinth, or "Liar!" held there
+//   call   — my turn: the face picked and the count nudged on the stage;
+//            on the plinth each call button shows exactly the call a tap
+//            makes (rising together with the count), Open and Split held
 //   split  — the splitter in red light, the bidder to accept or to hold
 //            for the counter-split (反劈)
 //   reveal — every cup lifted, the dice counted toward the call, the one
@@ -28,7 +29,7 @@ import { useTranslation } from "react-i18next";
 import { AppText, Button } from "@/components/ui";
 import { Journal, type JournalPage } from "@/features/game/Journal";
 import { Popup, type PopupLook } from "@/features/game/Popup";
-import { GameStage, stageText, type StageLook } from "@/features/game/stage/GameStage";
+import { GameStage, PLINTH_H, stageText, type StageLook } from "@/features/game/stage/GameStage";
 import { ToolButton } from "@/features/game/stage/parts";
 import type { Light, Standing } from "@/features/game/stage/StageLineup";
 import { asLook } from "@/features/mascot/dress";
@@ -37,23 +38,27 @@ import { fontFamily } from "@/theme";
 import { moveHaptic, tapHaptic } from "@/utils/haptics";
 import type { GameBoardProps } from "../types";
 import { denLayout, type DieTone } from "./art";
-import { CallScene, pickZhai, type CallPick } from "./CallScene";
+import { CallGrid, CallScene, callGridHeight, openRule } from "./CallScene";
 import { Den } from "./Den";
 import { Ending } from "./Ending";
 import { BOARD_DROP, BOARD_MID, BOARD_TUCK, BOARD_W, HangingBoard, type Flight } from "./HangingBoard";
 import {
-  breakZhaiMin,
+  activeSeats,
+  callPlan,
+  callingOf,
   canReroll,
   canSplit,
+  isKaizhai,
   isOut,
   isScattered,
-  isValidBid,
   myCount,
-  openingMin,
-  suggestedBid,
+  startFace,
+  storedZhai,
   taskFor,
+  thresholds,
   totalDice,
   type Bid,
+  type CallChoice,
   type LiarsDiceState,
 } from "./logic";
 import { Call, Slate } from "./pieces";
@@ -177,19 +182,12 @@ export function LiarsDiceBoard({
   const [countedRound, setCountedRound] = useState<number | null>(null);
   const counted = revealing && countedRound === reveal.round;
 
-  // the call being made on my turn, tagged with the step it's for
-  const fresh = (): CallPick & { step: string } => ({
-    step,
-    ...suggestedBid(state),
-    zhai: state.bid?.zhai ?? false,
-    liar: "open",
-  });
+  // the call being made on my turn: the face I'm on and the count I've
+  // nudged to (0: each call's least), tagged with the step it's for
+  const fresh = () => ({ step, face: startFace(state), quantity: 0 });
   const [pick0, setPick] = useState(fresh);
   const pick = pick0.step === step ? pick0 : fresh();
-  const choose = (change: Partial<CallPick>) => setPick({ ...pick, ...change, step });
-  const zhai = pickZhai(state, pick);
-  const valid = isValidBid(state, pick.quantity, pick.face, zhai);
-  const breakMin = breakZhaiMin(state);
+  const plan = callPlan(state, pick.face, pick.quantity);
 
   // what I've just done shows at once, before the server answers
   const [said, setSaid] = useState<{ step: string; text: string } | null>(null);
@@ -200,9 +198,11 @@ export function LiarsDiceBoard({
     onMove(move);
   };
   const hold = useSharedValue(0);
+  const splitHold = useSharedValue(0);
   useEffect(() => {
     hold.set(0);
-  }, [step, hold]);
+    splitHold.set(0);
+  }, [step, hold, splitHold]);
 
   const [panel, setPanel] = useState<Panel | null>(null);
   const bidText = (bid: Pick<Bid, "quantity" | "face" | "zhai">) =>
@@ -267,7 +267,7 @@ export function LiarsDiceBoard({
       ? `🪓 ${state.bid.seat === mySeat ? t("liarsdice.stage.splitYou", { name: nameOf(splitter) }) : t("liarsdice.stage.splitBy", { name: nameOf(splitter), bidder })}`
       : state.bid
         ? t("liarsdice.stage.called", { name: bidder })
-        : t("liarsdice.opening", { name: nameOf(state.turn), min: openingMin(state, false), zhaiMin: openingMin(state, true) });
+        : t("liarsdice.opening", { name: nameOf(state.turn), rule: openRule(state, t) });
   // while I hold to split (or counter), red light streams to them
   const aim =
     scene === "table" && canSplit(state, mySeat) && state.bid ? state.bid.seat : scene === "split" && task === "answer" ? splitter : null;
@@ -333,7 +333,15 @@ export function LiarsDiceBoard({
       </View>
     ) : scene === "call" ? (
       <View style={StyleSheet.absoluteFill}>
-        <CallScene state={state} pick={pick} onPick={choose} bidder={bidder} busy={busy} top={clear} />
+        <CallScene
+          state={state}
+          plan={plan}
+          onFace={(face) => setPick({ ...pick, face, step })}
+          onCount={(quantity) => setPick({ ...pick, face: plan.face, quantity, step })}
+          bidder={bidder}
+          busy={busy}
+          top={clear}
+        />
       </View>
     ) : (
       <View style={StyleSheet.absoluteFill}>
@@ -353,7 +361,18 @@ export function LiarsDiceBoard({
     );
 
   // ── the plinth ──
-  const liarLabel = pick.liar === "split" ? t("liarsdice.stage.holdSplit") : t("liarsdice.stage.holdOpen");
+  const call = (choice: CallChoice) => {
+    if (choice.quantity === null) return;
+    const zhai = storedZhai(state, choice.face, choice.zhai);
+    send(
+      { type: "bid", quantity: choice.quantity, face: choice.face, zhai },
+      `🎲 ${bidText({ quantity: choice.quantity, face: choice.face, zhai })}`,
+    );
+  };
+  // the grid on the plinth: a second row (Open, Split) once there's a call;
+  // lifted into the plinth's top on a screen with no home bar to spare
+  const gridRows = state.bid ? 2 : 1;
+  const gridLift = Math.max(0, callGridHeight(gridRows) + 6 - (PLINTH_H - 46 + insets.bottom));
   const bottom =
     scene === "reveal" ? (
       counted ? (
@@ -409,34 +428,18 @@ export function LiarsDiceBoard({
     ) : saying ? (
       <AppText style={[stageText.strong, styles.big]}>{saying}</AppText>
     ) : scene === "call" ? (
-      <View style={styles.pair}>
-        <Button
-          label={t("liarsdice.stage.callIt", { bid: t("liarsdice.bid", { count: pick.quantity, face: pick.face }) })}
-          size="lg"
-          style={styles.half}
-          disabled={!valid}
-          loading={busy}
-          onPress={() =>
-            send({ type: "bid", quantity: pick.quantity, face: pick.face, zhai }, `🎲 ${bidText({ quantity: pick.quantity, face: pick.face, zhai })}`)
-          }
-        />
-        {state.bid ? (
-          <View style={styles.half}>
-            <HoldButton
-              key={`${step}|${pick.liar}`}
-              label={liarLabel}
-              tone="bad"
-              progress={hold}
-              disabled={busy}
-              onDone={() =>
-                pick.liar === "split"
-                  ? send({ type: "split", bids: state.bids.length }, `🪓 ${t("liarsdice.stage.liar")}`)
-                  : send({ type: "challenge" }, `🔍 ${t("liarsdice.stage.liar")}`)
-              }
-            />
-          </View>
-        ) : null}
-      </View>
+      <CallGrid
+        plan={plan}
+        canLie={state.bid !== null}
+        busy={busy}
+        openHold={hold}
+        splitHold={splitHold}
+        holdKey={step}
+        lift={gridLift}
+        onCall={call}
+        onOpen={() => send({ type: "challenge" }, `🔍 ${t("liarsdice.stage.liar")}`)}
+        onSplit={() => send({ type: "split", bids: state.bids.length }, `🪓 ${t("liarsdice.stage.liar")}`)}
+      />
     ) : scene === "split" && task === "answer" ? (
       <View style={styles.pair}>
         <Button
@@ -489,6 +492,22 @@ export function LiarsDiceBoard({
             ? t(canReroll(state, mySeat) ? "liarsdice.stage.shake.scattered" : "liarsdice.stage.shake.wait")
             : t("liarsdice.stage.shake.good")
           : null;
+  // on my turn: why a call is greyed, else the rule that matters now
+  const greyed = plan.choices.find((c) => c.problem && (c.problem.code === "total" || c.problem.code === "onesZhai"))?.problem;
+  const calling = callingOf(state);
+  const callHint = greyed
+    ? greyed.code === "total"
+      ? t("liarsdice.callHint.total", { total: greyed.total })
+      : t("liarsdice.callHint.onesZhai")
+    : calling === "nozhai"
+      ? t("liarsdice.callHint.nozhai")
+      : isKaizhai(state)
+        ? t("liarsdice.callHint.kaizhai")
+        : state.bid && calling === "jijiji"
+          ? t("liarsdice.callHint.fei", { fei: thresholds(activeSeats(state).length)[2] })
+          : state.bid
+            ? t("liarsdice.callHint.double", { min: state.bid.quantity * 2 })
+            : t("liarsdice.callHint.pick");
   const hint =
     scene === "reveal" || scene === "ending" ? null : (
       <>
@@ -503,18 +522,17 @@ export function LiarsDiceBoard({
               {shakeHint}
             </AppText>
           ) : null
-        ) : scene === "call" && !valid ? (
-          <AppText style={stageText.hint} numberOfLines={2}>
-            {breakMin !== null && !zhai
-              ? t("liarsdice.mustBreak", { min: breakMin })
-              : state.bid
-                ? t("liarsdice.mustRaise")
-                : t("liarsdice.mustOpen", { min: openingMin(state, zhai) })}
-          </AppText>
-        ) : scene === "call" && state.bid ? (
-          <AppText style={stageText.hint} numberOfLines={2}>
-            {t("liarsdice.challengeHint")}
-          </AppText>
+        ) : scene === "call" ? (
+          <>
+            <AppText style={stageText.hint} numberOfLines={2}>
+              {callHint}
+            </AppText>
+            {state.bid ? (
+              <AppText style={stageText.hint} numberOfLines={1}>
+                {t("liarsdice.challengeHint")}
+              </AppText>
+            ) : null}
+          </>
         ) : scene === "split" && task === "answer" ? (
           <AppText style={stageText.hint} numberOfLines={2}>
             {t("liarsdice.stage.answerHold")}
@@ -535,7 +553,7 @@ export function LiarsDiceBoard({
   // ── my board, hanging from the den: the dice that count for the call
   // on the table (or the one I'm making) lit in gold ──
   const myDice = state.myDice;
-  const countFor = scene === "call" ? { face: pick.face, zhai } : state.bid;
+  const countFor = scene === "call" ? { face: plan.face, zhai: !isKaizhai(state) } : state.bid;
   const tones: DieTone[] = myDice.map((d) => (countFor && myCount([d], countFor.face, countFor.zhai) > 0 ? "lit" : "plain"));
 
   // the tools sit beside my board, the group centred: the calls on the

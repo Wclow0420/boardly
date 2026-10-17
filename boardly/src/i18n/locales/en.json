@@ -551,7 +551,7 @@
           },
           "call": {
             "title": "The first call",
-            "detail": "\"4 × fives\" means at least four 5s on the whole table, counting everyone's dice. Call more dice than there are players."
+            "detail": "\"4 × fives\" means at least four 5s on the whole table, counting everyone's dice. How low the first call may go depends on the way of calling (below)."
           },
           "raise": {
             "title": "Raise, or call a lie",
@@ -569,15 +569,11 @@
         "onesHeading": "Wild 1s",
         "kaizhai": {
           "name": "Kaizhai (开斋): 1s are wild",
-          "text": "1s count as any face. A first call without zhai makes the round kaizhai."
+          "text": "1s count as any face. Once a call goes kaizhai the round stays kaizhai: no more zhai, and no more 1s."
         },
         "zhai": {
           "name": "Zhai (斋): 1s are just 1s",
-          "text": "Tick zhai on the first call and 1s count only as 1s. A zhai first call may be as low as the number of players. Calling 1s is always zhai."
-        },
-        "fly": {
-          "name": "Breaking the fast (飞)",
-          "text": "In a zhai round, the next call may make 1s wild again — at double the dice (after 3 × fours zhai, at least 6). From then on the round stays kaizhai: no more zhai, no more 1s."
+          "text": "A zhai call (斋) makes 1s count only as 1s. Calling 1s is always zhai."
         },
         "leopard": {
           "name": "Five of a kind (豹子)",
@@ -592,13 +588,26 @@
           "name": "Endless",
           "text": "Nobody is ever out; cups add up. When more than half the table votes to stop, the fewest cups win."
         },
-        "note": "The host picks the mode in the lobby."
+        "note": "The host picks the mode and the way of calling in the lobby.",
+        "callingHeading": "Ways of calling (叫法)",
+        "jijiji": {
+          "name": "Ji Ji Ji (几几几)",
+          "text": "The Hong Kong and Macau bar rule, by the players still in. With {{n}} players: {{one}} dice may only be 1s, from {{zhai}} any face zhai, from {{fei}} kaizhai too — no doubling. Player counts has every table size."
+        },
+        "classic": {
+          "name": "Classic (经典)",
+          "text": "Open with more dice than players, or as many zhai. Going kaizhai after a zhai call needs double the dice (after 3 × fours zhai, at least 6)."
+        },
+        "nozhai": {
+          "name": "No zhai (不玩斋)",
+          "text": "1s are always wild and can't be called; every call is kaizhai. Open with more dice than players."
+        }
       },
       "actions": {
         "lead": "On your turn you call or open. Anyone may split, any time.",
         "call": {
           "name": "Call",
-          "text": "Name a count and a face, higher than the last call. Tick zhai on the first call to make 1s count only as 1s."
+          "text": "Name a count and a face, higher than the last call — zhai or kaizhai, as the way of calling allows. Each button shows exactly the call it makes."
         },
         "open": {
           "name": "Open (开)",
@@ -632,11 +641,15 @@
         "note": "The loser of a call starts the next round."
       },
       "counts": {
-        "lead": "More players, more dice — and a bigger first call. The table shows the smallest first call allowed.",
+        "lead": "More players, more dice — and bigger calls. The table shows the least each call may be.",
         "dice": "Dice on the table",
-        "opening": "First call",
-        "zhai": "Zhai first call",
-        "note": "Once someone is knocked out, the first call counts only the players still in."
+        "opening": "Classic kaizhai",
+        "zhai": "Classic zhai",
+        "note": "Once someone is knocked out, the table counts only the players still in.",
+        "jjOne": "几几几 1s",
+        "jjZhai": "几几几 zhai",
+        "jjFei": "几几几 kaizhai",
+        "nozhai": "No zhai"
       }
     },
     "nightwatch": {
@@ -1508,11 +1521,8 @@
     "bid_one": "{{count}} × {{face}}",
     "bid_other": "{{count}} × {{face}}",
     "zhai": "Zhai",
-    "zhaiName": "1s aren't wild",
-    "zhaiHint": "Ticked: zhai — 1s count only as 1s. Unticked: kaizhai — 1s are wild, and the round can't go zhai again.",
-    "zhaiOnes": "Calling 1s is always zhai",
     "round": "Round {{round}} · {{dice}} dice on the table",
-    "opening": "First call: {{name}} · at least {{min}}, or {{zhaiMin}} zhai",
+    "opening": "First call: {{name}}\n{{rule}}",
     "waiting": "{{name}} is thinking…",
     "youreOut": "You're out — enjoy the show 🥴",
     "yourDice": "Your dice (tap to cover)",
@@ -1522,14 +1532,11 @@
     "youHave_other": "You have {{count}} that count for {{face}}",
     "hideHint": "Only you can see these. 1s count as any face unless the round goes zhai.",
     "calls": "This round's calls",
-    "yourTurn": "Your turn — beat {{bid}}, or call it",
     "yourOpening": "Your turn — open the bidding",
     "call": "Call {{bid}}",
-    "mustRaise": "Call more dice, or the same number of a higher face (2 < 3 < 4 < 5 < 6 < 1)",
-    "mustOpen": "Open with at least {{min}}",
     "open": "Open",
     "split": "Split",
-    "challengeHint": "Open: the loser drinks 1. Split: the loser drinks 2 — and the bidder may counter for 4.",
+    "challengeHint": "Open: the loser drinks 1 · Split: 2, or 4 if countered",
     "drunk": "Drunk — out",
     "thinking": "thinking",
     "lastRound": "Round {{round}} result",
@@ -1544,10 +1551,6 @@
     "youWin": "You win! 🍻",
     "winner": "{{name}} wins!",
     "lastStanding": "Last one standing",
-    "breakZhai": "Break the fast (开斋) — 1s wild again",
-    "breakHint": "Untick to break the fast (开斋): 1s are wild again, but you must call at least {{min}}.",
-    "breakingHint": "Breaking the fast: call at least {{min}} dice.",
-    "mustBreak": "Breaking the fast needs at least {{min}} dice",
     "broke": "broke the fast",
     "splitting": "{{name}} split the call — {{bidder}} to answer!",
     "waitingAnswer": "{{name}} is deciding whether to counter…",
@@ -1568,7 +1571,6 @@
     "endVote": "Vote to stop",
     "endCancel": "Keep playing",
     "kaizhai": "Kaizhai",
-    "lockedKaizhai": "This round is kaizhai: 1s are wild, and nobody can call zhai or 1s.",
     "leopard": "Five of a kind +1",
     "reroll": "Scattered — show and reshake",
     "rerolled": "{{name}} reshook a scattered cup (showed {{dice}})",
@@ -1583,14 +1585,8 @@
       "noCalls": "No calls yet this round.",
       "called": "{{name}} called",
       "splitBy": "{{name}} split {{bidder}}'s call!",
-      "beat": "Beat {{name}}'s call",
-      "openMin": "At least {{min}} — or {{zhaiMin}} zhai",
-      "liarAs": "Call a lie by",
-      "openCups": "Opening · 1 cup",
-      "splitCups": "Splitting · 2 cups",
-      "callIt": "Call {{bid}}",
-      "holdOpen": "Hold: Liar!",
-      "holdSplit": "Hold: Liar! ×2",
+      "holdOpen": "Open (开)",
+      "holdSplit": "Split (劈)",
       "holdCounter": "Counter ×4",
       "holdSplitThem": "Hold to split {{name}} · 2 cups",
       "liar": "Liar!",
@@ -1614,7 +1610,7 @@
         "split": "{{name}} split your call",
         "counter": "{{name}} split your call — you countered!"
       },
-      "answerHold": "Accept: the loser drinks 2. Hold Counter: the loser drinks 4.",
+      "answerHold": "Accept: the loser drinks 2 · Hold Counter: 4",
       "shake": {
         "tag": "Scattered",
         "shake": "Shake",
@@ -1629,6 +1625,27 @@
         "good": "Happy with your dice? Start the round",
         "yourTurn": "It's your call — shake first"
       }
+    },
+    "openRule": {
+      "jijiji": "1s from {{one}} · zhai from {{zhai}} · kaizhai from {{fei}}",
+      "classic": "zhai from {{zhai}} · kaizhai from {{kai}}",
+      "nozhai": "at least {{min}} · 1s always wild"
+    },
+    "youHaveBoth": "You have {{zhai}} zhai · {{wild}} kaizhai",
+    "why": {
+      "onesZhai": "1s are zhai",
+      "total": "Only {{total}}",
+      "noZhai": "No zhai",
+      "raise": "Too low"
+    },
+    "callHint": {
+      "pick": "Pick a face, set the count, tap a call",
+      "onesZhai": "1s count only as 1s, so a call of 1s is always zhai",
+      "total": "There are only {{total}} dice on the table",
+      "fei": "Kaizhai from {{fei}} dice — then 1s stay wild all round",
+      "double": "Kaizhai must double: at least {{min}} dice",
+      "kaizhai": "Kaizhai round: 1s are wild — no zhai, no 1s",
+      "nozhai": "1s are always wild — call any face but 1"
     }
   },
   "nightwatch": {
@@ -2123,6 +2140,21 @@
         "endless": {
           "name": "Endless",
           "desc": "Nobody's out — just keep drinking. Vote to stop; fewest cups wins."
+        }
+      },
+      "calling": {
+        "title": "Calling",
+        "jijiji": {
+          "name": "Ji Ji Ji",
+          "desc": "HK / Macau bar rule: low calls are 1s, then zhai, then kaizhai."
+        },
+        "classic": {
+          "name": "Classic",
+          "desc": "Open above the players; kaizhai after zhai doubles."
+        },
+        "nozhai": {
+          "name": "No zhai",
+          "desc": "1s are always wild and can't be called."
         }
       }
     }
