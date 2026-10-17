@@ -72,7 +72,7 @@ function TeamsPage() {
       {(["good", "evil"] as const).map((side) => (
         <RuleCard
           key={side}
-          emoji={side === "good" ? "🕵" : "🐀"}
+          picture={<RolePortrait role={side === "good" ? "servant" : "minion"} size={58} />}
           name={t(`rules.avalon.teams.${side}.name`)}
           tint={tint(side)}
           tags={[t("rules.avalon.tags.perGame", { n: span(COUNTS.map((n) => sideCount(n, side))) })]}
@@ -117,7 +117,7 @@ function RolesPage() {
             return (
               <RuleCard
                 key={role}
-                picture={<RolePortrait role={role} size={44} />}
+                picture={<RolePortrait role={role} size={58} />}
                 name={t(`avalon.roles.${role}.name`)}
                 tint={tint(side)}
                 tags={tags}

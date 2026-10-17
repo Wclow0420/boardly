@@ -1,21 +1,25 @@
 // Double Agent's role card, as a playing card (components/tabletop/cards):
 // the back in the agency's sea-green with a lattice like a file's
 // security print and an emerald in the Boardly meeple; the front a
-// personnel file — the agent's photograph under a round arch (sea-green
-// for the agents, crimson for the moles), a red TOP SECRET stamp across
-// its corner, the cover name on the plaque, what the role does and what
-// it knows.
+// personnel file — the role's engraved portrait (emblems.ts) under a
+// round arch in its own shade (teal and steel for the agents, crimson for
+// the moles; cards.ts), a red TOP SECRET stamp across its corner, the
+// cover name on the brass plaque, its side, what it does and what it
+// knows.
 
-import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
+import { Canvas, Image as SkImage } from "@shopify/react-native-skia";
 import { StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
+import { bakedSvg } from "@/components/badges/bake";
+import { EmblemGlyph } from "@/components/engraved/Engraved";
+import { CardBack, CardFront, FRONT, type BackStyle } from "@/components/tabletop/cards/PlayingCard";
+import { CARD_H, CARD_W } from "@/components/tabletop/cards/cardArt";
 import { AppText } from "@/components/ui";
-import { CardBack, CardFront, FRONT, type BackStyle, type FrontStyle } from "@/components/tabletop/cards/PlayingCard";
 import { fontFamily } from "@/theme";
-import { ROLE_ART } from "./art";
-import { ROLE_EMOJI, sideOf, type AvalonState, type Role } from "./logic";
+import { EMBLEM_AT, ROLE_FRONT, faceSvg } from "./cards";
+import { ROLE_EMBLEMS } from "./emblems";
+import { sideOf, type AvalonState, type Role } from "./logic";
 
 /** Every card of the game shares this back. */
 export const AGENCY_BACK: BackStyle = {
@@ -24,48 +28,19 @@ export const AGENCY_BACK: BackStyle = {
   jewel: ["#C8FFD8", "#1E9A54", "#06401E"],
 };
 
-const AGENT_FRONT: FrontStyle = {
-  window: ["#5ABAB0", "#1E6A66", "#0A2E2C"],
-  plaque: ["#3AAE9E", "#1A6A60", "#0A3A34"],
-  arch: "round",
-};
-const MOLE_FRONT: FrontStyle = {
-  window: ["#D2445A", "#7A1020", "#2E0408"],
-  plaque: ["#D2384A", "#8A1424", "#4A0812"],
-  arch: "round",
-};
-
 /** The back of a role card. */
 export function RoleCardBack({ width }: { width: number }) {
   return <CardBack width={width} back={AGENCY_BACK} />;
 }
 
-/** The agent's photograph in the card's window: the role's portrait, or
- *  its emblem while it has none. */
-function Photo({ role, s }: { role: Role; s: number }) {
-  const W = FRONT.window;
-  const art = ROLE_ART[role];
+/** The role's portrait standing on the window's sill. */
+function Portrait({ role, s }: { role: Role; s: number }) {
   return (
     <View
-      style={{
-        position: "absolute",
-        left: (W.x + 1) * s,
-        top: (W.y + 1) * s,
-        width: (W.w - 2) * s,
-        height: (W.h - 2) * s,
-        borderTopLeftRadius: ((W.w - 2) / 2) * s,
-        borderTopRightRadius: ((W.w - 2) / 2) * s,
-        overflow: "hidden",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
+      style={{ position: "absolute", left: EMBLEM_AT.x * s, top: EMBLEM_AT.y * s }}
+      pointerEvents="none"
     >
-      {art ? (
-        <Image source={art} style={StyleSheet.absoluteFill} contentFit="cover" contentPosition="top" />
-      ) : (
-        <AppText style={{ fontSize: W.h * s * 0.5, lineHeight: W.h * s * 0.66 }}>{ROLE_EMOJI[role]}</AppText>
-      )}
-      <LinearGradient colors={["#00000000", "#000000AA"]} style={styles.fade} />
+      <EmblemGlyph data={ROLE_EMBLEMS[role]} size={EMBLEM_AT.size * s} />
     </View>
   );
 }
@@ -120,13 +95,8 @@ export function RoleCardFace({
       : null;
 
   return (
-    <CardFront width={width} front={evil ? MOLE_FRONT : AGENT_FRONT}>
-      <Photo role={role} s={s} />
-      <View style={[at(FRONT.window), styles.centre]} pointerEvents="none">
-        <AppText style={[styles.side, { fontSize: 3.6 * s, color: evil ? "#FFC2CA" : "#C8FFF4" }]}>
-          {t(`avalon.sides.${evil ? "evil" : "good"}`)}
-        </AppText>
-      </View>
+    <CardFront width={width} front={ROLE_FRONT[role]}>
+      <Portrait role={role} s={s} />
       <Stamp s={s} label={t("avalon.stage.secret")} />
       <View style={[at(FRONT.plaque), styles.centre]}>
         <AppText style={[styles.name, { fontSize: 7 * s, lineHeight: 9 * s }]} numberOfLines={1}>
@@ -134,6 +104,9 @@ export function RoleCardFace({
         </AppText>
       </View>
       <View style={[at(FRONT.body), styles.body]}>
+        <AppText style={[styles.side, { fontSize: 3.6 * s, lineHeight: 4.8 * s, color: evil ? "#A01830" : "#0E6A5E" }]}>
+          {t(`avalon.sides.${evil ? "evil" : "good"}`)}
+        </AppText>
         <AppText style={[styles.desc, { fontSize: 3.55 * s, lineHeight: 4.8 * s }]}>
           {t(`avalon.roles.${role}.desc`)}
         </AppText>
@@ -149,30 +122,23 @@ export function RoleCardFace({
   );
 }
 
-/** A small face-up role card, for the end of the game: the photograph
- *  in its side's colours. */
+/** A small face-up role card, for the end of the game: its whole face
+ *  baked into one picture (one per role and size). */
 export function MiniRoleCard({ role, width }: { role: Role; width: number }) {
-  const evil = sideOf(role) === "evil";
+  const h = Math.round((width * CARD_H) / CARD_W);
+  const face = bakedSvg(`agency-face|${role}`, width, h, () => faceSvg(role));
   return (
-    <CardFront width={width} front={evil ? MOLE_FRONT : AGENT_FRONT}>
-      <Photo role={role} s={width / 100} />
-    </CardFront>
+    <View style={{ width, height: h }} pointerEvents="none">
+      <Canvas style={{ width, height: h }}>
+        {face ? <SkImage image={face} x={0} y={0} width={width} height={h} /> : null}
+      </Canvas>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   centre: { alignItems: "center", justifyContent: "center" },
-  fade: { position: "absolute", left: 0, right: 0, bottom: 0, height: "38%" },
-  side: {
-    position: "absolute",
-    bottom: "6%",
-    fontFamily: fontFamily.bold,
-    letterSpacing: 2,
-    textTransform: "uppercase",
-    textShadowColor: "rgba(0,0,0,0.8)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
+  side: { fontFamily: fontFamily.bold, letterSpacing: 2, textTransform: "uppercase" },
   stamp: {
     position: "absolute",
     borderColor: "#C2203A",
