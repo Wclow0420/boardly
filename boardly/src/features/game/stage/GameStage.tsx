@@ -28,6 +28,10 @@ export const PLINTH_H = 128;
  *  plinth, past the stage between them. */
 const CURTAIN_UP = 14;
 const CURTAIN_DOWN = 12;
+/** How far the middle stands clear of what's under the header (above)
+ *  and of the hint lines (below). A middle that wants the whole height
+ *  between header and plinth reaches out by this much. */
+export const MIDDLE_PAD = { top: 26, bottom: 34 };
 
 /** For a middle that bleeds under the header and the plinth: how far its
  *  content should start from the top and stop from the bottom. */
@@ -166,12 +170,14 @@ export function GameStage({
           <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
             {bleed ? (
               <View style={[styles.centre, { top: CURTAIN_UP - headerHeight, bottom: CURTAIN_DOWN - plinthH }]}>
-                <StageInsets.Provider value={{ top: headerHeight + 26, bottom: plinthH + 34 }}>
+                <StageInsets.Provider value={{ top: headerHeight + MIDDLE_PAD.top, bottom: plinthH + MIDDLE_PAD.bottom }}>
                   {centre}
                 </StageInsets.Provider>
               </View>
             ) : (
-              <View style={[styles.centre, { top: CURTAIN_UP + 26, bottom: CURTAIN_DOWN + 34 }]}>{centre}</View>
+              <View style={[styles.centre, { top: CURTAIN_UP + MIDDLE_PAD.top, bottom: CURTAIN_DOWN + MIDDLE_PAD.bottom }]}>
+                {centre}
+              </View>
             )}
             {under ? (
               <Animated.View

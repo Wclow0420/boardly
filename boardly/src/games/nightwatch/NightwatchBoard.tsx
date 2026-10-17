@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useSharedValue } from "react-native-reanimated";
 import { Animated, Pressable, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -16,7 +16,10 @@ import { LetterScene, RoleIntro, ROLE_CARD_W } from "./Immersion";
 import { RoleCardBack, RoleCardFace } from "./RoleCardFace";
 import { NightMap } from "./NightMap";
 import { RoomScene, type ScenePerson } from "./RoomScene";
+import { FlatPreview } from "./flat/FlatPreview";
+import { FlatRoom } from "./flat/FlatRoom";
 import { ManorStage, stageText } from "./ManorStage";
+import { MIDDLE_PAD } from "@/features/game/stage/GameStage";
 import { StageLineup, type Light, type Plate } from "@/features/game/stage/StageLineup";
 import { VoteButtons } from "./VoteButtons";
 import { Ending } from "./ending/Ending";
@@ -532,9 +535,13 @@ export function NightwatchBoard({
         }
       : null;
 
+  // development only: the room drawn flat on, to compare with the iso one;
+  // it fills the whole middle, edge to edge, header to plinth
+  const flat = useContext(FlatPreview);
+  const Room = flat ? FlatRoom : RoomScene;
   const scene =
     room !== null ? (
-      <RoomScene
+      <Room
         room={room}
         active={task === "room"}
         onTouch={() => {
@@ -819,7 +826,14 @@ export function NightwatchBoard({
     ) : (
       <>
         {/* the room stays put under a moment, hidden and still */}
-        <View style={[styles.sceneBox, rite || lineup || council || atLetter || atPatrol ? styles.hidden : null]}>{scene}</View>
+        <View
+          style={[
+            flat && room !== null ? styles.sceneFull : styles.sceneBox,
+            rite || lineup || council || atLetter || atPatrol ? styles.hidden : null,
+          ]}
+        >
+          {scene}
+        </View>
         {rite ? (
           <View style={[StyleSheet.absoluteFill, rite.kind !== "reveal" && styles.besideTools]}>
             <LanternRite view={rite} hold={hold} paused={showing !== null} />
@@ -1755,6 +1769,7 @@ function manorPages(
 const styles = StyleSheet.create({
   grow: { flex: 1 },
   sceneBox: { flex: 1, marginRight: 60, justifyContent: "center" },
+  sceneFull: { position: "absolute", left: 0, right: 0, top: -MIDDLE_PAD.top, bottom: -MIDDLE_PAD.bottom },
   hidden: { opacity: 0 },
   besideTools: { right: 60 },
   main: { alignSelf: "stretch" },
