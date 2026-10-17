@@ -63,6 +63,7 @@ export function TableScene({
   hold,
   aim = null,
   paused,
+  top = 0,
 }: {
   people: Standing[];
   lights: Record<number, Light>;
@@ -77,8 +78,12 @@ export function TableScene({
   hold?: SharedValue<number>;
   aim?: number | null;
   paused: boolean;
+  /** Room left clear at the top (my board hanging there): the rig and
+   *  the slate start under it. */
+  top?: number;
 }) {
-  const [{ w, h }, onLayout] = useBox();
+  const [{ w, h: full }, onLayout] = useBox();
+  const h = full - top;
   const places = w > 0 ? standingPlaces(people.length, w, h) : [];
   const shake = useSharedValue(0);
   useEffect(() => {
@@ -91,26 +96,28 @@ export function TableScene({
     <View style={StyleSheet.absoluteFill} onLayout={onLayout}>
       {w > 0 ? (
         <>
-          <StageLineup people={people} lights={lights} plates={plates} hold={hold} aim={aim} paused={paused} />
-          <View style={StyleSheet.absoluteFill} pointerEvents="none">
-            <Canvas style={StyleSheet.absoluteFill}>
-              {people.map((p, k) =>
-                out.includes(p.seat) ? null : (
-                  <Cup
-                    key={p.seat}
-                    i={k}
-                    shake={shake}
-                    x={places[k].x + places[k].size * 0.5}
-                    y={places[k].y - places[k].size * 0.36 * 1.15 + 2}
-                    w={places[k].size * 0.36}
-                  />
-                ),
-              )}
-            </Canvas>
+          <View style={[styles.lineup, { top }]} pointerEvents="box-none">
+            <StageLineup people={people} lights={lights} plates={plates} hold={hold} aim={aim} paused={paused} />
+            <View style={StyleSheet.absoluteFill} pointerEvents="none">
+              <Canvas style={StyleSheet.absoluteFill}>
+                {people.map((p, k) =>
+                  out.includes(p.seat) ? null : (
+                    <Cup
+                      key={p.seat}
+                      i={k}
+                      shake={shake}
+                      x={places[k].x + places[k].size * 0.5}
+                      y={places[k].y - places[k].size * 0.36 * 1.15 + 2}
+                      w={places[k].size * 0.36}
+                    />
+                  ),
+                )}
+              </Canvas>
+            </View>
           </View>
-          <View style={[styles.slate, { top: 46 }]} pointerEvents="none">
+          <View style={[styles.slate, { top: top + (top > 0 ? 36 : 46) }]} pointerEvents="none">
             <Slate width={slateW} height={96}>
-              <AppText style={styles.heading} numberOfLines={1}>
+              <AppText style={styles.heading} numberOfLines={bid ? 1 : 2}>
                 {heading}
               </AppText>
               {bid ? <Call quantity={bid.quantity} face={bid.face} zhai={bid.zhai} size={40} /> : null}
@@ -123,6 +130,7 @@ export function TableScene({
 }
 
 const styles = StyleSheet.create({
+  lineup: { position: "absolute", left: 0, right: 0, bottom: 0 },
   slate: { position: "absolute", left: 0, right: 0, alignItems: "center" },
   heading: {
     fontFamily: fontFamily.semiBold,

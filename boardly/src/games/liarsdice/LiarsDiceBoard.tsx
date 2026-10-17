@@ -1,8 +1,13 @@
 // Liar's Dice (大话骰) on the stage (the shared GameStage, see "A game's
 // flow on the stage" in CLAUDE.md). The dice den's back bar across the
 // top: the round, the dice on the table, a stein per player filling with
-// every cup they drink. My own dice lie in a felt tray under it. Every
-// moment is its own scene behind the curtain:
+// every cup they drink. My own dice sit on a board hung from its shelf on
+// two chains (HangingBoard), in front of the curtain; the call on the
+// table and the tools hang below it. Every moment is its own scene behind
+// the curtain:
+//   shake  — each round starts with my cup on the mat: tap to shake it,
+//            drag it up to look, shake again if all five differ (散骰),
+//            then Start: the cup flies off, the dice fly up to my board
 //   table  — everyone on the stage, cups down at their feet, the call on
 //            the slate over them; anyone but the bidder may split (劈) it,
 //            holding the button while red light streams to the bidder
@@ -15,7 +20,7 @@
 //   ending — the tankard, the winner crowned, the night's tally.
 
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { StyleSheet, View, useWindowDimensions } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -31,15 +36,17 @@ import { HoldButton } from "@/games/nightwatch/lantern/HoldButton";
 import { fontFamily } from "@/theme";
 import { moveHaptic, tapHaptic } from "@/utils/haptics";
 import type { GameBoardProps } from "../types";
-import { denLayout } from "./art";
+import { denLayout, type DieTone } from "./art";
 import { CallScene, pickZhai, type CallPick } from "./CallScene";
 import { Den } from "./Den";
 import { Ending } from "./Ending";
+import { BOARD_DROP, BOARD_TUCK, HangingBoard, type Flight } from "./HangingBoard";
 import {
   breakZhaiMin,
   canReroll,
   canSplit,
   isOut,
+  isScattered,
   isValidBid,
   myCount,
   openingMin,
@@ -49,14 +56,19 @@ import {
   type Bid,
   type LiarsDiceState,
 } from "./logic";
-import { DiceRow, Tray } from "./pieces";
+import { Call, Slate } from "./pieces";
 import { RevealScene } from "./RevealScene";
+import { ShakeScene, useShake, type ShakeStep } from "./ShakeScene";
 import { TableScene } from "./TableScene";
 import { useSeenReveals } from "./useSeenReveals";
+import { useShaken } from "./useShaken";
 
 /** A dice den late at night: dark wine, amber lamplight. */
 const DEN: StageLook = { sky: ["#2E1410", "#1C0C0A", "#100606"], glow: "#F2A24B", jewel: "ruby" };
 const DEN_POPUP: PopupLook = { enamel: ["#B8382A", "#7A1810", "#3A0806"], jewel: "ruby", glow: "#FFC870" };
+
+/** The slate over the cup while I shake, with room under it. */
+const SHAKE_CALL_H = 80;
 
 type T = ReturnType<typeof useTranslation>["t"];
 type Panel = "calls" | "stop";
@@ -129,7 +141,11 @@ export function LiarsDiceBoard({
   sessionId,
   onMove,
   stage,
-}: GameBoardProps<LiarsDiceState>) {
+  devShake,
+}: GameBoardProps<LiarsDiceState> & {
+  /** Development only: open the shake part way (the dev page's samples). */
+  devShake?: ShakeStep;
+}) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -192,15 +208,39 @@ export function LiarsDiceBoard({
   const bidText = (bid: Pick<Bid, "quantity" | "face" | "zhai">) =>
     `${t("liarsdice.bid", { count: bid.quantity, face: bid.face })} · ${t(bid.zhai ? "liarsdice.zhai" : "liarsdice.kaizhai")}`;
 
-  const scene: "reveal" | "ending" | "split" | "call" | "table" = revealing
+  // each round starts with my shake, once on the device (skipped once
+  // I've made a call this round)
+  const shook = useShaken(sessionId);
+  const shake = useShake(state.round, devShake);
+  const [flight, setFlight] = useState<(Flight & { round: number }) | null>(null);
+  const shaking =
+    !over &&
+    mySeat >= 0 &&
+    !iAmOut &&
+    shook.ready &&
+    shook.shaken < state.round &&
+    state.myDice.length > 0 &&
+    !state.bids.some((b) => b.seat === mySeat);
+  const scattered = isScattered(state.myDice);
+  // a reshake waits for the server's new dice before the cup can be shaken
+  const myRerolls = state.rerolls.filter((r) => r.seat === mySeat).length;
+  const [rerolled, setRerolled] = useState<{ round: number; count: number } | null>(null);
+  const awaitingDice = rerolled !== null && rerolled.round === state.round && myRerolls <= rerolled.count && !stage?.error;
+  const startRound = () => shook.mark(state.round);
+
+  const scene: "reveal" | "ending" | "shake" | "split" | "call" | "table" = revealing
     ? "reveal"
     : over
       ? "ending"
-      : state.phase === "split"
-        ? "split"
-        : task === "bid"
-          ? "call"
-          : "table";
+      : shaking
+        ? "shake"
+        : state.phase === "split"
+          ? "split"
+          : task === "bid"
+            ? "call"
+            : "table";
+  // room at the top of the stage for my board
+  const clear = mySeat >= 0 ? BOARD_DROP - 22 : 0;
   const waiting = over ? null : state.phase === "split" ? (state.bid?.seat ?? null) : state.turn;
   const bidder = state.bid ? nameOf(state.bid.seat) : "";
   const splitter = state.split ? state.split.by : null;
@@ -267,9 +307,33 @@ export function LiarsDiceBoard({
         afterGame={stage?.afterGame}
         paused={panel !== null}
       />
+    ) : scene === "shake" ? (
+      <View style={StyleSheet.absoluteFill}>
+        {/* what's been called while I shake */}
+        {state.bid ? (
+          <View style={[styles.shakeCall, { top: clear }]} pointerEvents="none">
+            <Slate width={Math.min(width - 130, 260)} height={64}>
+              <AppText style={styles.slateHead} numberOfLines={1}>
+                {heading}
+              </AppText>
+              <Call quantity={state.bid.quantity} face={state.bid.face} zhai={state.bid.zhai} size={26} />
+            </Slate>
+          </View>
+        ) : null}
+        <ShakeScene
+          key={state.round}
+          shake={shake}
+          faces={state.myDice}
+          top={clear + (state.bid ? SHAKE_CALL_H : 0)}
+          flying={flight?.round === state.round}
+          scattered={scattered}
+          canShake={!awaitingDice}
+          tag={t("liarsdice.stage.shake.tag")}
+        />
+      </View>
     ) : scene === "call" ? (
       <View style={[StyleSheet.absoluteFill, styles.besideTools]}>
-        <CallScene state={state} pick={pick} onPick={choose} bidder={bidder} busy={busy} />
+        <CallScene state={state} pick={pick} onPick={choose} bidder={bidder} busy={busy} top={clear} />
       </View>
     ) : (
       <View style={[StyleSheet.absoluteFill, styles.besideTools]}>
@@ -283,6 +347,7 @@ export function LiarsDiceBoard({
           hold={hold}
           aim={aim}
           paused={panel !== null}
+          top={clear}
         />
       </View>
     );
@@ -306,6 +371,41 @@ export function LiarsDiceBoard({
       )
     ) : scene === "ending" ? (
       (stage?.onward ?? <AppText style={stageText.strong}>{title}</AppText>)
+    ) : scene === "shake" ? (
+      shake.step === "closed" ? (
+        <Button
+          label={`🎲 ${t("liarsdice.stage.shake.shake")}`}
+          size="lg"
+          style={styles.main}
+          disabled={awaitingDice}
+          loading={awaitingDice}
+          onPress={shake.shake}
+        />
+      ) : shake.step === "shaking" ? (
+        <AppText style={[stageText.strong, styles.big]}>{t("liarsdice.stage.shake.shaking")}</AppText>
+      ) : shake.step === "shaken" ? (
+        <Button label={t("liarsdice.stage.shake.lift")} variant="secondary" size="lg" style={styles.main} onPress={shake.raise} />
+      ) : scattered ? (
+        <Button
+          label={`🎲 ${t("liarsdice.stage.reshake")}`}
+          size="lg"
+          style={styles.main}
+          disabled={busy || !canReroll(state, mySeat) || shake.step !== "open"}
+          onPress={() => {
+            setRerolled({ round: state.round, count: myRerolls });
+            send({ type: "reroll" });
+            shake.lower();
+          }}
+        />
+      ) : (
+        <Button
+          label={t("liarsdice.stage.shake.start")}
+          size="lg"
+          style={styles.main}
+          disabled={shake.step !== "open"}
+          onPress={() => shake.leave((from) => setFlight({ round: state.round, from }), startRound)}
+        />
+      )
     ) : saying ? (
       <AppText style={[stageText.strong, styles.big]}>{saying}</AppText>
     ) : scene === "call" ? (
@@ -379,10 +479,31 @@ export function LiarsDiceBoard({
 
   // ── the lines over the plinth ──
   const lastReroll = state.rerolls[state.rerolls.length - 1];
+  const shakeHint =
+    shake.step === "closed"
+      ? t(awaitingDice ? "liarsdice.stage.shake.fresh" : "liarsdice.stage.shake.tap")
+      : shake.step === "shaken"
+        ? t("liarsdice.stage.shake.drag")
+        : shake.step === "open"
+          ? scattered
+            ? t(canReroll(state, mySeat) ? "liarsdice.stage.shake.scattered" : "liarsdice.stage.shake.wait")
+            : t("liarsdice.stage.shake.good")
+          : null;
   const hint =
     scene === "reveal" || scene === "ending" ? null : (
       <>
-        {scene === "call" && !valid ? (
+        {scene === "shake" && task === "bid" && (shake.step === "closed" || shake.step === "shaken") ? (
+          <AppText style={[stageText.hint, styles.turn]} numberOfLines={1}>
+            {t("liarsdice.stage.shake.yourTurn")}
+          </AppText>
+        ) : null}
+        {scene === "shake" ? (
+          shakeHint ? (
+            <AppText style={stageText.hint} numberOfLines={2}>
+              {shakeHint}
+            </AppText>
+          ) : null
+        ) : scene === "call" && !valid ? (
           <AppText style={stageText.hint} numberOfLines={2}>
             {breakMin !== null && !zhai
               ? t("liarsdice.mustBreak", { min: breakMin })
@@ -411,50 +532,26 @@ export function LiarsDiceBoard({
       </>
     );
 
-  // ── under the den: my cup, and the vote to stop ──
+  // ── my board, hanging from the den: the dice that count for the call
+  // on the table (or the one I'm making) lit in gold ──
   const myDice = state.myDice;
-  const counting = state.bid ? myDice.map((d) => myCount([d], state.bid!.face, state.bid!.zhai) > 0) : [];
-  const under =
-    mySeat >= 0 && !over && scene !== "call" ? (
-      <View style={styles.underRow}>
-        {iAmOut ? (
-          <Tray>
-            <AppText style={styles.trayText}>{`🥴 ${t("liarsdice.drunk")}`}</AppText>
-          </Tray>
-        ) : (
-          <Tray>
-            <AppText style={styles.trayText}>{t("liarsdice.stage.yourCup")}</AppText>
-            <DiceRow faces={myDice} size={22} gap={4} tones={counting.map((c) => (c ? "lit" : "plain"))} />
-          </Tray>
-        )}
-        {canReroll(state, mySeat) ? (
-          <Pressable
-            accessibilityRole="button"
-            disabled={busy}
-            onPress={() => send({ type: "reroll" })}
-            style={({ pressed }) => [styles.reroll, pressed && styles.pressed]}
-          >
-            <Tray>
-              <AppText style={styles.trayText}>{`🎲 ${t("liarsdice.stage.reshake")}`}</AppText>
-            </Tray>
-          </Pressable>
+  const countFor = scene === "call" ? { face: pick.face, zhai } : state.bid;
+  const tones: DieTone[] = myDice.map((d) => (countFor && myCount([d], countFor.face, countFor.zhai) > 0 ? "lit" : "plain"));
+
+  const tools =
+    over || scene === "reveal" ? null : (
+      <View style={[styles.tools, { top: clear > 0 ? clear + 4 : 20 }]} pointerEvents="box-none">
+        <ToolButton emoji="📜" label={t("liarsdice.stage.callsTool")} onPress={() => setPanel("calls")} />
+        {state.mode === "endless" && mySeat >= 0 ? (
+          <ToolButton
+            emoji="🛑"
+            label={`${state.endVotes.length}/${Math.floor(state.numPlayers / 2) + 1}`}
+            badge={state.endVotes.length > 0 && !state.endVotes.includes(mySeat)}
+            onPress={() => setPanel("stop")}
+          />
         ) : null}
       </View>
-    ) : undefined;
-
-  const tools = over ? undefined : (
-    <>
-      <ToolButton emoji="📜" label={t("liarsdice.stage.callsTool")} onPress={() => setPanel("calls")} />
-      {state.mode === "endless" && mySeat >= 0 ? (
-        <ToolButton
-          emoji="🛑"
-          label={`${state.endVotes.length}/${Math.floor(state.numPlayers / 2) + 1}`}
-          badge={state.endVotes.length > 0 && !state.endVotes.includes(mySeat)}
-          onPress={() => setPanel("stop")}
-        />
-      ) : null}
-    </>
-  );
+    );
 
   const L = denLayout(width, insets.top, state.numPlayers);
   const voted = state.endVotes.includes(mySeat);
@@ -462,38 +559,58 @@ export function LiarsDiceBoard({
   return (
     <GameStage
       header={
-        <Den
-          width={width}
-          top={insets.top}
-          title={
-            revealing && reveal
-              ? t("liarsdice.stage.round", { round: reveal.round })
-              : over
-                ? t("liarsdice.stage.closing")
-                : t("liarsdice.stage.round", { round: state.round })
-          }
-          subtitle={
-            revealing
-              ? t("liarsdice.stage.theReveal")
-              : over
-              ? undefined
-              : `${t("liarsdice.stage.dice", { count: totalDice(state) })}${state.bid ? ` · ${t(state.bid.zhai ? "liarsdice.zhai" : "liarsdice.kaizhai")}` : ""}`
-          }
-          tally={allSeats.map((seat) => {
-            // until the reveal's count is in, the one who drinks hasn't yet
-            const cups = revealing && !counted && reveal && seat === reveal.loser ? Math.max(0, state.cups[seat] - reveal.drink) : state.cups[seat];
-            return { name: nameOf(seat), cups, out: state.maxCups !== null && cups >= state.maxCups };
-          })}
-          maxCups={state.maxCups}
-          waiting={revealing ? null : waiting}
-          paused={panel !== null}
-        />
+        <View style={{ width, height: L.h }} pointerEvents="box-none">
+          {mySeat >= 0 ? (
+            <HangingBoard
+              width={width}
+              top={L.h - BOARD_TUCK}
+              faces={myDice}
+              tones={tones}
+              empty={scene === "shake"}
+              drunk={iAmOut ? `🥴 ${t("liarsdice.drunk")}` : undefined}
+              away={scene === "reveal" || scene === "ending"}
+              flight={scene === "shake" && flight?.round === state.round ? flight : null}
+              onLanded={startRound}
+              label={`${t("liarsdice.stage.yourCup")}: ${[...myDice].sort((a, b) => a - b).join(" ")}`}
+              paused={panel !== null}
+            />
+          ) : null}
+          <Den
+            width={width}
+            top={insets.top}
+            title={
+              revealing && reveal
+                ? t("liarsdice.stage.round", { round: reveal.round })
+                : over
+                  ? t("liarsdice.stage.closing")
+                  : t("liarsdice.stage.round", { round: state.round })
+            }
+            subtitle={
+              revealing
+                ? t("liarsdice.stage.theReveal")
+                : over
+                ? undefined
+                : `${t("liarsdice.stage.dice", { count: totalDice(state) })}${state.bid ? ` · ${t(state.bid.zhai ? "liarsdice.zhai" : "liarsdice.kaizhai")}` : ""}`
+            }
+            tally={allSeats.map((seat) => {
+              // until the reveal's count is in, the one who drinks hasn't yet
+              const cups = revealing && !counted && reveal && seat === reveal.loser ? Math.max(0, state.cups[seat] - reveal.drink) : state.cups[seat];
+              return { name: nameOf(seat), cups, out: state.maxCups !== null && cups >= state.maxCups };
+            })}
+            maxCups={state.maxCups}
+            waiting={revealing ? null : waiting}
+            paused={panel !== null}
+          />
+        </View>
       }
       headerHeight={L.h}
-      under={under}
-      sceneKey={scene === "reveal" && reveal ? `reveal-${reveal.round}` : scene}
-      centre={centre}
-      tools={tools}
+      sceneKey={scene === "reveal" && reveal ? `reveal-${reveal.round}` : scene === "shake" ? `shake-${state.round}` : scene}
+      centre={
+        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+          {centre}
+          {tools}
+        </View>
+      }
       hint={hint}
       bottom={bottom}
       onBack={stage?.onBack}
@@ -536,9 +653,17 @@ const styles = StyleSheet.create({
   half: { flex: 1 },
   big: { fontSize: 17, lineHeight: 22 },
   error: { color: "#FF8A94" },
-  underRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  trayText: { fontFamily: fontFamily.semiBold, fontSize: 11, lineHeight: 14, color: "#E8F4EA" },
-  reroll: {},
-  pressed: { opacity: 0.7 },
+  turn: { color: "#FFD58A" },
+  tools: { position: "absolute", right: 4, gap: 12 },
+  shakeCall: { position: "absolute", left: 0, right: 0, alignItems: "center" },
+  slateHead: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 12,
+    lineHeight: 15,
+    color: "#E8D2B4",
+    textShadowColor: "rgba(0,0,0,0.85)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
   panel: { gap: 12 },
 });

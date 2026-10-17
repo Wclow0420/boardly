@@ -1,6 +1,6 @@
-// My turn: the call to beat on the slate, my own dice lifted out of my
-// cup onto the felt (the ones that count for the face I'm choosing lit in
-// gold), and the call being made: the number on an ivory plaque between
+// My turn: the call to beat on the slate (my own dice on the board above
+// light up in gold where they count for the face I'm choosing), how many
+// of it I hold, and the call being made: the number on an ivory plaque between
 // two studs, the six faces as dice to pick from, zhai or not; with a call
 // on the table, which way to call it a lie (open, or split for two). The
 // call itself, and the lie, are made on the plinth.
@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import { AppText, BezelOverlay } from "@/components/ui";
 import { fontFamily } from "@/theme";
 import { tapHaptic } from "@/utils/haptics";
-import { Call, DiceRow, Slate, Tray, dieBox, dieImage } from "./pieces";
+import { Call, Slate, dieBox, dieImage } from "./pieces";
 import { breakZhaiMin, isKaizhai, myCount, openingMin, totalDice, type LiarsDiceState } from "./logic";
 
 export interface CallPick {
@@ -81,6 +81,7 @@ export function CallScene({
   onPick,
   bidder,
   busy,
+  top = 0,
 }: {
   state: LiarsDiceState;
   pick: CallPick;
@@ -88,6 +89,8 @@ export function CallScene({
   /** Who made the call on the table. */
   bidder: string;
   busy: boolean;
+  /** Room left clear at the top (my board hanging there). */
+  top?: number;
 }) {
   const { t } = useTranslation();
   const kaizhai = isKaizhai(state);
@@ -95,12 +98,11 @@ export function CallScene({
   const breakMin = breakZhaiMin(state);
   const total = totalDice(state);
   const faces = kaizhai ? [2, 3, 4, 5, 6] : [2, 3, 4, 5, 6, 1];
-  const counting = state.myDice.map((d) => myCount([d], pick.face, zhai) > 0);
   const have = myCount(state.myDice, pick.face, zhai);
   const rowW = faces.length * (FACE + 10) - 10;
 
   return (
-    <View style={styles.scene}>
+    <View style={[styles.scene, { paddingTop: top }]}>
       <Slate width={280} height={state.bid ? 80 : 62}>
         <AppText style={styles.heading} numberOfLines={1}>
           {state.bid ? t("liarsdice.stage.beat", { name: bidder }) : t("liarsdice.yourOpening")}
@@ -114,10 +116,6 @@ export function CallScene({
         )}
       </Slate>
 
-      <Tray>
-        <AppText style={styles.trayLabel}>{t("liarsdice.stage.yourCup")}</AppText>
-        <DiceRow faces={state.myDice} size={36} tones={counting.map((c) => (c ? "lit" : "plain"))} />
-      </Tray>
       <AppText style={styles.have} numberOfLines={1}>
         {t("liarsdice.youHave", { count: have, face: pick.face })}
       </AppText>
@@ -198,8 +196,7 @@ const styles = StyleSheet.create({
   scene: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8, paddingHorizontal: 12 },
   heading: { fontFamily: fontFamily.semiBold, fontSize: 12.5, lineHeight: 16, color: "#E8D2B4", ...shadow },
   small: { fontFamily: fontFamily.medium, fontSize: 12, lineHeight: 16, color: "#E8D2B4", textAlign: "center", ...shadow },
-  trayLabel: { fontFamily: fontFamily.semiBold, fontSize: 11, lineHeight: 14, color: "#CDE8D2", width: 46, ...shadow },
-  have: { fontFamily: fontFamily.semiBold, fontSize: 12, lineHeight: 16, color: "#FFD58A", marginTop: -4, ...shadow },
+  have: { fontFamily: fontFamily.semiBold, fontSize: 12.5, lineHeight: 16, color: "#FFD58A", ...shadow },
   row: { flexDirection: "row", alignItems: "center", gap: 12 },
   stud: { width: 42, height: 42, borderRadius: 21, overflow: "hidden", alignItems: "center", justifyContent: "center" },
   sign: { fontFamily: fontFamily.bold, fontSize: 24, lineHeight: 28, color: "#FFE7C8", ...shadow },

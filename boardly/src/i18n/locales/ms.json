@@ -1612,7 +1612,21 @@
         "split": "{{name}} membelah panggilan anda",
         "counter": "{{name}} membelah panggilan anda — anda membalas!"
       },
-      "answerHold": "Terima: yang kalah minum 2. Tahan Balas: yang kalah minum 4."
+      "answerHold": "Terima: yang kalah minum 2. Tahan Balas: yang kalah minum 4.",
+      "shake": {
+        "tag": "Berselerak",
+        "shake": "Goncang",
+        "shaking": "Dadu bergoncang…",
+        "lift": "Angkat cawan",
+        "start": "Mula",
+        "tap": "Ketik cawan untuk menggoncang dadu anda",
+        "fresh": "Dadu baharu sedang tiba…",
+        "drag": "Seret cawan ke atas untuk mengintai — atau ketiknya",
+        "scattered": "Kelima-lima berbeza — berselerak! Goncang semula",
+        "wait": "Berselerak — tunggu belahan selesai",
+        "good": "Puas hati dengan dadu? Mulakan pusingan",
+        "yourTurn": "Giliran anda — goncang dahulu"
+      }
     }
   },
   "nightwatch": {

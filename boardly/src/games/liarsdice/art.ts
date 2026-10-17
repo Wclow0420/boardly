@@ -7,7 +7,7 @@
 // gradients lit from the upper left, an ink outline, grooves and a line
 // of shine.
 
-import { INKS, JEWELS, MATERIALS, frond } from "@/components/engraved/shapes";
+import { INKS, JEWELS, MATERIALS, curl, frond } from "@/components/engraved/shapes";
 
 const f = (n: number) => +n.toFixed(2);
 const GOLD_INK = INKS.gold.ink;
@@ -97,8 +97,9 @@ export const dieArt = (face: number, s: number, tone: DieTone = "plain") => {
 // ------------------------------------------------------------- cup
 
 /** A dice cup turned mouth down, w × w*1.15: tooled crimson leather
- *  stitched round, two gold bands, a gold boss on its crown. */
-export function cupArt(w: number) {
+ *  stitched round, two gold bands, a gold boss on its crown; `shadow`:
+ *  with its shadow on the table under its mouth. */
+export function cupArt(w: number, shadow = true) {
   const h = w * 1.15;
   const top = w * 0.26;
   const bot = w * 0.47;
@@ -120,7 +121,7 @@ export function cupArt(w: number) {
     w,
     h,
     `<defs>${lit("cl", ["#C84A3A", "#8A1E1A", "#4A0A0A"], cx - bot, 0, cx + bot, h)}${lit("cg", MATERIALS.gold, cx - bot, 0, cx + bot, h)}</defs>
-<path d="M${f(cx - bot - 1)} ${f(y1 + w * 0.06)}Q${f(cx)} ${f(y1 + w * 0.2)} ${f(cx + bot + 1)} ${f(y1 + w * 0.06)}" fill="none" stroke="#000" stroke-opacity="0.4" stroke-width="${f(w * 0.08)}" stroke-linecap="round"/>
+${shadow ? `<path d="M${f(cx - bot - 1)} ${f(y1 + w * 0.06)}Q${f(cx)} ${f(y1 + w * 0.2)} ${f(cx + bot + 1)} ${f(y1 + w * 0.06)}" fill="none" stroke="#000" stroke-opacity="0.4" stroke-width="${f(w * 0.08)}" stroke-linecap="round"/>` : ""}
 <path d="${body}" fill="url(#cl)" stroke="#2A0404" stroke-width="${f(Math.max(0.8, w * 0.025))}" stroke-linejoin="round"/>
 ${stitch(0.42)}${stitch(0.6)}
 ${band(0.16, w * 0.07)}${band(0.8, w * 0.08)}
@@ -332,5 +333,134 @@ ${ring(0.12)}${ring(0.88)}
 <path d="M${f(bx + s * 0.04)} ${f(by + bh * 0.2)}V${f(by + bh * 0.8)}" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="${f(s * 0.018)}" stroke-linecap="round"/>
 ${foam}
 <path d="M${f(bx + bw * 0.16)} ${f(by - s * 0.07)}q${f(s * 0.04)} ${f(-s * 0.03)} ${f(s * 0.08)} ${f(-s * 0.02)}" stroke="#FFFFFF" stroke-width="1.2" fill="none" stroke-linecap="round"/>`,
+  );
+}
+
+// ------------------------------------------------------------- my board
+
+/** The board my own dice sit on, hung on two gold chains from the den's
+ *  shelf: its size, where the chains meet it and where each die lies. */
+export const BOARD = { die: 30, gap: 7, padX: 19, padY: 11, chain: 32 } as const;
+export function boardLayout() {
+  const { die, gap, padX, padY, chain } = BOARD;
+  const w = 5 * die + 4 * gap + padX * 2;
+  const bh = die + padY * 2;
+  return {
+    w,
+    /** The whole picture: the chains, the board and its shadow. */
+    h: chain + bh + 6,
+    chain,
+    bh,
+    /** Where the chains hang, across. */
+    hooks: [w * 0.17, w * 0.83],
+    /** Each die's top-left corner, left to right. */
+    slots: Array.from({ length: 5 }, (_, i) => ({ x: padX + i * (die + gap), y: chain + padY })),
+  };
+}
+
+/** An oval as a path (Skia's SVG reader drops gradients on <ellipse>). */
+const oval = (cx: number, cy: number, rx: number, ry: number) =>
+  `M${f(cx - rx)} ${f(cy)}A${f(rx)} ${f(ry)} 0 1 0 ${f(cx + rx)} ${f(cy)}A${f(rx)} ${f(ry)} 0 1 0 ${f(cx - rx)} ${f(cy)}Z`;
+
+/** The hanging board: an oak frame in a gold moulding, a green felt bed
+ *  with five hollows for the dice, gold corner bosses, and at the top two
+ *  scrolled brackets each holding a chain of gold links rising out of
+ *  sight behind the shelf. */
+export function boardArt() {
+  const L = boardLayout();
+  const { w, chain, bh } = L;
+  const y0 = chain;
+  const y1 = chain + bh;
+  const m = 6; // the oak between the moulding and the felt
+  const r = 9;
+  const shape = (x0: number, yy0: number, x1: number, yy1: number, rr: number) =>
+    `M${f(x0 + rr)} ${f(yy0)}H${f(x1 - rr)}Q${f(x1)} ${f(yy0)} ${f(x1)} ${f(yy0 + rr)}V${f(yy1 - rr)}Q${f(x1)} ${f(yy1)} ${f(x1 - rr)} ${f(yy1)}H${f(x0 + rr)}Q${f(x0)} ${f(yy1)} ${f(x0)} ${f(yy1 - rr)}V${f(yy0 + rr)}Q${f(x0)} ${f(yy0)} ${f(x0 + rr)} ${f(yy0)}Z`;
+  const outer = shape(1, y0, w - 1, y1, r);
+  const wood = shape(4, y0 + 3, w - 4, y1 - 3, r - 2);
+  const felt = shape(4 + m, y0 + 3 + m - 1, w - 4 - m, y1 - 3 - m + 1, r - 5);
+  const { die } = BOARD;
+  const wells = L.slots
+    .map(
+      (s) =>
+        `<rect x="${f(s.x - 1.5)}" y="${f(s.y - 1.5)}" width="${f(die + 3)}" height="${f(die + 3)}" rx="${f(die * 0.24)}" fill="#06180E" fill-opacity="0.55"/>` +
+        `<path d="M${f(s.x + die * 0.2)} ${f(s.y + die + 1.6)}H${f(s.x + die * 0.86)}" stroke="#7ACB9A" stroke-opacity="0.35" stroke-width="0.8" stroke-linecap="round"/>`,
+    )
+    .join("");
+  // a chain: links face on (rings) and edge on (bars), rising to the top
+  const chainAt = (x: number) => {
+    const links: string[] = [];
+    for (let y = y0 - 3, i = 0; y > -8; y -= 5.2, i++) {
+      if (i % 2 === 0) {
+        const d = oval(x, y, 2.6, 3.6);
+        links.push(
+          `<path d="${d}" fill="none" stroke="${GOLD_INK}" stroke-width="2.9"/><path d="${d}" fill="none" stroke="url(#bg)" stroke-width="1.6"/>`,
+        );
+      } else {
+        links.push(
+          `<path d="M${f(x)} ${f(y - 3.6)}V${f(y + 3.6)}" stroke="${GOLD_INK}" stroke-width="2.8" stroke-linecap="round"/><path d="M${f(x)} ${f(y - 3.2)}V${f(y + 3.2)}" stroke="url(#bg)" stroke-width="1.3" stroke-linecap="round"/>`,
+        );
+      }
+    }
+    return links.join("");
+  };
+  // the bracket: a gold plate with an eye, a scroll curling off each side
+  const bracket = (x: number) => {
+    const scrolls = [-1, 1]
+      .map((side) => {
+        const c = curl(x + side * 3, y0 + 2.2, side < 0 ? Math.PI : 0, 15, side * -4.4, 3.4);
+        return `<path d="${c.outline}" fill="url(#bg)" stroke="${GOLD_INK}" stroke-width="0.7"/><path d="${c.vein}" fill="none" stroke="${GOLD_VEIN}" stroke-width="0.45"/>`;
+      })
+      .join("");
+    return `${scrolls}<path d="M${f(x - 5)} ${f(y0 + 5.5)}L${f(x - 3.6)} ${f(y0 - 1.4)}Q${f(x)} ${f(y0 - 3.6)} ${f(x + 3.6)} ${f(y0 - 1.4)}L${f(x + 5)} ${f(y0 + 5.5)}Z" fill="url(#bg)" stroke="${GOLD_INK}" stroke-width="0.8"/>
+<circle cx="${f(x)}" cy="${f(y0 + 1.2)}" r="1.5" fill="#2A1404"/><circle cx="${f(x - 0.5)}" cy="${f(y0 - 0.6)}" r="0.6" fill="#FFFFFF" fill-opacity="0.85"/>`;
+  };
+  const boss = (x: number, y: number) =>
+    `<circle cx="${f(x)}" cy="${f(y)}" r="2.6" fill="url(#bg)" stroke="${GOLD_INK}" stroke-width="0.6"/><circle cx="${f(x - 0.7)}" cy="${f(y - 0.7)}" r="0.7" fill="#FFFFFF"/>`;
+  return svg(
+    w,
+    L.h,
+    `<defs>${lit("bg", MATERIALS.gold, 0, 0, w, L.h)}${lit("bo", ["#7A4A2A", "#4A2A16", "#24130A"], 0, y0, w, y1)}${rad("bf", ["#3E8A5E", "#1E5A3A", "#0E2E1C"], undefined, 0.4, 0.3, 0.9)}<clipPath id="bw"><path d="${wood}"/></clipPath></defs>
+${L.hooks.map(chainAt).join("")}
+<path d="${outer}" fill="#000" fill-opacity="0.45" transform="translate(1.5 4)"/>
+<path d="${outer}" fill="url(#bg)" stroke="${GOLD_INK}" stroke-width="1.2"/>
+<path d="M${f(r + 3)} ${f(y0 + 1.4)}H${f(w * 0.48)}" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="0.9" stroke-linecap="round"/>
+<path d="${wood}" fill="url(#bo)" stroke="${GOLD_INK}" stroke-width="0.8"/>
+<g clip-path="url(#bw)">${grain(4, y0 + 3, w - 8, bh - 6, 3.4, 11)}</g>
+<path d="${felt}" fill="url(#bf)" stroke="${GOLD_INK}" stroke-width="0.9"/>
+<path d="${felt}" fill="none" stroke="#E8C890" stroke-opacity="0.35" stroke-width="0.6" stroke-dasharray="2 1.6" transform="translate(0 0)"/>
+${wells}
+${boss(4 + m / 2 + 0.2, y0 + 3 + m / 2 + 0.2)}${boss(w - 4 - m / 2 - 0.2, y0 + 3 + m / 2 + 0.2)}${boss(4 + m / 2 + 0.2, y1 - 3 - m / 2 - 0.2)}${boss(w - 4 - m / 2 - 0.2, y1 - 3 - m / 2 - 0.2)}
+${L.hooks.map(bracket).join("")}`,
+  );
+}
+
+// ------------------------------------------------------------- the shake
+
+/** The shadow a cup throws on the mat under its mouth, w × h. */
+export function cupShadowArt(w: number, h: number) {
+  return svg(
+    w,
+    h,
+    `<defs>${rad("cs", ["#000000", "#000000"], [0.6, 0], 0.5, 0.5, 0.5)}</defs><path d="${oval(w / 2, h / 2, w / 2, h / 2)}" fill="url(#cs)"/>`,
+  );
+}
+
+/** The felt mat the cup is shaken on, w × h (an oval seen from the
+ *  front): a gold rim round green baize, stitched, its shadow under it. */
+export function matArt(w: number, h: number) {
+  const cx = w / 2;
+  const cy = h * 0.46;
+  const rx = w / 2 - 3;
+  const ry = h * 0.42;
+  return svg(
+    w,
+    h,
+    `<defs>${lit("mg", MATERIALS.gold, 0, 0, w, h)}${rad("mf", ["#3E8A5E", "#1E5A3A", "#0A2414"], undefined, 0.45, 0.35, 0.75)}</defs>
+<path d="${oval(cx + 2, cy + h * 0.07, rx, ry)}" fill="#000" fill-opacity="0.5"/>
+<path d="${oval(cx, cy, rx, ry)}" fill="url(#mg)" stroke="${GOLD_INK}" stroke-width="1.3"/>
+<path d="${oval(cx, cy + 1, rx - 6, ry - 5)}" fill="url(#mf)" stroke="${GOLD_INK}" stroke-width="1"/>
+<path d="${oval(cx, cy + 1, rx - 12, ry - 10)}" fill="none" stroke="#E8C890" stroke-opacity="0.4" stroke-width="0.9" stroke-dasharray="4 3"/>
+<path d="M${f(cx - rx * 0.78)} ${f(cy - ry * 0.55)}Q${f(cx - rx * 0.35)} ${f(cy - ry * 1.02)} ${f(cx + rx * 0.1)} ${f(cy - ry * 0.98)}" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M${f(cx + rx * 0.2)} ${f(cy + ry * 0.92)}Q${f(cx + rx * 0.62)} ${f(cy + ry * 0.8)} ${f(cx + rx * 0.86)} ${f(cy + ry * 0.4)}" fill="none" stroke="${GOLD_VEIN}" stroke-width="0.8" stroke-linecap="round"/>`,
   );
 }

@@ -1614,7 +1614,21 @@
         "split": "{{name}} split your call",
         "counter": "{{name}} split your call — you countered!"
       },
-      "answerHold": "Accept: the loser drinks 2. Hold Counter: the loser drinks 4."
+      "answerHold": "Accept: the loser drinks 2. Hold Counter: the loser drinks 4.",
+      "shake": {
+        "tag": "Scattered",
+        "shake": "Shake",
+        "shaking": "Rattling the dice…",
+        "lift": "Lift the cup",
+        "start": "Start",
+        "tap": "Tap the cup to shake your dice",
+        "fresh": "New dice on the way…",
+        "drag": "Drag the cup up to peek — or tap it",
+        "scattered": "All five are different — scattered! Shake again",
+        "wait": "Scattered — wait for the split to be settled",
+        "good": "Happy with your dice? Start the round",
+        "yourTurn": "It's your call — shake first"
+      }
     }
   },
   "nightwatch": {
