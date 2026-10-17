@@ -1,11 +1,7 @@
-// Hustle's artwork. Every slot is optional: without an image the game
-// draws a placeholder (emoji in a tinted circle, a glow for the
-// backdrop). To add art, put the file in assets/games/hustle/ (sizes in
-// that folder's README) and register it here, for example:
-//
-//   export const ROLE_ART: Partial<Record<Role, ImageSourcePropType>> = {
-//     duke: require("../../../assets/games/hustle/role-boss.png"),
-//   };
+// Hustle's artwork. The roles are drawn, not pictures: each is its card
+// face (cards.tsx), the engraved emblem in its enamel window, everywhere
+// (the table, the rules). The images here are the backdrop, logo and
+// card back (sizes in assets/games/hustle/README).
 
 import type { ImageSourcePropType } from "react-native";
 
@@ -15,14 +11,6 @@ export const BACKDROP: ImageSourcePropType | undefined = require("../../../asset
 // logo.png cropped, brightened and given a soft halo
 export const LOGO: ImageSourcePropType | undefined = require("../../../assets/games/hustle/logo-trimmed.png");
 export const CARD_BACK: ImageSourcePropType | undefined = require("../../../assets/games/hustle/card-back.png");
-
-export const ROLE_ART: Partial<Record<Role, ImageSourcePropType>> = {
-  duke: require("../../../assets/games/hustle/role-boss.png"),
-  assassin: require("../../../assets/games/hustle/role-enforcer.png"),
-  captain: require("../../../assets/games/hustle/role-pickpocket.png"),
-  ambassador: require("../../../assets/games/hustle/role-fixer.png"),
-  contessa: require("../../../assets/games/hustle/role-auntie.png"),
-};
 
 /** Picture badges for the actions, drawn in place of the tinted circle.
  *  None: each action is its engraved emblem (ACTION_EMOJI, drawn by
