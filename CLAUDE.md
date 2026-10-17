@@ -274,6 +274,12 @@ pieces it uses before building another. The owner loves its flow.
   tapped, and `hold`/`aim`/`struck` for a dramatic choice.
 - Every game must hold up at its largest table (10 players): check each
   scene at the biggest count.
+- A player's name anywhere on the stage or header goes through
+  `PlayerName` (`features/game/stage/PlayerName.tsx`): centred in a fixed
+  slot, one line, cut with "…", a bot's 🤖 drawn beside it (inline in the
+  text it pushed the name off centre). Inside a sentence (a title, "X's
+  turn") use `shortName` so the words round it still show. The dev
+  samples carry a bot and long names; look at every scene with them.
 
 ## The flow
 - Secrecy first: nothing on screen reveals a hidden choice until the
