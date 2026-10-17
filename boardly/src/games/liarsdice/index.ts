@@ -91,7 +91,8 @@ export const liarsdice: GameDefinition<LiarsDiceState> = {
         text: t("liarsdice.table.calling", { name: t(`gameOptions.liarsdice.calling.${calling}.name`), rule: rule[calling] }),
       })),
       { emoji: "🍺", text: t("liarsdice.table.drinks", DRINKS) },
-      { emoji: "🍻", text: t("liarsdice.table.knockout", { count: KNOCKOUT_CUPS }) },
+      // only a knockout table has a cup that puts you out
+      ...(settings?.mode === "endless" ? [] : [{ emoji: "🍻", text: t("liarsdice.table.knockout", { count: KNOCKOUT_CUPS }) }]),
     ];
   },
 };

@@ -89,6 +89,15 @@ in the app's own world and palette).
   a time with a stop, lurch and ding; a players count dims what doesn't
   fit; last floor remembered. Keep the gate OPEN (5 pickets, tall
   diamonds, slim straps): a dense gate hid the floor and was rejected.
+- **Many games:** banks of 7 by type (`category` in each GameDefinition:
+  deduction, bluff, strategy, party, duel, classic; `lift/banks.ts`),
+  the first bank "Your floors" (most played, from my stats). The dial
+  shows one bank; its number drums roll over like an odometer between
+  banks, studs jump banks. The Floors plate opens the letter-board
+  directory (every floor by bank, players count, "new" tags, search past
+  20 games). A new game needs a `category`, a floor in
+  `lift/floors.ts` and a lead in `lift/leads.ts`; the lobby reads its
+  floor number from the same building (`useLiftFloor`).
 - **The lobby = that game's floor** (`features/lobby/floor/`), seen flat
   on like the lift's floors (not iso): the lift's landing sign
   ("3F · Hustle", floor = the game's place in the lift), the table code
