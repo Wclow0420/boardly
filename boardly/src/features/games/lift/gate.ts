@@ -7,7 +7,9 @@
 
 import { Skia, StrokeCap, PaintStyle, TileMode, type SkCanvas, type SkPaint, type SkPath } from "@shopify/react-native-skia";
 
-const PICKETS = 7;
+// few pickets, tall diamonds and slim straps: an open gate the floor
+// behind it reads through
+const PICKETS = 5;
 const RAIL = 7;
 
 export interface GatePaths {
@@ -24,7 +26,7 @@ export function gatePaths(w: number, h: number, open: number): GatePaths {
   const bot = h - RAIL;
   const shut = (w - 8) / (PICKETS - 1);
   const bay = shut * (1 - 0.86 * open);
-  const rows = Math.max(4, Math.round((bot - top) / (shut * 1.75)));
+  const rows = Math.max(3, Math.round((bot - top) / (shut * 1.5)));
   const rowH = (bot - top) / rows;
   const pickets = Skia.Path.Make();
   const links = Skia.Path.Make();
@@ -90,10 +92,10 @@ export function gatePaints(h: number): GatePaints {
   rail.setAntiAlias(true);
   rail.setShader(Skia.Shader.MakeLinearGradient({ x: 0, y: 0 }, { x: 0, y: RAIL }, gold.slice(0, 3), null, TileMode.Mirror));
   return {
-    inkLink: stroke("#3A2408", 3.4),
-    inkPicket: stroke("#3A2408", 6),
-    brassLink: brass(1.8),
-    brassPicket: brass(4),
+    inkLink: stroke("#3A2408", 2.6),
+    inkPicket: stroke("#3A2408", 5),
+    brassLink: brass(1.3),
+    brassPicket: brass(3.2),
     shine, pin, pinInk, rail, railInk: stroke("#3A2408", 1) };
 }
 
