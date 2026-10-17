@@ -150,15 +150,27 @@ export function ToolButton({
 }
 
 /** The plinth across the foot of the stage, holding its children (the
- *  main button). */
-export function Plinth({ width, height, children }: { width: number; height: number; children: ReactNode }) {
+ *  main button), `inset` in from each end (40, or clear of a dock). */
+export function Plinth({
+  width,
+  height,
+  inset,
+  children,
+}: {
+  width: number;
+  height: number;
+  inset?: { left: number; right: number };
+  children: ReactNode;
+}) {
   const image = bakedSvg("plinth", width, height, () => plinth(width, height));
   return (
     <View style={{ width, height }}>
       <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
         {image ? <SkImage image={image} x={0} y={0} width={width} height={height} /> : null}
       </Canvas>
-      <View style={styles.plinthBody}>{children}</View>
+      <View style={[styles.plinthBody, inset ? { paddingLeft: inset.left, paddingRight: inset.right } : null]}>
+        {children}
+      </View>
     </View>
   );
 }

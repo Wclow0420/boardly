@@ -1,7 +1,7 @@
-// Development only: while the owner compares the two, the dev page can
-// ask Seal the Manor's board to draw the room flat on (FlatRoom) instead
-// of in iso (RoomScene). The game itself never sets it.
+// Whether Seal the Manor's board draws the room flat on (FlatRoom, which
+// falls back to the iso RoomScene for rooms not drawn flat yet). The game
+// draws flat; the dev page can turn it off (&flat=0) to compare with iso.
 
 import { createContext } from "react";
 
-export const FlatPreview = createContext(false);
+export const FlatPreview = createContext(true);

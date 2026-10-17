@@ -284,7 +284,13 @@
     "leaveMessage": "Permainan akan tamat untuk semua orang di meja dan tidak boleh disambung.",
     "leaveConfirm": "Tinggalkan Permainan",
     "keepPlaying": "Teruskan Bermain",
-    "yourMove": "Giliran anda"
+    "yourMove": "Giliran anda",
+    "stage": {
+      "tools": "Alatan",
+      "fold": "Simpan alatan",
+      "more": "Lagi",
+      "putAway": "Ketik untuk simpan"
+    }
   },
   "rules": {
     "title": "Cara bermain",
@@ -2123,6 +2129,17 @@
       "twoFails": "Malam {{night}} perlukan dua kad Gagal untuk gagal",
       "copies": "{{role}} ×{{n}}",
       "join": ", "
+    },
+    "lip": {
+      "roomDone": "Kerja malam ini sudah selesai.",
+      "toTeam": "Teruskan ke pasukan",
+      "missionEvil": "Hanya bilangan kad gagal didedahkan.",
+      "patrol": "Kekal, atau berjalan ke bilik bersebelahan.",
+      "book": "Buka buku di atas rehal.",
+      "goTo": "Pergi ke {{room}}",
+      "follow": "Ikut {{name}}",
+      "reach_one": "Pasukan mesti dalam 1 bilik dari {{room}}.",
+      "reach_other": "Pasukan mesti dalam {{count}} bilik dari {{room}}."
     }
   },
   "profile": {

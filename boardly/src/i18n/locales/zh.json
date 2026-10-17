@@ -283,7 +283,13 @@
     "leaveMessage": "这局游戏会对所有人结束，无法继续。",
     "leaveConfirm": "离开游戏",
     "keepPlaying": "继续玩",
-    "yourMove": "轮到你了"
+    "yourMove": "轮到你了",
+    "stage": {
+      "tools": "工具",
+      "fold": "收起工具",
+      "more": "更多",
+      "putAway": "轻点收起"
+    }
   },
   "rules": {
     "title": "游戏玩法",
@@ -2118,6 +2124,17 @@
       "twoFails": "第 {{night}} 夜要 2 张失败牌任务才失败",
       "copies": "{{role}} ×{{n}}",
       "join": "、"
+    },
+    "lip": {
+      "roomDone": "今晚的事已做完。",
+      "toTeam": "去组队",
+      "missionEvil": "只会公布失败牌的数量。",
+      "patrol": "留在原地，或走到相邻的房间。",
+      "book": "点开讲台上的那本书。",
+      "goTo": "去{{room}}",
+      "follow": "跟踪 {{name}}",
+      "reach_one": "队员须在离{{room}} 1 个房间以内。",
+      "reach_other": "队员须在离{{room}} {{count}} 个房间以内。"
     }
   },
   "profile": {

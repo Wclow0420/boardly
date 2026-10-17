@@ -5,6 +5,9 @@ import "@/i18n";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { ThemeProvider } from "@/theme";
 import { NightwatchBoard } from "../NightwatchBoard";
+// the rooms are drawn in iso here: the flat ones lay themselves out on
+// the device's measure, which tests don't have
+import { FlatPreview } from "../flat/FlatPreview";
 
 
 jest.mock("@gorhom/bottom-sheet", () => { const { TextInput, View } = jest.requireActual("react-native"); return { BottomSheetTextInput: TextInput, BottomSheetModal: View, BottomSheetView: View, BottomSheetScrollView: View, BottomSheetBackdrop: View, BottomSheetModalProvider: View }; });
@@ -23,7 +26,9 @@ const base: any = {"numPlayers": 5, "phase": "announce", "round": 0, "rounds": 5
 const players = [0, 1, 2, 3, 4].map((s) => ({ seat: s, userId: "u" + s, username: "p" + s, borderId: "wood", avatarUrl: null }));
 const board = (state: any) => (
   <ThemeProvider>
-    <NightwatchBoard state={state} mySeat={0} isMyTurn={false} players={players} busy={false} finished={false} onMove={() => {}} />
+    <FlatPreview.Provider value={false}>
+      <NightwatchBoard state={state} mySeat={0} isMyTurn={false} players={players} busy={false} finished={false} onMove={() => {}} />
+    </FlatPreview.Provider>
   </ThemeProvider>
 );
 
@@ -58,12 +63,21 @@ it("walks announce → patrol → room → news and every panel", async () => {
   const waiting = { ...room, ready: [true, false, false, false, false], myOrder: {} };
   await view.rerender(board(waiting));
   expect(screen.getByText(/Everyone is using their room/)).toBeTruthy();
-  const expected: Record<string, RegExp> = { Map: /Bell Tower/, Notebook: /Only you can see this/, Record: /Mission in the Cellar/, Role: /Prophet/, Watchers: /p3/ };
+  // the lookup tools are in the satchel on the plinth: it opens, then a
+  // tool opens its panel
+  const expected: Record<string, RegExp> = { Map: /Bell Tower/, Notebook: /Only you can see this/, Record: /Mission in the Cellar/, Watchers: /p3/ };
   for (const label of Object.keys(expected)) {
+    expect(screen.queryByLabelText(label)).toBeNull();
+    await fireEvent.press(screen.getByLabelText("Tools"));
     await fireEvent.press(screen.getByLabelText(label));
     expect(screen.getAllByText(expected[label]).length).toBeGreaterThan(0);
     await fireEvent.press(screen.getAllByLabelText("Got it")[0]);
   }
+  // my role card is in my hand: a tap lifts it, another puts it away
+  await fireEvent.press(screen.getByLabelText("Role"));
+  expect(screen.getAllByText(/Prophet/).length).toBeGreaterThan(0);
+  await fireEvent.press(screen.getByLabelText("Tap to put it away"));
+  expect(screen.queryByLabelText("Tap to put it away")).toBeNull();
 }, 20000);
 
 it("opens the map night by night, with notes only on nights so far", async () => {
@@ -71,6 +85,7 @@ it("opens the map night by night, with notes only on nights so far", async () =>
   const result = { round: 0, room: 6, team: [0, 1], missing: [], fails: 0, success: true };
   const second = { ...base, round: 1, missionRoom: 2, nextMissionRoom: 7, ready: [true, false, false, false, false], log: [patrol], results: [result] };
   await render(board(second));
+  await fireEvent.press(screen.getByLabelText("Tools"));
   await fireEvent.press(screen.getByLabelText("Map"));
 
   expect(screen.getByLabelText("Night 2").props.accessibilityState.selected).toBe(true);

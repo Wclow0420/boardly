@@ -284,7 +284,13 @@
     "leaveMessage": "The game ends for everyone at the table and can't be resumed.",
     "leaveConfirm": "Leave Game",
     "keepPlaying": "Keep Playing",
-    "yourMove": "Your move"
+    "yourMove": "Your move",
+    "stage": {
+      "tools": "Tools",
+      "fold": "Put the tools away",
+      "more": "More",
+      "putAway": "Tap to put it away"
+    }
   },
   "rules": {
     "title": "How to play",
@@ -2125,6 +2131,17 @@
       "twoFails": "Night {{night}} needs two Fail cards to fail",
       "copies": "{{role}} ×{{n}}",
       "join": ", "
+    },
+    "lip": {
+      "roomDone": "The night's work is done.",
+      "toTeam": "On to the team",
+      "missionEvil": "Only the number of fail cards is revealed.",
+      "patrol": "Stay, or walk to a room next door.",
+      "book": "Open the book on the lectern.",
+      "goTo": "Go to the {{room}}",
+      "follow": "Follow {{name}}",
+      "reach_one": "The team must be within 1 room of the {{room}}.",
+      "reach_other": "The team must be within {{count}} rooms of the {{room}}."
     }
   },
   "profile": {

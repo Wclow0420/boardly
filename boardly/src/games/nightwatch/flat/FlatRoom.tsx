@@ -12,8 +12,10 @@
 // Dust, Vignette). The four ways out: two doors in the back wall and an
 // archway in each side wall, each named on a plate in its room's colour.
 //
-// Same props as the iso RoomScene, which it falls back to for the rooms
-// not yet drawn flat (only the Study is, as a sample to compare).
+// Every room drawn flat on is one FlatRoomDef (flatRooms/types.ts: its
+// plan, still art, working object and live parts), listed in
+// flatRooms/index.ts. Same props as the iso RoomScene, which it falls
+// back to for the rooms not yet drawn flat.
 
 import { BlendMode, Canvas, Image as SkImg, PaintStyle, Picture, Skia, type SkImage } from "@shopify/react-native-skia";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
@@ -39,23 +41,15 @@ import { MascotFigure } from "@/features/mascot/MascotStage";
 import type { Look } from "@/features/mascot/dress";
 import { BOX } from "@/features/mascot/rig";
 import { fontFamily, useTheme } from "@/theme";
-import { heavyHaptic, tapHaptic, tickHaptic } from "@/utils/haptics";
+import { heavyHaptic, successHaptic, tapHaptic, tickHaptic } from "@/utils/haptics";
 import { ROOMS, ROOM_COLOR } from "../logic";
 import { doorBetween } from "../manorShapes";
 import { RoomScene, type RoomSceneProps } from "../RoomScene";
-import type { Side } from "../roomScenes";
+import type { Payoff, Side } from "../roomScenes";
+import { FLAT_ROOMS } from "./flatRooms";
+import type { FlatExit, FlatFlame, FlatFrame, FlatRoomDef } from "./flatRooms/types";
 import { exitFoot, exitPlate, flatLayout, type FlatLayout, type Spot } from "./layout";
 import { flameArt, sealArt, shadowArt } from "./parts";
-import {
-  STUDY,
-  leafArt,
-  ledgerArt,
-  moonShaft,
-  studyArt,
-  studyPlan,
-  windowFlashArt,
-  type FlatExit,
-} from "./flatRooms/study";
 
 /** Where the feet are in the mascot's box, as a share of its height. */
 const FEET = 118.4 / BOX[1];
@@ -65,6 +59,33 @@ const HALO = "#FFE3A8";
 const PAPER = "#E9E2CF";
 const COLS = 3;
 const NO_DOORS: number[][] = [];
+const SCREENS = 4;
+
+/** How using the room feels in the hand (as the iso room). */
+function feel(haptic: Payoff["haptic"]) {
+  const later = (fn: () => void, ms: number) => setTimeout(fn, ms);
+  switch (haptic) {
+    case "ring":
+      heavyHaptic();
+      [220, 440, 660].forEach((ms) => later(tickHaptic, ms));
+      break;
+    case "bless":
+      successHaptic();
+      break;
+    case "thud":
+      heavyHaptic();
+      break;
+    case "clink":
+      tickHaptic();
+      later(tickHaptic, 90);
+      break;
+    case "ripple":
+      [0, 140, 280].forEach((ms) => later(tickHaptic, ms));
+      break;
+    default:
+      tapHaptic();
+  }
+}
 
 const plateW = (s: Spot) => {
   "worklet";
@@ -96,7 +117,8 @@ function exitsOf(room: number, collapsed: number[], lockedDoor: number[] | null)
 
 export function FlatRoom(props: RoomSceneProps) {
   const [box, setBox] = useState<{ w: number; h: number } | null>(null);
-  if (ROOMS[props.room] !== "study") return <RoomScene {...props} />;
+  const def = FLAT_ROOMS[ROOMS[props.room]];
+  if (!def) return <RoomScene {...props} />;
   return (
     <View
       style={styles.fill}
@@ -106,7 +128,7 @@ export function FlatRoom(props: RoomSceneProps) {
         setBox((b) => (b && b.w === w && b.h === h ? b : { w, h }));
       }}
     >
-      {box && box.w > 100 && box.h > 260 ? <FlatStudy {...props} w={box.w} h={box.h} /> : null}
+      {box && box.w > 100 && box.h > 260 ? <FlatScene key={def.id} {...props} def={def} w={box.w} h={box.h} /> : null}
     </View>
   );
 }
@@ -114,7 +136,8 @@ export function FlatRoom(props: RoomSceneProps) {
 const sway = Easing.inOut(Easing.sin);
 const glide = (value: number, duration: number) => withTiming(value, { duration, easing: sway });
 
-function FlatStudy({
+function FlatScene({
+  def,
   room,
   active,
   onTouch,
@@ -132,9 +155,10 @@ function FlatStudy({
   arrival,
   onArrived,
   mascots,
+  book,
   w,
   h,
-}: RoomSceneProps & { w: number; h: number }) {
+}: RoomSceneProps & { def: FlatRoomDef; w: number; h: number }) {
   const { colors } = useTheme();
   // the server sends new copies of these arrays with every update
   const walls = JSON.stringify([collapsed, lockedDoor]);
@@ -143,9 +167,10 @@ function FlatStudy({
   const drawn: FlatExit[] = useMemo(() => exits.map(({ side, door, color }) => ({ side, door, color })), [exits]);
   const standing = people.slice(0, 10);
   const L = useMemo(() => flatLayout(w, h, standing.length), [w, h, standing.length]);
-  const P = useMemo(() => studyPlan(L, drawn), [L, drawn]);
+  const P = useMemo(() => def.plan(L, drawn), [def, L, drawn]);
   const doorsKey = drawn.map((e) => `${e.side}:${e.door}`).join(",");
-  const art = bakedSvg(`flat-study|${doorsKey}`, w, h, () => studyArt(L, P, drawn));
+  const art = bakedSvg(`flat-${def.id}|${doorsKey}`, w, h, () => def.art(L, P, drawn));
+  const motion = useMemo(() => def.motion(P), [def, P]);
 
   // who stands where: you in the middle of the front row, the others
   // filling the front, then the row behind
@@ -173,7 +198,7 @@ function FlatStudy({
   const echo = useSharedValue(1);
   const act = useSharedValue(0);
   const beckon = useSharedValue(0);
-  const leaf = useSharedValue(1);
+  const touched = useSharedValue(1);
   const enter = useSharedValue(1);
 
   useEffect(() => {
@@ -232,7 +257,7 @@ function FlatStudy({
     return () => clearInterval(ring);
   }, [event, resting, still, echo]);
 
-  // while the ledger can be read it glows, and stirs on its slope
+  // while the object can be used it glows, and stirs
   useEffect(() => {
     if (!active || still || resting) return;
     beckon.set(0);
@@ -244,12 +269,17 @@ function FlatStudy({
   }, [active, still, resting, beckon]);
 
   const press = () => {
-    if (active) tapHaptic();
+    if (active) feel(def.payoff.haptic);
     if (!still) {
-      // the ledger lifts, its leaves riffle over, a glow of gold
-      act.set(withSequence(glide(1, 280), glide(1, 520), glide(0, 420)));
-      leaf.set(0);
-      leaf.set(withTiming(1, { duration: 1100, easing: Easing.inOut(Easing.quad) }));
+      // the object answers: it lifts, or swings (ringing on and dying
+      // away), and a burst of its light
+      act.set(
+        motion.kind === "swing" && motion.ring
+          ? withSequence(glide(1, 380), glide(-0.75, 620), glide(0.5, 560), glide(-0.28, 500), glide(0.1, 440), glide(0, 380))
+          : withSequence(glide(1, 280), glide(1, 520), glide(0, 420)),
+      );
+      touched.set(0);
+      touched.set(withTiming(1, { duration: 1100, easing: Easing.inOut(Easing.quad) }));
       if (active) {
         burst.set(0);
         burst.set(withTiming(1, { duration: 900, easing: Easing.linear }));
@@ -269,8 +299,11 @@ function FlatStudy({
     });
   const passageKey = passages.map((p) => p.join(",")).join("|");
 
-  const led = P.ledger;
-  const shaft = useMemo(() => moonShaft(L, P), [L, P]);
+  const prop = P.prop;
+  const spot = P.touch ?? { x: prop.x + prop.w / 2, y: prop.y + prop.h / 2, rx: prop.w * 0.66, ry: prop.h * 0.78 };
+  const burstAt = def.payoff.at ? def.payoff.at(P) : [spot.x, spot.y];
+  const bookOn = book && P.book ? P.book : null;
+  const unread = bookOn !== null && !!book?.unread;
   const parts = useMemo(() => {
     const rows = [0, 1].map((row) => L.spots.find((s) => s.row === row)).filter((s): s is Spot => s !== undefined);
     const byRow = (make: (s: Spot) => SkImage | null) => {
@@ -283,23 +316,32 @@ function FlatStudy({
       p.setBlendMode(BlendMode.Screen);
       return p;
     };
-    const mote = Skia.Paint();
-    mote.setAntiAlias(true);
-    mote.setColor(Skia.Color("#DCE8FF"));
     const ring = Skia.Paint();
     ring.setAntiAlias(true);
     ring.setStyle(PaintStyle.Stroke);
     ring.setStrokeWidth(1.3);
     ring.setColor(Skia.Color(HALO));
+    const own = def.images ? def.images(L, P) : {};
+    const img: Record<string, SkImage | null> = {};
+    for (const name of Object.keys(own)) {
+      const o = own[name];
+      img[name] = bakedSvg(`flat-${def.id}-${name}|${o.key ?? `${doorsKey}|${w}x${h}`}`, o.w, o.h, o.art);
+    }
+    const fill = Skia.Paint();
+    fill.setAntiAlias(true);
+    const stroke = Skia.Paint();
+    stroke.setAntiAlias(true);
+    stroke.setStyle(PaintStyle.Stroke);
     return {
-      ledger: bakedSvg("flat-ledger", led.w, led.h, () => ledgerArt(led.w, led.h)),
-      leaf: bakedSvg("flat-leaf", led.w / 2, led.h, () => leafArt(led.w / 2, led.h)),
+      prop: bakedSvg(`flat-${def.id}-prop`, prop.w, prop.h, () => def.propArt(P)),
+      img,
+      screens: Array.from({ length: SCREENS }, screen),
+      fill,
+      stroke,
       flame: bakedSvg("flat-flame", 8, 16, () => flameArt(8, 16)),
-      glow: bakedSvg(`lobby-glow|${STUDY.light}`, GLOW, GLOW, () => glowArt(GLOW, STUDY.light)),
+      glow: bakedSvg(`lobby-glow|${def.light}`, GLOW, GLOW, () => glowArt(GLOW, def.light)),
       halo: bakedSvg(`lobby-glow|${HALO}`, GLOW, GLOW, () => glowArt(GLOW, HALO)),
       cool: bakedSvg("lobby-glow|#9CB8FF", GLOW, GLOW, () => glowArt(GLOW, "#9CB8FF")),
-      shaft: bakedSvg(`flat-study-shaft|${doorsKey}|${w}x${h}`, shaft.w, shaft.h, shaft.art),
-      winFlash: bakedSvg("flat-study-flash", P.win.w + 60, P.win.h + 60, () => windowFlashArt(P)),
       seal: bakedSvg(`flat-seal|${colors.danger}`, 160, 160, () => sealArt(160, colors.danger)),
       plate: byRow((s) => bakedSvg("lobby-plate", plateW(s), PLATE_H, () => plateArt(plateW(s), PLATE_H))),
       shadow: byRow((s) => bakedSvg("flat-shadow", s.size, s.size * 1.3, () => shadowArt(s.size))),
@@ -307,15 +349,14 @@ function FlatStudy({
       lit: Skia.Paint(),
       glowPaint: screen(),
       flamePaint: screen(),
-      shaftPaint: screen(),
-      flashPaint: screen(),
       haloPaint: screen(),
       sealPaint: screen(),
-      leafPaint: Skia.Paint(),
-      mote,
+      bookPaint: screen(),
       ring,
     };
-  }, [L, P, led.w, led.h, shaft, doorsKey, w, h, colors.danger]);
+  }, [def, L, P, prop.w, prop.h, doorsKey, w, h, colors.danger]);
+  const under = def.under;
+  const onProp = def.onProp;
 
   const picture = useDerivedValue(() => {
     const time = clock.get();
@@ -326,22 +367,22 @@ function FlatStudy({
       if (img) c.drawImageRect(img, Skia.XYWHRect(0, 0, img.width(), img.height()), Skia.XYWHRect(x, y, dw, dh), paint);
     };
 
-    // the moonlight through the window, breathing, motes drifting in it
-    X.shaftPaint.setAlphaf(0.8 + 0.2 * Math.sin(time * 0.35));
-    draw(X.shaft, shaft.x, shaft.y, shaft.w, shaft.h, X.shaftPaint);
-    for (let i = 0; i < 9; i++) {
-      const u = (i * 0.618 + time * 0.012 * (1 + (i % 3) * 0.4)) % 1;
-      const mx = P.win.x + P.win.w * (0.2 + 0.7 * ((i * 0.37) % 1)) + u * 26 + Math.sin(time * 0.6 + i) * 3;
-      const my = P.win.y + P.win.h * 0.5 + u * (L.floorY - P.win.y) * 0.9;
-      X.mote.setAlphaf(0.5 * Math.sin(Math.PI * u));
-      c.drawCircle(mx, my, 0.7 + (i % 3) * 0.25, X.mote);
-    }
-    // lightning: the window lights up
-    const fl = flash.get();
-    if (fl > 0.01) {
-      X.flashPaint.setAlphaf(Math.min(1, fl));
-      draw(X.winFlash, P.win.x - 30, P.win.y - 30, P.win.w + 60, P.win.h + 60, X.flashPaint);
-    }
+    const v = act.get() + beckon.get();
+    const fx: FlatFrame = {
+      c,
+      time,
+      draw,
+      img: X.img,
+      screen: X.screens,
+      fill: X.fill,
+      stroke: X.stroke,
+      flash: flash.get(),
+      move: v,
+      touched: touched.get(),
+      active,
+    };
+    // what lives in this room of its own (moonlight, lightning in a window, a rope)
+    if (under) under(fx, P);
 
     // a secret door's cold glow in its corner
     for (let i = 0; i < passages.length; i++) {
@@ -364,53 +405,58 @@ function FlatStudy({
     }
 
     // the candles: a warm halo each, flames licking
-    for (let i = 0; i < P.flames.length; i++) {
-      const fm = P.flames[i];
-      const flick = 0.9 + 0.06 * Math.sin(time * 5.3 + i * 1.9) + 0.04 * Math.sin(time * 13.1 + i * 2.3);
-      const g = 54 * fm.s * (0.92 + 0.08 * flick);
-      X.glowPaint.setAlphaf(0.5 * flick);
-      draw(X.glow, fm.x - g / 2, fm.y + 5 - g / 2, g, g, X.glowPaint);
-      const fw = 5.6 * fm.s;
-      const fh = 11.5 * fm.s * (0.9 + 0.12 * Math.sin(time * 7.7 + i * 3.1));
-      c.save();
-      c.translate(fm.x, fm.y + 11 * fm.s);
-      c.skew(0.12 * Math.sin(time * 2.9 + i), 0);
-      X.flamePaint.setAlphaf(1);
-      draw(X.flame, -fw / 2, -fh, fw, fh, X.flamePaint);
-      c.restore();
-    }
-
-    // the ledger: glowing while it waits, lifting when it's read
-    const cx = led.x + led.w / 2;
-    const cy = led.y + led.h / 2;
-    if (active) {
-      const beat = 0.5 + 0.5 * Math.sin((time * Math.PI * 2) / 1.8);
-      const r = led.w * 0.95;
-      X.haloPaint.setAlphaf(0.3 + 0.45 * beat);
-      draw(X.halo, cx - r, cy - r * 0.8, r * 2, r * 1.6, X.haloPaint);
-      X.ring.setAlphaf(0.35 + 0.55 * beat);
-      c.drawOval(Skia.XYWHRect(cx - led.w * 0.66, cy - led.h * 0.78, led.w * 1.32, led.h * 1.56), X.ring);
-    }
-    const v = act.get() + beckon.get();
-    c.save();
-    c.translate(cx, led.y + led.h);
-    c.translate(0, -12 * v);
-    c.scale(1 + 0.25 * v, 1 + 0.25 * v);
-    draw(X.ledger, -led.w / 2, -led.h, led.w, led.h);
-    // its leaves riffling over, right to left
-    const lp = leaf.get();
-    if (lp < 1) {
-      for (let k = 0; k < 3; k++) {
-        const q = Math.min(1, Math.max(0, lp * 1.7 - k * 0.32));
-        if (q <= 0 || q >= 1) continue;
-        const sx = Math.cos(Math.PI * q);
+    const candles = (flames: FlatFlame[], from: number) => {
+      for (let j = 0; j < flames.length; j++) {
+        const fm = flames[j];
+        const i = j + from;
+        const flick = 0.9 + 0.06 * Math.sin(time * 5.3 + i * 1.9) + 0.04 * Math.sin(time * 13.1 + i * 2.3);
+        const g = 54 * fm.s * (0.92 + 0.08 * flick);
+        X.glowPaint.setAlphaf(0.5 * flick);
+        draw(X.glow, fm.x - g / 2, fm.y + 5 - g / 2, g, g, X.glowPaint);
+        const fw = 5.6 * fm.s;
+        const fh = 11.5 * fm.s * (0.9 + 0.12 * Math.sin(time * 7.7 + i * 3.1));
         c.save();
-        c.scale(sx, 1);
-        X.leafPaint.setAlphaf(0.75 + 0.25 * Math.abs(sx));
-        draw(X.leaf, 0, -led.h, led.w / 2, led.h, X.leafPaint);
+        c.translate(fm.x, fm.y + 11 * fm.s);
+        c.skew(0.12 * Math.sin(time * 2.9 + i), 0);
+        X.flamePaint.setAlphaf(1);
+        draw(X.flame, -fw / 2, -fh, fw, fh, X.flamePaint);
         c.restore();
       }
+    };
+    candles(P.flames, 0);
+
+    // a book to read: a soft glow round it until it has been
+    if (unread && bookOn) {
+      const beat = 0.5 + 0.5 * Math.sin((time * Math.PI * 2) / 2.4);
+      const r = bookOn.r * 2.2;
+      X.bookPaint.setAlphaf(0.25 + 0.4 * beat);
+      draw(X.halo, bookOn.x - r, bookOn.y - r, r * 2, r * 2, X.bookPaint);
     }
+
+    // the working object: glowing while it waits, answering a touch
+    if (active) {
+      const beat = 0.5 + 0.5 * Math.sin((time * Math.PI * 2) / 1.8);
+      const r = spot.rx * 1.44;
+      X.haloPaint.setAlphaf(0.3 + 0.45 * beat);
+      draw(X.halo, spot.x - r, spot.y - r * 0.8, r * 2, r * 1.6, X.haloPaint);
+      X.ring.setAlphaf(0.35 + 0.55 * beat);
+      c.drawOval(Skia.XYWHRect(spot.x - spot.rx, spot.y - spot.ry, spot.rx * 2, spot.ry * 2), X.ring);
+    }
+    c.save();
+    if (motion.kind === "swing") {
+      c.translate(motion.x, motion.y);
+      c.rotate(motion.degrees * v, 0, 0);
+      c.translate(-motion.x, -motion.y);
+    } else {
+      const fx0 = prop.x + prop.w / 2;
+      const fy0 = prop.y + prop.h;
+      c.translate(fx0, fy0 - motion.lift * v);
+      c.scale(1 + motion.scale * v, 1 + motion.scale * v);
+      c.translate(-fx0, -fy0);
+    }
+    draw(X.prop, prop.x, prop.y, prop.w, prop.h);
+    if (P.propFlames) candles(P.propFlames, P.flames.length);
+    if (onProp) onProp(fx, P);
     c.restore();
 
     // shadows in the dark, and every name plate
@@ -423,7 +469,7 @@ function FlatStudy({
       draw(X.plate[s.row], s.x - pw / 2, s.y + 1, pw, PLATE_H);
     }
     return rec.finishRecordingAsPicture();
-  }, [parts, w, h, active, sealed, passageKey, spotKey, shadowKey, walking]);
+  }, [parts, P, motion, w, h, active, unread, sealed, passageKey, spotKey, shadowKey, walking]);
 
   // the payoff's glow and the night's weather, over the room
   const lantern = me ? { x: me.spot.x, y: me.spot.y - me.spot.size * 0.7 } : { x: w / 2, y: h * 0.75 };
@@ -455,7 +501,7 @@ function FlatStudy({
       color,
     };
   };
-  const reach = Math.max(led.w * 0.75, 44);
+  const reach = Math.max(spot.rx * 1.14, 44);
 
   return (
     <Animated.View style={[{ width: w, height: h }, enterStyle]}>
@@ -463,14 +509,7 @@ function FlatStudy({
         {art ? <SkImg image={art} x={0} y={0} width={w} height={h} /> : null}
         <Picture picture={picture} />
         <Burst
-          spec={{
-            kind: "glow",
-            x: led.x + led.w / 2,
-            y: led.y + led.h / 2,
-            size: 46,
-            color: HALO,
-            duration: 900,
-          }}
+          spec={{ ...def.payoff.burst, x: burstAt[0], y: burstAt[1] }}
           progress={burst}
         />
         {event === "insomnia" ? <Vignette width={w} height={h} color="#7C5CFF" clock={clock} /> : null}
@@ -585,13 +624,25 @@ function FlatStudy({
           styles.abs,
           styles.round,
           {
-            left: led.x + led.w / 2 - reach,
-            top: led.y + led.h / 2 - reach * 0.8,
+            left: spot.x - reach,
+            top: spot.y - reach * 0.8,
             width: reach * 2,
             height: reach * 1.6,
           },
         ]}
       />
+      {book && bookOn ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={book.label}
+          onPress={book.onOpen}
+          style={[
+            styles.abs,
+            styles.round,
+            { left: bookOn.x - bookOn.r - 8, top: bookOn.y - bookOn.r - 8, width: bookOn.r * 2 + 16, height: bookOn.r * 2 + 16 },
+          ]}
+        />
+      ) : null}
     </Animated.View>
   );
 }

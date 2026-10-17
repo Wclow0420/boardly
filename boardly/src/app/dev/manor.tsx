@@ -1,9 +1,10 @@
 // Development only: Seal the Manor's board in every moment of a game,
 // with sample states, to look at on a device without playing. Open with
 // boardly-dev://dev/manor?sample=<name> (the `dev` tab on the left lists
-// them; add &perf=1 for the frame rate). &flat=1 draws the room flat on
-// (games/nightwatch/flat, the Study only so far) instead of in iso, to
-// compare the two: sample=room is the Study alone, study6 with company in
+// them; add &perf=1 for the frame rate, &w=375 to lay the stage out as a
+// narrow phone, &lang=zh for another language). Rooms are drawn flat on, as in the game (games/nightwatch/
+// flat; rooms not drawn flat yet fall back to iso); &flat=0 draws them in
+// iso to compare: sample=room is the Study alone, study6 with company in
 // a storm, study10 a full house on the mission's seal in fog with a door
 // locked, studyDark a blackout with a stranger in it, studyUsed the Study
 // already read tonight (a touch lifts the ledger without the popup).
@@ -17,10 +18,12 @@ import { scheduleOnRN } from "react-native-worklets";
 
 import { AppText, Button } from "@/components/ui";
 import { RulesSheet } from "@/features/game/RulesSheet";
+import { StageWidth } from "@/features/game/stage/GameStage";
 import { NightwatchBoard } from "@/games/nightwatch/NightwatchBoard";
 import { FlatPreview } from "@/games/nightwatch/flat/FlatPreview";
 import type { NightwatchState } from "@/games/nightwatch/logic";
 import { GAMES } from "@/games/registry";
+import { useLocale } from "@/i18n/LocaleContext";
 import { ThemeScope, useTheme } from "@/theme";
 
 const base = {
@@ -87,6 +90,26 @@ const studyLog = (seen: number[] | null, company: boolean) => [
 ];
 const unready = (n: number) => ({ ready: Array(n).fill(false), voted: Array(n).fill(false) });
 
+/** A room's samples: `<fn>` alone (someone with you, ready to use it),
+ *  `<fn>Dark` in a blackout with a stranger, `<fn>10` a full house on
+ *  the mission's seal with tonight's ways and weather. */
+const roomSamples = (fn: "belltower" | "chapel" | "gallery" | "hall" | "dining" | "cellar" | "kitchen" | "garden", room: number, night: Record<string, unknown>) => {
+  const log = (seen: number[] | null, company: boolean) => [
+    ...base.log.slice(0, 3),
+    { round: 2, kind: "patrol", room, seen, company, fake: null, tracked: null, blocked: null },
+  ];
+  return {
+    [fn]: { state: S({ phase: "room", myRoom: room, myFn: fn, event: null, ...unready(5), log: log([2], true) }) },
+    [`${fn}Dark`]: { state: S({ phase: "room", myRoom: room, myFn: null, event: "blackout", ...unready(5), log: log(null, true) }) },
+    [`${fn}10`]: {
+      state: T({
+        phase: "room", myRoom: room, myFn: null, missionRoom: room, nextMissionRoom: 1, ...night,
+        ...unready(10), log: log([1, 2, 3, 4, 5, 6, 7, 8, 9], true),
+      }),
+    },
+  };
+};
+
 /** Each moment, whether the role card is still to be dealt in it, and
  *  whether the lanterns are still to reveal its last vote or mission. */
 const SAMPLES: Record<string, { state: NightwatchState; deal?: boolean; reveal?: "vote" | "mission" }> = {
@@ -112,6 +135,18 @@ const SAMPLES: Record<string, { state: NightwatchState; deal?: boolean; reveal?:
     state: S({ phase: "room", myRoom: 1, myFn: "study", event: null, ...unready(5), ready: [true, false, false, false, false], log: studyLog([], false) }),
   },
   studyDark: { state: S({ phase: "room", myRoom: 1, myFn: null, event: "blackout", ...unready(5), log: studyLog(null, true) }) },
+  // the dining room, cellar, kitchen and garden (&flat=1): each alone and
+  // ready to use, and each with a full house on the mission's seal, a way
+  // locked and one shut, in the night's weather
+  ...roomSamples("dining", 5, { lockedDoor: [5, 2], collapsed: [8], event: "storm" }),
+  ...roomSamples("cellar", 6, { lockedDoor: [6, 3], event: "fog" }),
+  ...roomSamples("kitchen", 7, { collapsed: [6], event: "echo" }),
+  ...roomSamples("garden", 8, { lockedDoor: [8, 5], collapsed: [7], event: "fog" }),
+  // the bell tower, chapel, gallery and hall (&flat=1), the same way
+  ...roomSamples("belltower", 0, { lockedDoor: [0, 3], event: "storm" }),
+  ...roomSamples("chapel", 2, { lockedDoor: [2, 5], event: "fog" }),
+  ...roomSamples("gallery", 3, { lockedDoor: [3, 0], collapsed: [6], event: "echo" }),
+  ...roomSamples("hall", 4, { lockedDoor: [4, 1], collapsed: [5], event: "fog" }),
   team: { state: S({ phase: "team", leader: 0 }) },
   gather: { state: S({ phase: "team", leader: 3 }) },
   picking: { state: S({ phase: "team", leader: 3, team: [1, 3] }) },
@@ -200,14 +235,19 @@ function ManorSamples() {
   const [sample, setSample] = useState(asked && SAMPLES[asked] ? asked : "team");
   const [rules, setRules] = useState(false);
   const [picking, setPicking] = useState(false);
-  const { perf, flat: flatAsked } = useLocalSearchParams<{ perf?: string; flat?: string }>();
-  const [flat, setFlat] = useState(flatAsked === "1");
+  const { perf, flat: flatAsked, w: narrow, lang } = useLocalSearchParams<{ perf?: string; flat?: string; w?: string; lang?: string }>();
+  // &lang=zh (en, ms): look at a moment in another language
+  const { language, setLanguage } = useLocale();
+  useEffect(() => {
+    if ((lang === "en" || lang === "zh" || lang === "ms") && lang !== language) setLanguage(lang);
+  }, [lang, language, setLanguage]);
+  const [flat, setFlat] = useState(flatAsked !== "0");
   // a new link to the page already open picks its sample and view
   const link = `${asked}|${flatAsked}`;
   const [lastLink, setLastLink] = useState(link);
   if (link !== lastLink) {
     setLastLink(link);
-    setFlat(flatAsked === "1");
+    setFlat(flatAsked !== "0");
     if (asked && SAMPLES[asked]) setSample(asked);
   }
   const fps = useFps(perf === "1");
@@ -234,6 +274,8 @@ function ManorSamples() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {seeded === sample ? (
+        <StageWidth.Provider value={narrow ? Number(narrow) : null}>
+        <View style={narrow ? { width: Number(narrow), flex: 1, alignSelf: "center", overflow: "hidden" } : { flex: 1 }}>
         <FlatPreview.Provider value={flat}>
           <NightwatchBoard
             key={sample}
@@ -258,10 +300,12 @@ function ManorSamples() {
             }}
           />
         </FlatPreview.Provider>
+        </View>
+        </StageWidth.Provider>
       ) : null}
       {/* the samples, behind a small tab on the left edge */}
       <Pressable onPress={() => setPicking(true)} style={[styles.devTab, { borderColor: colors.primary }]}>
-        <AppText variant="tiny">{`${perf === "1" ? `dev\n${fps}` : "dev"}${flat ? "\nflat" : ""}`}</AppText>
+        <AppText variant="tiny">{`${perf === "1" ? `dev\n${fps}` : "dev"}${flat ? "" : "\niso"}`}</AppText>
       </Pressable>
       <Modal visible={picking} transparent animationType="fade" onRequestClose={() => setPicking(false)}>
         <Pressable style={styles.devDim} onPress={() => setPicking(false)}>

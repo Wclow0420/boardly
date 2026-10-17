@@ -7,9 +7,16 @@
 // changes; the plinth's move changes only once it's shut. Corner studs
 // for back and rules. See "The stage" in AGENTS.md, and Seal the Manor's
 // ManorStage for a game using it.
+//
+// A game can instead hand it a `dock` (Dock.tsx): then nothing is laid
+// over the scene, which fills the whole middle. My secret card sits in
+// my hand at the plinth's left, the lookup tools in a satchel at its
+// right (they fan out above it when tapped), and the hint is one line on
+// the plinth's crest, the rest behind an info stud. The plinth's move
+// sits between hand and satchel. `tools` and `hint` are then unused.
 
 import { LinearGradient } from "expo-linear-gradient";
-import { createContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,8 +26,22 @@ import type { Jewel } from "@/components/engraved/shapes";
 import { BackIcon, Emblem } from "@/components/icons";
 import { AppText, BezelOverlay, IconButton } from "@/components/ui";
 import { fontFamily } from "@/theme";
+import { Popup, type PopupLook } from "../Popup";
+import {
+  HandSlot,
+  HandUp,
+  HintLip,
+  HintMore,
+  SatchelFan,
+  SatchelSlot,
+  dockInsets,
+  satchelCentre,
+  type StageDock,
+} from "./Dock";
 import { Glow, Plinth } from "./parts";
 import { StageCurtain } from "./StageCurtain";
+
+export type { StageDock, StageHand, StageHint, StageTool } from "./Dock";
 
 /** How tall the plinth is above the home bar. */
 export const PLINTH_H = 128;
@@ -32,6 +53,20 @@ const CURTAIN_DOWN = 12;
  *  and of the hint lines (below). A middle that wants the whole height
  *  between header and plinth reaches out by this much. */
 export const MIDDLE_PAD = { top: 26, bottom: 34 };
+/** The same, on a stage with a dock: nothing stands over the scene's
+ *  foot, so the middle reaches nearly down to the plinth. */
+export const DOCK_PAD = { top: 26, bottom: 10 };
+
+/** Development only: lay the stage out as if the screen were this wide
+ *  (a narrow phone, on a wide simulator). */
+export const StageWidth = createContext<number | null>(null);
+
+/** The stage's size: the screen's, unless a dev page narrows it. */
+export function useStageSize() {
+  const window = useWindowDimensions();
+  const width = useContext(StageWidth);
+  return { width: width ?? window.width, height: window.height };
+}
 
 /** For a middle that bleeds under the header and the plinth: how far its
  *  content should start from the top and stop from the bottom. */
@@ -44,10 +79,17 @@ export interface StageLook {
   glow: string;
   /** The jewel on the curtain's valance. */
   jewel?: Jewel;
+  /** The dock's popups (the rest of the hint) wear this. */
+  popup?: PopupLook;
 }
 
 /** Seal the Manor's night. */
-export const NIGHT: StageLook = { sky: ["#1A2238", "#0E1220", "#0B0E16"], glow: "#F28B4B", jewel: "amber" };
+export const NIGHT: StageLook = {
+  sky: ["#1A2238", "#0E1220", "#0B0E16"],
+  glow: "#F28B4B",
+  jewel: "amber",
+  popup: { enamel: ["#3A4A7A", "#1E2A50", "#0E1430"], jewel: "amber", glow: "#FFB45E" },
+};
 
 /** A round metal stud in a top corner (back, rules). */
 function Stud({
@@ -84,6 +126,8 @@ export function GameStage({
   centre,
   tools,
   hint,
+  dock,
+  handRef,
   bottom,
   overlays,
   onBack,
@@ -107,6 +151,11 @@ export function GameStage({
   tools?: ReactNode;
   /** Lines just above the plinth. */
   hint?: ReactNode;
+  /** Keep the tools, my card and the hint on the plinth instead (see the
+   *  top of the file): the scene gets the whole middle. */
+  dock?: StageDock;
+  /** Set on the card in the dock's hand: where a dealt card is put away. */
+  handRef?: RefObject<View | null>;
   /** On the plinth: the main move. */
   bottom: ReactNode;
   /** Full-screen pieces over everything (set pieces, popups). */
@@ -124,13 +173,31 @@ export function GameStage({
 }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
+  const { width, height } = useStageSize();
   // the move on the plinth changes with the scene, once the curtain has
   // closed on the old one
   const [aside, setAside] = useState<{ key: string; bottom: ReactNode }>(() => ({ key: sceneKey, bottom }));
   if (aside.key === sceneKey && aside.bottom !== bottom) setAside({ key: sceneKey, bottom });
   const settled = aside.key === sceneKey;
   const plinthH = PLINTH_H + insets.bottom;
+  const pad = dock ? DOCK_PAD : MIDDLE_PAD;
+
+  // the dock: one thing open at a time (the hand lifted, the satchel's
+  // tools fanned out, the rest of the hint); a scene behind can rest
+  const [open, setOpen] = useState<"hand" | "satchel" | "hint" | null>(null);
+  const onOpen = dock?.onOpen;
+  useEffect(() => {
+    onOpen?.(open !== null);
+  }, [open, onOpen]);
+  const toggle = (what: "hand" | "satchel" | "hint") => setOpen((now) => (now === what ? null : what));
+  const hand = dock?.hand;
+  const satchel = dock?.satchel;
+  const lip = dock?.hint ?? null;
+  // a dock part that goes away takes its open view with it
+  if ((open === "hand" && !hand) || (open === "satchel" && !satchel) || (open === "hint" && !lip)) {
+    setOpen(null);
+  }
+  const fanFrom = satchelCentre(width);
 
   // what's under the header and the tools slide off when a moment takes
   // the stage
@@ -170,12 +237,12 @@ export function GameStage({
           <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
             {bleed ? (
               <View style={[styles.centre, { top: CURTAIN_UP - headerHeight, bottom: CURTAIN_DOWN - plinthH }]}>
-                <StageInsets.Provider value={{ top: headerHeight + MIDDLE_PAD.top, bottom: plinthH + MIDDLE_PAD.bottom }}>
+                <StageInsets.Provider value={{ top: headerHeight + pad.top, bottom: plinthH + pad.bottom }}>
                   {centre}
                 </StageInsets.Provider>
               </View>
             ) : (
-              <View style={[styles.centre, { top: CURTAIN_UP + MIDDLE_PAD.top, bottom: CURTAIN_DOWN + MIDDLE_PAD.bottom }]}>
+              <View style={[styles.centre, { top: CURTAIN_UP + pad.top, bottom: CURTAIN_DOWN + pad.bottom }]}>
                 {centre}
               </View>
             )}
@@ -187,7 +254,7 @@ export function GameStage({
                 {under}
               </Animated.View>
             ) : null}
-            {tools ? (
+            {tools && !dock ? (
               <Animated.View
                 style={[styles.tools, { top: CURTAIN_UP + 46 }, toolsOut]}
                 pointerEvents={away ? "none" : "box-none"}
@@ -195,9 +262,11 @@ export function GameStage({
                 {tools}
               </Animated.View>
             ) : null}
-            <View style={[styles.hint, { bottom: CURTAIN_DOWN + 2 }]} pointerEvents="box-none">
-              {hint}
-            </View>
+            {!dock ? (
+              <View style={[styles.hint, { bottom: CURTAIN_DOWN + 2 }]} pointerEvents="box-none">
+                {hint}
+              </View>
+            ) : null}
           </View>
         </StageCurtain>
       </View>
@@ -217,10 +286,45 @@ export function GameStage({
       ) : null}
 
       <View style={styles.bottom} pointerEvents="box-none">
-        <Plinth width={width} height={plinthH}>
+        <Plinth width={width} height={plinthH} inset={dock ? dockInsets(width, dock) : undefined}>
           {settled ? bottom : aside.bottom}
         </Plinth>
+        {dock ? (
+          <View style={[styles.dock, { width, height: plinthH }]} pointerEvents="box-none">
+            {hand ? <HandSlot hand={hand} anchor={handRef} width={width} lifted={open === "hand"} onLift={() => toggle("hand")} /> : null}
+            {satchel ? (
+              <SatchelSlot
+                width={width}
+                tools={satchel.tools}
+                jewel={satchel.jewel ?? look.jewel}
+                open={open === "satchel"}
+                onToggle={() => toggle("satchel")}
+              />
+            ) : null}
+            {lip ? <HintLip hint={lip} width={width} Text={dock.Text} onMore={() => toggle("hint")} /> : null}
+          </View>
+        ) : null}
       </View>
+      {satchel && open === "satchel" ? (
+        <SatchelFan
+          tools={satchel.tools}
+          at={{ x: fanFrom.x, y: height - plinthH + fanFrom.y }}
+          onClose={() => setOpen(null)}
+        />
+      ) : null}
+      {hand && open === "hand" ? (
+        <HandUp hand={hand} width={width} height={height} plinthTop={height - plinthH} onDown={() => setOpen(null)} />
+      ) : null}
+      {dock ? (
+        <Popup
+          look={look.popup}
+          visible={open === "hint" && lip !== null}
+          title={lip?.title ?? t("game.stage.more")}
+          onClose={() => setOpen(null)}
+        >
+          {lip ? <HintMore hint={lip} Text={dock.Text} /> : null}
+        </Popup>
+      ) : null}
       {overlays}
     </View>
   );
@@ -250,6 +354,7 @@ const styles = StyleSheet.create({
   corner: { position: "absolute" },
   stud: { position: "absolute", left: 0, top: 0, right: 0, bottom: 0, borderRadius: 20 },
   bottom: { position: "absolute", left: 0, right: 0, bottom: 0, alignItems: "center" },
+  dock: { position: "absolute", top: 0 },
   hint: { position: "absolute", left: 0, right: 0, alignItems: "center", paddingHorizontal: 26, gap: 2 },
 });
 

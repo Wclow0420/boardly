@@ -10,7 +10,8 @@
 // SVG markup, baked once (FlatRoom); what moves (the ledger, the flames,
 // the moonlight) is drawn over it each frame.
 
-import type { Door } from "@/components/iso/kit";
+import { Skia } from "@shopify/react-native-skia";
+
 import { linear, radial } from "@/components/engraved/panel";
 import { MATERIALS } from "@/components/engraved/shapes";
 import { rrect } from "@/components/engraved/trim";
@@ -36,14 +37,9 @@ import {
   svg,
   type P2,
 } from "../parts";
+import { flatRoom, type FlatExit, type FlatFrame } from "./types";
 
-/** A way out as the room draws it: its side, tonight's door, and the
- *  next room's colour (its light at the end of the passage). */
-export interface FlatExit {
-  side: Side;
-  door: Door;
-  color: string;
-}
+export type { FlatExit };
 
 const PAPER = ["#34548A", "#22396A", "#142448"];
 const VELVET = ["#C2203A", "#8A1424", "#4A0610"];
@@ -113,6 +109,7 @@ export function studyPlan(L: FlatLayout, exits: FlatExit[]) {
     desk,
     topFront,
     ledger: { ...ledger, x: lx, y: ly },
+    prop: { ...ledger, x: lx, y: ly },
     flames,
     stick: { x: crx, y: crFoot },
     D,
@@ -744,3 +741,71 @@ export function moonShaft(L: FlatLayout, P: StudyPlan) {
 }
 
 export const STUDY = { light: STUDY_LIGHT };
+
+/** The study's moonlight, breathing, motes drifting in it, and the
+ *  window lit up by lightning. */
+function studyUnder(fx: FlatFrame, P: StudyPlan & { shaft: { x: number; y: number; w: number; h: number }; floorY: number }) {
+  "worklet";
+  const { c, time, draw, img } = fx;
+  const sh = P.shaft;
+  fx.screen[0].setAlphaf(0.8 + 0.2 * Math.sin(time * 0.35));
+  draw(img.shaft, sh.x, sh.y, sh.w, sh.h, fx.screen[0]);
+  fx.fill.setColor(Skia.Color("#DCE8FF"));
+  for (let i = 0; i < 9; i++) {
+    const u = (i * 0.618 + time * 0.012 * (1 + (i % 3) * 0.4)) % 1;
+    const mx = P.win.x + P.win.w * (0.2 + 0.7 * ((i * 0.37) % 1)) + u * 26 + Math.sin(time * 0.6 + i) * 3;
+    const my = P.win.y + P.win.h * 0.5 + u * (P.floorY - P.win.y) * 0.9;
+    fx.fill.setAlphaf(0.5 * Math.sin(Math.PI * u));
+    c.drawCircle(mx, my, 0.7 + (i % 3) * 0.25, fx.fill);
+  }
+  if (fx.flash > 0.01) {
+    fx.screen[1].setAlphaf(Math.min(1, fx.flash));
+    draw(img.winFlash, P.win.x - 30, P.win.y - 30, P.win.w + 60, P.win.h + 60, fx.screen[1]);
+  }
+}
+
+/** The ledger's leaves riffling over, right to left, after a touch. */
+function studyLeaves(fx: FlatFrame, P: StudyPlan) {
+  "worklet";
+  const lp = fx.touched;
+  if (lp >= 1) return;
+  const led = P.ledger;
+  const { c } = fx;
+  c.save();
+  c.translate(led.x + led.w / 2, led.y + led.h);
+  for (let k = 0; k < 3; k++) {
+    const q = Math.min(1, Math.max(0, lp * 1.7 - k * 0.32));
+    if (q <= 0 || q >= 1) continue;
+    const sx = Math.cos(Math.PI * q);
+    c.save();
+    c.scale(sx, 1);
+    fx.fill.setAlphaf(0.75 + 0.25 * Math.abs(sx));
+    fx.draw(fx.img.leaf, 0, -led.h, led.w / 2, led.h, fx.fill);
+    c.restore();
+  }
+  c.restore();
+}
+
+export const study = flatRoom({
+  id: "study",
+  light: STUDY_LIGHT,
+  plan: (L, exits) => {
+    const P = studyPlan(L, exits);
+    const sh = moonShaft(L, P);
+    return { ...P, shaft: { x: sh.x, y: sh.y, w: sh.w, h: sh.h }, floorY: L.floorY };
+  },
+  art: studyArt,
+  propArt: (P) => ledgerArt(P.ledger.w, P.ledger.h),
+  motion: () => ({ kind: "pop", lift: 12, scale: 0.25 }),
+  payoff: { burst: { kind: "glow", size: 46, color: "#FFE3A8", duration: 900 }, haptic: "tick" },
+  images: (L, P) => {
+    const sh = moonShaft(L, P);
+    return {
+      leaf: { w: P.ledger.w / 2, h: P.ledger.h, art: () => leafArt(P.ledger.w / 2, P.ledger.h), key: "" },
+      shaft: { w: sh.w, h: sh.h, art: sh.art },
+      winFlash: { w: P.win.w + 60, h: P.win.h + 60, art: () => windowFlashArt(P), key: "" },
+    };
+  },
+  under: studyUnder,
+  onProp: studyLeaves,
+});

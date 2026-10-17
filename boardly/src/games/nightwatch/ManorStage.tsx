@@ -4,14 +4,14 @@
 // rooms on enamel tags under it.
 
 import { LinearGradient } from "expo-linear-gradient";
-import type { ReactNode } from "react";
-import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import type { ReactNode, RefObject } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { BezelOverlay } from "@/components/ui";
 import { archLayout, type Pane } from "@/features/game/stage/archArt";
-import { GameStage, NIGHT } from "@/features/game/stage/GameStage";
+import { GameStage, NIGHT, useStageSize, type StageDock } from "@/features/game/stage/GameStage";
 import { NightArch } from "@/features/game/stage/NightArch";
 import { fontFamily } from "@/theme";
 import { GameText as AppText } from "./GameText";
@@ -54,6 +54,8 @@ export function ManorStage({
   centre,
   tools,
   hint,
+  dock,
+  handRef,
   bottom,
   overlays,
   onBack,
@@ -75,6 +77,11 @@ export function ManorStage({
   tools?: ReactNode;
   /** Lines just above the plinth. */
   hint?: ReactNode;
+  /** My card, the satchel of tools and the hint line, on the plinth (the
+   *  scene then fills the middle). */
+  dock?: StageDock;
+  /** Set on the card in my hand: where the dealt role card is put away. */
+  handRef?: RefObject<View | null>;
   /** On the plinth: the main move. */
   bottom: ReactNode;
   /** Full-screen pieces over everything (set pieces, popups). */
@@ -92,7 +99,7 @@ export function ManorStage({
 }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width } = useStageSize();
   const live = state.phase !== "finished";
   const track = missionTrack(state);
   const panes: Pane[] = track.map((result, r) =>
@@ -141,6 +148,8 @@ export function ManorStage({
       centre={centre}
       tools={tools}
       hint={hint}
+      dock={dock}
+      handRef={handRef}
       bottom={bottom}
       overlays={overlays}
       onBack={onBack}
@@ -170,4 +179,4 @@ const styles = StyleSheet.create({
 });
 
 // shared now (features/game/stage/GameStage); re-exported for the board
-export { PLINTH_H, StageInsets, stageText } from "@/features/game/stage/GameStage";
+export { DOCK_PAD, PLINTH_H, StageInsets, stageText } from "@/features/game/stage/GameStage";
