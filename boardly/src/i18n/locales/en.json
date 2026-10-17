@@ -576,8 +576,12 @@
           "text": "A zhai call (斋) makes 1s count only as 1s. Calling 1s is always zhai."
         },
         "leopard": {
-          "name": "Five of a kind (豹子)",
-          "text": "A cup whose five dice all count for the call counts as six. With wild 1s, two 1s and three 3s are six 3s."
+          "name": "Five that count (豹子)",
+          "text": "A cup whose five dice all count for the call counts as six — with wild 1s, two 1s and three 3s are six 3s."
+        },
+        "bigLeopard": {
+          "name": "Five the same (大豹子)",
+          "text": "Five of the very same number counts as seven: five 3s are seven 3s, and when 1s are wild five 1s are seven of whatever was called."
         },
         "winHeading": "Winning",
         "knockout": {

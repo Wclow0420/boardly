@@ -64,6 +64,7 @@ function Play() {
       {card("kaizhai", "✨")}
       {card("zhai", "🎲")}
       {card("leopard", "🐆")}
+      {card("bigLeopard", "🐆")}
       <RuleHeading>{t(`${R}.play.callingHeading`)}</RuleHeading>
       {card("jijiji", "🍻", {
         n: EXAMPLE,

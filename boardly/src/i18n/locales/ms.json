@@ -576,8 +576,12 @@
           "text": "Panggilan zhai (斋) menjadikan 1 dikira sebagai 1 sahaja. Memanggil 1 sentiasa zhai."
         },
         "leopard": {
-          "name": "Lima sama (豹子)",
-          "text": "Cawan yang kelima-lima dadunya dikira untuk panggilan dikira sebagai enam. Dengan 1 joker, dua 1 dan tiga 3 ialah enam 3."
+          "name": "Lima yang dikira (豹子)",
+          "text": "Cawan yang kelima-lima dadunya dikira untuk panggilan dikira enam — dengan 1 liar, dua 1 dan tiga 3 ialah enam 3."
+        },
+        "bigLeopard": {
+          "name": "Lima sama (大豹子)",
+          "text": "Lima nombor yang sama dikira tujuh: lima 3 ialah tujuh 3, dan apabila 1 liar, lima 1 ialah tujuh bagi apa sahaja yang dipanggil."
         },
         "winHeading": "Menang",
         "knockout": {

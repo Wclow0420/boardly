@@ -2,7 +2,7 @@
 // chalked on the slate, then every cup lifted off its dice one after
 // another, the dice that count for the call lit in gold one by one as the
 // tally climbs toward it (a tick in the hand with each), the cup that is
-// five of a kind counting its extra one. Then the verdict: a lie or the
+// a 豹子 counting its extra one (a 大豹子 two). Then the verdict: a lie or the
 // call stands, and the one who drinks lit red, the cups they drink
 // stamped on their row ("out" if it was their last).
 
@@ -28,7 +28,7 @@ import { fontFamily } from "@/theme";
 import { errorHaptic, heavyHaptic, successHaptic, tickHaptic } from "@/utils/haptics";
 import { cupArt } from "./art";
 import { Call, Slate, dieBox, dieImage } from "./pieces";
-import { isLeopard, myCount, type Reveal } from "./logic";
+import { leopardBonus, myCount, type Reveal } from "./logic";
 
 const LIFT_MS = 900;
 
@@ -87,7 +87,8 @@ export function RevealScene({
     r.hand.forEach((d, i) => {
       if (myCount([d], bid.face, bid.zhai) > 0) order.push({ row: k, die: i });
     });
-    if (isLeopard(r.hand, bid.face, bid.zhai)) order.push({ row: k, die: -1 });
+    // 豹子 one more, 大豹子 two
+    for (let b = 1; b <= leopardBonus(r.hand, bid.face, bid.zhai); b++) order.push({ row: k, die: -b });
   });
   const [counted, setCounted] = useState(still ? order.length : 0);
   const done = counted >= order.length;
@@ -130,7 +131,7 @@ export function RevealScene({
 
   const shown = order.slice(0, counted);
   const isLit = (row: number, i: number) => shown.some((o) => o.row === row && o.die === i);
-  const bonus = (row: number) => shown.some((o) => o.row === row && o.die === -1);
+  const bonus = (row: number) => shown.filter((o) => o.row === row && o.die < 0).length;
   const tallied = done ? reveal.found : shown.length;
   const lie = reveal.found < bid.quantity;
 
@@ -172,7 +173,7 @@ export function RevealScene({
                 numberOfLines={1}
               >
                 {nameOf(r.seat)}
-                {bonus(k) ? <AppText style={styles.bonus}>{"  🐆+1"}</AppText> : null}
+                {bonus(k) ? <AppText style={styles.bonus}>{`  🐆+${bonus(k)}`}</AppText> : null}
               </AppText>
               {loser ? (
                 <Animated.View entering={ZoomIn.duration(320)} style={[styles.stamp, { top: two ? 1 : rowH / 2 - 11 }]}>

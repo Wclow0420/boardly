@@ -20,8 +20,9 @@ the last bid a lie:
     breaking zhai (开斋) needs at least double the dice.
   - nozhai (不玩斋): 1s are always wild and can't be called; every bid
     is kaizhai; open with more dice than players.
-- 豹子 (five of a kind): a cup whose five dice all count for the bid
-  counts as six (two 1s + three 3s are six 3s when 1s are wild).
+- 豹子: a cup whose five dice all count for the bid counts as six (two
+  1s + three 3s are six 3s when 1s are wild). 大豹子: five of the very
+  same number (five 3s; or five 1s when they're wild) counts as seven.
 - 散骰 (all five faces different): you may show your cup to the table
   and shake again, any time before your first bid of the round.
 - Open (开): the player whose turn it is calls the last bid a lie.
@@ -81,12 +82,20 @@ DRINKS = {"open": 1, "split": 2, "counter": 4}
 
 
 def hand_count(hand: list[int], face: int, zhai: bool) -> int:
-    """Dice in one cup that count for a bid on `face`. A full cup that all
-    counts (豹子 — five of a kind, wild 1s included when kaizhai) counts
-    one extra: two 1s and three 3s are six 3s, but only when 1s are wild."""
+    """Dice in one cup that count for a bid on `face`, plus its bonus."""
     wild = not zhai and face != 1
     found = sum(1 for d in hand if d == face or (wild and d == 1))
-    return found + 1 if found == len(hand) == DICE_EACH else found
+    return found + leopard_bonus(hand, face, zhai)
+
+
+def leopard_bonus(hand: list[int], face: int, zhai: bool) -> int:
+    """A cup whose five dice all count for `face` counts extra: 豹子 (two 1s
+    and three 3s, when 1s are wild) one more, six; 大豹子 (five of the very
+    same number) two more, seven."""
+    wild = not zhai and face != 1
+    if len(hand) != DICE_EACH or not all(d == face or (wild and d == 1) for d in hand):
+        return 0
+    return 2 if len(set(hand)) == 1 else 1
 
 
 def counts(dice: list[list[int]], face: int, zhai: bool) -> int:

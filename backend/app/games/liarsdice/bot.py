@@ -30,10 +30,12 @@ DICE_EACH = 5
 
 
 def _mine(hand: list[int], face: int, zhai: bool) -> int:
-    """Dice in this cup that count for the face (豹子 counts one extra)."""
+    """Dice in this cup that count for the face (豹子 one extra, 大豹子 two)."""
     wild = not zhai and face != 1
     found = sum(1 for d in hand if d == face or (wild and d == 1))
-    return found + 1 if found == len(hand) == DICE_EACH else found
+    if found == len(hand) == DICE_EACH:
+        return found + (2 if len(set(hand)) == 1 else 1)
+    return found
 
 
 @lru_cache(maxsize=4096)

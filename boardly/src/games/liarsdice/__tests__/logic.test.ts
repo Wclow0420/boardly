@@ -93,10 +93,13 @@ describe("bidding", () => {
     expect(isValidBid(state, 4, 4, true)).toBe(true); // staying zhai raises as usual
   });
 
-  it("counts five of a kind (豹子) one extra", () => {
+  it("counts 豹子 as six and 大豹子 as seven", () => {
     expect(myCount([1, 1, 3, 3, 3], 3, false)).toBe(6);
     expect(myCount([1, 1, 3, 3, 3], 3, true)).toBe(3);
-    expect(myCount([3, 3, 3, 3, 3], 3, true)).toBe(6);
+    expect(myCount([3, 3, 3, 3, 3], 3, true)).toBe(7);
+    expect(myCount([3, 3, 3, 3, 3], 3, false)).toBe(7);
+    expect(myCount([1, 1, 1, 1, 1], 4, false)).toBe(7);
+    expect(myCount([1, 1, 1, 1, 1], 4, true)).toBe(0);
     expect(myCount([3, 3, 3, 3, 2], 3, false)).toBe(4);
     expect(isLeopard([1, 1, 1, 1, 1], 4, false)).toBe(true);
     expect(isLeopard([1, 1, 1, 1, 1], 4, true)).toBe(false);

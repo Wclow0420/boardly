@@ -333,12 +333,18 @@ export function startFace(state: LiarsDiceState): number {
   return [1, 6, 5, 4, 3, 2].find((face) => callPlan(state, face).face === face && callable(face)) ?? first;
 }
 
-/** How many dice in one cup count for a face. A full cup that all
- *  counts (豹子 — five of a kind, wild 1s included when kaizhai) counts
- *  one extra: two 1s + three 3s are six 3s, but only when 1s are wild. */
+/** How many dice in one cup count for a face, plus its bonus. */
 export function myCount(dice: number[], face: number, zhai: boolean): number {
   const found = dice.filter((d) => d === face || (!zhai && face !== 1 && d === 1)).length;
-  return isLeopard(dice, face, zhai) ? found + 1 : found;
+  return found + leopardBonus(dice, face, zhai);
+}
+
+/** A cup whose five dice all count for a face counts extra: 豹子 (two 1s
+ *  and three 3s, when 1s are wild) one more, six; 大豹子 (five of the very
+ *  same number) two more, seven. */
+export function leopardBonus(dice: number[], face: number, zhai: boolean): number {
+  if (!isLeopard(dice, face, zhai)) return 0;
+  return dice.every((d) => d === dice[0]) ? 2 : 1;
 }
 
 /** Whether a cup is 豹子 for this face: all five dice count. */

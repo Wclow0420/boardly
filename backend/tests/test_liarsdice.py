@@ -58,13 +58,15 @@ def test_setup():
         game.initial_state(3, calling="vegas")
 
 
-def test_five_of_a_kind_counts_one_extra():
+def test_baozi_counts_six_and_da_baozi_seven():
     leopard = [[1, 1, 3, 3, 3]]
-    assert counts(leopard, 3, zhai=False) == 6  # kaizhai: 1s wild, 豹子 +1
+    assert counts(leopard, 3, zhai=False) == 6  # 豹子: 1s wild, all five count
     assert counts(leopard, 3, zhai=True) == 3   # zhai: just three 3s
-    assert counts([[3, 3, 3, 3, 3]], 3, zhai=True) == 6  # five real 3s
-    assert counts([[1, 1, 1, 1, 1]], 1, zhai=True) == 6
-    assert counts([[1, 1, 1, 1, 1]], 4, zhai=False) == 6  # all wild
+    assert counts([[3, 3, 3, 3, 3]], 3, zhai=True) == 7   # 大豹子
+    assert counts([[3, 3, 3, 3, 3]], 3, zhai=False) == 7
+    assert counts([[1, 1, 1, 1, 1]], 1, zhai=True) == 7
+    assert counts([[1, 1, 1, 1, 1]], 4, zhai=False) == 7  # five wild 1s
+    assert counts([[1, 1, 1, 1, 1]], 4, zhai=True) == 0   # not wild in zhai
     assert counts([[3, 3, 3, 3, 2]], 3, zhai=False) == 4  # not a full cup
     assert counts([[1, 1, 3, 3, 3], [3, 2, 2, 2, 2]], 3, zhai=False) == 7
 
