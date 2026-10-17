@@ -224,6 +224,20 @@ Every badge has four levels, and each level wears a frame
   in iron. Three or four rounds. A set of games can be drawn by
   parallel agents, one game each, with this brief; review every sheet.
 
+## Roles
+
+Every game's roles are drawn as faceless meeple portraits, never
+uploaded photos or a bare object: a gold meeple head on cloth shoulders,
+told apart by what it wears or holds (a headset, a shield, a fedora, a
+mask, a lantern), in the game's own palette. The model is Double Agent's
+`ROLE_EMBLEMS` (`src/games/avalon/emblems.ts`, 48 × 48 `EmblemData`).
+- The same portrait everywhere the role is pictured: in its card's
+  window (`cards.ts`, `faceSvg`), on the ending's cards, and in the rules.
+- In the rules a role is the portrait on its own: no card, window or
+  background behind it (`RolePortrait`).
+- Look the set over with `node scripts/emblem-sheet.mjs <file>
+  <png> ROLE_EMBLEMS`; every one must read at 17pt.
+
 ## Icons specifically
 
 - Use a 48 × 48 box with the drawing filling about 4–44, in 2–6
