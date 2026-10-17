@@ -10,12 +10,14 @@ import { memo, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 
+import { EmblemGlyph } from "@/components/engraved/Engraved";
 import { Emblem } from "@/components/icons";
 import { AppText, BezelOverlay } from "@/components/ui";
 import { fontFamily } from "@/theme";
 import { tapHaptic } from "@/utils/haptics";
-import { ROLE_EMOJI, ROLE_TINT } from "../art";
+import { ROLE_TINT } from "../art";
 import { HustleBack } from "../cards";
+import { ROLE_EMBLEMS } from "../emblems";
 import type { Role } from "../logic";
 
 export const ClaimScene = memo(function ClaimScene({
@@ -55,7 +57,7 @@ export const ClaimScene = memo(function ClaimScene({
           <HustleBack width={58} />
           {role ? (
             <View style={[styles.badge, { borderColor: tint }]}>
-              <Emblem emoji={ROLE_EMOJI[role]} size={26} />
+              <EmblemGlyph data={ROLE_EMBLEMS[role]} size={28} />
             </View>
           ) : null}
         </View>
@@ -87,7 +89,7 @@ export const ClaimScene = memo(function ClaimScene({
           </AppText>
           {hand.roles.map((r, i) => (
             <View key={i} style={[styles.handCard, { borderColor: ROLE_TINT[r] }]}>
-              <Emblem emoji={ROLE_EMOJI[r]} size={16} />
+              <EmblemGlyph data={ROLE_EMBLEMS[r]} size={18} />
               <AppText style={styles.handName} numberOfLines={1}>
                 {hand.name(r)}
               </AppText>
@@ -108,7 +110,7 @@ export const ClaimScene = memo(function ClaimScene({
               }}
               style={[styles.chipBox, chips.picked === r && { borderColor: ROLE_TINT[r], backgroundColor: `${ROLE_TINT[r]}33` }]}
             >
-              <Emblem emoji={ROLE_EMOJI[r]} size={20} />
+              <EmblemGlyph data={ROLE_EMBLEMS[r]} size={20} />
               <AppText style={styles.chipText} numberOfLines={1}>
                 {chips.label(r)}
               </AppText>

@@ -1,6 +1,6 @@
-// Hustle's artwork. The roles are drawn, not pictures: each is its card
-// face (cards.tsx), the engraved emblem in its enamel window, everywhere
-// (the table, the rules). The images here are the backdrop, logo and
+// Hustle's artwork. The roles are drawn, not pictures: each is a faceless
+// meeple portrait (emblems.ts), standing in its card's enamel window
+// (cards.tsx) and on its own in the rules. The images here are the backdrop, logo and
 // card back (sizes in assets/games/hustle/README).
 
 import type { ImageSourcePropType } from "react-native";
@@ -17,7 +17,8 @@ export const CARD_BACK: ImageSourcePropType | undefined = require("../../../asse
  *  <Emblem>) in a circle of its tint, in the app's own style. */
 export const ACTION_ART: Partial<Record<ActionType, ImageSourcePropType>> = {};
 
-/** Placeholder glyphs used until art is registered above. */
+/** The roles' emoji, for lines of text; pictured, a role is its
+ *  portrait (ROLE_EMBLEMS in emblems.ts). */
 export const ROLE_EMOJI: Record<Role, string> = {
   duke: "🕴️",
   assassin: "👊",

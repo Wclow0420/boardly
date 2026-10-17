@@ -3,7 +3,8 @@
 // jewel in the Boardly meeple's heart; each role's front its own enamel
 // in the window (the Boss's lamp-gold, the Enforcer's jade, the
 // Pickpocket's amber, the Fixer's violet, the Auntie's rose) with the
-// role's engraved emblem, its name on the plaque and what it does.
+// role's engraved portrait (emblems.ts) standing on the window's sill,
+// its name on the plaque and what it does.
 // The small cards at players' feet and in the header are baked images
 // (one per role, one back), drawn together on one canvas.
 
@@ -11,13 +12,13 @@ import { StyleSheet, View } from "react-native";
 import Animated, { useAnimatedStyle, type SharedValue } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
 
+import { EmblemGlyph } from "@/components/engraved/Engraved";
 import { toSvgBody } from "@/components/engraved/emblem";
-import { Emblem, emblemData } from "@/components/icons";
 import { CardBack, CardFront, FRONT, type BackStyle, type FrontStyle } from "@/components/tabletop/cards/PlayingCard";
 import { CARD_H, CARD_W, cardBack, cardFront } from "@/components/tabletop/cards/cardArt";
 import { AppText } from "@/components/ui";
 import { fontFamily } from "@/theme";
-import { ROLE_EMOJI } from "./art";
+import { ROLE_EMBLEMS } from "./emblems";
 import { ACTIONS, type Role } from "./logic";
 
 export const CARD_RATIO = CARD_H / CARD_W;
@@ -37,24 +38,23 @@ export const ROLE_FRONT: Record<Role, FrontStyle> = {
   contessa: { window: ["#FFA8CE", "#C83C7C", "#4A0828"], plaque: ["#2E8A76", "#155446", "#082A22"] },
 };
 
-/** Where the emblem sits in a card's window, in the card's own units. */
-const EMBLEM_AT = { size: 40, x: 30, y: 15 };
+/** Where the portrait sits in a card's window, in the card's own units:
+ *  its foot (y 44 of the 48 box) standing on the plaque's top edge
+ *  (FRONT.plaque, y 60). */
+const EMBLEM_AT = { size: 50, x: 25, y: 60 - (44 * 50) / 48 };
 
-/** A whole card face as one SVG (frame and emblem), for the baked small
- *  cards where text would be too small to read. */
+/** A whole card face as one SVG (frame and portrait), for the baked
+ *  small cards where text would be too small to read. */
 export function faceSvg(role: Role) {
-  const found = emblemData(ROLE_EMOJI[role]);
   const s = EMBLEM_AT.size / 48;
-  const emblem = found
-    ? `<g transform="translate(${EMBLEM_AT.x} ${EMBLEM_AT.y}) scale(${s})">${toSvgBody(found.data, found.tint, `r${role}`)}</g>`
-    : "";
-  return cardFront(ROLE_FRONT[role]).replace(/<\/svg>\s*$/, `${emblem}</svg>`);
+  const portrait = `<g transform="translate(${EMBLEM_AT.x} ${+EMBLEM_AT.y.toFixed(2)}) scale(${+s.toFixed(4)})">${toSvgBody(ROLE_EMBLEMS[role], undefined, `r${role}`)}</g>`;
+  return cardFront(ROLE_FRONT[role]).replace(/<\/svg>\s*$/, `${portrait}</svg>`);
 }
 
 export const backSvg = () => cardBack(HUSTLE_BACK);
 
 /** Baked image keys for a small card: its back, or a role's face. */
-export const miniKey = (role: Role | null) => (role ? `hustle-face|${role}` : "hustle-back");
+export const miniKey = (role: Role | null) => (role ? `hustle-face2|${role}` : "hustle-back");
 export const miniSvg = (role: Role | null) => (role ? faceSvg(role) : backSvg());
 
 /** The back of a Hustle card. */
@@ -62,7 +62,7 @@ export function HustleBack({ width }: { width: number }) {
   return <CardBack width={width} back={HUSTLE_BACK} />;
 }
 
-/** A role's card, face up and readable: the emblem in its window, the
+/** A role's card, face up and readable: the portrait in its window, the
  *  name on the plaque, what it does and what it blocks. `lost`: turned
  *  over for good, struck through. */
 export function RoleCard({ role, width, lost = false }: { role: Role; width: number; lost?: boolean }) {
@@ -80,8 +80,8 @@ export function RoleCard({ role, width, lost = false }: { role: Role; width: num
   return (
     <View style={lost ? styles.lost : null}>
       <CardFront width={width} front={ROLE_FRONT[role]}>
-        <View style={[at(FRONT.window), styles.centre]}>
-          <Emblem emoji={ROLE_EMOJI[role]} size={FRONT.window.h * s * 0.8} />
+        <View style={{ position: "absolute", left: EMBLEM_AT.x * s, top: EMBLEM_AT.y * s }} pointerEvents="none">
+          <EmblemGlyph data={ROLE_EMBLEMS[role]} size={EMBLEM_AT.size * s} />
         </View>
         <View style={[at(FRONT.plaque), styles.centre]}>
           <AppText style={[styles.name, { fontSize: 7 * s, lineHeight: 9 * s }]} numberOfLines={1}>
