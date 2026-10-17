@@ -40,7 +40,7 @@ import { denLayout, type DieTone } from "./art";
 import { CallScene, pickZhai, type CallPick } from "./CallScene";
 import { Den } from "./Den";
 import { Ending } from "./Ending";
-import { BOARD_DROP, BOARD_TUCK, HangingBoard, type Flight } from "./HangingBoard";
+import { BOARD_DROP, BOARD_MID, BOARD_TUCK, BOARD_W, HangingBoard, type Flight } from "./HangingBoard";
 import {
   breakZhaiMin,
   canReroll,
@@ -312,7 +312,7 @@ export function LiarsDiceBoard({
         {/* what's been called while I shake */}
         {state.bid ? (
           <View style={[styles.shakeCall, { top: clear }]} pointerEvents="none">
-            <Slate width={Math.min(width - 130, 260)} height={64}>
+            <Slate width={Math.min(width - 48, 280)} height={64}>
               <AppText style={styles.slateHead} numberOfLines={1}>
                 {heading}
               </AppText>
@@ -332,11 +332,11 @@ export function LiarsDiceBoard({
         />
       </View>
     ) : scene === "call" ? (
-      <View style={[StyleSheet.absoluteFill, styles.besideTools]}>
+      <View style={StyleSheet.absoluteFill}>
         <CallScene state={state} pick={pick} onPick={choose} bidder={bidder} busy={busy} top={clear} />
       </View>
     ) : (
-      <View style={[StyleSheet.absoluteFill, styles.besideTools]}>
+      <View style={StyleSheet.absoluteFill}>
         <TableScene
           people={people}
           lights={tableLights}
@@ -538,22 +538,42 @@ export function LiarsDiceBoard({
   const countFor = scene === "call" ? { face: pick.face, zhai } : state.bid;
   const tones: DieTone[] = myDice.map((d) => (countFor && myCount([d], countFor.face, countFor.zhai) > 0 ? "lit" : "plain"));
 
+  // the tools sit beside my board, the group centred: the calls on the
+  // left and the stop vote on the right, or (no vote) the calls just
+  // right of the board, board and tool centred together
+  const L = denLayout(width, insets.top, state.numPlayers);
+  const stopVote = state.mode === "endless" && mySeat >= 0;
+  const TOOL_W = 62;
+  const TOOL_GAP = 12;
+  const boardShift = mySeat >= 0 && !stopVote ? -(TOOL_W + TOOL_GAP) / 2 : 0;
+  const boardLeft = (width - BOARD_W) / 2 + boardShift;
+  const toolY = mySeat >= 0 ? L.h - BOARD_TUCK + BOARD_MID - 26 : L.h + 8;
+  const callsTool = (
+    <ToolButton emoji="📜" label={t("liarsdice.stage.callsTool")} onPress={() => setPanel("calls")} />
+  );
   const tools =
-    over || scene === "reveal" ? null : (
-      <View style={[styles.tools, { top: clear > 0 ? clear + 4 : 20 }]} pointerEvents="box-none">
-        <ToolButton emoji="📜" label={t("liarsdice.stage.callsTool")} onPress={() => setPanel("calls")} />
-        {state.mode === "endless" && mySeat >= 0 ? (
-          <ToolButton
-            emoji="🛑"
-            label={`${state.endVotes.length}/${Math.floor(state.numPlayers / 2) + 1}`}
-            badge={state.endVotes.length > 0 && !state.endVotes.includes(mySeat)}
-            onPress={() => setPanel("stop")}
-          />
+    over || scene === "reveal" ? null : mySeat < 0 ? (
+      <View style={[styles.tool, { left: (width - TOOL_W) / 2, top: toolY }]}>{callsTool}</View>
+    ) : (
+      <>
+        <View
+          style={[styles.tool, { top: toolY, left: stopVote ? boardLeft - TOOL_GAP - TOOL_W : boardLeft + BOARD_W + TOOL_GAP }]}
+        >
+          {callsTool}
+        </View>
+        {stopVote ? (
+          <View style={[styles.tool, { top: toolY, left: boardLeft + BOARD_W + TOOL_GAP }]}>
+            <ToolButton
+              emoji="🛑"
+              label={`${state.endVotes.length}/${Math.floor(state.numPlayers / 2) + 1}`}
+              badge={state.endVotes.length > 0 && !state.endVotes.includes(mySeat)}
+              onPress={() => setPanel("stop")}
+            />
+          </View>
         ) : null}
-      </View>
+      </>
     );
 
-  const L = denLayout(width, insets.top, state.numPlayers);
   const voted = state.endVotes.includes(mySeat);
 
   return (
@@ -564,6 +584,7 @@ export function LiarsDiceBoard({
             <HangingBoard
               width={width}
               top={L.h - BOARD_TUCK}
+              shift={boardShift}
               faces={myDice}
               tones={tones}
               empty={scene === "shake"}
@@ -575,6 +596,7 @@ export function LiarsDiceBoard({
               paused={panel !== null}
             />
           ) : null}
+          {tools}
           <Den
             width={width}
             top={insets.top}
@@ -608,7 +630,6 @@ export function LiarsDiceBoard({
       centre={
         <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
           {centre}
-          {tools}
         </View>
       }
       hint={hint}
@@ -647,14 +668,13 @@ export function LiarsDiceBoard({
 }
 
 const styles = StyleSheet.create({
-  besideTools: { right: 60 },
   main: { alignSelf: "stretch" },
   pair: { flexDirection: "row", gap: 10, alignSelf: "stretch", alignItems: "center" },
   half: { flex: 1 },
   big: { fontSize: 17, lineHeight: 22 },
   error: { color: "#FF8A94" },
   turn: { color: "#FFD58A" },
-  tools: { position: "absolute", right: 4, gap: 12 },
+  tool: { position: "absolute", width: 62, alignItems: "center" },
   shakeCall: { position: "absolute", left: 0, right: 0, alignItems: "center" },
   slateHead: {
     fontFamily: fontFamily.semiBold,

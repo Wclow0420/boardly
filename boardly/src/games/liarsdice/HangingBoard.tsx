@@ -35,6 +35,10 @@ const L = boardLayout();
 export const BOARD_TUCK = 14;
 /** How far below the den's bottom edge the board reaches. */
 export const BOARD_DROP = L.h - BOARD_TUCK;
+/** The board's width, and its felt's middle below its top (where the
+ *  tools beside it line up). */
+export const BOARD_W = L.w;
+export const BOARD_MID = L.chain + L.bh / 2;
 const FLY_MS = 900;
 
 /** Where each die starts its flight, in window coordinates (its centre,
@@ -92,6 +96,7 @@ function FlightDie({
 export function HangingBoard({
   width,
   top,
+  shift = 0,
   faces,
   tones,
   empty = false,
@@ -106,6 +111,8 @@ export function HangingBoard({
   /** The window y the board's picture starts at (its chains, tucked
    *  behind the den's shelf). */
   top: number;
+  /** Across from the middle (to centre it with the tools beside it). */
+  shift?: number;
   /** My dice. */
   faces: number[];
   /** Each die's look, in the order of `faces`. */
@@ -125,7 +132,7 @@ export function HangingBoard({
 }) {
   const still = useReducedMotion();
   const image = bakedSvg("ld-board", L.w, L.h, boardArt);
-  const x0 = (width - L.w) / 2;
+  const x0 = (width - L.w) / 2 + shift;
 
   // laid out low to high
   const place = useMemo(() => placesOf(faces), [faces]);
