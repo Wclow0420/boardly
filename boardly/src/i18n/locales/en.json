@@ -102,7 +102,28 @@
       "taglines": {
         "tictactoe": "Three in a row takes the parlour"
       },
-      "rules": "Rules"
+      "rules": "Rules",
+      "floors": "Floors",
+      "allFloors": "All floors",
+      "directory": "Directory",
+      "bankRange": "Floors {{from}}–{{to}}",
+      "bankOne": "Floor {{from}}",
+      "prevBank": "Back to {{name}}",
+      "nextBank": "On to {{name}}",
+      "new": "New",
+      "search": "Find a game",
+      "noMatch": "No game by that name",
+      "lit_one": "{{count}} of {{total}} floors lit",
+      "lit_other": "{{count}} of {{total}} floors lit",
+      "banks": {
+        "often": "Your floors",
+        "deduction": "Deduction",
+        "bluff": "Bluff",
+        "strategy": "Strategy",
+        "party": "Party",
+        "duel": "Duel",
+        "classic": "Classic"
+      }
     }
   },
   "gameNames": {

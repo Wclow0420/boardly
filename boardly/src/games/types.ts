@@ -85,6 +85,10 @@ export interface RulesPage {
   Content: ComponentType;
 }
 
+/** What kind of game it is: the Games tab's lift groups its floors into
+ *  banks by it (features/games/lift/banks.ts orders them). */
+export type GameType = "deduction" | "bluff" | "strategy" | "party" | "duel" | "classic";
+
 /** Everything the app needs to know to host a game.
  *  Each game folder (src/games/<key>/) exports one of these. */
 export interface GameDefinition<TState = Record<string, unknown>> {
@@ -92,6 +96,10 @@ export interface GameDefinition<TState = Record<string, unknown>> {
   name: string;
   minPlayers: number;
   maxPlayers: number;
+  /** Its kind, for the lift's banks (hidden roles: "deduction"). */
+  category: GameType;
+  /** Just added: the lift's directory tags it "New". */
+  isNew?: boolean;
   /** The board UI, rendered inside the shared game screen. */
   Board: ComponentType<GameBoardProps<TState>>;
   /** Whose turn it is, derived from state (used by the shared screen);

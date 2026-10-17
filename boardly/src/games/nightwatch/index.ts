@@ -53,6 +53,7 @@ export const nightwatch: GameDefinition<NightwatchState> = {
   name: "Seal the Manor",
   minPlayers: 5,
   maxPlayers: 10,
+  category: "deduction",
   Board: NightwatchBoard,
   currentSeat,
   layout: "stage",

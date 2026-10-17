@@ -21,6 +21,7 @@ export const coup: GameDefinition<CoupState> = {
   name: "Hustle",
   minPlayers: 2,
   maxPlayers: 6,
+  category: "bluff",
   Board: CoupBoard,
   currentSeat,
   layout: "stage",

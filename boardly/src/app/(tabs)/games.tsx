@@ -1,6 +1,7 @@
 // The Games tab: a brass lift with one floor per game (features/games/
 // lift). Ride to a game, step out to open a table of it (the lobby), or
-// read its rules.
+// read its rules. The games I've played most (my stats) make the lift's
+// first bank.
 
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
@@ -8,6 +9,7 @@ import { useCallback, useState } from "react";
 import type { GameCatalogEntry } from "@/data/types";
 import { RulesSheet } from "@/features/game/RulesSheet";
 import { useGamesQuery } from "@/features/games/hooks";
+import { usePlayed } from "@/features/games/lift/building";
 import { LiftPage } from "@/features/games/lift/LiftPage";
 import { useAlreadyInRoomRedirect, useCreateRoom } from "@/features/home/hooks";
 import { useGameName } from "@/games/names";
@@ -23,6 +25,7 @@ export default function GamesScreen() {
   const [rulesFor, setRulesFor] = useState<GameCatalogEntry | null>(null);
   const [rulesOpen, setRulesOpen] = useState(false);
   const { isPending, mutate } = createRoom;
+  const played = usePlayed();
 
   const openTable = useCallback(
     (game: GameCatalogEntry) =>
@@ -50,6 +53,7 @@ export default function GamesScreen() {
         error={games.isError}
         onRetry={() => games.refetch()}
         busy={isPending}
+        played={played}
         onOpenTable={openTable}
         onRules={(game) => {
           setRulesFor(game);

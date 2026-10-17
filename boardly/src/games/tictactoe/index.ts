@@ -10,6 +10,7 @@ export const tictactoe: GameDefinition<TicTacToeState> = {
   name: "Tic-Tac-Toe",
   minPlayers: 2,
   maxPlayers: 2,
+  category: "duel",
   rulePages: TICTACTOE_RULES,
   Board: TicTacToeBoard,
   currentSeat: (state) => state.currentSeat,

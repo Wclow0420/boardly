@@ -2,8 +2,10 @@
 // look at without the server. Open with boardly-dev://dev/lift
 // (&count=5 to start with the players counter set, &perf=1 for the frame
 // rate and how long it took to open, &w=375&h=700 for a smaller phone,
-// &lang=zh for another language). Stepping out folds the gate open and,
-// here, shuts it again.
+// &lang=zh for another language, &many=1 for a building of 24 games in
+// five banks with a player's stats, so Your floors opens, &dir=1 to open
+// on the directory). Stepping out folds the gate open and, here, shuts it
+// again.
 
 import { Redirect, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -15,7 +17,8 @@ import { scheduleOnRN } from "react-native-worklets";
 import { AppText } from "@/components/ui";
 import type { GameCatalogEntry } from "@/data/types";
 import { RulesSheet } from "@/features/game/RulesSheet";
-import { LiftPage } from "@/features/games/lift/LiftPage";
+import { LiftPage, type LiftMeta } from "@/features/games/lift/LiftPage";
+import type { GameType } from "@/games/types";
 
 const SAMPLE: GameCatalogEntry[] = [
   {
@@ -90,6 +93,50 @@ const SAMPLE: GameCatalogEntry[] = [
   },
 ];
 
+/** A big building for &many=1: the real seven and seventeen more drawn
+ *  with their art, in every kind, two of them new. */
+const MORE: [name: string, art: string, category: GameType, min: number, max: number, isNew?: boolean][] = [
+  ["Night Ferry", "nightwatch", "deduction", 5, 9],
+  ["Cold Case", "avalon", "deduction", 4, 8],
+  ["Lighthouse Keeper", "shelter", "deduction", 3, 7],
+  ["Masquerade", "manor", "deduction", 6, 12],
+  ["The Vault", "avalon", "deduction", 5, 10, true],
+  ["Poker Face", "coup", "bluff", 2, 8],
+  ["Bazaar", "coup", "bluff", 3, 6],
+  ["Dice Den", "liarsdice", "bluff", 2, 6],
+  ["Smugglers", "liarsdice", "bluff", 3, 5, true],
+  ["Trade Winds", "coup", "strategy", 2, 4],
+  ["Railway Baron", "tictactoe", "strategy", 3, 5],
+  ["Harbour Master", "shelter", "strategy", 2, 4],
+  ["Charades", "liarsdice", "party", 4, 12],
+  ["Telephone", "manor", "party", 5, 12],
+  ["Who Am I", "avalon", "party", 3, 10],
+  ["Four in a Row", "tictactoe", "duel", 2, 2],
+  ["Checkers", "tictactoe", "duel", 2, 2],
+];
+const MANY: GameCatalogEntry[] = [
+  ...SAMPLE,
+  ...MORE.map(([name, art, , min, max], i) => ({
+    ...SAMPLE.find((g) => g.id === art)!,
+    id: `${art}~${i}`,
+    name,
+    minPlayers: min,
+    maxPlayers: max,
+  })),
+];
+const MANY_META: Record<string, LiftMeta> = Object.fromEntries(
+  MORE.map(([, art, category, , , isNew], i) => [`${art}~${i}`, { art, category, isNew }]),
+);
+/** A player's stats for &many=1: the games they've played, by id. */
+const MANY_PLAYED: Record<string, number> = {
+  coup: 14,
+  nightwatch: 9,
+  liarsdice: 6,
+  avalon: 4,
+  "coup~5": 3,
+  tictactoe: 2,
+};
+
 /** Frames drawn in the last second, counted on the UI thread. */
 function useFps(on: boolean) {
   const [fps, setFps] = useState(0);
@@ -108,8 +155,10 @@ function useFps(on: boolean) {
 }
 
 export default function LiftPreview() {
-  const { perf, count, w, h, lang } = useLocalSearchParams<{
+  const { perf, count, w, h, lang, many, dir } = useLocalSearchParams<{
     lang?: string;
+    many?: string;
+    dir?: string;
     perf?: string;
     count?: string;
     w?: string;
@@ -137,8 +186,11 @@ export default function LiftPreview() {
         }
       >
         <LiftPage
-          games={SAMPLE}
-          storageKey="boardly.dev.lift.floor"
+          games={many === "1" ? MANY : SAMPLE}
+          meta={many === "1" ? MANY_META : undefined}
+          played={many === "1" ? MANY_PLAYED : undefined}
+          initialDirectory={dir === "1"}
+          storageKey={many === "1" ? "boardly.dev.lift.many" : "boardly.dev.lift.floor"}
           initialCount={count ? Number(count) : null}
           onShown={() => setOpenMs(Math.round(performance.now() - opened))}
           onOpenTable={() =>
@@ -157,7 +209,7 @@ export default function LiftPreview() {
       ) : null}
       {rules ? (
         <RulesSheet
-          gameKey={rules.id}
+          gameKey={rules.id.split("~")[0]}
           gameName={rules.name}
           visible
           onClose={() => setRules(null)}

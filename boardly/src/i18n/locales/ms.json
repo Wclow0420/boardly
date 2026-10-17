@@ -102,7 +102,28 @@
       "taglines": {
         "tictactoe": "Tiga sebaris menguasai bilik tamu"
       },
-      "rules": "Peraturan"
+      "rules": "Peraturan",
+      "floors": "Tingkat",
+      "allFloors": "Semua tingkat",
+      "directory": "Direktori",
+      "bankRange": "Tingkat {{from}}–{{to}}",
+      "bankOne": "Tingkat {{from}}",
+      "prevBank": "Kembali ke {{name}}",
+      "nextBank": "Terus ke {{name}}",
+      "new": "Baru",
+      "search": "Cari permainan",
+      "noMatch": "Tiada permainan dengan nama itu",
+      "lit_one": "{{count}} daripada {{total}} tingkat menyala",
+      "lit_other": "{{count}} daripada {{total}} tingkat menyala",
+      "banks": {
+        "often": "Kegemaran",
+        "deduction": "Deduksi",
+        "bluff": "Bluf",
+        "strategy": "Strategi",
+        "party": "Parti",
+        "duel": "Duel",
+        "classic": "Klasik"
+      }
     }
   },
   "gameNames": {

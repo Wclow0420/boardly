@@ -43,6 +43,7 @@ export const shelter: GameDefinition<ShelterState> = {
   name: "Shelter",
   minPlayers: 4,
   maxPlayers: 8,
+  category: "deduction",
   Board: ShelterBoard,
   currentSeat,
   layout: "custom",

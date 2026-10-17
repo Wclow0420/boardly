@@ -53,6 +53,7 @@ export const liarsdice: GameDefinition<LiarsDiceState> = {
   name: "Liar's Dice",
   minPlayers: 2,
   maxPlayers: 10,
+  category: "bluff",
   rulePages: LIARSDICE_RULES,
   Board: LiarsDiceBoard,
   currentSeat,

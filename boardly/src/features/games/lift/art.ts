@@ -15,7 +15,7 @@ import { linear, moulding, radial } from "@/components/engraved/panel";
 import { INKS, MATERIALS, shade } from "@/components/engraved/shapes";
 import { rrect } from "@/components/engraved/trim";
 import { hallWall } from "@/features/badges/hall/art";
-import type { LiftLayout } from "./layout";
+import { DIR_R, STUD_R, type LiftLayout } from "./layout";
 
 const f = (n: number) => +n.toFixed(2);
 const GOLD = MATERIALS.gold;
@@ -53,11 +53,42 @@ const stud = (x: number, y: number, r: number, id = "lsv") =>
 
 // ------------------------------------------------------------- the cab
 
+/** A number drum's window on the dial. */
+export const DRUM_W = 24;
+export const DRUM_H = 18;
+/** How far down the right plate the directory button sits. */
+export const DIR_Y = 46;
+
+/** A round brass stud with an ivory chevron, pointing `dir` (the way to
+ *  the bank before or after). */
+function bankStud(x: number, y: number, dir: -1 | 1) {
+  const r = STUD_R;
+  const k = dir;
+  const chev = `M${f(x - k * 2.6)} ${f(y - 5.4)}L${f(x + k * 3.4)} ${y}L${f(x - k * 2.6)} ${f(y + 5.4)}L${f(x - k * 4.4)} ${f(y + 3.6)}L${f(x + k * 0.2)} ${y}L${f(x - k * 4.4)} ${f(y - 3.6)}Z`;
+  return `<circle cx="${x}" cy="${f(y + 1.6)}" r="${r}" fill="#000" fill-opacity="0.5"/><circle cx="${x}" cy="${y}" r="${r}" fill="url(#lsv)" stroke="${INK}" stroke-width="1.1"/><circle cx="${x}" cy="${y}" r="${r - 3.4}" fill="#3A1A08" stroke="${VEIN}" stroke-width="0.7"/><path d="${chev}" fill="url(#livory)" stroke="${INK}" stroke-width="0.8" stroke-linejoin="round"/><path d="M${f(x - r + 2.6)} ${f(y - 2.4)}A${r - 2.4} ${r - 2.4} 0 0 1 ${f(x - 2.4)} ${f(y - r + 2.6)}" stroke="#fff" stroke-opacity="0.75" stroke-width="1" fill="none" stroke-linecap="round"/>`;
+}
+
+/** The brass button that opens the directory: a little letter board,
+ *  black felt in a gilt frame with lines of white letters. */
+function directoryButton(x: number, y: number) {
+  const r = DIR_R;
+  const bw = 17;
+  const bh = 14;
+  const lines = [0, 1, 2]
+    .map((i) => {
+      const ly = y - bh / 2 + 3.6 + i * 3.4;
+      const len = [10, 7.4, 8.8][i];
+      return `<path d="M${f(x - bw / 2 + 3.4)} ${f(ly)}H${f(x - bw / 2 + 3.4 + len)}" stroke="${i === 0 ? "#FF8A7A" : "#F4EEDF"}" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="1.6 0.9"/>`;
+    })
+    .join("");
+  return `<circle cx="${x}" cy="${f(y + 1.6)}" r="${r}" fill="#000" fill-opacity="0.5"/><circle cx="${x}" cy="${y}" r="${r}" fill="url(#lsv)" stroke="${INK}" stroke-width="1.1"/><circle cx="${x}" cy="${y}" r="${r - 3.6}" fill="none" stroke="${VEIN}" stroke-width="0.7"/><path d="${rrect(x - bw / 2 - 1.6, y - bh / 2 - 1.6, bw + 3.2, bh + 3.2, 2.4)}" fill="url(#lgoldv)" stroke="${INK}" stroke-width="0.9"/><path d="${rrect(x - bw / 2, y - bh / 2, bw, bh, 1.4)}" fill="url(#lfelt)" stroke="${INK}" stroke-width="0.6"/>${lines}<path d="M${f(x - r + 3)} ${f(y - 3)}A${r - 3} ${r - 3} 0 0 1 ${f(x - 3)} ${f(y - r + 3)}" stroke="#fff" stroke-opacity="0.8" stroke-width="1.1" fill="none" stroke-linecap="round"/>`;
+}
+
 /** Everything on the page that never moves, w × h: the planks, the cab
  *  front with the dial (each floor's emblem round it), the side plates,
  *  the pilasters, the threshold and the plaque. */
-export function cabArt(L: LiftLayout, emblems: { data: EmblemData; tint?: string }[]) {
-  const { w, h, cx, cy, R, lintel, sign, headerH, panels, margin, pilaster, plaque, opening, sill, stops } = L;
+export function cabArt(L: LiftLayout) {
+  const { w, h, cx, cy, R, lintel, sign, studs, centre, headerH, panels, margin, pilaster, plaque, opening, sill, stops } = L;
   const defs = `<defs>
 ${lit("lwal", WALNUT, 0, 0, w * 0.4, headerH * 1.4)}
 ${linear("lgold", GOLD, false)}
@@ -125,22 +156,29 @@ ${radial("lshade", ["#000000", "#000000"], [0, 0.55], 0.5, 0.45, 0.75)}
       const [c, d] = pt(cx, cy, ring1 - 2, deg);
       return `<path d="M${a} ${b}L${c} ${d}" stroke="#C8A050" stroke-opacity="0.12" stroke-width="0.5"/>`;
     }).join("");
-  const emblemSize = 25;
-  const emblemMarks = stops
-    .map((s, i) => {
-      const e = emblems[i];
-      if (!e) return "";
-      const k = emblemSize / 48;
-      const { x, y } = s.emblem;
-      return `<circle cx="${f(x)}" cy="${f(y)}" r="${emblemSize * 0.62}" fill="url(#lglowe)"/><g transform="translate(${f(x - emblemSize / 2)} ${f(y - emblemSize / 2)}) scale(${f(k)})">${toSvgBody(e.data, e.tint, `le${i}`)}</g>`;
+  // the number drums, each seen through a window cut in the ring (the
+  // numbers roll in them when the dial turns over to another bank)
+  const windows = stops
+    .map((s) => {
+      const { x, y } = s.num;
+      return `<path d="${rrect(x - DRUM_W / 2 - 1.6, y - DRUM_H / 2 - 1.6, DRUM_W + 3.2, DRUM_H + 3.2, 4.4)}" fill="url(#lgoldv)" stroke="${INK}" stroke-width="0.9"/><path d="${rrect(x - DRUM_W / 2, y - DRUM_H / 2, DRUM_W, DRUM_H, 3)}" fill="url(#ldrum)" stroke="${INK}" stroke-width="0.8"/>`;
     })
     .join("");
+  // the cartouche over the hub the bank's name is lettered on
+  const C = centre;
+  const cartouche = `
+<path d="${rrect(C.x - 1, C.y + 1.6, C.w + 2, C.h, C.h / 2)}" fill="#000" fill-opacity="0.45"/>
+${[-1, 1].map((k) => {
+    const x = k < 0 ? C.x + 3 : C.x + C.w - 3;
+    return `<path d="M${f(x)} ${f(C.y + 2)}L${f(x + k * 9)} ${f(C.y + C.h / 2)}L${f(x)} ${f(C.y + C.h - 2)}Z" fill="url(#lgoldv)" stroke="${INK}" stroke-width="0.8"/>`;
+  }).join("")}
+${moulding(C.x, C.y, C.w, C.h, C.h / 2, 2.2, "lcm")}
+<path d="${rrect(C.x + 2.2, C.y + 2.2, C.w - 4.4, C.h - 4.4, C.h / 2 - 2.2)}" fill="url(#livory)"/>
+<path d="M${f(C.x + C.h / 2)} ${f(C.y + 3.6)}H${f(C.x + C.w * 0.45)}" stroke="#fff" stroke-width="0.9" stroke-linecap="round"/>`;
   const dial = `
 <path d="${halfDisc(cx, cy + 3, R + 2)}" fill="#000" fill-opacity="0.5"/>
 <path d="${halfDisc(cx, cy, ring1)}" fill="url(#lface)"/>
 ${guilloche}
-<defs>${radial("lglowe", ["#FFE7B0", "#FFE7B0"], [0.34, 0], 0.5, 0.5, 0.5)}</defs>
-${emblemMarks}
 <path d="${band(cx, cy, ring1, ring0, -90, 90)}" fill="url(#livory)"/>
 <path d="${band(cx, cy, ring1, ring0, -90, 90)}" fill="none" stroke="${INK}" stroke-width="0.9"/>
 <path d="M${f(cx - ring0 + 3)} ${cy}A${ring0 - 3} ${ring0 - 3} 0 0 1 ${f(cx + ring0 - 3)} ${cy}" fill="none" stroke="${INKS.ivory.vein}" stroke-width="0.6"/>
@@ -150,6 +188,8 @@ ${ticks}
 <path d="M${pt(cx, cy, R - 1.6, -62).join(" ")}A${R - 1.6} ${R - 1.6} 0 0 1 ${pt(cx, cy, R - 1.6, -20).join(" ")}" fill="none" stroke="#fff" stroke-width="1.1" stroke-linecap="round"/>
 <path d="${halfDisc(cx, cy, R)}" fill="none" stroke="${INK}" stroke-width="1.4"/>
 <path d="M${f(cx - ring1)} ${cy}A${ring1} ${ring1} 0 0 1 ${f(cx + ring1)} ${cy}" fill="none" stroke="${INK}" stroke-width="1"/>
+${windows}
+${cartouche}
 ${[-1, 1].map((s) => stud(cx + s * (R - 3.5), cy - 3, 2.6)).join("")}`;
 
   // the lintel: gold mouldings round a frieze of chevrons, the sign
@@ -169,12 +209,8 @@ ${[ly, ly + lh - 6].map((y) => `<rect x="-2" y="${y}" width="${w + 4}" height="6
 ${moulding(sign.x, sign.y, sign.w, sign.h, 9, 4, "lsg")}
 <path d="${rrect(sign.x + 4, sign.y + 4, sign.w - 8, sign.h - 8, 6)}" fill="url(#lenamel)" stroke="#3A0408" stroke-width="0.9"/>
 <path d="M${f(sign.x + 12)} ${sign.y + 8}H${f(sign.x + sign.w * 0.5)}" stroke="#fff" stroke-opacity="0.3" stroke-width="2" stroke-linecap="round"/>
-${[-1, 1].map((s) => {
-    // a stepped deco fin off each end of the sign
-    const x = s < 0 ? sign.x : sign.x + sign.w;
-    const d = `M${x} ${sign.y + 7}L${f(x + s * 14)} ${sign.y + 7}L${f(x + s * 14)} ${sign.y + 11}L${f(x + s * 24)} ${sign.y + 11}L${f(x + s * 24)} ${sign.y + sign.h - 11}L${f(x + s * 14)} ${sign.y + sign.h - 11}L${f(x + s * 14)} ${sign.y + sign.h - 7}L${x} ${sign.y + sign.h - 7}Z`;
-    return `<path d="${d}" fill="url(#lgoldv)" stroke="${INK}" stroke-width="0.9"/>`;
-  }).join("")}`;
+${bankStud(studs.left.x, studs.left.y, -1)}
+${bankStud(studs.right.x, studs.right.y, 1)}`;
 
   // the side plates: brass round a walnut face; the call buttons on the
   // left, the players counter on the right
@@ -184,18 +220,15 @@ ${[-1, 1].map((s) => {
     const tri = up ? `M${x} ${y - 6}L${x + 6.5} ${y + 4.5}H${x - 6.5}Z` : `M${x} ${y + 6}L${x + 6.5} ${y - 4.5}H${x - 6.5}Z`;
     return `<circle cx="${x}" cy="${y + 1.5}" r="15" fill="#000" fill-opacity="0.45"/><circle cx="${x}" cy="${y}" r="15" fill="url(#lsv)" stroke="${INK}" stroke-width="1.1"/><circle cx="${x}" cy="${y}" r="11.5" fill="#3A1A08" stroke="${VEIN}" stroke-width="0.7"/><circle cx="${x}" cy="${y}" r="10.4" fill="url(#lamber)"/><path d="${tri}" fill="url(#livory)" stroke="${INK}" stroke-width="0.9" stroke-linejoin="round"/><path d="M${x - 9} ${y - 3}A9.6 9.6 0 0 1 ${x - 3} ${y - 9}" stroke="#fff" stroke-opacity="0.7" stroke-width="1" fill="none" stroke-linecap="round"/>`;
   };
-  const knob = (x: number, y: number, plus: boolean) =>
-    `<circle cx="${x}" cy="${y + 1.5}" r="12" fill="#000" fill-opacity="0.45"/><circle cx="${x}" cy="${y}" r="12" fill="url(#lsv)" stroke="${INK}" stroke-width="1.1"/><circle cx="${x}" cy="${y}" r="8.6" fill="none" stroke="${VEIN}" stroke-width="0.7"/><path d="M${x - 5} ${y}H${x + 5}${plus ? `M${x} ${y - 5}V${y + 5}` : ""}" stroke="${INK}" stroke-width="2.6" stroke-linecap="round"/><path d="M${x - 8} ${y - 3}A8.4 8.4 0 0 1 ${x - 3} ${y - 8}" stroke="#fff" stroke-opacity="0.8" stroke-width="1" fill="none" stroke-linecap="round"/>`;
   const { left, right } = panels;
   const panelArt = `
 ${plate(left, "lpl")}
 ${callButton(left.x + left.w / 2, left.y + 46, true)}
 ${callButton(left.x + left.w / 2, left.y + 84, false)}
 ${plate(right, "lpr")}
-${knob(right.x + right.w / 2, right.y + 40, true)}
-<path d="${rrect(right.x + 8, right.y + 56, right.w - 16, 24, 4)}" fill="url(#livory)" stroke="${INK}" stroke-width="1"/>
-<path d="M${right.x + 11} ${right.y + 58.4}H${f(right.x + right.w * 0.55)}" stroke="#fff" stroke-width="1" stroke-linecap="round"/>
-${knob(right.x + right.w / 2, right.y + 94, false)}`;
+${directoryButton(right.x + right.w / 2, right.y + DIR_Y)}
+<path d="${rrect(right.x + 8, right.y + 76, right.w - 16, 24, 4)}" fill="url(#livory)" stroke="${INK}" stroke-width="1"/>
+<path d="M${right.x + 11} ${right.y + 78.4}H${f(right.x + right.w * 0.55)}" stroke="#fff" stroke-width="1" stroke-linecap="round"/>`;
 
   // fluted brass pilasters either side of the opening, capitals and bases
   const top0 = headerH;
@@ -248,7 +281,7 @@ ${stud(cx, P.y - 1.5, 3.2)}`;
     w,
     h,
     `${defs}
-<defs>${radial("lamber", ["#7A3A10", "#4A1E06", "#2A1004"], undefined, 0.38, 0.32, 0.75)}</defs>
+<defs>${radial("lamber", ["#7A3A10", "#4A1E06", "#2A1004"], undefined, 0.38, 0.32, 0.75)}${linear("ldrum", ["#8A7A5A", "#F4EEDF", "#FFFFFF", "#F4EEDF", "#8A7A5A"])}${radial("lfelt", ["#262A30", "#101216", "#08090B"], undefined, 0.4, 0.35, 0.8)}</defs>
 <g clip-path="url(#lhead)">
 <rect width="${w}" height="${headerH}" fill="url(#lwal)"/>
 ${grain}
@@ -397,3 +430,135 @@ export function landingShade(w: number, h: number) {
 
 /** The dial's gold rim, for the light to sweep across. */
 export const dialRim = (L: LiftLayout) => band(L.cx, L.cy, L.R - 7, L.R, -90, 90);
+
+// ------------------------------------------------------------- the banks
+
+/** A five-pointed star at (x, y), `r` to its points. */
+export function starPath(x: number, y: number, r: number) {
+  const pts = Array.from({ length: 10 }, (_, i) => {
+    const a = ((i * 36 - 90) * Math.PI) / 180;
+    const rr = i % 2 ? r * 0.45 : r;
+    return `${f(x + Math.cos(a) * rr)} ${f(y + Math.sin(a) * rr)}`;
+  });
+  return `M${pts.join("L")}Z`;
+}
+
+/** A gold star, as markup (for the dial's face and the directory). */
+export const starMark = (x: number, y: number, r: number, id: string) =>
+  `<defs>${radial(id, ["#FFF6D0", "#F0CC72", "#9A6B1E"], undefined, 0.38, 0.3, 0.75)}</defs><path d="${starPath(x, y + 0.8, r)}" fill="#000" fill-opacity="0.5"/><path d="${starPath(x, y, r)}" fill="url(#${id})" stroke="${INK}" stroke-width="${f(Math.max(0.6, r * 0.14))}" stroke-linejoin="round"/><path d="M${f(x - r * 0.18)} ${f(y - r * 0.55)}L${f(x - r * 0.42)} ${f(y - r * 0.08)}" stroke="#fff" stroke-width="${f(r * 0.14)}" stroke-linecap="round"/>`;
+
+export interface FaceMark {
+  data: EmblemData;
+  tint?: string;
+  /** One of the games I play most: a star by it. */
+  often: boolean;
+}
+
+/** A bank's face of the dial: each floor's emblem in a soft light where
+ *  it sits round the dial, a star by the ones I play most. The box is
+ *  the dial's half disc, 2R × R, its corner at (cx − R, cy − R). Baked
+ *  once per bank and turned over with the numbers. */
+export function faceArt(L: LiftLayout, marks: (FaceMark | null)[]) {
+  const { cx, cy, R, stops, emblem } = L;
+  const ox = cx - R;
+  const oy = cy - R;
+  const k = emblem / 48;
+  const body = stops
+    .map((s, i) => {
+      const m = marks[i];
+      if (!m) return "";
+      const x = s.emblem.x - ox;
+      const y = s.emblem.y - oy;
+      const star = m.often ? starMark(x + emblem * 0.42, y + emblem * 0.34, Math.max(4.4, emblem * 0.24), `fs${i}`) : "";
+      return `<circle cx="${f(x)}" cy="${f(y)}" r="${f(emblem * 0.62)}" fill="url(#fglow)"/><g transform="translate(${f(x - emblem / 2)} ${f(y - emblem / 2)}) scale(${f(k)})">${toSvgBody(m.data, m.tint, `fe${i}`)}</g>${star}`;
+    })
+    .join("");
+  return svg(2 * R, R, `<defs>${radial("fglow", ["#FFE7B0", "#FFE7B0"], [0.34, 0], 0.5, 0.5, 0.5)}</defs>${body}`);
+}
+
+// ------------------------------------------------------------- the directory
+
+/** The directory's board, w × h: a building lobby's letter board, black
+ *  felt ribbed for the letters in a brass deco frame, riveted, a sunburst
+ *  fan in each top corner. The rows are laid over it. */
+export const BOARD_RIM = 10;
+export function directoryArt(w: number, h: number) {
+  const t = BOARD_RIM;
+  const r = 18;
+  const ribs = Array.from({ length: Math.ceil((h - 2 * t) / 6) }, (_, i) => {
+    const y = t + 3 + i * 6;
+    return `<path d="M${t} ${f(y)}H${f(w - t)}" stroke="#000" stroke-opacity="0.55" stroke-width="1.3"/><path d="M${t} ${f(y + 1.3)}H${f(w - t)}" stroke="#fff" stroke-opacity="0.045" stroke-width="0.8"/>`;
+  }).join("");
+  const rivets = [
+    ...[0.25, 0.5, 0.75].flatMap((k) => [
+      [w * k, t / 2],
+      [w * k, h - t / 2],
+    ]),
+    ...[0.2, 0.4, 0.6, 0.8].flatMap((k) => [
+      [t / 2, h * k],
+      [w - t / 2, h * k],
+    ]),
+  ]
+    .map(([x, y]) => stud(x, y, 2.2, "dsv"))
+    .join("");
+  const fan = (x: number, y: number, sx: number) =>
+    Array.from({ length: 6 }, (_, i) => {
+      const a0 = (i * 90) / 6;
+      const a1 = a0 + 90 / 6 - 2.4;
+      const rr = 30;
+      const p = (a: number, q: number) => {
+        const tt = (a * Math.PI) / 180;
+        return `${f(x + sx * Math.cos(tt) * q)} ${f(y + Math.sin(tt) * q)}`;
+      };
+      return `<path d="M${p(a0, 5)}L${p(a0, rr)}L${p(a1, rr)}L${p(a1, 5)}Z" fill="url(#dgold)" fill-opacity="0.8" stroke="${INK}" stroke-width="0.5"/>`;
+    }).join("");
+  return svg(
+    w,
+    h,
+    `<defs>${radial("dfelt", ["#23272E", "#121418", "#07080A"], undefined, 0.45, 0.25, 0.9)}${linear("dgold", GOLD, false)}${radial("dsv", ["#FFF6D0", "#E2B04A", "#7A5212"], undefined, 0.35, 0.3, 0.7)}
+<clipPath id="dclip"><path d="${rrect(t, t, w - 2 * t, h - 2 * t, r - t)}"/></clipPath></defs>
+<path d="${rrect(0, 0, w, h, r)}" fill="url(#dfelt)"/>
+<g clip-path="url(#dclip)"><rect width="${w}" height="${h}" fill="url(#dfelt)"/>${ribs}${fan(t, t, 1)}${fan(w - t, t, -1)}</g>
+<path d="${rrect(t, t, w - 2 * t, h - 2 * t, r - t)}" fill="none" stroke="#000" stroke-opacity="0.8" stroke-width="3"/>
+${moulding(0, 0, w, h, r, t, "dmo")}
+${rivets}`,
+  );
+}
+
+/** The players control on the directory, COUNT_W × COUNT_H: a brass bar
+ *  with a knob at each end (fewer, more) and an ivory window between. */
+export const COUNT_W = 150;
+export const COUNT_H = 40;
+export function countArt() {
+  const w = COUNT_W;
+  const h = COUNT_H;
+  const r = 15;
+  const knob = (x: number, plus: boolean) => {
+    const y = h / 2;
+    return `<circle cx="${x}" cy="${y + 1.5}" r="${r}" fill="#000" fill-opacity="0.5"/><circle cx="${x}" cy="${y}" r="${r}" fill="url(#csv)" stroke="${INK}" stroke-width="1.1"/><circle cx="${x}" cy="${y}" r="${r - 3.6}" fill="none" stroke="${VEIN}" stroke-width="0.7"/><path d="M${x - 5.5} ${y}H${x + 5.5}${plus ? `M${x} ${y - 5.5}V${y + 5.5}` : ""}" stroke="${INK}" stroke-width="2.8" stroke-linecap="round"/><path d="M${x - r + 3} ${y - 3}A${r - 3} ${r - 3} 0 0 1 ${x - 3} ${y - r + 3}" stroke="#fff" stroke-opacity="0.8" stroke-width="1.1" fill="none" stroke-linecap="round"/>`;
+  };
+  return svg(
+    w,
+    h,
+    `<defs>${radial("csv", ["#FFF6D0", "#E2B04A", "#7A5212"], undefined, 0.35, 0.3, 0.7)}${linear("cbar", GOLD)}${linear("civ", MATERIALS.ivory)}</defs>
+<path d="${rrect(14, h / 2 - 7, w - 28, 14, 7)}" fill="url(#cbar)" stroke="${INK}" stroke-width="1"/>
+<path d="M22 ${h / 2 - 4.4}H${w - 22}" stroke="#fff" stroke-opacity="0.6" stroke-width="0.8"/>
+<path d="${rrect(w / 2 - 34, 5, 68, h - 10, 6)}" fill="#000" fill-opacity="0.5" transform="translate(0 1.5)"/>
+${moulding(w / 2 - 34, 5, 68, h - 10, 6, 3, "cmo")}
+<path d="${rrect(w / 2 - 31, 8, 62, h - 16, 4)}" fill="url(#civ)" stroke="${INK}" stroke-width="0.8"/>
+<path d="M${w / 2 - 27} 10.4H${w / 2 + 4}" stroke="#fff" stroke-width="1" stroke-linecap="round"/>
+${knob(r + 1, false)}
+${knob(w - r - 1, true)}`,
+  );
+}
+
+/** A floor's emblem for the directory's rows, `s` square, with a star
+ *  in its corner if it's one of the games I play most. */
+export function rowEmblemArt(data: EmblemData, tint: string | undefined, often: boolean, s: number) {
+  const k = (s * 0.86) / 48;
+  return svg(
+    s,
+    s,
+    `<g transform="translate(${f(s * 0.02)} ${f(s * 0.02)}) scale(${f(k)})">${toSvgBody(data, tint, "re")}</g>${often ? starMark(s * 0.8, s * 0.78, s * 0.19, "rs") : ""}`,
+  );
+}

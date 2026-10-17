@@ -52,6 +52,7 @@ export const manor: GameDefinition<ManorState> = {
   name: "Midnight Manor",
   minPlayers: 4,
   maxPlayers: 8,
+  category: "deduction",
   rulePages: MANOR_RULES,
   Board: ManorBoard,
   currentSeat,

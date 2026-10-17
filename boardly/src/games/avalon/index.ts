@@ -23,6 +23,7 @@ export const avalon: GameDefinition<AvalonState> = {
   name: "Double Agent",
   minPlayers: 5,
   maxPlayers: 10,
+  category: "deduction",
   Board: AvalonBoard,
   currentSeat,
   layout: "stage",
