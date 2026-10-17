@@ -17,6 +17,7 @@ import {
 } from "@/features/game/rules/blocks";
 import { useTheme } from "@/theme";
 import type { RulesPage } from "../types";
+import { RolePortrait } from "./RolePortrait";
 import {
   BEDROOM,
   CAMERA_ROOMS,
@@ -68,10 +69,20 @@ function Teams() {
   return (
     <RulePage>
       <RuleLead>{t(`${R}.teams.lead`)}</RuleLead>
-      <RuleCard emoji="🛡️" name={t(`${R}.teams.household.name`)} tint={side.good}>
+      <RuleCard
+        emoji="🛡️"
+        picture={<RolePortrait role="butler" size={50} />}
+        name={t(`${R}.teams.household.name`)}
+        tint={side.good}
+      >
         {t(`${R}.teams.household.text`)}
       </RuleCard>
-      <RuleCard emoji="🎭" name={t(`${R}.teams.intruders.name`)} tint={side.evil}>
+      <RuleCard
+        emoji="🎭"
+        picture={<RolePortrait role="intruder" size={50} />}
+        name={t(`${R}.teams.intruders.name`)}
+        tint={side.evil}
+      >
         {t(`${R}.teams.intruders.text`)}
       </RuleCard>
     </RulePage>
@@ -92,6 +103,7 @@ function Roles() {
     <RuleCard
       key={role}
       emoji={ROLE_EMOJI[role]}
+      picture={<RolePortrait role={role} size={50} />}
       name={t(`manor.roles.${role}.name`)}
       tint={tint}
       tags={[howMany(role)]}

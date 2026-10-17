@@ -24,6 +24,7 @@ import type { GameBoardProps } from "../types";
 import { asLook } from "@/features/mascot/dress";
 import { GameButton as Button, GameText as AppText } from "./GameText";
 import { GameIcon } from "./icons";
+import { RolePortrait } from "./RolePortrait";
 import {
   FOOD,
   PLACE_COLOR,
@@ -285,7 +286,11 @@ export function ShelterBoard({
         >
           <EdgeGlow color={turnedMe ? colors.danger : "#9CB8FF"} />
           <View style={styles.coughBody}>
-            <GameIcon name={turnedMe ? "infected" : "cough"} size={96} color={turnedMe ? colors.danger : "#E9E2CF"} />
+            {turnedMe ? (
+              <RolePortrait role="infected" size={110} />
+            ) : (
+              <GameIcon name="cough" size={96} color="#E9E2CF" />
+            )}
             <AppText variant="h1" align="center" style={{ color: turnedMe ? colors.danger : "#E9E2CF" }}>
               {turnedMe ? t("shelter.cough.youTitle") : t("shelter.cough.title")}
             </AppText>

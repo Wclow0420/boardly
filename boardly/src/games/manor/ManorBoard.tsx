@@ -3,12 +3,14 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { EmblemGlyph } from "@/components/engraved/Engraved";
 import { AppText, BottomSheetModal, Button, Card } from "@/components/ui";
 import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
 import { usePromptSheet } from "@/hooks/usePromptSheet";
 import { fontFamily, useTheme } from "@/theme";
 import { moveHaptic, tapHaptic } from "@/utils/haptics";
 import type { GameBoardProps, GamePlayer } from "../types";
+import { OWNER_EMBLEM } from "./emblems";
 import {
   ITEM_EMOJI,
   ROOMS,
@@ -29,6 +31,7 @@ import {
   type ManorEvent,
   type ManorState,
 } from "./logic";
+import { RolePortrait } from "./RolePortrait";
 
 /** Blank space added under the table while the action sheet is up. */
 const SHEET_CLEARANCE = 380;
@@ -284,15 +287,7 @@ function RoleCard({
       {shown ? (
         <>
           <View style={styles.roleHead}>
-            <AppText style={{ fontSize: 44 }}>
-              {role === "butler"
-                ? "🤵"
-                : role === "guard"
-                  ? "🔦"
-                  : role === "intruder"
-                    ? "🗡️"
-                    : "🧳"}
-            </AppText>
+            <RolePortrait role={role} size={60} />
             <View style={styles.grow}>
               <AppText
                 variant="h2"
@@ -363,8 +358,7 @@ function HouseMap({
         const canGo = selectable.includes(room);
         const isSelected = selected === room;
         const camera = state.cameras[room];
-        const ownerMark =
-          (mine && state.ownerHere) || ownerAt === room ? "👴" : null;
+        const ownerMark = (mine && state.ownerHere) || ownerAt === room;
         return (
           <Pressable
             key={id}
@@ -414,7 +408,7 @@ function HouseMap({
                   {t("manor.map.you")}
                 </AppText>
               ) : null}
-              {ownerMark ? <AppText variant="tiny">{ownerMark}</AppText> : null}
+              {ownerMark ? <EmblemGlyph data={OWNER_EMBLEM} size={18} /> : null}
               {mine
                 ? state.roomItems.map((item) => (
                     <AppText key={item} variant="tiny">
@@ -1112,9 +1106,11 @@ function Result({
 
   return (
     <View style={{ alignItems: "center" }}>
-      <AppText style={{ fontSize: 48 }}>
-        {state.winner === "good" ? "🌅" : state.winner === "evil" ? "🗡️" : "🚪"}
-      </AppText>
+      {state.winner === "evil" ? (
+        <RolePortrait role="intruder" size={64} />
+      ) : (
+        <AppText style={{ fontSize: 48 }}>{state.winner === "good" ? "🌅" : "🚪"}</AppText>
+      )}
       <AppText
         variant="h2"
         align="center"

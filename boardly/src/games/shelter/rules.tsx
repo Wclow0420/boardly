@@ -35,6 +35,7 @@ import {
   startFood,
   type Card,
 } from "./logic";
+import { RolePortrait } from "./RolePortrait";
 import { PLACE_HEIGHT, PLACE_WIDTH, placeScene } from "./shelterScenes";
 
 const R = "rules.shelter";
@@ -77,10 +78,11 @@ function TeamsPage() {
   const { colors } = useTheme();
   const infected = PLAYER_COUNTS.map((n) => COUNTS[n][0]);
   const sides = [
-    { key: "survivors", emoji: "🧍", tint: colors.successStrong, tags: [t(`${R}.teams.survivors.tag`)] },
+    { key: "survivors", emoji: "🧍", role: "survivor" as const, tint: colors.successStrong, tags: [t(`${R}.teams.survivors.tag`)] },
     {
       key: "infected",
       emoji: "☣",
+      role: "infected" as const,
       tint: colors.danger,
       tags: [t(`${R}.teams.infected.tag`), t(`${R}.teams.infected.size`, { min: Math.min(...infected), max: Math.max(...infected) })],
     },
@@ -88,8 +90,8 @@ function TeamsPage() {
   return (
     <RulePage>
       <RuleLead>{t(`${R}.teams.lead`)}</RuleLead>
-      {sides.map(({ key, emoji, tint, tags }) => (
-        <RuleCard key={key} emoji={emoji} picture={gameIcon(emoji, tint)} name={t(`${R}.teams.${key}.name`)} tint={tint} tags={tags}>
+      {sides.map(({ key, emoji, role, tint, tags }) => (
+        <RuleCard key={key} emoji={emoji} picture={<RolePortrait role={role} size={50} />} name={t(`${R}.teams.${key}.name`)} tint={tint} tags={tags}>
           {t(`${R}.teams.${key}.text`, { days: DAYS })}
         </RuleCard>
       ))}
@@ -106,7 +108,7 @@ function RolesPage() {
       <RuleLead>{t(`${R}.roles.lead`)}</RuleLead>
       <RuleCard
         emoji="🧍"
-        picture={gameIcon("🧍", colors.successStrong)}
+        picture={<RolePortrait role="survivor" size={50} />}
         name={t(`${R}.roles.survivor.name`)}
         tint={colors.successStrong}
         tags={[t(`${R}.roles.survivor.tag`)]}
@@ -115,7 +117,7 @@ function RolesPage() {
       </RuleCard>
       <RuleCard
         emoji="☣"
-        picture={gameIcon("☣", colors.danger)}
+        picture={<RolePortrait role="infected" size={50} />}
         name={t(`${R}.roles.infected.name`)}
         tint={colors.danger}
         tags={[t(`${R}.roles.infected.tag`)]}
