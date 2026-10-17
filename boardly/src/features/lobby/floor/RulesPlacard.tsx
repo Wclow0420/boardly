@@ -2,7 +2,7 @@
 // with the room, rooms.ts) with what the host has set written on it and
 // the count at the table on its medallion ("5/6"); tap it for the house
 // rules in a popup in the room's style. There the host changes the
-// game's settings (the same settings as the lobby's GameSettings), and
+// game's settings (the same settings the server keeps for the table), and
 // everyone reads what the number at the table means for this game (its
 // tableNotes: Hustle's coins, cards and deck).
 
@@ -15,7 +15,7 @@ import type { RoomInfo } from "@/api/client";
 import { Emblem } from "@/components/icons";
 import { AppText, BezelOverlay } from "@/components/ui";
 import { Popup } from "@/features/game/Popup";
-import { roomSettings } from "@/features/lobby/GameSettings";
+import { roomSettings } from "@/features/lobby/settings";
 import { getGame } from "@/games/registry";
 import type { TableNote } from "@/games/types";
 import { fontFamily } from "@/theme";
@@ -62,6 +62,11 @@ export const RulesPlacard = memo(function RulesPlacard({
 }) {
   const { t } = useTranslation();
   const B = { x: R.board.x * k, y: R.board.y * k, w: R.board.w * k, h: R.board.h * k };
+  // the words are drawn down with the board, the count sized to its
+  // medallion's face (r 16.8 at the least): "10/10" smaller than "5/6"
+  const label = `${count}/${max}`;
+  const face = 31 * k;
+  const countSize = Math.min(13, 30 / (label.length * 0.6)) * k;
   return (
     <Pressable
       accessibilityRole="button"
@@ -73,16 +78,22 @@ export const RulesPlacard = memo(function RulesPlacard({
       style={({ pressed }) => [styles.abs, { left: B.x, top: B.y, width: B.w, height: B.h }, pressed && styles.pressed]}
     >
       <View style={[styles.abs, styles.text, { left: 16 * k, right: 54 * k, top: 0, bottom: 0 }]}>
-        <AppText style={[styles.title, { color: look.board.title }]} numberOfLines={1}>
+        <AppText
+          style={[styles.title, { color: look.board.title, fontSize: 9 * k, lineHeight: 12 * k, letterSpacing: 1.6 * k }]}
+          numberOfLines={1}
+        >
           {t("lobby.floor.houseRules")}
         </AppText>
-        <AppText style={[styles.line, { color: look.board.text }]} numberOfLines={1}>
+        <AppText
+          style={[styles.line, { color: look.board.text, fontSize: 14 * k, lineHeight: 19 * k, marginTop: k }]}
+          numberOfLines={1}
+        >
           {summary}
         </AppText>
       </View>
-      <View style={[styles.abs, styles.count, { left: B.w - 27 * k - 17, top: B.h / 2 - 17 }]}>
-        <AppText style={styles.countText} numberOfLines={1}>
-          {`${count}/${max}`}
+      <View style={[styles.abs, styles.count, { left: B.w - 27 * k - face / 2, top: B.h / 2 - face / 2, width: face, height: face }]}>
+        <AppText style={[styles.countText, { fontSize: countSize, lineHeight: countSize * 1.3 }]} numberOfLines={1}>
+          {label}
         </AppText>
       </View>
     </Pressable>
@@ -181,10 +192,10 @@ const styles = StyleSheet.create({
   abs: { position: "absolute" },
   pressed: { opacity: 0.8 },
   text: { justifyContent: "center" },
-  title: { fontFamily: fontFamily.bold, fontSize: 9, lineHeight: 12, letterSpacing: 1.6, textTransform: "uppercase", ...shadow },
-  line: { fontFamily: fontFamily.bold, fontSize: 14, lineHeight: 19, marginTop: 1, ...shadow },
-  count: { width: 34, height: 34, alignItems: "center", justifyContent: "center" },
-  countText: { fontFamily: fontFamily.bold, fontSize: 13, lineHeight: 17, color: "#3A2408" },
+  title: { fontFamily: fontFamily.bold, textTransform: "uppercase", ...shadow },
+  line: { fontFamily: fontFamily.bold, ...shadow },
+  count: { alignItems: "center", justifyContent: "center" },
+  countText: { fontFamily: fontFamily.bold, color: "#3A2408", textAlign: "center" },
   range: { fontFamily: fontFamily.semiBold, fontSize: 13, lineHeight: 19, color: "#F7C948", textAlign: "center" },
   section: { marginTop: 16, gap: 8 },
   head: { fontFamily: fontFamily.bold, fontSize: 11, lineHeight: 14, letterSpacing: 1.2, color: "#E8C88A", textTransform: "uppercase" },

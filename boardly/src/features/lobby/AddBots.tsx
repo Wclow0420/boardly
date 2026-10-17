@@ -1,7 +1,7 @@
-// Bot players, for when the table is a player or two short. In the
-// lobby header the host has a bot button next to the rules; it opens
-// this sheet to pick how many and add them. They sit down ready and the
-// server plays them; the host can take one off from its seat card.
+// Bot players, for when the table is a player or two short. On the
+// lobby's plinth the host has a bot bell; it opens this sheet to pick
+// how many and add them. They sit down ready and the server plays them;
+// the host can take one off by holding it on the floor.
 // Offered only where the backend has bots for this game
 // (room.botsAvailable).
 
@@ -10,27 +10,15 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import type { RoomInfo } from "@/api/client";
-import { BotIcon } from "@/components/icons";
 import {
   AppText,
   BottomSheetModal,
   Button,
   GorhomBottomSheetModal,
-  IconButton,
 } from "@/components/ui";
 import { useTheme } from "@/theme";
 import { tapHaptic } from "@/utils/haptics";
 import { useAddBots } from "./hooks";
-
-/** The header button that opens the sheet. */
-export function BotsButton({ color, onPress }: { color: string; onPress: () => void }) {
-  const { t } = useTranslation();
-  return (
-    <IconButton accessibilityLabel={t("lobby.bots.title")} onPress={onPress}>
-      <BotIcon size={22} color={color} />
-    </IconButton>
-  );
-}
 
 export interface AddBotsSheetProps {
   room: RoomInfo;

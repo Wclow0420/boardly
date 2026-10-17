@@ -1,68 +1,58 @@
-import * as Clipboard from "expo-clipboard";
-import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTranslation } from "react-i18next";
+// A table's lobby: the game's own floor of the lift (features/lobby/floor).
+// This screen holds the server's side (the room's query and socket, the
+// moves) and the sheets; FloorLobby draws the floor. When the table
+// starts, the lamps go down and everyone moves on to the game.
 
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import type { RoomPlayerInfo } from "@/api/client";
+import { BackIcon } from "@/components/icons";
 import {
-  BackIcon,
-  CopyIcon,
-  FriendsIcon,
-  LinkIcon,
-} from "@/components/icons";
-import {
-  AppText,
-  AvatarStage,
-  Button,
   ConfirmSheet,
   EmptyState,
   ErrorState,
   GorhomBottomSheetModal,
   IconButton,
   Screen,
-  Skeleton,
+  TableBackdrop,
 } from "@/components/ui";
 import { useSession } from "@/context/SessionContext";
-import {
-  RulesButton,
-  RulesSheet,
-  useHasRules,
-} from "@/features/game/RulesSheet";
-import { AddBotsSheet, BotsButton } from "@/features/lobby/AddBots";
-import { ConfettiBackdrop } from "@/features/lobby/ConfettiBackdrop";
-import { usePlayerCard } from "@/features/players/PlayerCardProvider";
-import { InviteFriendsSheet } from "@/features/lobby/InviteFriendsSheet";
-import { GameSettings } from "@/features/lobby/GameSettings";
-import { InviteSlotCard, PlayerCard } from "@/features/lobby/PlayerCard";
+import { RulesSheet, useHasRules } from "@/features/game/RulesSheet";
+import { AddBotsSheet } from "@/features/lobby/AddBots";
+import { FloorLobby } from "@/features/lobby/floor/FloorLobby";
+import { useLiftFloor } from "@/features/lobby/floor/useLiftFloor";
 import {
   useLeaveRoom,
   useRemoveBot,
   useRoom,
   useSetReady,
+  useSetRoomOptions,
   useStartGame,
 } from "@/features/lobby/hooks";
+import { InviteFriendsSheet } from "@/features/lobby/InviteFriendsSheet";
+import { usePlayerCard } from "@/features/players/PlayerCardProvider";
 import { useGameName } from "@/games/names";
-import { getGame } from "@/games/registry";
-import { fontFamily, palette, useTheme } from "@/theme";
-import { successHaptic, tapHaptic } from "@/utils/haptics";
+import { useTheme } from "@/theme";
+import { successHaptic } from "@/utils/haptics";
 import { inviteLink, shareOrCopy } from "@/utils/share";
+
+/** How long the lamps take to go down before the game opens. */
+const LAMPS_DOWN_MS = 600;
 
 export default function LobbyScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
   const { t } = useTranslation();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { colors, radius, spacing } = useTheme();
   const { user } = useSession();
-  const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
   const gameName = useGameName();
-  const leaveSheetRef = useRef<GorhomBottomSheetModal>(null);
   const playerCard = usePlayerCard();
+  const leaveSheetRef = useRef<GorhomBottomSheetModal>(null);
   const inviteSheetRef = useRef<GorhomBottomSheetModal>(null);
   const botsSheetRef = useRef<GorhomBottomSheetModal>(null);
 
@@ -71,53 +61,52 @@ export default function LobbyScreen() {
   const room = roomQuery.data;
   const startGame = useStartGame(room?.id);
   const setReady = useSetReady(room?.id, roomCode);
+  const setOptions = useSetRoomOptions(room?.id, roomCode);
   const leaveRoom = useLeaveRoom(room?.id);
   const removeBot = useRemoveBot(room?.id);
+  const { floor, floors } = useLiftFloor(room?.gameType);
 
   const hasRules = useHasRules(room?.gameType);
-  // Games with their own look bring their art into the lobby header
-  const skin = room ? getGame(room.gameType)?.skin : undefined;
-  const heroInk = skin ? "#FFFFFF" : palette.ink;
-  const me = room?.players.find((p) => p.userId === user?.id);
   const isHost = user?.id === room?.hostId;
-  const isMember = me !== undefined;
+  const isMember = room?.players.some((p) => p.userId === user?.id) ?? false;
   // the host can fill seats with bots where the backend offers them
   const canAddBots = isHost && room?.botsAvailable === true && room.status === "waiting";
+  const minPlayers = room?.game?.minPlayers ?? 2;
+  const maxPlayers = room?.game?.maxPlayers ?? 2;
 
-  // The moment the game starts (host's tap or the socket broadcast),
-  // everyone in the lobby moves to the game screen.
+  // The moment the game starts (the host's hold or the socket's word),
+  // everyone in the lobby moves on to the game: the lamps go down first.
+  // Opening the lobby of a table already playing goes straight on.
   const status = room?.status;
+  const [sawWaiting, setSawWaiting] = useState(false);
+  if (status === "waiting" && !sawWaiting) setSawWaiting(true);
+  const starting = status === "playing" && isMember && sawWaiting;
   useEffect(() => {
-    if (status === "playing" && isMember) {
-      successHaptic();
+    if (status !== "playing" || !isMember) return;
+    if (!sawWaiting) {
       router.replace(`/game/${roomCode}`);
+      return;
     }
-  }, [status, isMember, roomCode, router]);
+    successHaptic();
+    const go = setTimeout(() => router.replace(`/game/${roomCode}`), LAMPS_DOWN_MS);
+    return () => clearTimeout(go);
+  }, [status, isMember, sawWaiting, roomCode, router]);
 
-  const copyCode = async () => {
-    tapHaptic();
-    await Clipboard.setStringAsync(roomCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const name = room ? gameName(room.gameType, room.game?.name) : "";
+  const link = useMemo(() => inviteLink(roomCode), [roomCode]);
 
-  const shareInvite = async () => {
+  const shareInvite = useCallback(async () => {
     if (!room) return;
-    const link = inviteLink(room.code);
     const outcome = await shareOrCopy(
-      t("lobby.shareMessage", {
-        game: gameName(room.gameType, room.game?.name),
-        code: room.code,
-        link,
-      }),
-      link
+      t("lobby.shareMessage", { game: name, code: room.code, link }),
+      link,
     ).catch(() => "dismissed" as const);
     // No share sheet (desktop browsers): the link went to the clipboard
     if (outcome === "copied") {
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
     }
-  };
+  }, [room, name, link, t]);
 
   const handleBack = () => {
     // Leaving an active lobby means leaving the table — confirm first.
@@ -140,264 +129,70 @@ export default function LobbyScreen() {
     });
   };
 
-  const minPlayers = room?.game?.minPlayers ?? 2;
-  const maxPlayers = room?.game?.maxPlayers ?? 2;
-  // Host is ready by definition (also tolerates pre-migration rows)
-  const everyoneReady =
-    room?.players.every((p) => p.ready || p.userId === room.hostId) ?? false;
-  const canStart =
-    room?.status === "waiting" &&
-    (room?.players.length ?? 0) >= minPlayers &&
-    everyoneReady;
+  const showPlayer = (player: RoomPlayerInfo) =>
+    playerCard.show({
+      id: player.userId,
+      name: player.username,
+      borderId: player.borderId,
+      avatarUrl: player.avatarUrl,
+      mascot: player.mascot,
+    });
 
   const isClosed = room?.status === "closed" || room?.status === "finished";
 
   return (
-    // Fixed header and footer; only the player list in between scrolls
-    <Screen
-      scroll={false}
-      padded={false}
-      inset={false}
-      background={colors.surface}
-    >
-      {/* Header — brand gradient stays identical in dark mode */}
-      <LinearGradient
-        colors={
-          skin
-            ? [skin.colors.background ?? "#0B1114", skin.colors.background ?? "#0B1114"]
-            : ["#FFD24A", "#FFB627"]
-        }
-        start={{ x: 0.2, y: 0 }}
-        end={{ x: 0.8, y: 1 }}
-        style={[styles.hero, { paddingTop: insets.top + spacing.sm }]}
-      >
-        {skin ? (
-          <>
-            {skin.backdropImage ? (
-              <Image
-                source={skin.backdropImage}
-                style={StyleSheet.absoluteFill}
-                contentFit="cover"
-              />
-            ) : null}
-            <View style={[StyleSheet.absoluteFill, styles.heroShade]} />
-          </>
-        ) : (
-          <ConfettiBackdrop />
-        )}
-        <View style={styles.heroNav}>
-          <IconButton accessibilityLabel="Back" onPress={handleBack}>
-            <BackIcon size={20} color={heroInk} />
-          </IconButton>
-          <View style={styles.heroActions}>
-            {canAddBots ? (
-              <BotsButton color={heroInk} onPress={() => botsSheetRef.current?.present()} />
-            ) : null}
-            {hasRules ? (
-              <RulesButton color={heroInk} onPress={() => setRulesOpen(true)} />
-            ) : null}
-          </View>
-        </View>
-
-        <View style={styles.heroBody}>
-          {skin?.logo ? (
-            <Image
-              source={skin.logo}
-              style={styles.heroLogo}
-              contentFit="contain"
-              accessibilityLabel={
-                room ? gameName(room.gameType, room.game?.name) : undefined
-              }
+    <View style={styles.screen}>
+      {room && !isClosed ? (
+        <FloorLobby
+          room={room}
+          meId={user?.id}
+          floor={floor}
+          floors={floors}
+          gameName={name}
+          link={link}
+          onBack={handleBack}
+          onRules={hasRules ? () => setRulesOpen(true) : undefined}
+          onReady={(ready) => setReady.mutate(ready)}
+          readyBusy={setReady.isPending}
+          onStart={() => startGame.mutate()}
+          startBusy={startGame.isPending}
+          onRemoveBot={(id) => removeBot.mutate(id)}
+          onSetOption={(option, choice) => setOptions.mutate({ [option]: choice })}
+          optionsBusy={setOptions.isPending}
+          onInvite={() => inviteSheetRef.current?.present()}
+          onBots={canAddBots ? () => botsSheetRef.current?.present() : undefined}
+          onShare={shareInvite}
+          shared={linkCopied}
+          onPlayer={showPlayer}
+          starting={starting}
+        />
+      ) : (
+        <LobbyMessage onBack={handleBack}>
+          {roomQuery.isPending ? (
+            <ActivityIndicator size="large" color="#F7C948" />
+          ) : roomQuery.isError ? (
+            <ErrorState
+              title={t("common.errorTitle")}
+              subtitle={t("common.errorSubtitle")}
+              retryLabel={t("common.retry")}
+              onRetry={() => roomQuery.refetch()}
             />
           ) : (
-            <>
-              <AppText style={styles.heroEmoji}>
-                {room?.game?.emoji ?? "🎲"}
-              </AppText>
-              <AppText
-                style={{
-                  fontFamily: fontFamily.bold,
-                  fontSize: 30,
-                  lineHeight: 40,
-                  color: heroInk,
-                  marginTop: 8,
-                }}
-              >
-                {room ? gameName(room.gameType, room.game?.name) : " "}
-              </AppText>
-            </>
-          )}
-          <AppText
-            style={{
-              fontFamily: fontFamily.medium,
-              fontSize: 11,
-              color: skin ? "rgba(255,255,255,0.7)" : "rgba(24,32,43,0.6)",
-              marginTop: 10,
-            }}
-          >
-            {copied ? t("lobby.codeCopied") : t("lobby.tableCode")}
-          </AppText>
-          <Pressable
-            onPress={copyCode}
-            style={[styles.codePill, skin ? styles.codePillDark : null]}
-          >
-            <AppText
-              style={{
-                fontFamily: fontFamily.bold,
-                fontSize: 16,
-                color: heroInk,
-                letterSpacing: 1,
-              }}
-            >
-              {roomCode}
-            </AppText>
-            <CopyIcon size={15} color={heroInk} />
-          </Pressable>
-        </View>
-      </LinearGradient>
-
-      {/* Player grid / closed state */}
-      <View
-        style={[
-          styles.playersSheet,
-          {
-            backgroundColor: colors.surface,
-            borderTopLeftRadius: radius.xxl,
-            borderTopRightRadius: radius.xxl,
-          },
-        ]}
-      >
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.playersScroll}
-        >
-        {/* bordered avatars draw over the cards round them */}
-        <AvatarStage>
-        {roomQuery.isPending ? (
-          <View style={styles.playersGrid}>
-            {Array.from({ length: 4 }, (_, i) => (
-              <View key={i} style={styles.playerCell}>
-                <Skeleton height={150} radius={radius.xl} />
-              </View>
-            ))}
-          </View>
-        ) : roomQuery.isError ? (
-          <ErrorState
-            title={t("common.errorTitle")}
-            subtitle={t("common.errorSubtitle")}
-            retryLabel={t("common.retry")}
-            onRetry={() => roomQuery.refetch()}
-          />
-        ) : isClosed ? (
-          <EmptyState
-            emoji="🚪"
-            title={t("lobby.closedTitle")}
-            subtitle={t("lobby.closedSubtitle")}
-            actionLabel={t("game.backHome")}
-            onAction={() => router.dismissTo("/")}
-          />
-        ) : (
-          <>
-          {room ? (
-            <GameSettings room={room} code={roomCode} isHost={isHost} />
-          ) : null}
-          <View style={styles.playersGrid}>
-            {room?.players.map((player) => (
-              <View key={player.userId} style={styles.playerCell}>
-                <PlayerCard
-                  player={{
-                    id: player.userId,
-                    name: player.username,
-                    borderId: player.borderId,
-                    avatarUrl: player.avatarUrl,
-                    mascot: player.mascot,
-                    isHost: player.userId === room.hostId,
-                    ready: player.ready,
-                    isBot: player.isBot,
-                  }}
-                  onRemove={
-                    isHost && player.isBot && room.status === "waiting"
-                      ? () => removeBot.mutate(player.userId)
-                      : undefined
-                  }
-                  onPress={
-                    player.isBot
-                      ? undefined
-                      : () =>
-                          playerCard.show({
-                            id: player.userId,
-                            name: player.username,
-                            borderId: player.borderId,
-                            avatarUrl: player.avatarUrl,
-                            mascot: player.mascot,
-                          })
-                  }
-                />
-              </View>
-            ))}
-            {(room?.players.length ?? 0) < maxPlayers ? (
-              <View style={styles.playerCell}>
-                <InviteSlotCard
-                  onPress={() => inviteSheetRef.current?.present()}
-                />
-              </View>
-            ) : null}
-          </View>
-          </>
-        )}
-        </AvatarStage>
-        </ScrollView>
-      </View>
-
-      {/* Footer */}
-      {!isClosed && !roomQuery.isError ? (
-        <View style={[styles.footer, { paddingHorizontal: spacing.xxl }]}>
-          <View style={styles.count}>
-            <FriendsIcon size={22} color={colors.icon} />
-            <AppText variant="title" style={{ fontSize: 14 }}>
-              {t("lobby.playersCount", {
-                current: room?.players.length ?? 0,
-                max: maxPlayers,
-              })}
-            </AppText>
-          </View>
-
-          {isHost ? (
-            <Button
-              label={t("lobby.startGame")}
-              size="lg"
-              style={{ marginTop: spacing.lg }}
-              disabled={!canStart}
-              loading={startGame.isPending}
-              onPress={() => startGame.mutate()}
-            />
-          ) : (
-            <Button
-              label={me?.ready ? t("lobby.unready") : t("lobby.imReady")}
-              size="lg"
-              variant={me?.ready ? "secondary" : "primary"}
-              style={{ marginTop: spacing.lg }}
-              disabled={!isMember || room?.status !== "waiting"}
-              loading={setReady.isPending}
-              onPress={() => setReady.mutate(!me?.ready)}
+            <EmptyState
+              emoji="🚪"
+              title={t("lobby.closedTitle")}
+              subtitle={t("lobby.closedSubtitle")}
+              actionLabel={t("game.backHome")}
+              onAction={() => router.dismissTo("/")}
             />
           )}
-
-          <Button
-            label={linkCopied ? t("lobby.linkCopied") : t("lobby.shareInvite")}
-            variant="secondary"
-            size="md"
-            leftIcon={<LinkIcon size={16} color={colors.primary} />}
-            style={{ marginTop: spacing.md, borderRadius: 999, paddingVertical: 15 }}
-            onPress={shareInvite}
-          />
-        </View>
-      ) : null}
+        </LobbyMessage>
+      )}
 
       {room && hasRules ? (
         <RulesSheet
           gameKey={room.gameType}
-          gameName={gameName(room.gameType, room.game?.name)}
+          gameName={name}
           visible={rulesOpen}
           onClose={() => setRulesOpen(false)}
         />
@@ -421,63 +216,29 @@ export default function LobbyScreen() {
         loading={leaveRoom.isPending}
         onConfirm={confirmLeave}
       />
+    </View>
+  );
+}
+
+/** While the table loads, can't be reached or has closed: the app's own
+ *  table with a word in the middle and the way back. */
+function LobbyMessage({ onBack, children }: { onBack: () => void; children: ReactNode }) {
+  const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  return (
+    <Screen scroll={false} padded={false} inset={false} backdrop={<TableBackdrop dim={0.3} />}>
+      <View style={[styles.nav, { paddingTop: insets.top + 6 }]}>
+        <IconButton accessibilityLabel="Back" onPress={onBack}>
+          <BackIcon size={20} color={colors.icon} />
+        </IconButton>
+      </View>
+      <View style={styles.message}>{children}</View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: {
-    paddingBottom: 34,
-    overflow: "hidden",
-  },
-  heroNav: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 14,
-    paddingTop: 6,
-  },
-  heroActions: { flexDirection: "row", alignItems: "center", gap: 4 },
-  heroBody: { alignItems: "center", paddingTop: 6 },
-  heroEmoji: { fontSize: 44, lineHeight: 52 },
-  heroLogo: { width: 250, height: 118 },
-  heroShade: { backgroundColor: "rgba(0,0,0,0.55)" },
-  codePillDark: {
-    backgroundColor: "rgba(255,255,255,0.14)",
-    borderColor: "rgba(255,255,255,0.35)",
-  },
-  codePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginTop: 8,
-    paddingVertical: 9,
-    paddingHorizontal: 18,
-    borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.55)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.8)",
-  },
-  playersSheet: {
-    flex: 1,
-    marginTop: -22,
-    marginHorizontal: 14,
-    overflow: "hidden",
-  },
-  playersScroll: { padding: 16 },
-  playersGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 14,
-  },
-  playerCell: {
-    width: "47%",
-    flexGrow: 1,
-  },
-  footer: { paddingTop: 18 },
-  count: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
+  screen: { flex: 1, backgroundColor: "#140A04" },
+  nav: { paddingHorizontal: 14 },
+  message: { flex: 1, justifyContent: "center", paddingHorizontal: 24, paddingBottom: 80 },
 });
