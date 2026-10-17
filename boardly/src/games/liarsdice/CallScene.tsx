@@ -58,6 +58,8 @@ const whyShort = (problem: BidProblem, t: T) =>
 
 const FACE = 38;
 const FACE_GAP = 10;
+/** The face row canvas reaches this far past the row on every side. */
+const PAD = 10;
 
 /** A round stud with a sign on it (− or +). */
 function Stud({ sign, label, onPress, disabled }: { sign: string; label: string; onPress: () => void; disabled: boolean }) {
@@ -135,11 +137,16 @@ export function CallScene({
         </AppText>
 
         <View style={{ width: rowW, height: FACE * 1.2 }}>
-          <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
+          {/* drawn with a margin all round: a die's picture runs past its
+              face (its shadow and, when picked, its lift and glow) */}
+          <Canvas
+            style={{ position: "absolute", left: -PAD, top: -PAD, width: rowW + 2 * PAD, height: FACE * 1.2 + 2 * PAD }}
+            pointerEvents="none"
+          >
             {faces.map((f, i) => {
               const on = f === face;
               const img = dieImage(f, FACE, on ? "lit" : "plain");
-              const box = dieBox(i * (FACE + FACE_GAP), FACE * 0.1 - (on ? 3 : 0), FACE);
+              const box = dieBox(PAD + i * (FACE + FACE_GAP), PAD + FACE * 0.1 - (on ? 3 : 0), FACE);
               return img ? <SkImage key={f} image={img} {...box} opacity={on ? 1 : 0.7} /> : null;
             })}
           </Canvas>
