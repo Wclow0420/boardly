@@ -18,6 +18,9 @@ import { Canvas, Image as SkImage } from "@shopify/react-native-skia";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   useEffect,
+  useMemo,
+  useRef,
+  useState,
   type ComponentType,
   type ReactNode,
   type RefObject,
@@ -25,9 +28,9 @@ import {
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
-  FadeIn,
-  FadeOut,
   interpolate,
+  runOnJS,
+  type SharedValue,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -42,7 +45,7 @@ import { bakedSvg } from "@/components/badges/bake";
 import type { Jewel } from "@/components/engraved/shapes";
 import { AppText, BezelOverlay, type AppTextProps } from "@/components/ui";
 import { fontFamily } from "@/theme";
-import { heavyHaptic, tapHaptic } from "@/utils/haptics";
+import { tapHaptic } from "@/utils/haptics";
 import { SATCHEL_BOX, finialArt, infoArt, satchelArt } from "./dockArt";
 import { glowArt } from "./art";
 import { ToolButton } from "./parts";
@@ -101,6 +104,8 @@ export const DOCK_COMPACT = 390;
 const HAND = { w: 46, left: 14, top: 30 };
 const SATCHEL = { w: 60, right: 10, top: 34 };
 const STUD = { d: 44, side: 6, top: 53 };
+/** The card on the narrow phone's stud. */
+const STUD_CARD = 20;
 const LABEL_H = 14;
 
 /** How far in from each end the plinth's move sits. */
@@ -120,18 +125,6 @@ export function satchelCentre(width: number) {
     return { x: width - STUD.side - STUD.d / 2, y: STUD.top + STUD.d / 2 };
   const h = (SATCHEL.w * SATCHEL_BOX[1]) / SATCHEL_BOX[0];
   return { x: width - SATCHEL.right - SATCHEL.w / 2, y: SATCHEL.top + h / 2 };
-}
-
-/** Where the hand's card (or its stud's) middle is, and how wide the
- *  card is there, from the plinth's top left. */
-export function handCentre(width: number) {
-  if (width < DOCK_COMPACT)
-    return { x: STUD.side + STUD.d / 2, y: STUD.top + STUD.d / 2, w: 20 };
-  return {
-    x: HAND.left + HAND.w / 2,
-    y: HAND.top + (HAND.w * 1.4) / 2,
-    w: HAND.w,
-  };
 }
 
 const shadow = {
@@ -158,24 +151,40 @@ function Dot() {
   return <View style={styles.dot} />;
 }
 
+/** The card's flight between my hand and the middle, shared by the card
+ *  in the hand (`HandSlot`) and the lifted card (`HandUp`): `seat` is the
+ *  hand card's place (measured for the flight), `out` is 1 while the card
+ *  is out of the hand (up, or on its way back), so the hand shows it again
+ *  the very frame it lands. */
+export interface HandFlight {
+  seat: RefObject<View | null>;
+  out: SharedValue<number>;
+}
+
+export function useHandFlight(): HandFlight {
+  const seat = useRef<View | null>(null);
+  const out = useSharedValue(0);
+  return useMemo(() => ({ seat, out }), [out]);
+}
+
 /** The card in my hand, at the plinth's left. */
 export function HandSlot({
   hand,
   anchor,
+  flight,
   width,
-  lifted,
   onLift,
 }: {
   hand: StageHand;
   /** Set on the card in the hand: where a dealt card is put away. */
   anchor?: RefObject<View | null>;
+  flight: HandFlight;
   width: number;
-  lifted: boolean;
   onLift: () => void;
 }) {
   const compact = width < DOCK_COMPACT;
   const press = () => {
-    heavyHaptic();
+    tapHaptic();
     onLift();
   };
   // a card landing in the hand bounces it
@@ -186,7 +195,19 @@ export function HandSlot({
       bounce.set(withSequence(withTiming(1.3, { duration: 120 }), withSpring(1, { damping: 6, stiffness: 220 })));
     }
   }, [pulse, bounce]);
-  const bounced = useAnimatedStyle(() => ({ transform: [{ scale: bounce.get() }] }));
+  const out = flight.out;
+  const bounced = useAnimatedStyle(() => ({
+    opacity: out.get() > 0 ? 0 : 1,
+    transform: [{ scale: bounce.get() }],
+  }));
+  // the seat is the card's unturned box: the flight starts and ends there
+  const card = (w: number, style: object) => (
+    <View ref={flight.seat} collapsable={false} style={{ width: w, height: w * 1.4 }}>
+      <View ref={anchor} collapsable={false} style={style}>
+        <Animated.View style={bounced}>{hand.back(w)}</Animated.View>
+      </View>
+    </View>
+  );
   if (compact) {
     return (
       <Pressable
@@ -200,15 +221,7 @@ export function HandSlot({
           pressed && styles.pressed,
         ]}
       >
-        <Stud>
-          <View
-            ref={anchor}
-            collapsable={false}
-            style={[styles.studCard, lifted && styles.gone]}
-          >
-            <Animated.View style={bounced}>{hand.back(20)}</Animated.View>
-          </View>
-        </Stud>
+        <Stud>{card(STUD_CARD, styles.studCard)}</Stud>
       </Pressable>
     );
   }
@@ -220,13 +233,7 @@ export function HandSlot({
       hitSlop={8}
       style={({ pressed }) => [styles.hand, pressed && styles.handPressed]}
     >
-      <View
-        ref={anchor}
-        collapsable={false}
-        style={[styles.handCard, lifted && styles.gone]}
-      >
-        <Animated.View style={bounced}>{hand.back(HAND.w)}</Animated.View>
-      </View>
+      {card(HAND.w, styles.handCard)}
       <AppText style={styles.label} numberOfLines={1}>
         {hand.label}
       </AppText>
@@ -234,79 +241,159 @@ export function HandSlot({
   );
 }
 
-/** The card lifted out of my hand: it rises from the plinth to the middle
- *  of the screen, turning over on the way; a tap anywhere puts it back. */
+/** How long the card takes to fly up, and back down. */
+const FLY_UP = 440;
+const FLY_DOWN = 380;
+/** How long the flying card waits over the hand's before it takes off. */
+const TAKE_OFF = 40;
+/** How the card in the hand is turned. */
+const TILT = -8;
+
+/** The card lifted out of my hand: it flies from its place in the hand to
+ *  the middle of the screen, growing and turning over on the way; a tap
+ *  anywhere flies it back, shrinking and turning back, to land exactly in
+ *  its place. Stays mounted (`up` false) until it has landed. */
 export function HandUp({
   hand,
-  width,
-  height,
-  plinthTop,
+  flight,
+  up,
   onDown,
 }: {
   hand: StageHand;
-  width: number;
-  height: number;
-  /** Where the plinth's top is on screen. */
-  plinthTop: number;
+  flight: HandFlight;
+  /** Lifted (true) or put back (false: it flies home, then goes). */
+  up: boolean;
   onDown: () => void;
 }) {
   const { t } = useTranslation();
   const still = useReducedMotion();
-  const lift = useSharedValue(0);
+  const [shown, setShown] = useState(up);
+  if (up && !shown) setShown(true);
+  const upRef = useRef(up);
   useEffect(() => {
-    lift.set(
-      still
-        ? 1
-        : withTiming(1, { duration: 520, easing: Easing.inOut(Easing.cubic) }),
-    );
-  }, [lift, still]);
-  const from = handCentre(width);
+    upRef.current = up;
+  }, [up]);
+  const root = useRef<View>(null);
+  const lift = useSharedValue(0);
+  // where the hand's card is, from the middle of the screen, and its scale
+  const from = useSharedValue({ dx: 0, dy: 0, s: 0.2 });
+  const ready = useSharedValue(0);
+  const out = flight.out;
   const { width: fw, height: fh } = hand.faceSize;
-  const dx = from.x - width / 2;
-  const dy = plinthTop + from.y - height / 2;
-  const s0 = from.w / fw;
+
+  useEffect(() => {
+    if (!shown) return;
+    if (up) {
+      const go = () => {
+        // put back before it had even taken off
+        if (!upRef.current) return setShown(false);
+        // the flying card shows first, exactly over the one in the hand,
+        // and takes off a couple of frames later, once it's painted: the
+        // hand is never seen empty with nothing flying
+        const wait = ready.get() ? 0 : TAKE_OFF;
+        ready.set(1);
+        out.set(withDelay(wait, withTiming(1, { duration: 0 })));
+        lift.set(
+          withDelay(
+            wait,
+            still
+              ? withTiming(1, { duration: 180 })
+              : withTiming(1, { duration: FLY_UP, easing: Easing.inOut(Easing.cubic) }),
+          ),
+        );
+      };
+      if (ready.get()) return go();
+      // measure the hand's card and the screen, then take off from there
+      const seat = flight.seat.current;
+      const screen = root.current;
+      if (!seat || !screen) return go();
+      screen.measureInWindow((sx, sy, sw, sh) => {
+        seat.measureInWindow((x, y, w, h) => {
+          if (w > 0 && sw > 0) {
+            from.set({
+              dx: x + w / 2 - (sx + sw / 2),
+              dy: y + h / 2 - (sy + sh / 2),
+              s: w / fw,
+            });
+          }
+          go();
+        });
+      });
+    } else {
+      const landed = () => {
+        setShown(false);
+        ready.set(0);
+        tapHaptic();
+      };
+      lift.set(
+        withTiming(
+          0,
+          still
+            ? { duration: 160 }
+            : { duration: FLY_DOWN, easing: Easing.inOut(Easing.cubic) },
+          (done) => {
+            "worklet";
+            if (!done) return;
+            // back in the hand the same frame the flying card lands
+            out.set(0);
+            runOnJS(landed)();
+          },
+        ),
+      );
+    }
+  }, [up, shown, still, fw, lift, from, ready, out, flight.seat]);
+
   const card = useAnimatedStyle(() => {
     const p = lift.get();
+    if (still) return { opacity: ready.get() * p };
+    const f = from.get();
     return {
+      opacity: ready.get(),
       transform: [
-        { translateX: dx * (1 - p) },
-        { translateY: dy * (1 - p) - Math.sin(p * Math.PI) * 30 },
-        { scale: s0 + (1 - s0) * p },
-        { rotate: `${-8 * (1 - p)}deg` },
+        { translateX: f.dx * (1 - p) },
+        { translateY: f.dy * (1 - p) - Math.sin(p * Math.PI) * 40 },
+        { scale: f.s + (1 - f.s) * p },
+        { rotate: `${TILT * (1 - p)}deg` },
       ],
     };
   });
   // the back shows until halfway, then the face, each turning edge-on
-  const back = useAnimatedStyle(() => ({
-    opacity: lift.get() < 0.5 ? 1 : 0,
-    transform: [
-      { perspective: 900 },
-      { rotateY: `${interpolate(lift.get(), [0, 0.5], [0, 90], "clamp")}deg` },
-    ],
-  }));
-  const face = useAnimatedStyle(() => ({
-    opacity: lift.get() >= 0.5 ? 1 : 0,
-    transform: [
-      { perspective: 900 },
-      { rotateY: `${interpolate(lift.get(), [0.5, 1], [-90, 0], "clamp")}deg` },
-    ],
-  }));
+  const back = useAnimatedStyle(() => {
+    const p = still ? 1 : lift.get();
+    return {
+      opacity: p < 0.5 ? 1 : 0,
+      transform: [
+        { perspective: 900 },
+        { rotateY: `${interpolate(p, [0, 0.5], [0, 90], "clamp")}deg` },
+      ],
+    };
+  });
+  const face = useAnimatedStyle(() => {
+    const p = still ? 1 : lift.get();
+    return {
+      opacity: p >= 0.5 ? 1 : 0,
+      transform: [
+        { perspective: 900 },
+        { rotateY: `${interpolate(p, [0.5, 1], [-90, 0], "clamp")}deg` },
+      ],
+    };
+  });
   const dim = useAnimatedStyle(() => ({ opacity: lift.get() * 0.82 }));
   const words = useAnimatedStyle(() => ({
     opacity: interpolate(lift.get(), [0.7, 1], [0, 1], "clamp"),
   }));
+  if (!shown) return null;
   return (
-    <Animated.View
+    <View
+      ref={root}
+      collapsable={false}
       style={StyleSheet.absoluteFill}
-      exiting={FadeOut.duration(160)}
+      pointerEvents={up ? "auto" : "none"}
     >
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={t("game.stage.putAway")}
-        onPress={() => {
-          tapHaptic();
-          onDown();
-        }}
+        onPress={onDown}
         style={StyleSheet.absoluteFill}
       >
         <Animated.View style={[StyleSheet.absoluteFill, styles.dim, dim]} />
@@ -319,12 +406,12 @@ export function HandUp({
               {hand.face}
             </Animated.View>
           </Animated.View>
-          <Animated.View style={words}>
-            <AppText style={styles.putAway}>{t("game.stage.putAway")}</AppText>
-          </Animated.View>
         </View>
+        <Animated.View style={[styles.putAwayAt, { top: "50%", marginTop: fh / 2 + 18 }, words]} pointerEvents="none">
+          <AppText style={styles.putAway}>{t("game.stage.putAway")}</AppText>
+        </Animated.View>
       </Pressable>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -411,32 +498,34 @@ function Shade() {
   );
 }
 
+/** How long the fan takes to open (each tool a little after the one
+ *  below it) and to fold. */
+const FAN_OPEN = 220;
+const FAN_STEP = 25;
+const FAN_FOLD = 150;
+
 function FanTool({
   tool,
   index,
+  open,
   onPick,
 }: {
   tool: StageTool;
   index: number;
+  open: SharedValue<number>;
   onPick: () => void;
 }) {
-  const still = useReducedMotion();
-  const out = useSharedValue(still ? 1 : 0);
-  useEffect(() => {
-    if (!still)
-      out.set(
-        withDelay(index * 45, withSpring(1, { damping: 14, stiffness: 180 })),
-      );
-  }, [out, index, still]);
   const to = fanAt(index);
+  // each tool runs its own stretch of the one open value, so they leave
+  // the satchel one after another and fold back together
   const style = useAnimatedStyle(() => {
-    const p = out.get();
+    const p = open.get();
     return {
-      opacity: Math.min(1, p * 1.6),
+      opacity: Math.min(1, p * 2),
       transform: [
         { translateX: to.x * p },
         { translateY: to.y * p },
-        { scale: 0.45 + 0.55 * p },
+        { scale: 0.5 + 0.5 * Math.min(p, 1.04) },
       ],
     };
   });
@@ -453,39 +542,94 @@ function FanTool({
   );
 }
 
+/** One tool's share of the fan's opening. */
+function useFanValue(index: number, open: boolean, still: boolean) {
+  const v = useSharedValue(0);
+  useEffect(() => {
+    if (still) v.set(withTiming(open ? 1 : 0, { duration: 120 }));
+    else if (open)
+      v.set(
+        withDelay(
+          index * FAN_STEP,
+          withTiming(1, {
+            duration: FAN_OPEN,
+            // out quickly, with the slightest settle at the end
+            easing: Easing.out(Easing.back(1.15)),
+          }),
+        ),
+      );
+    else v.set(withTiming(0, { duration: FAN_FOLD, easing: Easing.in(Easing.quad) }));
+  }, [v, index, open, still]);
+  return v;
+}
+
+function FanSlot(props: {
+  tool: StageTool;
+  index: number;
+  open: boolean;
+  still: boolean;
+  onPick: () => void;
+}) {
+  const v = useFanValue(props.index, props.open, props.still);
+  return (
+    <FanTool tool={props.tool} index={props.index} open={v} onPick={props.onPick} />
+  );
+}
+
 /** The tools fanned out of the open satchel, over a dimmed stage; a tap
- *  anywhere else folds them back. `at` is the satchel's middle on screen. */
+ *  anywhere else folds them back. `at` is the satchel's middle on screen.
+ *  The tools take touches the moment it opens, mid-flight; it stays
+ *  mounted (`open` false) while it folds. */
 export function SatchelFan({
   tools,
   at,
+  open,
   onClose,
 }: {
   tools: StageTool[];
   at: { x: number; y: number };
+  open: boolean;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const still = useReducedMotion();
+  const [shown, setShown] = useState(open);
+  if (open && !shown) setShown(true);
+  const dim = useSharedValue(0);
+  useEffect(() => {
+    if (!shown) return;
+    if (open) dim.set(withTiming(1, { duration: 140 }));
+    else
+      dim.set(
+        withTiming(0, { duration: FAN_FOLD }, (done) => {
+          "worklet";
+          if (done) runOnJS(setShown)(false);
+        }),
+      );
+  }, [open, shown, dim]);
+  const dimStyle = useAnimatedStyle(() => ({ opacity: dim.get() }));
+  if (!shown) return null;
   return (
-    <Animated.View
-      style={StyleSheet.absoluteFill}
-      entering={FadeIn.duration(160)}
-      exiting={FadeOut.duration(140)}
-    >
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={t("game.stage.fold")}
-        onPress={onClose}
-        style={[StyleSheet.absoluteFill, styles.fanDim]}
-      />
+    <View style={StyleSheet.absoluteFill} pointerEvents={open ? "box-none" : "none"}>
+      <Animated.View style={[StyleSheet.absoluteFill, dimStyle]}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t("game.stage.fold")}
+          onPress={onClose}
+          style={[StyleSheet.absoluteFill, styles.fanDim]}
+        />
+      </Animated.View>
       <View
         style={[styles.fanFrom, { left: at.x, top: at.y }]}
         pointerEvents="box-none"
       >
         {tools.map((tool, i) => (
-          <FanTool
+          <FanSlot
             key={tool.key}
             tool={tool}
             index={i}
+            open={open}
+            still={still}
             onPick={() => {
               onClose();
               tool.onPress();
@@ -493,7 +637,7 @@ export function SatchelFan({
           />
         ))}
       </View>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -614,7 +758,7 @@ const styles = StyleSheet.create({
   handCard: {
     width: HAND.w,
     height: HAND.w * 1.4,
-    transform: [{ rotate: "-8deg" }],
+    transform: [{ rotate: `${TILT}deg` }],
     shadowColor: "#000",
     shadowOpacity: 0.55,
     shadowRadius: 5,
@@ -644,7 +788,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  studCard: { width: 20, height: 28, transform: [{ rotate: "-8deg" }] },
+  studCard: {
+    width: STUD_CARD,
+    height: STUD_CARD * 1.4,
+    transform: [{ rotate: `${TILT}deg` }],
+  },
   dot: {
     width: 11,
     height: 11,
@@ -668,8 +816,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     alignItems: "center",
     justifyContent: "center",
-    gap: 18,
   },
+  putAwayAt: { position: "absolute", left: 0, right: 0, alignItems: "center" },
   putAway: {
     fontFamily: fontFamily.medium,
     fontSize: 13,

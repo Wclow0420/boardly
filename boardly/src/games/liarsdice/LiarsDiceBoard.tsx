@@ -594,6 +594,11 @@ export function LiarsDiceBoard({
 
   const voted = state.endVotes.includes(mySeat);
 
+  // until this device's memory of which reveals it has watched is read,
+  // nothing is shown: a reload in the middle of a reveal mustn't flash
+  // the cups already drunk
+  if (!memoryReady) return <View style={styles.wait} />;
+
   return (
     <GameStage
       header={
@@ -686,6 +691,7 @@ export function LiarsDiceBoard({
 }
 
 const styles = StyleSheet.create({
+  wait: { flex: 1, backgroundColor: "#1C0C0A" },
   main: { alignSelf: "stretch" },
   pair: { flexDirection: "row", gap: 10, alignSelf: "stretch", alignItems: "center" },
   half: { flex: 1 },

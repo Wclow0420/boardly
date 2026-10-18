@@ -583,22 +583,54 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
   }
 
   // ── the header: whose turn, how many still in, everyone's tile ──
-  const tiles: DenTile[] = people.map((p) => ({
-    seat: p.seat,
-    name: p.name,
-    hidden: state.players[p.seat]?.cards.filter((c) => !c.revealed).length ?? 0,
-    coins: state.players[p.seat]?.coins ?? 0,
-  }));
-  const title = over
+  // It never runs ahead of the stage: while a challenge or a player out
+  // is still to be shown here, the cards lost and the players out since
+  // (and a game won by it) are left off until that moment has played
+  const cut = staged ? staged.at : state.log.length;
+  const unseenLost: Record<number, number> = {};
+  let unseenOut = 0;
+  for (let at = cut; at < state.log.length; at++) {
+    const event = state.log[at];
+    if (event.t === "lose") unseenLost[event.seat] = (unseenLost[event.seat] ?? 0) + 1;
+    if (event.t === "out") unseenOut++;
+  }
+  const goneSeat = staged?.event.t === "out" ? staged.event.seat : null;
+  const overShown = over && !staged;
+  // a game ended by the moment still to be shown: still the turn it
+  // happened in
+  let turnShown = state.turn;
+  if (over && staged) {
+    for (let at = cut - 1; at >= 0; at--) {
+      const event = state.log[at];
+      if (event.t === "action") {
+        turnShown = event.actor;
+        break;
+      }
+    }
+  }
+  const tiles: DenTile[] = people.map((p) => {
+    const hidden = (state.players[p.seat]?.cards.filter((c) => !c.revealed).length ?? 0) + (unseenLost[p.seat] ?? 0);
+    return {
+      seat: p.seat,
+      name: p.name,
+      hidden: p.seat === goneSeat ? Math.max(1, hidden) : hidden,
+      coins: state.players[p.seat]?.coins ?? 0,
+    };
+  });
+  const title = overShown
     ? state.winner !== null
       ? state.winner === mySeat
         ? t("coup.end.youWin")
         : t("coup.den.won", { name: shortName(nameOf(state.winner)) })
       : t("coup.result.none")
-    : state.turn === mySeat
+    : turnShown === mySeat
       ? t("coup.den.yourTurn")
-      : t("coup.den.turn", { name: shortName(nameOf(state.turn)) });
-  const subtitle = t("coup.den.subtitle", { n: Math.max(1, turnCount(state)), left: aliveCount(state), total: state.numPlayers });
+      : t("coup.den.turn", { name: shortName(nameOf(turnShown)) });
+  const subtitle = t("coup.den.subtitle", {
+    n: Math.max(1, turnCount(state)),
+    left: aliveCount(state) + unseenOut,
+    total: state.numPlayers,
+  });
 
   const tools = (
     <>
@@ -610,12 +642,16 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
   const away = kind === "show" || kind === "out" || kind === "ending" || kind === "deal";
   const sideTools = !away;
 
+  // until this device's memory of what it has watched is read, nothing is
+  // shown: a reload in the middle of a moment mustn't flash its outcome
+  if (!ready) return <View style={styles.wait} />;
+
   return (
     <DenStage
       title={title}
       subtitle={subtitle}
       tiles={tiles}
-      turn={over ? state.winner : state.turn}
+      turn={overShown ? state.winner : turnShown}
       under={
         !over && me ? (
           <>
@@ -644,7 +680,7 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
           {panel === "hand" ? (
             <HandPanel state={state} mySeat={mySeat} />
           ) : panel === "record" ? (
-            <Journal pages={hustlePages(state.log, mySeat, t, userOf)} emptyText={t("coup.journal.empty")} />
+            <Journal pages={hustlePages(state.log.slice(0, cut), mySeat, t, userOf)} emptyText={t("coup.journal.empty")} />
           ) : panel === "roles" ? (
             <RolesPanel />
           ) : null}
@@ -737,6 +773,7 @@ function RolesPanel() {
 }
 
 const styles = StyleSheet.create({
+  wait: { flex: 1, backgroundColor: "#1A0C0E" },
   main: { alignSelf: "stretch" },
   pair: { flexDirection: "row", gap: 10, alignSelf: "stretch", alignItems: "center" },
   half: { flex: 1 },

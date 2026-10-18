@@ -140,9 +140,67 @@ ${part(mount, "url(#hgold)", INK, 0.7)}
 <circle cx="${f(x - 1.2)}" cy="${f(jy - 1.3)}" r="0.95" fill="#fff" fill-opacity="0.9"/>`;
 }
 
+/** How a closed operation's file is marked: a green seal on a cleared
+ *  one; a red band and a red wax seal on a compromised one. */
+function fileMark(F: HeaderLayout["files"][number], kind: "won" | "lost", i: number, only?: "band" | "seal") {
+  const x = F.x;
+  const y = F.y;
+  const w = F.w;
+  const h = F.h;
+  const front = rrect(x, y + 12, w, h - 12, 1.6);
+  let mark = "";
+  if (kind === "won") {
+    const sx = x + w / 2;
+    const sy = y + h - 15;
+    const seal = `<path d="${circle(sx + 0.6, sy + 1.2, 9)}" fill="#000" fill-opacity="0.3"/>
+${part(circle(sx, sy, 9), "url(#hgold)", INK, 0.8)}
+${part(circle(sx, sy, 6.8), "url(#hgreen)", "#06240F", 0.6)}
+<path d="M${f(sx - 3.4)} ${f(sy + 0.2)}l2.3 2.5l4.6 -5.2" fill="none" stroke="#F0FFE8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>`;
+    const band = `<path d="M${f(x + 9)} ${f(y + 22)}H${f(x + w - 12)}M${f(x + 9)} ${f(y + 26)}H${f(x + w - 16)}" stroke="#5A5040" stroke-opacity="0.6" stroke-width="0.8" stroke-dasharray="2 0.8"/>`;
+    mark = (only !== "band" ? seal : "") + (only !== "seal" ? band : "");
+  } else if (kind === "lost") {
+    const sx = x + w / 2 + 1;
+    const sy = y + h - 15;
+    const band = `<clipPath id="hc${i}"><path d="${front}"/></clipPath>
+<g clip-path="url(#hc${i})"><path d="M${f(x - 6)} ${f(y + 30)}L${f(x + w + 6)} ${f(y + 14)}L${f(x + w + 6)} ${f(y + 22)}L${f(x - 6)} ${f(y + 38)}Z" fill="url(#hwaxband)"/>
+<path d="M${f(x - 6)} ${f(y + 30)}L${f(x + w + 6)} ${f(y + 14)}M${f(x - 6)} ${f(y + 38)}L${f(x + w + 6)} ${f(y + 22)}" stroke="#4A0410" stroke-width="0.7"/>
+<path d="M${f(x + 4)} ${f(y + 31.4)}L${f(x + w - 4)} ${f(y + 19.4)}" stroke="#FFD8DC" stroke-opacity="0.7" stroke-width="0.9" stroke-dasharray="2.4 1.2"/></g>`;
+    const seal = `<path d="${blob(sx + 0.7, sy + 1.4, 9.4, 1, 7, 0.7)}" fill="#000" fill-opacity="0.35"/>
+${part(blob(sx, sy, 9.4, 1, 7, 0.7), "url(#hwax)", "#2A0208", 0.8)}
+<path d="${circle(sx, sy, 6)}" fill="none" stroke="#3A0408" stroke-opacity="0.6" stroke-width="1"/>
+<path d="M${f(sx - 3)} ${f(sy - 3)}L${f(sx + 3)} ${f(sy + 3)}M${f(sx + 3)} ${f(sy - 3)}L${f(sx - 3)} ${f(sy + 3)}" stroke="#2A0208" stroke-width="1.6" stroke-linecap="round"/>
+<path d="M${f(sx - 5.6)} ${f(sy - 4)}Q${f(sx - 3.8)} ${f(sy - 6.6)} ${f(sx - 0.8)} ${f(sy - 7)}" stroke="#fff" stroke-opacity="0.6" stroke-width="0.8" fill="none" stroke-linecap="round"/>`;
+    mark = (only !== "seal" ? band : "") + (only !== "band" ? seal : "");
+  }
+  return mark;
+}
+
+/** Where a closed file's seal sits (its middle), for the stamp. */
+export function sealAt(L: HeaderLayout, i: number, kind: "won" | "lost") {
+  const F = L.files[i];
+  return { x: F.x + F.w / 2 + (kind === "lost" ? 1 : 0), y: F.y + F.h - 15 };
+}
+
+/** The box round file `i` that its mark is drawn in, on its own. */
+export function markBox(L: HeaderLayout, i: number) {
+  const F = L.files[i];
+  return { x: F.x - 12, y: F.y - 4, w: F.w + 24, h: F.h + 16 };
+}
+
+/** A closed file's mark on its own (the seal coming down on it), in the
+ *  header's coordinates, framed by `markBox`: the band across it, or
+ *  the seal. */
+export function markArt(L: HeaderLayout, i: number, kind: "won" | "lost", only: "band" | "seal") {
+  const B = markBox(L, i);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${B.w}" height="${B.h}" viewBox="${f(B.x)} ${f(B.y)} ${f(B.w)} ${f(B.h)}">
+<defs>${lin("hgold", GOLD)}${rad("hgreen", GREEN)}${rad("hwax", WAX)}${lin("hwaxband", ["#E04A5A", "#A01428"], 0, 1)}</defs>
+${fileMark(L.files[i], kind, i, only)}
+</svg>`;
+}
+
 /** A case file: its back cover with a numbered tab, the papers inside,
  *  the front cover, and how the operation went. */
-function caseFile(F: HeaderLayout["files"][number], kind: FileState, i: number) {
+function caseFile(F: HeaderLayout["files"][number], kind: FileState, i: number, bare = false) {
   const lift = kind === "now" ? -6 : 0;
   const x = F.x;
   const y = F.y + lift;
@@ -163,26 +221,8 @@ function caseFile(F: HeaderLayout["files"][number], kind: FileState, i: number) 
 <path d="M${f(x + w / 2)} ${f(y + h - 7)}C${f(x + w / 2 + 6)} ${f(y + h - 2)} ${f(x + w / 2 + 9)} ${f(y + h - 12)} ${f(x + w / 2 + 13)} ${f(y + h - 8)}" fill="none" stroke="#7A2A18" stroke-width="0.8"/>`;
   const label = part(rrect(x + 7, y + 18, w - 14, 13, 1.2), "#FFFDF4", "#8A7A5A", 0.6);
   let mark = "";
-  if (kind === "won") {
-    const sx = x + w / 2;
-    const sy = y + h - 15;
-    mark = `<path d="${circle(sx + 0.6, sy + 1.2, 9)}" fill="#000" fill-opacity="0.3"/>
-${part(circle(sx, sy, 9), "url(#hgold)", INK, 0.8)}
-${part(circle(sx, sy, 6.8), "url(#hgreen)", "#06240F", 0.6)}
-<path d="M${f(sx - 3.4)} ${f(sy + 0.2)}l2.3 2.5l4.6 -5.2" fill="none" stroke="#F0FFE8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M${f(x + 9)} ${f(y + 22)}H${f(x + w - 12)}M${f(x + 9)} ${f(y + 26)}H${f(x + w - 16)}" stroke="#5A5040" stroke-opacity="0.6" stroke-width="0.8" stroke-dasharray="2 0.8"/>`;
-  } else if (kind === "lost") {
-    const sx = x + w / 2 + 1;
-    const sy = y + h - 15;
-    mark = `<clipPath id="hc${i}"><path d="${front}"/></clipPath>
-<g clip-path="url(#hc${i})"><path d="M${f(x - 6)} ${f(y + 30)}L${f(x + w + 6)} ${f(y + 14)}L${f(x + w + 6)} ${f(y + 22)}L${f(x - 6)} ${f(y + 38)}Z" fill="url(#hwaxband)"/>
-<path d="M${f(x - 6)} ${f(y + 30)}L${f(x + w + 6)} ${f(y + 14)}M${f(x - 6)} ${f(y + 38)}L${f(x + w + 6)} ${f(y + 22)}" stroke="#4A0410" stroke-width="0.7"/>
-<path d="M${f(x + 4)} ${f(y + 31.4)}L${f(x + w - 4)} ${f(y + 19.4)}" stroke="#FFD8DC" stroke-opacity="0.7" stroke-width="0.9" stroke-dasharray="2.4 1.2"/></g>
-<path d="${blob(sx + 0.7, sy + 1.4, 9.4, 1, 7, 0.7)}" fill="#000" fill-opacity="0.35"/>
-${part(blob(sx, sy, 9.4, 1, 7, 0.7), "url(#hwax)", "#2A0208", 0.8)}
-<path d="${circle(sx, sy, 6)}" fill="none" stroke="#3A0408" stroke-opacity="0.6" stroke-width="1"/>
-<path d="M${f(sx - 3)} ${f(sy - 3)}L${f(sx + 3)} ${f(sy + 3)}M${f(sx + 3)} ${f(sy - 3)}L${f(sx - 3)} ${f(sy + 3)}" stroke="#2A0208" stroke-width="1.6" stroke-linecap="round"/>
-<path d="M${f(sx - 5.6)} ${f(sy - 4)}Q${f(sx - 3.8)} ${f(sy - 6.6)} ${f(sx - 0.8)} ${f(sy - 7)}" stroke="#fff" stroke-opacity="0.6" stroke-width="0.8" fill="none" stroke-linecap="round"/>`;
+  if (kind === "won" || kind === "lost") {
+    if (!bare) mark = fileMark(F, kind, i);
   } else if (kind === "now") {
     // a clip holds the orders on: it's this one's turn
     const cx0 = x + w - 9;
@@ -202,8 +242,9 @@ ${mark}
 ${shade}`;
 }
 
-/** The header, w × h: canopy, rail, crest, case files, plaque. */
-export function agencyHeader(L: HeaderLayout, files: FileState[]) {
+/** The header, w × h: canopy, rail, crest, case files, plaque. File
+ *  `bare` is drawn closed but not yet marked (its seal is coming down). */
+export function agencyHeader(L: HeaderLayout, files: FileState[], bare = -1) {
   const { w, h, rail, plaque: P, crest: C } = L;
   // light through venetian blinds, falling across the steel
   const slats: string[] = [];
@@ -250,7 +291,7 @@ ${lin("hslat", ["#FFE7B0", "#FFE7B0"], 0, 1, [0.07, 0.015])}
 ${seamPaths}
 <rect x="0" y="${L.top - 10}" width="${w}" height="3" fill="url(#hgold)" stroke="${INK}" stroke-width="0.5"/>
 ${crest(C.x, C.y, C.r)}
-${L.files.map((F, i) => caseFile(F, files[i] ?? "ahead", i)).join("")}
+${L.files.map((F, i) => caseFile(F, files[i] ?? "ahead", i, i === bare)).join("")}
 <rect x="0" y="${rail - 1}" width="${w}" height="10" fill="#000" fill-opacity="0.45" transform="translate(0 4)"/>
 <rect x="0" y="${rail - 3}" width="${w}" height="7" fill="url(#hgold)" stroke="${INK}" stroke-width="0.8"/>
 <path d="M0 ${rail - 1.4}H${w}" stroke="#fff" stroke-opacity="0.55" stroke-width="0.9"/>

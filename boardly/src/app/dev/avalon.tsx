@@ -125,6 +125,31 @@ const SAMPLES: Record<string, { state: AvalonState; deal?: boolean; reveal?: "vo
     state: S({ phase: "team", quest: 3, leader: 1, questResults: [...base.questResults, { team: [0, 2, 3], fails: 2, success: false }] }),
     reveal: "mission",
   },
+  // the last operations, still to be revealed: the third success (on to
+  // the Hitman's shot) and the third failure (on to the ending)
+  thirdWin: {
+    state: S({
+      phase: "assassinate",
+      quest: 3,
+      assassinSeat: 2,
+      evilSeats: [2, 4],
+      questResults: [...base.questResults, { team: [0, 3], fails: 0, success: true }, { team: [1, 2, 3], fails: 0, success: true }],
+    }),
+    reveal: "mission",
+  },
+  thirdFail: {
+    state: S({
+      phase: "finished",
+      quest: 4,
+      winner: "evil",
+      winReason: "failedQuests",
+      roles: ROLES5,
+      assassinSeat: 2,
+      evilSeats: [2, 4],
+      questResults: [...base.questResults, { team: [0, 3], fails: 0, success: true }, { team: [1, 2, 4], fails: 1, success: false }, { team: [0, 2, 4], fails: 1, success: false }],
+    }),
+    reveal: "mission",
+  },
   assassin: {
     state: S({
       phase: "assassinate",

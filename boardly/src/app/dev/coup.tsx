@@ -68,7 +68,7 @@ const act = (actor: number, type: ActionType, target: number | null = null) => (
 
 /** Each moment; `deal`: my cards still to be dealt; `reveal`: the last
  *  log event still to be played on the stage. */
-const SAMPLES: Record<string, { state: CoupState; deal?: boolean; reveal?: boolean }> = {
+const SAMPLES: Record<string, { state: CoupState; deal?: boolean; reveal?: boolean | number }> = {
   deal: { state: S({ log: [], turn: 3, waitingOn: [3], players: PLAYERS.map((p, i) => (i === 0 ? p : { coins: 2, alive: true, cards: [hidden(null), hidden(null)] })) }), deal: true },
   table: { state: S({}) },
   felt: { state: S({ turn: 0, waitingOn: [0] }) },
@@ -156,6 +156,31 @@ const SAMPLES: Record<string, { state: CoupState; deal?: boolean; reveal?: boole
   },
   swapping: {
     state: S({ phase: "exchange", action: act(2, "exchange"), waitingOn: [2], log: [...LOG, { t: "action", actor: 2, action: "exchange", target: null }] }),
+  },
+  // a bluff caught on someone's last card ends the game: the challenge
+  // and what followed (the card lost, out, the win) still to be shown
+  lastBluff: {
+    state: S({
+      phase: "finished",
+      winner: 0,
+      waitingOn: [],
+      players: [
+        { coins: 5, alive: true, cards: [hidden("duke"), lost("ambassador")] },
+        { coins: 0, alive: false, cards: [lost("assassin"), lost("captain")] },
+        { coins: 0, alive: false, cards: [lost("duke"), lost("contessa")] },
+        { coins: 0, alive: false, cards: [lost("ambassador"), lost("captain")] },
+        { coins: 0, alive: false, cards: [lost("assassin"), lost("contessa")] },
+        { coins: 3, alive: false, cards: [lost("captain"), lost("assassin")] },
+      ],
+      log: [
+        ...LOG,
+        { t: "action", actor: 5, action: "tax", target: null },
+        { t: "challenge", challenger: 0, claimant: 5, role: "duke", caught: true },
+        { t: "lose", seat: 5, role: "assassin", why: "challenge" },
+        { t: "out", seat: 5 },
+      ],
+    }),
+    reveal: 3,
   },
   won: {
     state: S({
@@ -264,7 +289,7 @@ function HustleSamples() {
   const [seeded, setSeeded] = useState<string | null>(null);
   useEffect(() => {
     const { state, deal, reveal } = SAMPLES[sample];
-    const watched = { dealt: !deal, shown: state.log.length - (reveal ? 1 : 0) };
+    const watched = { dealt: !deal, shown: state.log.length - (reveal === true ? 1 : reveal || 0) };
     AsyncStorage.setItem(`boardly.coup.watched.${session}`, JSON.stringify(watched))
       .catch(() => {})
       .finally(() => setSeeded(sample));

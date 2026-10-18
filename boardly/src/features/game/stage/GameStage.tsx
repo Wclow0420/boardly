@@ -36,6 +36,7 @@ import {
   SatchelSlot,
   dockInsets,
   satchelCentre,
+  useHandFlight,
   type StageDock,
 } from "./Dock";
 import { Glow, Plinth } from "./parts";
@@ -56,6 +57,9 @@ export const MIDDLE_PAD = { top: 26, bottom: 34 };
 /** The same, on a stage with a dock: nothing stands over the scene's
  *  foot, so the middle reaches nearly down to the plinth. */
 export const DOCK_PAD = { top: 26, bottom: 10 };
+/** How long the dock takes to put away what was open (the card flying
+ *  home): a scene behind rests until then. */
+const DOCK_SETTLE = 420;
 
 /** Development only: lay the stage out as if the screen were this wide
  *  (a narrow phone, on a wide simulator). */
@@ -187,7 +191,10 @@ export function GameStage({
   const [open, setOpen] = useState<"hand" | "satchel" | "hint" | null>(null);
   const onOpen = dock?.onOpen;
   useEffect(() => {
-    onOpen?.(open !== null);
+    if (open !== null) return onOpen?.(true);
+    // the scene wakes once the card has flown home or the tools folded
+    const wake = setTimeout(() => onOpen?.(false), DOCK_SETTLE);
+    return () => clearTimeout(wake);
   }, [open, onOpen]);
   const toggle = (what: "hand" | "satchel" | "hint") => setOpen((now) => (now === what ? null : what));
   const hand = dock?.hand;
@@ -198,6 +205,7 @@ export function GameStage({
     setOpen(null);
   }
   const fanFrom = satchelCentre(width);
+  const flight = useHandFlight();
 
   // what's under the header and the tools slide off when a moment takes
   // the stage
@@ -291,7 +299,7 @@ export function GameStage({
         </Plinth>
         {dock ? (
           <View style={[styles.dock, { width, height: plinthH }]} pointerEvents="box-none">
-            {hand ? <HandSlot hand={hand} anchor={handRef} width={width} lifted={open === "hand"} onLift={() => toggle("hand")} /> : null}
+            {hand ? <HandSlot hand={hand} anchor={handRef} flight={flight} width={width} onLift={() => toggle("hand")} /> : null}
             {satchel ? (
               <SatchelSlot
                 width={width}
@@ -305,16 +313,15 @@ export function GameStage({
           </View>
         ) : null}
       </View>
-      {satchel && open === "satchel" ? (
+      {satchel ? (
         <SatchelFan
           tools={satchel.tools}
           at={{ x: fanFrom.x, y: height - plinthH + fanFrom.y }}
+          open={open === "satchel"}
           onClose={() => setOpen(null)}
         />
       ) : null}
-      {hand && open === "hand" ? (
-        <HandUp hand={hand} width={width} height={height} plinthTop={height - plinthH} onDown={() => setOpen(null)} />
-      ) : null}
+      {hand ? <HandUp hand={hand} flight={flight} up={open === "hand"} onDown={() => setOpen(null)} /> : null}
       {dock ? (
         <Popup
           look={look.popup}

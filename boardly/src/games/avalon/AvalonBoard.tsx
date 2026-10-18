@@ -147,9 +147,16 @@ export function AvalonBoard({ state, mySeat, players, busy, finished, sessionId,
       ? state.questResults[results - 1]
       : null;
   const revealing = (voteToShow !== null || missionToShow !== null) && !dealing;
+  // an operation's file in the header closes only once its reveal has
+  // been watched here, its seal coming down as the stage moves on
+  const [stamp, setStamp] = useState<{ index: number; n: number } | null>(null);
   const markReveal = () => {
     tapHaptic();
-    pieces.mark(voteToShow ? { votes: state.history.length } : { missions: results });
+    if (voteToShow) pieces.mark({ votes: state.history.length });
+    else {
+      pieces.mark({ missions: results });
+      setStamp({ index: results - 1, n: results });
+    }
   };
 
   // ── the team and the vote: everyone on the stage
@@ -252,16 +259,39 @@ export function AvalonBoard({ state, mySeat, players, busy, finished, sessionId,
     };
   }
 
-  // the header and the tags never run ahead of the stage: while a vote
-  // or an operation is still being revealed they show the table as it
-  // stood before it
+  // the header and the tags never run ahead of the stage: they show the
+  // table as this device has seen it, so a vote or an operation still to
+  // be revealed (or being revealed, or finishing while my own stamp is
+  // still coming down) is left out until its reveal has been watched
+  const seenVotes = Math.min(state.history.length, pieces.watched.votes ?? state.history.length);
+  const seenMissions = Math.min(results, pieces.watched.missions ?? results);
+  // the record, likewise, holds what has been revealed here
+  const seen: AvalonState =
+    seenVotes < state.history.length || seenMissions < results
+      ? { ...state, history: state.history.slice(0, seenVotes), questResults: state.questResults.slice(0, seenMissions) }
+      : state;
   let shown = state;
-  if (revealing && missionToShow) {
-    shown = { ...state, phase: "quest", quest: results - 1, questResults: state.questResults.slice(0, -1), winner: null };
-  } else if (revealing && voteToShow) {
+  if (seenVotes < state.history.length) {
+    const vote = state.history[state.history.length - 1];
     let before = 0;
     for (let i = state.history.length - 2; i >= 0 && !state.history[i].approved; i--) before++;
-    shown = { ...state, phase: "vote", quest: voteToShow.quest, rejections: before, winner: null };
+    shown = {
+      ...state,
+      phase: "vote",
+      quest: vote.quest,
+      rejections: before,
+      questResults: state.questResults.slice(0, seenMissions),
+      winner: null,
+    };
+  } else if (seenMissions < results) {
+    shown = {
+      ...state,
+      phase: "quest",
+      quest: seenMissions,
+      rejections: 0,
+      questResults: state.questResults.slice(0, seenMissions),
+      winner: null,
+    };
   }
 
   const showing = !pieces.ready || dealing ? null : panel;
@@ -484,6 +514,10 @@ export function AvalonBoard({ state, mySeat, players, busy, finished, sessionId,
           ? "ending"
           : "empty";
 
+  // until this device's memory of what it has watched is read, nothing is
+  // shown: a reload in the middle of a reveal mustn't flash its result
+  if (!pieces.ready) return <View style={styles.wait} />;
+
   return (
     <AgencyStage
       state={shown}
@@ -493,6 +527,7 @@ export function AvalonBoard({ state, mySeat, players, busy, finished, sessionId,
       tools={ending ? undefined : tools}
       away={desk?.kind === "reveal" || lineup || ending}
       bleed={ending}
+      stamp={stamp}
       hint={hint}
       bottom={bottom}
       onBack={stage?.onBack}
@@ -535,7 +570,7 @@ export function AvalonBoard({ state, mySeat, players, busy, finished, sessionId,
               )
             ) : showing === "record" ? (
               <View style={{ gap: spacing.sm }}>
-                <Record state={state} names={names} />
+                <Record state={seen} names={names} />
               </View>
             ) : showing === "agents" ? (
               <Agents state={state} mySeat={mySeat} players={players} names={names} />
@@ -550,4 +585,5 @@ export function AvalonBoard({ state, mySeat, players, busy, finished, sessionId,
 const styles = StyleSheet.create({
   main: { alignSelf: "stretch" },
   besideTools: { right: 60 },
+  wait: { flex: 1, backgroundColor: "#0D181C" },
 });

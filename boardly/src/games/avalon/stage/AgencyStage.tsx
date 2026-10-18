@@ -49,6 +49,7 @@ export function AgencyStage({
   away = false,
   bleed = false,
   paused = false,
+  stamp = null,
 }: {
   state: AvalonState;
   /** The plaque's second line (the phase). */
@@ -64,6 +65,8 @@ export function AgencyStage({
   away?: boolean;
   bleed?: boolean;
   paused?: boolean;
+  /** A file just closed on this device: its seal comes down. */
+  stamp?: { index: number; n: number } | null;
 }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -89,6 +92,7 @@ export function AgencyStage({
           subtitle={subtitle}
           files={files}
           labels={labels}
+          stamp={stamp}
           paused={paused}
         />
       }
