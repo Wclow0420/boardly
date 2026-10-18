@@ -2140,6 +2140,13 @@
       "follow": "Ikut {{name}}",
       "reach_one": "Pasukan mesti dalam 1 bilik dari {{room}}.",
       "reach_other": "Pasukan mesti dalam {{count}} bilik dari {{room}}."
+    },
+    "medallion": {
+      "title": "Kejadian malam",
+      "tonight": "Malam ini",
+      "lasting": "Masih berkuat kuasa",
+      "label": "Kejadian malam ini: {{name}}",
+      "none": "Tiada kejadian malam ini"
     }
   },
   "profile": {

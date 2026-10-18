@@ -10,7 +10,7 @@ import { moveHaptic, tapHaptic } from "@/utils/haptics";
 import type { GameBoardProps, GamePlayer } from "../types";
 import { ManorMap } from "./ManorMap";
 import { Journal, type JournalPage, type JournalSection } from "@/features/game/Journal";
-import { Popup, type PopupLook } from "@/features/game/Popup";
+import { Popup } from "@/features/game/Popup";
 import { arrivalOf } from "./arrival";
 import { LetterScene, RoleIntro, ROLE_CARD_W } from "./Immersion";
 import { RoleCardBack, RoleCardFace } from "./RoleCardFace";
@@ -19,7 +19,8 @@ import { RoomScene, type ScenePerson } from "./RoomScene";
 import { FlatPreview } from "./flat/FlatPreview";
 import { FlatRoom } from "./flat/FlatRoom";
 import { FLAT_ROOMS } from "./flat/flatRooms";
-import { ManorStage, stageText } from "./ManorStage";
+import { MANOR_POPUP, ManorStage, stageText } from "./ManorStage";
+import { shownNight } from "./shownNight";
 import { DOCK_PAD, useStageSize, type StageDock, type StageHint, type StageTool } from "@/features/game/stage/GameStage";
 import { StageLineup, type Light, type Plate } from "@/features/game/stage/StageLineup";
 import { VoteButtons } from "./VoteButtons";
@@ -54,8 +55,6 @@ import {
   type TimelineEntry,
 } from "./logic";
 
-/** The manor's popups: a night-blue sign, lantern-amber jewels. */
-const MANOR_POPUP: PopupLook = { enamel: ["#3A4A7A", "#1E2A50", "#0E1430"], jewel: "amber", glow: "#FFB45E" };
 
 /** The panels behind the tools in the satchel (my role card is in my
  *  hand, on the plinth's other end). */
@@ -387,13 +386,21 @@ export function NightwatchBoard({
   const fresh: Partial<Record<Panel, boolean>> = { notebook: notesNow > looked.notebook, record: recordNow > looked.record };
   // the dock's hand lifted, satchel open or hint opened: the room rests
   const [docked, setDocked] = useState(false);
-  const subtitle = [
-    t(`nightwatch.phases.${state.phase}`),
-    !over && state.myRoom !== null ? names.roomName(state.myRoom) : null,
-    state.rejections > 0 ? t("nightwatch.bar.rejections", { count: state.rejections }) : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  // the header tells the night only as far as it has been revealed here:
+  // a settled vote or mission waits for its lanterns
+  const shown = pieces.ready
+    ? shownNight(state, { votes: pieces.watched.votes, missions: pieces.watched.missions })
+    : null;
+  const subtitle = shown
+    ? [
+        t(`nightwatch.phases.${shown.phase}`),
+        // the count before my room: the line is cut short at the end
+        shown.rejections > 0 ? t("nightwatch.bar.rejections", { count: shown.rejections }) : null,
+        shown.live && !shown.held && state.myRoom !== null ? names.roomName(state.myRoom) : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "";
 
   // ── the lanterns: the vote and the mission on the stage ──
   const hold = useSharedValue(0);
@@ -965,6 +972,7 @@ export function NightwatchBoard({
   return (
     <ManorStage
       state={state}
+      shown={shown}
       roomName={names.roomName}
       subtitle={subtitle}
       sceneKey={

@@ -2142,6 +2142,13 @@
       "follow": "Follow {{name}}",
       "reach_one": "The team must be within 1 room of the {{room}}.",
       "reach_other": "The team must be within {{count}} rooms of the {{room}}."
+    },
+    "medallion": {
+      "title": "Night events",
+      "tonight": "Tonight",
+      "lasting": "Still in effect",
+      "label": "Tonight's event: {{name}}",
+      "none": "No event tonight"
     }
   },
   "profile": {

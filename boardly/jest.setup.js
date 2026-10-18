@@ -54,6 +54,8 @@ jest.mock("@/features/mascot/MascotStage", () => ({
   MascotFigure: () => null,
   MascotStage: () => null,
 }));
+// Seal the Manor's night-event medallion in the arch (one Skia picture)
+jest.mock("@/games/nightwatch/medallion/EventMedallion", () => ({ EventMedallion: () => null }));
 jest.mock("@/components/tabletop/cards/PlayingCard", () => ({
   FRONT: {
     window: { x: 16, y: 12, w: 68, h: 50 },

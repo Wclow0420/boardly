@@ -24,7 +24,7 @@ const rad = (id: string, colors: readonly string[], op?: number[], cx = 0.5, cy 
 export type Pane = "won" | "lost" | "now" | "ahead";
 
 /** The glass of each kind of night: light, body, depth. */
-const GLASS: Record<Pane, [string, string, string]> = {
+export const GLASS: Record<Pane, [string, string, string]> = {
   won: ["#E4F7B0", "#79B83E", "#2E5E1A"],
   lost: ["#FFA0AA", "#B81E36", "#3E0610"],
   now: ["#FFF4C4", "#FFB23A", "#A8481A"],
@@ -63,7 +63,7 @@ export type ArchLayout = ReturnType<typeof archLayout>;
 
 /** A lancet: a tall window with a pointed top, x..x+w, y..y+h, shrunk
  *  evenly by k. */
-function lancet(x: number, y: number, w: number, h: number, k = 0) {
+export function lancet(x: number, y: number, w: number, h: number, k = 0) {
   const l = x + k;
   const r = x + w - k;
   const t = y + k;

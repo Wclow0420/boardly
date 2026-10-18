@@ -8,6 +8,12 @@
 // a storm, study10 a full house on the mission's seal in fog with a door
 // locked, studyDark a blackout with a stranger in it, studyUsed the Study
 // already read tonight (a touch lifts the ledger without the popup).
+// The header (arch, tags, the event medallion) lags until a reveal is
+// watched: succeeded/failed (a new night and event behind the lanterns),
+// lastWon/lastLost (the third result: the last chance, the ending),
+// rejected/approved/rejected5 (a vote held back); lasting shows tonight's
+// event with two lasting ones (tap the medallion), events turns the
+// night's event over every 3 s.
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
@@ -174,8 +180,64 @@ const SAMPLES: Record<string, { state: NightwatchState; deal?: boolean; reveal?:
   },
   evilMission: { state: S({ phase: "mission", team: [0, 3], missionPlayed: [], myRole: "double", known: [{ seat: 4, as: "evil" }] }) },
   playing: { state: S({ phase: "mission", team: [1, 3], missionPlayed: [3] }) },
-  succeeded: { state: S({ phase: "announce", round: 3, ready: [false, true, true, false, true], results: [...base.results, result(true, 0)] }), reveal: "mission" },
-  failed: { state: S({ phase: "announce", round: 3, ready: [false, true, true, false, true], results: [...base.results, result(false, 1)] }), reveal: "mission" },
+  // a mission revealed: the server is already on the next night (its
+  // event too), the header waits for the lanterns, then lights the window
+  // and turns the medallion to the new night's event
+  succeeded: {
+    state: S({
+      phase: "announce", round: 3, event: "storm", missionRoom: 7, nextMissionRoom: 3, ready: [false, true, true, false, true],
+      results: [...base.results, result(true, 0)], timeline: [...base.timeline, { round: 3, kind: "night", event: "storm" }],
+    }),
+    reveal: "mission",
+  },
+  failed: {
+    state: S({
+      phase: "announce", round: 3, event: "calm", missionRoom: 7, nextMissionRoom: 3, ready: [false, true, true, false, true],
+      results: [...base.results, result(false, 1)], timeline: [...base.timeline, { round: 3, kind: "night", event: "calm" }],
+    }),
+    reveal: "mission",
+  },
+  // the third success: on to the last chance once the lanterns have shown it
+  lastWon: {
+    state: S({
+      phase: "assassinate", round: 3, missionRoom: 7, nextMissionRoom: 3, assassinSeat: 4, event: "echo",
+      results: [...base.results, result(true, 0), { round: 3, room: 7, team: [0, 1, 3], missing: [], fails: 0, success: true }],
+      timeline: [...base.timeline, { round: 3, kind: "night", event: "echo" }],
+    }),
+    reveal: "mission",
+  },
+  // the third failure: the ending, once the lanterns have shown it
+  lastLost: {
+    state: S({
+      phase: "finished", round: 3, missionRoom: 7, nextMissionRoom: 3, event: "echo", winner: "evil", winReason: "failedMissions",
+      roles: ["prophet", "tracker", "double", "apprentice", "hermit"],
+      results: [...base.results, result(false, 1), { round: 3, room: 7, team: [0, 2, 3], missing: [], fails: 1, success: false }],
+      timeline: [...base.timeline, { round: 3, kind: "night", event: "echo" }],
+    }),
+    reveal: "mission",
+  },
+  // the fifth team turned down: the ending, once the vote is revealed
+  rejected5: {
+    state: S({
+      phase: "finished", leader: 3, rejections: 5, winner: "evil", winReason: "rejections",
+      roles: ["prophet", "tracker", "double", "apprentice", "hermit"],
+      history: [
+        ...base.history,
+        ...[0, 1, 2, 3, 4].map((k) => ({ ...proposal(false, [0, 3], [true, false, false, true, false]), leader: (3 + k) % 5 })),
+      ],
+    }),
+    reveal: "vote",
+  },
+  // two lasting effects (a door, a caved-in room) under tonight's echo
+  lasting: {
+    state: S({
+      phase: "team", leader: 3, round: 3, event: "echo", missionRoom: 7, nextMissionRoom: 3, collapsed: [8],
+      results: [...base.results, result(true, 0)],
+      timeline: [...base.timeline, { round: 2, kind: "collapse", room: 8 }, { round: 3, kind: "night", event: "echo" }],
+    }),
+  },
+  // the event changing every few seconds, through every event and none
+  events: { state: S({ phase: "team", leader: 3 }) },
   assassin: {
     state: S({ phase: "assassinate", myRole: "double", known: [{ seat: 4, as: "evil" }], assassinSeat: 0, evilSeats: [0, 4] }),
   },
@@ -251,6 +313,16 @@ function ManorSamples() {
     if (asked && SAMPLES[asked]) setSample(asked);
   }
   const fps = useFps(perf === "1");
+  // sample=events: the night's event turns over every 3 s
+  const [turn, setTurn] = useState(0);
+  useEffect(() => {
+    if (sample !== "events") return;
+    const id = setInterval(() => setTurn((n) => n + 1), 3000);
+    return () => clearInterval(id);
+  }, [sample]);
+  const CYCLE = ["fog", "storm", null, "blackout", "collapse", "secretDoor", "insomnia", "echo", "calm"] as const;
+  const shownState =
+    sample === "events" ? ({ ...SAMPLES.events.state, event: CYCLE[turn % CYCLE.length] } as NightwatchState) : SAMPLES[sample].state;
   const router = useRouter();
   // moments after the deal: the card counts as dealt for this session
   const session = `dev-${sample}`;
@@ -280,7 +352,7 @@ function ManorSamples() {
           <NightwatchBoard
             key={sample}
             sessionId={session}
-            state={SAMPLES[sample].state}
+            state={shownState}
             mySeat={0}
             isMyTurn={false}
             players={NAMES.slice(0, SAMPLES[sample].state.numPlayers)}

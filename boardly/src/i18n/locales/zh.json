@@ -2135,6 +2135,13 @@
       "follow": "跟踪 {{name}}",
       "reach_one": "队员须在离{{room}} 1 个房间以内。",
       "reach_other": "队员须在离{{room}} {{count}} 个房间以内。"
+    },
+    "medallion": {
+      "title": "夜晚事件",
+      "tonight": "今晚",
+      "lasting": "持续生效",
+      "label": "今晚的事件：{{name}}",
+      "none": "今晚没有事件"
     }
   },
   "profile": {
