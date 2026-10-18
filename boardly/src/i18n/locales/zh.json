@@ -2134,7 +2134,8 @@
       "goTo": "去{{room}}",
       "follow": "跟踪 {{name}}",
       "reach_one": "队员须在离{{room}} 1 个房间以内。",
-      "reach_other": "队员须在离{{room}} {{count}} 个房间以内。"
+      "reach_other": "队员须在离{{room}} {{count}} 个房间以内。",
+      "proposedBy": "{{name}} 提出这一队"
     },
     "medallion": {
       "title": "夜晚事件",

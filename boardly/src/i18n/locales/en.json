@@ -2141,7 +2141,8 @@
       "goTo": "Go to the {{room}}",
       "follow": "Follow {{name}}",
       "reach_one": "The team must be within 1 room of the {{room}}.",
-      "reach_other": "The team must be within {{count}} rooms of the {{room}}."
+      "reach_other": "The team must be within {{count}} rooms of the {{room}}.",
+      "proposedBy": "{{name}} proposed this team"
     },
     "medallion": {
       "title": "Night events",

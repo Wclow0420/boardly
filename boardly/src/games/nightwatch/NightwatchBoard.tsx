@@ -657,7 +657,11 @@ export function NightwatchBoard({
               more: [`👑  ${t("nightwatch.rite.picking", { name: names.nameOf(state.leader ?? -1), size: teamSize(state) })}`],
             };
       }
-      return iVoted ? { line: teamLine, more: [] } : { line: t("nightwatch.prompt.vote"), more: [teamLine] };
+      // who put this team forward, and who is on it
+      const proposed = `👑  ${t("nightwatch.lip.proposedBy", { name: names.nameOf(state.leader ?? -1) })}`;
+      return iVoted
+        ? { line: teamLine, more: [proposed] }
+        : { line: t("nightwatch.prompt.vote"), more: [proposed, teamLine] };
     }
     if (rite?.kind === "choose") {
       return evil

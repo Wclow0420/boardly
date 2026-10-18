@@ -2139,7 +2139,8 @@
       "goTo": "Pergi ke {{room}}",
       "follow": "Ikut {{name}}",
       "reach_one": "Pasukan mesti dalam 1 bilik dari {{room}}.",
-      "reach_other": "Pasukan mesti dalam {{count}} bilik dari {{room}}."
+      "reach_other": "Pasukan mesti dalam {{count}} bilik dari {{room}}.",
+      "proposedBy": "{{name}} mencadangkan pasukan ini"
     },
     "medallion": {
       "title": "Kejadian malam",
