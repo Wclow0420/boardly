@@ -1,147 +1,210 @@
-// Press-and-hold button: the action only fires after the button has
-// been held for the full duration, with a fill sweeping across as
-// progress. Letting go early cancels. Used for playing quest cards, so
-// a stray tap can't send the wrong one.
+// The button you hold to play your card or take the Hitman's shot: an
+// enamel bar in a gold bezel that fills with light while held, ticking
+// faster and harder in the hand as it fills; let go early and it drains
+// away. It shares its `progress` (0..1) with the stamp being charged (or
+// the red light streaming to the one named). A line under the label says
+// to hold it, and a quick tap (someone who didn't know) shakes it and says
+// to keep holding. After Seal the Manor's.
 
-import { useEffect, useRef } from "react";
-import {
-  Animated,
+import { LinearGradient } from "expo-linear-gradient";
+import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Pressable, StyleSheet, View } from "react-native";
+import Animated, {
   Easing,
-  Pressable,
-  StyleSheet,
-  type StyleProp,
-  type ViewStyle,
-} from "react-native";
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+  type SharedValue,
+} from "react-native-reanimated";
+import { scheduleOnRN } from "react-native-worklets";
 
-import { AppText } from "@/components/ui";
-import { useAnimatedValue } from "@/hooks/useAnimatedValue";
-import { useTheme } from "@/theme";
-import { tapHaptic } from "@/utils/haptics";
+import { AppText, BezelOverlay, LightSweep } from "@/components/ui";
+import { fontFamily } from "@/theme";
+import {
+  heavyHaptic,
+  moveHaptic,
+  tapHaptic,
+  tickHaptic,
+} from "@/utils/haptics";
 
-export const HOLD_MS = 2000;
+const HOLD_MS = 1600;
 
-export interface HoldButtonProps {
-  label: string;
-  onComplete: () => void;
-  variant?: "primary" | "danger";
-  disabled?: boolean;
-  holdMs?: number;
-  accessibilityHint?: string;
-  style?: StyleProp<ViewStyle>;
-}
+const ENAMEL = {
+  good: {
+    fill: ["#7AE8A0", "#22A058", "#0E5228"],
+    light: ["#E8FFE0", "#9CFFB8"],
+    text: "#06240F",
+  },
+  bad: {
+    fill: ["#FF7A86", "#B8182E", "#520612"],
+    light: ["#FFE0E0", "#FF8A94"],
+    text: "#FFF2F0",
+  },
+  plain: {
+    fill: ["#FFB27A", "#F28B4B", "#C2602A"],
+    light: ["#FFF6D8", "#FFD08A"],
+    text: "#2A1206",
+  },
+} as const;
 
 export function HoldButton({
   label,
-  onComplete,
-  variant = "primary",
+  tone,
+  progress,
   disabled = false,
-  holdMs = HOLD_MS,
-  accessibilityHint,
-  style,
-}: HoldButtonProps) {
-  const { colors, radius, typography } = useTheme();
-  const progress = useAnimatedValue(0);
-  // A timer decides when the hold is complete; the animation is only
-  // the visual. (Animations follow the display's frame rate, which a
-  // backgrounded or throttled screen slows down — the timer doesn't.)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+  onDone,
+}: {
+  label: string;
+  tone: keyof typeof ENAMEL;
+  /** 0..1 while held; 1 once done. */
+  progress: SharedValue<number>;
+  disabled?: boolean;
+  onDone: () => void;
+}) {
+  const { t } = useTranslation();
+  const look = ENAMEL[tone];
+  const done = useRef(false);
+  const shake = useSharedValue(0);
+  const [nudged, setNudged] = useState(false);
+  const nudge = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
     () => () => {
-      if (timer.current) clearTimeout(timer.current);
+      if (nudge.current) clearTimeout(nudge.current);
     },
-    []
+    [],
   );
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const start = () => {
-    if (timer.current) return;
-    tapHaptic();
-    Animated.timing(progress, {
-      toValue: 1,
-      duration: holdMs,
-      easing: Easing.linear,
-      // Animates width, which the native driver can't do
-      useNativeDriver: false,
-    }).start();
-    timer.current = setTimeout(() => {
-      timer.current = null;
-      progress.stopAnimation();
-      progress.setValue(0);
-      onComplete();
-    }, holdMs);
-  };
-
-  const cancel = () => {
-    if (!timer.current) return; // already completed
-    clearTimeout(timer.current);
+  const stopTicks = () => {
+    if (timer.current) clearTimeout(timer.current);
     timer.current = null;
-    Animated.timing(progress, {
-      toValue: 0,
-      duration: 150,
-      useNativeDriver: false,
-    }).start();
+  };
+  useEffect(() => stopTicks, []);
+
+  const finish = () => {
+    if (done.current) return;
+    done.current = true;
+    stopTicks();
+    heavyHaptic();
+    onDone();
+  };
+  // the hand feels it fill: faint ticks, quicker and firmer toward the end
+  const tick = () => {
+    const p = progress.get();
+    if (p < 0.45) tickHaptic();
+    else if (p < 0.8) tapHaptic();
+    else moveHaptic();
+    timer.current = setTimeout(tick, 210 - 160 * p);
+  };
+  const start = () => {
+    if (disabled || done.current) return;
+    tick();
+    progress.set(
+      withTiming(
+        1,
+        {
+          duration: HOLD_MS * (1 - progress.get()),
+          easing: Easing.inOut(Easing.quad),
+        },
+        (finished) => {
+          if (finished) scheduleOnRN(finish);
+        },
+      ),
+    );
+  };
+  const release = () => {
+    if (done.current) return;
+    // let go before a third: they tapped it, not knowing to hold
+    if (progress.get() < 0.35) {
+      moveHaptic();
+      shake.set(
+        withSequence(
+          withTiming(-7, { duration: 60 }),
+          withTiming(7, { duration: 90 }),
+          withTiming(-4, { duration: 80 }),
+          withTiming(0, { duration: 70 }),
+        ),
+      );
+      setNudged(true);
+      if (nudge.current) clearTimeout(nudge.current);
+      nudge.current = setTimeout(() => setNudged(false), 2600);
+    }
+    stopTicks();
+    cancelAnimation(progress);
+    progress.set(
+      withTiming(0, { duration: 380, easing: Easing.out(Easing.quad) }),
+    );
   };
 
-  const base = variant === "danger" ? colors.danger : colors.primary;
+  const fill = useAnimatedStyle(() => ({ width: `${progress.value * 100}%` }));
+  const press = useAnimatedStyle(() => ({
+    transform: [{ translateX: shake.value }, { scale: 1 - 0.03 * Math.min(1, progress.value * 4) }],
+  }));
 
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ disabled }}
-      accessibilityHint={accessibilityHint}
+      // a screen reader can't hold: a double tap casts it
+      accessibilityActions={[{ name: "activate" }]}
+      onAccessibilityAction={finish}
       disabled={disabled}
       onPressIn={start}
-      onPressOut={cancel}
-      style={[
-        styles.base,
-        {
-          borderRadius: radius.md,
-          backgroundColor: base,
-          opacity: disabled ? 0.5 : 1,
-        },
-        style,
-      ]}
+      onPressOut={release}
+      style={styles.wrap}
     >
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          styles.fill,
-          {
-            width: progress.interpolate({
-              inputRange: [0, 1],
-              outputRange: ["0%", "100%"],
-            }),
-          },
-        ]}
-      />
-      <AppText
-        style={{
-          fontFamily: typography.label.fontFamily,
-          fontSize: 14,
-          color: colors.primaryContrast,
-        }}
-      >
-        {label}
-      </AppText>
+      <Animated.View style={[styles.button, press, disabled && styles.off]}>
+        <LinearGradient
+          colors={look.fill as unknown as [string, string, string]}
+          style={StyleSheet.absoluteFill}
+        />
+        <Animated.View style={[styles.fill, fill]}>
+          <LinearGradient
+            colors={look.light as unknown as [string, string]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </Animated.View>
+        <LightSweep r={16} />
+        <BezelOverlay r={16} t={4} />
+        <View style={styles.face} pointerEvents="none">
+          <AppText
+            style={[styles.label, { color: look.text }]}
+            numberOfLines={1}
+          >
+            {label}
+          </AppText>
+          <AppText style={[styles.cue, { color: look.text }, nudged && styles.cueNudged]} numberOfLines={1}>
+            {nudged ? t("common.holdNudge") : t("common.holdCue")}
+          </AppText>
+        </View>
+      </Animated.View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  base: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 13,
-    paddingHorizontal: 20,
+  wrap: { alignSelf: "stretch" },
+  button: {
+    height: 60,
+    borderRadius: 16,
     overflow: "hidden",
-    // Web: a long press must not select the label or open a menu
-    userSelect: "none",
+    justifyContent: "center",
   },
-  fill: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.28)",
+  off: { opacity: 0.5 },
+  fill: { position: "absolute", left: 0, top: 0, bottom: 0, opacity: 0.75 },
+  face: { alignItems: "center", paddingHorizontal: 10 },
+  label: {
+    fontFamily: fontFamily.bold,
+    fontSize: 18,
+    lineHeight: 23,
+    letterSpacing: 0.5,
   },
+  cue: { fontFamily: fontFamily.semiBold, fontSize: 11, lineHeight: 14, opacity: 0.72 },
+  cueNudged: { opacity: 1, fontFamily: fontFamily.bold },
 });

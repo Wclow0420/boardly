@@ -1,7 +1,10 @@
 import { BADGE_GLYPHS as G } from "@/components/badges/glyphs";
 import type { GameDefinition } from "../types";
+import { BADGE_FRAMES } from "./badgeFrames";
 import { LiarsDiceBoard } from "./LiarsDiceBoard";
 import { currentSeat, taskFor, type LiarsDiceState } from "./logic";
+import { liarsTableNotes } from "./notes";
+import { LIARSDICE_RULES } from "./rules";
 
 // Late-night bar: dark wood, neon red, beer gold.
 const SKIN_COLORS = {
@@ -40,9 +43,11 @@ export const liarsdice: GameDefinition<LiarsDiceState> = {
   name: "Liar's Dice",
   minPlayers: 2,
   maxPlayers: 10,
+  category: "bluff",
+  rulePages: LIARSDICE_RULES,
   Board: LiarsDiceBoard,
   currentSeat,
-  layout: "custom",
+  layout: "stage",
   skin: {
     colors: SKIN_COLORS,
     backdrop: ["#4A1414", "rgba(20,12,12,0)"],
@@ -50,7 +55,12 @@ export const liarsdice: GameDefinition<LiarsDiceState> = {
   },
   needsMe: (state, mySeat) => taskFor(state, mySeat) !== null,
   badges: {
-    "liarsdice.firstWin": { glyph: G.cup, loop: "sway" },
-    "liarsdice.bluffer": { glyph: G.die, loop: "tumble" },
+    "liarsdice.bluffer": { glyph: G.die, emoji: "🎲", loop: "tumble" },
+    "liarsdice.sober": { glyph: G.cup, emoji: "🥤", loop: "bob" },
+    "liarsdice.counter": { glyph: G.target, emoji: "🥊", loop: "pulse" },
   },
+  badgeFrames: BADGE_FRAMES,
+  // what this many at the bar means: the dice under the cups, where each
+  // way of calling starts, what a lost call costs, when you're out
+  tableNotes: liarsTableNotes,
 };

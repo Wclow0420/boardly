@@ -1,209 +1,168 @@
-// Hustle's "How to play" pages. The Roles and Actions pages are built
-// from the same action table the game runs on (logic.ts), so they can't
-// drift from the real rules; the wording lives in the locale files.
+// Hustle's "How to play", written to the rules standard
+// (features/game/rules): Overview, Roles, How to play, Actions, Player
+// counts. The role tags, the action cards and the counts table are built
+// from the tables the game runs on (logic.ts), so they can't drift from
+// the real rules; the wording lives under rules.coup in the locales.
 
-import { Image } from "expo-image";
-import { StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { Emblem } from "@/components/icons";
-import { AppText } from "@/components/ui";
-import { RulesText } from "@/features/game/RulesText";
-import { fontFamily, useTheme } from "@/theme";
-import type { RulesPage } from "../types";
 import {
-  ACTION_ART,
-  ACTION_EMOJI,
-  ACTION_TINT,
-  ROLE_TINT,
-} from "./art";
-import { ACTIONS, type Role } from "./logic";
+  CountsTable,
+  RuleCard,
+  RuleLead,
+  RuleNote,
+  RulePage,
+  RuleSteps,
+  RuleText,
+} from "@/features/game/rules/blocks";
+import type { RulesPage } from "../types";
+import { ACTION_EMOJI, ACTION_TINT, ROLE_TINT } from "./art";
+import {
+  ACTIONS,
+  CARDS_EACH,
+  DECK_SIZE,
+  FORCED_COUP_AT,
+  PLAYER_COUNTS,
+  ROLES,
+  STARTING_COINS,
+  firstPlayerCoins,
+  specOf,
+} from "./logic";
 import { RolePortrait } from "./RolePortrait";
 
-const ROLES: Role[] = ["duke", "assassin", "captain", "ambassador", "contessa"];
+const MIN = PLAYER_COUNTS[0];
+const MAX = PLAYER_COUNTS[PLAYER_COUNTS.length - 1];
 
-/** "Label  value" line inside a rules card. */
-function Fact({ label, value }: { label: string; value: string }) {
+function OverviewPage() {
+  const { t } = useTranslation();
   return (
-    <View style={styles.fact}>
-      <AppText variant="tiny" color="textSubtle" style={styles.factLabel}>
-        {label}
-      </AppText>
-      <AppText variant="caption" style={styles.grow}>
-        {value}
-      </AppText>
-    </View>
+    <RulePage>
+      <RuleLead>{t("rules.coup.overview.lead")}</RuleLead>
+      <RuleText>{t("rules.coup.overview.cards", { cash: t("coup.coins", { count: STARTING_COINS }) })}</RuleText>
+      <RuleText>{t("rules.coup.overview.win")}</RuleText>
+      <RuleText>{t("rules.coup.overview.size", { min: MIN, max: MAX })}</RuleText>
+    </RulePage>
   );
 }
 
 function RolesPage() {
   const { t } = useTranslation();
-  const { colors, spacing } = useTheme();
-
+  const action = (type: string) => t(`coup.actions.${type}.name`);
   return (
-    <View style={{ gap: spacing.md }}>
-      <AppText variant="body" color="textMuted">
-        {t("rules.coup.pages.roles.intro")}
-      </AppText>
+    <RulePage>
+      <RuleLead>{t("rules.coup.roles.lead")}</RuleLead>
       {ROLES.map((role) => {
         const own = ACTIONS.filter((a) => a.claim === role);
         const blocks = ACTIONS.filter((a) => a.blockers.includes(role));
         return (
-          <View
+          <RuleCard
             key={role}
-            style={[
-              styles.card,
-              {
-                backgroundColor: colors.card,
-                borderColor: `${ROLE_TINT[role]}88`,
-              },
+            picture={<RolePortrait role={role} size={50} />}
+            name={t(`coup.roles.${role}.name`)}
+            tint={ROLE_TINT[role]}
+            tags={[
+              ...own.map((a) => t("rules.coup.tags.does", { action: action(a.type) })),
+              ...blocks.map((a) => t("rules.coup.tags.blocks", { action: action(a.type) })),
             ]}
           >
-            <View style={styles.cardHead}>
-              <RolePortrait role={role} size={48} />
-              <AppText variant="title" style={styles.grow}>
-                {t(`coup.roles.${role}.name`)}
-              </AppText>
-            </View>
-            <Fact
-              label={t("rules.coup.labels.action")}
-              value={
-                own.length > 0
-                  ? own
-                      .map(
-                        (a) =>
-                          `${t(`coup.actions.${a.type}.name`)} — ${t(
-                            `rules.coup.effects.${a.type}`
-                          )}`
-                      )
-                      .join("\n")
-                  : t("rules.coup.labels.noAction")
-              }
-            />
-            <Fact
-              label={t("rules.coup.labels.blocks")}
-              value={
-                blocks.length > 0
-                  ? blocks.map((a) => t(`coup.actions.${a.type}.name`)).join(", ")
-                  : t("rules.coup.labels.blocksNothing")
-              }
-            />
-          </View>
+            {t(`rules.coup.roles.${role}`)}
+          </RuleCard>
         );
       })}
-    </View>
+    </RulePage>
+  );
+}
+
+const STEPS = [
+  { key: "act", emoji: "🎲" },
+  { key: "claim", emoji: "🎭" },
+  { key: "challenge", emoji: "🔍" },
+  { key: "block", emoji: "🚫" },
+  { key: "resolve", emoji: "✅" },
+  { key: "lose", emoji: "💀" },
+  { key: "win", emoji: "🏆" },
+] as const;
+
+function PlayPage() {
+  const { t } = useTranslation();
+  const forced = t("coup.coins", { count: FORCED_COUP_AT });
+  return (
+    <RulePage>
+      <RuleLead>{t("rules.coup.play.lead")}</RuleLead>
+      <RuleSteps
+        steps={STEPS.map(({ key, emoji }) => ({
+          emoji,
+          title: t(`rules.coup.play.${key}.title`),
+          detail: t(`rules.coup.play.${key}.detail`, { forced }),
+        }))}
+      />
+      <RuleNote>
+        {t("rules.coup.play.doubleLoss", { cost: t("coup.coins", { count: specOf("assassinate").cost }) })}
+      </RuleNote>
+      <RuleNote>{t("rules.coup.play.secret")}</RuleNote>
+    </RulePage>
   );
 }
 
 function ActionsPage() {
   const { t } = useTranslation();
-  const { colors, spacing } = useTheme();
-
+  const role = (r: string) => t(`coup.roles.${r}.name`);
   return (
-    <View style={{ gap: spacing.md }}>
-      <AppText variant="body" color="textMuted">
-        {t("rules.coup.pages.actions.intro")}
-      </AppText>
-      {ACTIONS.map((action) => {
-        const tint = ACTION_TINT[action.type];
-        const art = ACTION_ART[action.type];
-        // Foreign aid is the one action anybody at the table may block
-        const anyoneBlocks = action.type === "foreignAid";
+    <RulePage>
+      <RuleLead>{t("rules.coup.actions.lead")}</RuleLead>
+      {ACTIONS.map((a) => {
+        const tags = [
+          a.cost > 0 ? t("rules.coup.tags.cost", { cash: t("coup.coins", { count: a.cost }) }) : t("rules.coup.tags.free"),
+          a.claim ? t("rules.coup.tags.claims", { role: role(a.claim) }) : t("rules.coup.tags.noClaim"),
+          a.blockers.length === 0
+            ? t("rules.coup.tags.unblockable")
+            : t(a.anyoneBlocks ? "rules.coup.tags.anyoneBlocks" : "rules.coup.tags.targetBlocks", {
+                roles: a.blockers.map(role).join(" / "),
+              }),
+        ];
         return (
-          <View
-            key={action.type}
-            style={[
-              styles.card,
-              { backgroundColor: colors.card, borderColor: `${tint}88` },
-            ]}
+          <RuleCard
+            key={a.type}
+            emoji={ACTION_EMOJI[a.type]}
+            name={t(`coup.actions.${a.type}.name`)}
+            tint={ACTION_TINT[a.type]}
+            tags={tags}
           >
-            <View style={styles.cardHead}>
-              {art ? (
-                <Image source={art} style={styles.icon} contentFit="contain" />
-              ) : (
-                <View style={[styles.icon, { backgroundColor: `${tint}33` }]}>
-                  <Emblem emoji={ACTION_EMOJI[action.type]} size={30} />
-                </View>
-              )}
-              <View style={styles.grow}>
-                <AppText variant="title">
-                  {t(`coup.actions.${action.type}.name`)}
-                </AppText>
-                <AppText variant="caption" color="textMuted">
-                  {t(`rules.coup.effects.${action.type}`)}
-                </AppText>
-              </View>
-            </View>
-            <Fact
-              label={t("rules.coup.labels.cost")}
-              value={
-                action.cost > 0
-                  ? t("coup.coins", { count: action.cost })
-                  : t("rules.coup.labels.free")
-              }
-            />
-            <Fact
-              label={t("rules.coup.labels.needs")}
-              value={
-                action.claim
-                  ? t("rules.coup.labels.needsRole", {
-                      role: t(`coup.roles.${action.claim}.name`),
-                    })
-                  : t("rules.coup.labels.anyone")
-              }
-            />
-            <Fact
-              label={t("rules.coup.labels.blockedBy")}
-              value={
-                action.blockers.length > 0
-                  ? `${action.blockers
-                      .map((role) => t(`coup.roles.${role}.name`))
-                      .join(" / ")} ${t(
-                      anyoneBlocks
-                        ? "rules.coup.labels.byAnyone"
-                        : "rules.coup.labels.byTarget"
-                    )}`
-                  : t("rules.coup.labels.noBlock")
-              }
-            />
-          </View>
+            {t(`rules.coup.effects.${a.type}`)}
+          </RuleCard>
         );
       })}
-    </View>
+      <RuleNote>{t("rules.coup.actions.forced", { forced: t("coup.coins", { count: FORCED_COUP_AT }) })}</RuleNote>
+    </RulePage>
   );
 }
 
-const text = (page: string) =>
-  function TextPage() {
-    return <RulesText i18nKey={`rules.coup.pages.${page}`} />;
-  };
+function CountsPage() {
+  const { t } = useTranslation();
+  const counts = [...PLAYER_COUNTS];
+  const cash = (n: number) => t("coup.coins", { count: n });
+  return (
+    <RulePage>
+      <RuleLead>{t("rules.coup.counts.lead", { cards: DECK_SIZE })}</RuleLead>
+      <CountsTable
+        counts={counts}
+        rows={[
+          { label: t("rules.coup.counts.dealt"), values: counts.map((n) => n * CARDS_EACH) },
+          { label: t("rules.coup.counts.deck"), values: counts.map((n) => DECK_SIZE - n * CARDS_EACH) },
+          { label: t("rules.coup.counts.cash"), values: counts.map(() => cash(STARTING_COINS)) },
+          { label: t("rules.coup.counts.first"), values: counts.map((n) => cash(firstPlayerCoins(n))) },
+        ]}
+      />
+      <RuleNote>{t("rules.coup.counts.two", { first: cash(firstPlayerCoins(2)), cash: cash(STARTING_COINS) })}</RuleNote>
+      <RuleNote>{t("rules.coup.counts.leave")}</RuleNote>
+    </RulePage>
+  );
+}
 
 export const COUP_RULES: RulesPage[] = [
-  { key: "overview", titleKey: "rules.coup.pages.overview.title", Content: text("overview") },
-  { key: "roles", titleKey: "rules.coup.pages.roles.title", Content: RolesPage },
-  { key: "actions", titleKey: "rules.coup.pages.actions.title", Content: ActionsPage },
-  { key: "challenges", titleKey: "rules.coup.pages.challenges.title", Content: text("challenges") },
-  { key: "blocks", titleKey: "rules.coup.pages.blocks.title", Content: text("blocks") },
-  { key: "more", titleKey: "rules.coup.pages.more.title", Content: text("more") },
+  { key: "overview", section: "overview", Content: OverviewPage },
+  { key: "roles", section: "roles", Content: RolesPage },
+  { key: "play", section: "play", Content: PlayPage },
+  { key: "actions", section: "actions", Content: ActionsPage },
+  { key: "counts", section: "counts", Content: CountsPage },
 ];
-
-const styles = StyleSheet.create({
-  grow: { flex: 1 },
-  card: { borderWidth: 1.5, borderRadius: 18, padding: 12, gap: 8 },
-  cardHead: { flexDirection: "row", alignItems: "center", gap: 12 },
-  fact: { flexDirection: "row", gap: 10 },
-  factLabel: {
-    width: 76,
-    fontFamily: fontFamily.semiBold,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    paddingTop: 2,
-  },
-  icon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

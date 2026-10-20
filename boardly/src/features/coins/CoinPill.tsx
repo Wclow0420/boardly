@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 
-import { AppText } from "@/components/ui";
+import { AppText, BezelOverlay } from "@/components/ui";
 import { useAnimatedValue } from "@/hooks/useAnimatedValue";
 import { TABLE, fontFamily } from "@/theme";
 
@@ -76,6 +76,7 @@ export const CoinPill = forwardRef<View, { amount: number }>(function CoinPill(
         accessibilityLabel={`${amount} coins`}
         style={styles.pill}
       >
+        <BezelOverlay r={16} t={3} />
         <CoinIcon size={18} />
         <AppText style={styles.amount}>{shown.toLocaleString()}</AppText>
       </View>
@@ -88,13 +89,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    paddingLeft: 5,
-    paddingRight: 10,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "rgba(20,12,6,0.72)",
-    borderWidth: 1.5,
-    borderColor: TABLE.yellow.border,
+    paddingLeft: 7,
+    paddingRight: 12,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(20,12,6,0.82)",
   },
   amount: {
     fontFamily: fontFamily.bold,

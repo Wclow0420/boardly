@@ -23,7 +23,8 @@ def apply_move(room, session, seat: int, move: dict) -> dict | None:
     GameError for an illegal move. Does not commit; returns the result
     (None while the game goes on)."""
     game = get_game(session.game_type)
-    session.state = game.apply_move(session.state, seat, move)
+    version = session.state.get("_v", 0)
+    session.state = {**game.apply_move(session.state, seat, move), "_v": version + 1}
 
     result = game.get_result(session.state)
     if result is not None:
@@ -38,9 +39,21 @@ def apply_move(room, session, seat: int, move: dict) -> dict | None:
     return result
 
 
-def announce_move(room, result) -> None:
-    """After the commit: everyone at the table refetches their view;
-    when the game ended, friends see these players free again."""
+def announce_move(room, result, session=None) -> None:
+    """After the commit, the new state goes out: each player at the table
+    is sent their own view of it (no refetch, no waiting on a second round
+    trip), and the table's channel is told for anyone watching. When the
+    game ended, friends see these players free again."""
+    if session is not None and result is None:
+        for player in room.players:
+            if player.user is not None and not player.user.is_bot:
+                socketio.emit(
+                    "game_updated",
+                    {"roomId": str(room.id), "session": session.to_dict(player.seat)},
+                    to=f"user:{player.user_id}",
+                )
+        socketio.emit("game_updated", {"roomId": str(room.id), "seated": True}, to=f"room:{room.id}")
+        return
     socketio.emit("game_updated", {"roomId": str(room.id)}, to=f"room:{room.id}")
     if result is not None:
         presence.notify_friends_of([p.user_id for p in room.players])

@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { FlashList } from "@shopify/flash-list";
+import { Pressable, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { BackIcon, Emblem } from "@/components/icons";
@@ -10,12 +12,13 @@ import {
   Button,
   Frame,
   IconButton,
-  Ribbon,
+  SectionTitle, TitlePlaque,
   Screen,
   TableBackdrop,
 } from "@/components/ui";
 import { api } from "@/api/client";
 import { useSession } from "@/context/SessionContext";
+import { TIERS, type BadgeTier } from "@/components/badges/types";
 import { badgeText } from "@/features/badges/strings";
 import { CoinIcon } from "@/features/coins/CoinIcon";
 import { CoinPill } from "@/features/coins/CoinPill";
@@ -24,11 +27,64 @@ import {
   BORDERS,
   RARITY_COLORS,
   getBorder,
+  type BorderRarity,
   type ProfileBorder,
 } from "@/features/cosmetics/borders";
 import { useEquippedBorder } from "@/features/cosmetics/store";
 import { TABLE, fontFamily, useTheme } from "@/theme";
 import { successHaptic, tapHaptic } from "@/utils/haptics";
+
+type SectionKey = BorderRarity | "earned";
+
+/** Each rarity's card: its fill, its edge, and the line of light on it. */
+const RARITY_TILE: Record<
+  BorderRarity,
+  { fill: [string, string]; edge: string; shine: string }
+> = {
+  common: { fill: ["#5A3A22", "#3A2414"], edge: "#2E1C0F", shine: "#9A6B43" },
+  rare: { fill: ["#2C5A8E", "#16304F"], edge: "#5FA8F0", shine: "#9CCBFF" },
+  epic: { fill: ["#5E2F94", "#2C1650"], edge: "#C084FC", shine: "#E2C2FF" },
+  legendary: { fill: ["#9A6A1C", "#4A2C08"], edge: "#F7C948", shine: "#FFF0B0" },
+  mythic: { fill: ["#8E1430", "#2A0610"], edge: "#FF5A7A", shine: "#FFC2CF" },
+};
+
+/** Each section's ribbon. */
+const SECTION_RIBBON: Record<SectionKey, [string, string]> = {
+  common: TABLE.ribbonGold,
+  rare: ["#3A78C2", "#25507F"],
+  epic: ["#8A4ACF", "#5E2F94"],
+  legendary: ["#E9B334", "#B07A12"],
+  mythic: ["#D8344F", "#8E1430"],
+  earned: ["#2E8A78", "#1C5E52"],
+};
+
+const byPrice = (a: ProfileBorder, b: ProfileBorder) => a.price - b.price;
+const earnedOnly = (border: ProfileBorder) =>
+  border.kind === "art" && border.earnedBy !== undefined;
+
+/** The shop's sections: each rarity, cheapest first, then the borders that
+ *  can only be earned. */
+const SECTIONS: { key: SectionKey; borders: ProfileBorder[] }[] = [
+  ...(["common", "rare", "epic", "legendary", "mythic"] as BorderRarity[]).map((rarity) => ({
+    key: rarity as SectionKey,
+    borders: BORDERS.filter((b) => b.rarity === rarity && !earnedOnly(b)).sort(byPrice),
+  })),
+  { key: "earned", borders: BORDERS.filter(earnedOnly) },
+];
+
+/** The shop as rows for a list that builds only what's in view: each
+ *  section's head, then its borders three to a row. */
+type Row =
+  | { kind: "head"; key: string; section: SectionKey; count: number; first: boolean }
+  | { kind: "tiles"; key: string; borders: ProfileBorder[] };
+const ROWS: Row[] = SECTIONS.filter((section) => section.borders.length > 0).flatMap((section, i) => [
+  { kind: "head" as const, key: `head-${section.key}`, section: section.key, count: section.borders.length, first: i === 0 },
+  ...Array.from({ length: Math.ceil(section.borders.length / 3) }, (_, r) => ({
+    kind: "tiles" as const,
+    key: `${section.key}-${r}`,
+    borders: section.borders.slice(r * 3, r * 3 + 3),
+  })),
+]);
 
 /** Gallery of profile borders: preview one on your avatar and wear it. */
 export default function BordersScreen() {
@@ -48,12 +104,11 @@ export default function BordersScreen() {
     queryFn: async () => (await api.auth.stats()).stats,
     enabled: user !== null,
   });
-  const earned = new Set(
-    stats.data?.badges.filter((b) => b.unlockedAt).map((b) => b.key) ?? [],
-  );
+  const reached = (key: string, tier: BadgeTier) =>
+    stats.data?.badges.some((b) => b.key === key && b.unlocked[tier]) ?? false;
   const owns = (border: ProfileBorder) =>
     border.kind === "art" && border.earnedBy
-      ? earned.has(border.earnedBy)
+      ? reached(border.earnedBy, border.earnedAt ?? "bronze")
       : border.price === 0 || (user?.ownedBorders ?? []).includes(border.id);
 
   /** Wear a border; a locked one is bought first, then worn. */
@@ -78,6 +133,89 @@ export default function BordersScreen() {
   const shortBy = Math.max(0, selected.price - coins);
   // the badge an earned border comes with
   const earnedBy = selected.kind === "art" ? selected.earnedBy : undefined;
+  const earnedAt = (selected.kind === "art" && selected.earnedAt) || "bronze";
+  // what that level asks for ("Win 25 games of Shelter")
+  const earnedGoal =
+    stats.data?.badges.find((b) => b.key === earnedBy)?.goals[TIERS.indexOf(earnedAt)] ?? 1;
+  // "Gold · Spymaster": the badge and the level of it that brings this border
+  const earnedName = earnedBy
+    ? `${t(`badges.tiers.${earnedAt}`)} · ${badgeText(t, earnedBy).name}`
+    : "";
+
+  const renderTile = (border: ProfileBorder) => {
+    const active = border.id === selectedId;
+    const look = RARITY_TILE[border.rarity];
+    const earnedBy =
+      border.kind === "art" ? border.earnedBy : undefined;
+    return (
+      <Pressable
+        key={border.id}
+        accessibilityRole="button"
+        accessibilityState={{ selected: active }}
+        accessibilityLabel={border.name}
+        onPress={() => {
+          tapHaptic();
+          setFailed(false);
+          setSelectedId(border.id);
+        }}
+        style={[
+          styles.tile,
+          { borderColor: active ? "#FFFFFF" : look.edge },
+          active && styles.tileOn,
+        ]}
+      >
+        <LinearGradient colors={look.fill} style={styles.tileFill}>
+          {/* a fine line of light along the top */}
+          <View style={[styles.tileShine, { backgroundColor: look.shine }]} />
+          <View style={styles.tileAvatar}>
+            <AvatarBorder
+              name={name}
+              size={40}
+              borderId={border.id}
+              avatarUrl={user?.avatarUrl}
+              mascot={user?.mascot}
+            />
+          </View>
+          <AppText
+            variant="tiny"
+            numberOfLines={1}
+            align="center"
+            style={styles.tileName}
+          >
+            {border.name}
+          </AppText>
+          <View style={styles.tilePrice}>
+            {owns(border) ? (
+              <AppText style={styles.tileOwned}>
+                {border.id === equippedId
+                  ? t("borders.equipped")
+                  : t("borders.owned")}
+              </AppText>
+            ) : earnedBy ? (
+              <Emblem emoji="🏅" size={13} />
+            ) : (
+              <>
+                <CoinIcon size={11} />
+                <AppText style={styles.tileCost}>
+                  {border.price.toLocaleString()}
+                </AppText>
+              </>
+            )}
+          </View>
+          {border.id === equippedId ? (
+            <View style={styles.check}>
+              <Emblem emoji="✓" size={14} />
+            </View>
+          ) : null}
+          {!owns(border) ? (
+            <View style={styles.lock}>
+              <Emblem emoji="🔒" size={14} />
+            </View>
+          ) : null}
+        </LinearGradient>
+      </Pressable>
+    );
+  };
 
   return (
     <Screen
@@ -92,17 +230,13 @@ export default function BordersScreen() {
         >
           <BackIcon size={20} color={colors.icon} />
         </IconButton>
-        <Ribbon
-          label={t("borders.title")}
-          colors={TABLE.ribbonGold}
-          standalone
-        />
+        <TitlePlaque label={t("borders.title")} />
         <View style={styles.grow} />
         <CoinPill amount={coins} />
       </View>
 
       {/* Preview of the selected border */}
-      <Frame tone="dark" style={styles.preview}>
+      <Frame tone="dark" ornate style={styles.preview}>
         <View style={styles.previewAvatar}>
           <AvatarBorder
             key={selected.id}
@@ -110,6 +244,7 @@ export default function BordersScreen() {
             size={84}
             borderId={selected.id}
             avatarUrl={user?.avatarUrl}
+            mascot={user?.mascot}
           />
         </View>
         <AppText variant="title" align="center">
@@ -125,9 +260,9 @@ export default function BordersScreen() {
             {selected.price > 0 ? <CoinIcon size={16} /> : null}
             <AppText variant="label" style={{ color: TABLE.yellow.fill[0] }}>
               {earnedBy
-                ? `🏅 ${badgeText(t, earnedBy).name}`
+                ? `🏅 ${earnedName}`
                 : selected.price > 0
-                  ? selected.price
+                  ? selected.price.toLocaleString()
                   : t("borders.free")}
             </AppText>
           </View>
@@ -138,9 +273,9 @@ export default function BordersScreen() {
             selected.id === equippedId
               ? t("borders.equipped")
               : !selectedOwned && earnedBy
-                ? t("borders.earnWith", { badge: badgeText(t, earnedBy).name })
+                ? t("borders.earnWith", { badge: earnedName })
                 : !selectedOwned
-                  ? t("borders.unlock", { price: selected.price })
+                  ? t("borders.unlock", { price: selected.price.toLocaleString() })
                   : t("borders.equip")
           }
           leftIcon={
@@ -158,11 +293,11 @@ export default function BordersScreen() {
         />
         {!selectedOwned && earnedBy ? (
           <AppText variant="caption" color="textMuted" align="center">
-            {badgeText(t, earnedBy).desc}
+            {badgeText(t, earnedBy, earnedGoal).desc}
           </AppText>
         ) : !selectedOwned && shortBy > 0 ? (
           <AppText variant="caption" color="textMuted" align="center">
-            {t("borders.notEnough", { count: shortBy })}
+            {t("borders.notEnough", { count: shortBy, amount: shortBy.toLocaleString() })}
           </AppText>
         ) : null}
         {failed ? (
@@ -172,68 +307,34 @@ export default function BordersScreen() {
         ) : null}
       </Frame>
 
-      {/* All borders */}
+      {/* All borders, by rarity; the ones earned with a badge last */}
       <Frame tone="wood" style={styles.list}>
-        <ScrollView
+        {/* only the rows in view are built: a screen of borders all at
+            once held hundreds of MB */}
+        <FlashList
+          data={ROWS}
+          keyExtractor={(row) => row.key}
+          getItemType={(row) => row.kind}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.grid}
-        >
-          {BORDERS.map((border) => {
-            const active = border.id === selectedId;
-            return (
-              <Pressable
-                key={border.id}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
-                accessibilityLabel={border.name}
-                onPress={() => {
-                  tapHaptic();
-                  setFailed(false);
-                  setSelectedId(border.id);
-                }}
-                style={[
-                  styles.tile,
-                  {
-                    backgroundColor: colors.well,
-                    borderColor: active ? TABLE.yellow.fill[0] : colors.border,
-                  },
-                ]}
-              >
-                <View style={styles.tileAvatar}>
-                  <AvatarBorder
-                    name={name}
-                    size={40}
-                    borderId={border.id}
-                    avatarUrl={user?.avatarUrl}
-                  />
-                </View>
-                <AppText variant="tiny" numberOfLines={1} align="center">
-                  {border.name}
-                </AppText>
-                <View
-                  style={[
-                    styles.dot,
-                    { backgroundColor: RARITY_COLORS[border.rarity] },
-                  ]}
-                />
-                {border.id === equippedId ? (
-                  <View style={styles.check}>
-                    <Emblem emoji="✓" size={14} />
-                  </View>
-                ) : null}
-                {!owns(border) ? (
-                  <View style={styles.lock}>
-                    <Emblem emoji="🔒" size={16} />
-                  </View>
-                ) : null}
-              </Pressable>
-            );
-          })}
-          {/* Empty cells so a short last row stays left-aligned */}
-          {Array.from({ length: (3 - (BORDERS.length % 3)) % 3 }, (_, i) => (
-            <View key={i} style={styles.filler} />
-          ))}
-        </ScrollView>
+          renderItem={({ item: row }) =>
+            row.kind === "head" ? (
+              <SectionTitle
+                label={row.section === "earned" ? t("borders.earnedSection") : t(`borders.rarity.${row.section}`)}
+                colors={SECTION_RIBBON[row.section]}
+                right={<AppText style={styles.count}>{row.count}</AppText>}
+                style={row.first ? undefined : styles.sectionGap}
+              />
+            ) : (
+              <View style={styles.grid}>
+                {row.borders.map(renderTile)}
+                {/* empty cells so a short last row stays left-aligned */}
+                {Array.from({ length: 3 - row.borders.length }, (_, i) => (
+                  <View key={i} style={styles.filler} />
+                ))}
+              </View>
+            )
+          }
+        />
       </Frame>
     </Screen>
   );
@@ -258,32 +359,40 @@ const styles = StyleSheet.create({
   equip: { alignSelf: "stretch", marginTop: 6 },
 
   list: { flex: 1, minHeight: 0, marginTop: 14, padding: 10 },
+  sectionGap: { marginTop: 14 },
+  sectionHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  count: { color: TABLE.creamMuted, fontFamily: fontFamily.semiBold, fontSize: 12 },
   grid: {
     flexDirection: "row",
-    flexWrap: "wrap",
     justifyContent: "space-between",
-    rowGap: 8,
-    paddingBottom: 4,
+    marginBottom: 8,
   },
   tile: {
     width: "31.3%",
-    alignItems: "center",
-    paddingHorizontal: 4,
-    paddingBottom: 8,
     borderRadius: 14,
     borderWidth: 2,
     overflow: "hidden",
   },
+  tileOn: { borderWidth: 3 },
+  tileFill: { alignItems: "center", paddingHorizontal: 4, paddingBottom: 7 },
+  tileShine: { position: "absolute", top: 0, left: 10, right: 10, height: 1.5, opacity: 0.7 },
   filler: { width: "31.3%" },
-  tileAvatar: { paddingTop: 24, paddingBottom: 22 },
-  dot: { width: 6, height: 6, borderRadius: 3, marginTop: 4 },
-  lock: { position: "absolute", top: 4, left: 6, fontSize: 11 },
-  check: {
-    position: "absolute",
-    top: 4,
-    right: 7,
-    fontFamily: fontFamily.bold,
-    fontSize: 12,
-    color: TABLE.yellow.fill[0],
+  tileAvatar: { paddingTop: 24, paddingBottom: 20 },
+  tileName: { color: "#FFFFFF" },
+  tilePrice: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    marginTop: 2,
+    minHeight: 15,
   },
+  tileCost: { color: "#FBDD7E", fontFamily: fontFamily.bold, fontSize: 10, lineHeight: 14 },
+  tileOwned: { color: TABLE.creamMuted, fontSize: 10, lineHeight: 14 },
+  lock: { position: "absolute", top: 4, left: 5 },
+  check: { position: "absolute", top: 4, right: 6 },
 });

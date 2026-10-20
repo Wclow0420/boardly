@@ -9,12 +9,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 
-import { api, type BadgeRecord } from "@/api/client";
+import { api } from "@/api/client";
 import { useSession } from "@/context/SessionContext";
 import { useTheme } from "@/theme";
 import { BadgeCelebration } from "./BadgeCelebration";
 import { NextBadge } from "./NextBadge";
-import { earnedLastGame, nextBadge } from "./order";
+import { earnedLastGame, nextBadge, type LevelUp } from "./order";
 import { useSeenBadges } from "./useSeenBadges";
 
 /** Let the result land before the badges arrive. */
@@ -41,7 +41,7 @@ export function GameOverBadges({ gameType }: { gameType: string }) {
 
   const { seen, markSeen } = useSeenBadges(user?.id);
   // fixed once found, so marking them seen doesn't cut the show short
-  const [toCelebrate, setToCelebrate] = useState<BadgeRecord[] | null>(null);
+  const [toCelebrate, setToCelebrate] = useState<LevelUp[] | null>(null);
   const earned = useMemo(
     () =>
       card && seen ? earnedLastGame(card.badges, card.lastGameAt, seen) : null,
@@ -53,7 +53,7 @@ export function GameOverBadges({ gameType }: { gameType: string }) {
     return () => clearTimeout(timer);
   }, [earned, toCelebrate]);
 
-  const onShown = useCallback((key: string) => markSeen([key]), [markSeen]);
+  const onShown = useCallback((id: string) => markSeen([id]), [markSeen]);
   const next = card ? nextBadge(card.badges, gameType) : null;
 
   return (

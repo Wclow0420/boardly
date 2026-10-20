@@ -4,6 +4,7 @@
 
 import {
   Circle,
+  FillType,
   Group,
   LinearGradient,
   Oval,
@@ -31,23 +32,33 @@ export function Sweep({
   d,
   every = 3.6,
   phase = 0,
+  evenOdd = false,
 }: {
   t: Clock;
   d: string;
   every?: number;
   phase?: number;
+  /** `d` cuts holes (a ring drawn as two circles): keep the light out of
+   *  them. */
+  evenOdd?: boolean;
 }) {
-  const clip = useMemo(() => Skia.Path.MakeFromSVGString(d), [d]);
+  const clip = useMemo(() => {
+    const path = Skia.Path.MakeFromSVGString(d);
+    if (path && evenOdd) path.setFillType(FillType.EvenOdd);
+    return path;
+  }, [d, evenOdd]);
   const transform = useDerivedValue(() => {
     const p = ((t.value + phase) % every) / 1.1;
-    const x = p < 1 ? -80 + p * 160 : 200;
+    // from well clear of one side to well clear of the other
+    const x = p < 1 ? -110 + p * 220 : 260;
     return [{ translateX: x }, { rotate: 0.45 }];
   });
   if (!clip) return null;
   return (
     <Group clip={clip}>
       <Group transform={transform}>
-        <Rect x={-12} y={-140} width={24} height={200}>
+        {/* tall enough to cross the tallest frame, corner to corner */}
+        <Rect x={-12} y={-160} width={24} height={320}>
           <LinearGradient
             start={vec(-12, 0)}
             end={vec(12, 0)}

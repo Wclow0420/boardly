@@ -1,17 +1,19 @@
 """Liar's Dice (大话骰) engine tests plus API tests for lobby options."""
 
 import random
+from types import SimpleNamespace
 
 import pytest
 
 from app.games.base import GameError
 from app.games.liarsdice.game import KNOCKOUT_CUPS, LiarsDice, counts, face_rank
+from app.games.liarsdice.rules import JIJIJI, least_call, thresholds
 
 game = LiarsDice(random.Random(3))
 
 
-def start(dice, turn=0, cups=None, mode="knockout"):
-    state = game.initial_state(len(dice), random.Random(1), mode=mode)
+def start(dice, turn=0, cups=None, mode="knockout", calling="classic"):
+    state = game.initial_state(len(dice), random.Random(1), mode=mode, calling=calling)
     return {**state, "dice": [list(h) for h in dice], "turn": turn,
             "cups": cups or [0] * len(dice)}
 
@@ -45,21 +47,26 @@ def test_setup():
     assert len(state["dice"]) == 4 and all(len(h) == 5 for h in state["dice"])
     assert all(1 <= d <= 6 for h in state["dice"] for d in h)
     assert state["cups"] == [0, 0, 0, 0] and state["bid"] is None
-    assert state["mode"] == "knockout"
+    assert state["mode"] == "knockout" and state["calling"] == "jijiji"
     assert len(game.initial_state(10, random.Random(2))["dice"]) == 10
     for n in (1, 11):
         with pytest.raises(GameError):
             game.initial_state(n)
     assert game.new_state(3, {"mode": "endless"})["mode"] == "endless"
+    assert game.new_state(3, {"mode": "knockout", "calling": "nozhai"})["calling"] == "nozhai"
+    with pytest.raises(GameError):
+        game.initial_state(3, calling="vegas")
 
 
-def test_five_of_a_kind_counts_one_extra():
+def test_baozi_counts_six_and_da_baozi_seven():
     leopard = [[1, 1, 3, 3, 3]]
-    assert counts(leopard, 3, zhai=False) == 6  # kaizhai: 1s wild, 豹子 +1
+    assert counts(leopard, 3, zhai=False) == 6  # 豹子: 1s wild, all five count
     assert counts(leopard, 3, zhai=True) == 3   # zhai: just three 3s
-    assert counts([[3, 3, 3, 3, 3]], 3, zhai=True) == 6  # five real 3s
-    assert counts([[1, 1, 1, 1, 1]], 1, zhai=True) == 6
-    assert counts([[1, 1, 1, 1, 1]], 4, zhai=False) == 6  # all wild
+    assert counts([[3, 3, 3, 3, 3]], 3, zhai=True) == 7   # 大豹子
+    assert counts([[3, 3, 3, 3, 3]], 3, zhai=False) == 7
+    assert counts([[1, 1, 1, 1, 1]], 1, zhai=True) == 7
+    assert counts([[1, 1, 1, 1, 1]], 4, zhai=False) == 7  # five wild 1s
+    assert counts([[1, 1, 1, 1, 1]], 4, zhai=True) == 0   # not wild in zhai
     assert counts([[3, 3, 3, 3, 2]], 3, zhai=False) == 4  # not a full cup
     assert counts([[1, 1, 3, 3, 3], [3, 2, 2, 2, 2]], 3, zhai=False) == 7
 
@@ -72,7 +79,7 @@ def test_ones_are_wild_unless_zhai():
     assert [face_rank(f) for f in (2, 6, 1)] == [2, 6, 7]
 
 
-# -------------------------------------------------------------- bidding
+# ------------------------------------------------- classic (经典) bidding
 
 
 def test_opening_must_beat_the_player_count():
@@ -134,6 +141,129 @@ def test_not_your_turn():
         bid(start(TWO), 1, 3, 5)
     with pytest.raises(GameError):  # nothing to open yet
         open_(start(TWO), 0)
+
+
+# --------------------------------------------------- jijiji (几几几) bidding
+
+
+def dice_for(n):
+    return [[2, 3, 4, 5, 6] for _ in range(n)]
+
+
+def jstart(n, turn=0):
+    return start(dice_for(n), turn=turn, calling="jijiji")
+
+
+def legal(state, seat, q, f, zhai):
+    try:
+        bid(state, seat, q, f, zhai)
+        return True
+    except GameError:
+        return False
+
+
+def test_jijiji_table_of_thresholds():
+    assert JIJIJI == {2: (2, 3, 3), 3: (3, 4, 5), 4: (4, 5, 7), 5: (5, 6, 8), 6: (6, 7, 9),
+                      7: (7, 8, 11), 8: (8, 9, 12), 9: (9, 10, 14), 10: (10, 11, 15)}
+
+
+@pytest.mark.parametrize("n", range(2, 11))
+def test_jijiji_openings_at_every_table_size(n):
+    one, zhai, fei = thresholds(n)
+    state = jstart(n)
+    # nothing below ONE, not even 1s
+    assert not legal(state, 0, one - 1, 1, True)
+    # ONE up to ZHAI-1: only 1s (always zhai)
+    for q in range(one, zhai):
+        assert legal(state, 0, q, 1, False)
+        assert bid(state, 0, q, 1)["bid"]["zhai"] is True
+        for f in range(2, 7):
+            assert not legal(state, 0, q, f, True) and not legal(state, 0, q, f, False)
+    # ZHAI up to FEI-1: zhai only, any face
+    for q in range(zhai, fei):
+        for f in range(1, 7):
+            assert legal(state, 0, q, f, True)
+        for f in range(2, 7):
+            assert not legal(state, 0, q, f, False)
+    # FEI and up: zhai or kaizhai
+    for f in range(2, 7):
+        assert legal(state, 0, fei, f, True) and legal(state, 0, fei, f, False)
+    assert bid(state, 0, fei, 1)["bid"]["zhai"] is True  # 1s at FEI are still zhai
+    # the smallest calls the bots and the app work from
+    total = 5 * n
+    assert least_call("jijiji", n, None, 1, True, total) == one
+    assert least_call("jijiji", n, None, 4, True, total) == zhai
+    assert least_call("jijiji", n, None, 4, False, total) == fei
+
+
+def test_jijiji_counts_only_the_players_still_in():
+    # four seated, one drunk: the 3-player table applies (3 / 4 / 5)
+    state = start(dice_for(4), cups=[0, 0, 0, KNOCKOUT_CUPS], calling="jijiji")
+    state = {**state, "dice": dice_for(3) + [[]]}
+    assert legal(state, 0, 3, 1, True) and not legal(state, 0, 4, 5, False)
+    assert legal(state, 0, 5, 5, False)
+    # endless: nobody is out, everyone counts
+    endless = start(dice_for(4), cups=[0, 0, 0, 9], mode="endless", calling="jijiji")
+    assert not legal(endless, 0, 3, 1, True) and legal(endless, 0, 4, 1, True)
+
+
+def test_jijiji_zhai_to_kaizhai_needs_no_doubling():
+    state = bid(jstart(3), 0, 4, 5, zhai=True)        # 4 fives zhai
+    assert not legal(state, 1, 4, 6, False)            # kaizhai below FEI
+    state = bid(state, 1, 5, 3)                        # 5 threes kaizhai: fine
+    assert state["bid"]["zhai"] is False
+    # it must still be a raise: 4 fives zhai -> 4 sixes kaizhai is short of FEI,
+    # and 5 sixes zhai -> 5 threes kaizhai goes down the faces
+    high = bid(bid(jstart(3), 0, 4, 5, zhai=True), 1, 5, 6, zhai=True)
+    assert not legal(high, 2, 5, 3, False) and legal(high, 2, 5, 1, True)
+    assert legal(high, 2, 6, 3, False)
+
+
+def test_jijiji_stays_kaizhai_and_no_ones_after_fei():
+    state = bid(jstart(3), 0, 5, 4)                    # opens kaizhai at FEI
+    for q, f, z in ((6, 4, True), (6, 1, True), (6, 1, False), (9, 6, True)):
+        assert not legal(state, 1, q, f, z)
+    state = bid(state, 1, 5, 6)
+    assert legal(state, 2, 6, 2, False) and not legal(state, 2, 6, 2, True)
+    # broken mid-round: the same from then on
+    state = bid(bid(jstart(3), 0, 4, 2, zhai=True), 1, 5, 2)
+    assert not legal(state, 2, 7, 1, True) and not legal(state, 2, 7, 3, True)
+    assert legal(state, 2, 5, 3, False)
+
+
+def test_jijiji_raises_and_ones_on_top():
+    state = bid(jstart(3), 0, 3, 1)                    # three 1s: the lowest opening
+    assert not legal(state, 1, 3, 6, True)             # nothing tops 1s at 3
+    assert legal(state, 1, 4, 2, True) and legal(state, 1, 4, 1, True)
+    state = bid(state, 1, 4, 6, zhai=True)
+    assert legal(state, 2, 4, 1, True) and not legal(state, 2, 4, 5, True)
+
+
+# -------------------------------------------------------- nozhai (不玩斋)
+
+
+def test_nozhai_ones_are_wild_and_never_called():
+    state = start(THREE, calling="nozhai")
+    assert not legal(state, 0, 3, 5, False)            # open above the players
+    assert not legal(state, 0, 4, 1, False) and not legal(state, 0, 4, 1, True)
+    assert not legal(state, 0, 4, 5, True)             # no zhai at all
+    state = bid(state, 0, 4, 5)
+    assert state["bid"]["zhai"] is False
+    assert not legal(state, 1, 4, 4, False) and legal(state, 1, 4, 6, False)
+    assert not legal(state, 1, 5, 1, False)
+    # 1s are wild in the count: three 5s plus two 1s = 5, so the call holds
+    state = open_(bid(state, 1, 5, 5), 2)
+    assert state["reveal"]["found"] == 5 and state["reveal"]["loser"] == 2
+
+
+def test_old_games_without_calling_play_classic():
+    state = start(TWO)
+    old = {k: v for k, v in state.items() if k != "calling"}
+    assert game.view_for(old, 0)["calling"] == "classic"
+    assert bid(old, 0, 2, 5, zhai=True)["bid"]["quantity"] == 2  # a classic zhai opening
+    state = bid(old, 0, 3, 4, zhai=True)
+    with pytest.raises(GameError):  # classic: breaking zhai doubles
+        bid(state, 1, 5, 6)
 
 
 # ------------------------------------------------------------- opening
@@ -217,6 +347,40 @@ def test_knockout_five_cups_and_out_last_one_wins():
     assert game.get_result(state) == {"winnerSeat": 2}
 
 
+# ------------------------------------------------------------ badges
+
+
+def _badge(key):
+    return next(b for b in game.badges if b.key == key)
+
+
+def _row(state, seat, won):
+    return SimpleNamespace(won=won, abandoned=False, side=None, role=None,
+                           **game.player_outcome(state, seat))
+
+
+def test_badges_count_cups_and_counter_splits():
+    # seat 1 splits a true call, seat 0 counters and wins
+    state = bid(start(THREE), 0, 4, 5)  # 5s: four plus two wild 1s: true
+    state = respond(split(state, 1), 0, counter=True)
+    assert state["reveal"]["loser"] == 1 and state["counterWins"] == [1, 0, 0]
+    # a counter-split lost doesn't count for the one who split
+    state = bid({**state, "dice": THREE, "turn": 0}, 0, 7, 6)  # a lie
+    state = respond(split(state, 2), 0, counter=True)
+    assert state["reveal"]["loser"] == 0 and state["counterWins"] == [1, 0, 1]
+
+    counter, sober = _badge("liarsdice.counter"), _badge("liarsdice.sober")
+    assert counter.match(_row(state, 0, False)) and counter.match(_row(state, 2, False))
+    assert not counter.match(_row(state, 1, False))
+    # seat 2 has drunk nothing: a sober win; seat 0 has drunk four
+    assert state["cups"] == [4, 4, 0]
+    assert sober.match(_row(state, 2, True)) and not sober.match(_row(state, 2, False))
+    assert not sober.match(_row(state, 0, True))
+    # games saved before counter-splits were counted
+    old = {k: v for k, v in state.items() if k != "counterWins"}
+    assert game.player_outcome(old, 0)["facts"] == {"cups": 4, "counterWins": 0}
+
+
 def test_endless_never_knocks_anyone_out():
     state = start(TWO, cups=[9, 0], mode="endless")
     state = respond(split(bid(state, 0, 9, 6), 1), 0, counter=True)
@@ -296,8 +460,9 @@ def _state(client, room, user):
 
 def test_api_game_keeps_dice_private(client, make_user):
     users, room = _table(client, make_user)
-    assert room["options"] == {"mode": "knockout"}
-    assert room["game"]["options"] == {"mode": ["knockout", "endless"]}
+    assert room["options"] == {"mode": "knockout", "calling": "jijiji"}
+    assert room["game"]["options"] == {"mode": ["knockout", "endless"],
+                                       "calling": ["jijiji", "classic", "nozhai"]}
     assert client.post(f"/api/v1/rooms/{room['id']}/start",
                        headers=users[0]["headers"]).status_code == 201
     views = [_state(client, room, u) for u in users]
@@ -320,10 +485,16 @@ def test_api_host_picks_the_mode_in_the_lobby(client, make_user):
     assert bad.status_code == 400
     res = client.patch(url, json={"options": {"mode": "endless"}},
                        headers=users[0]["headers"])
-    assert res.get_json()["room"]["options"] == {"mode": "endless"}
+    assert res.get_json()["room"]["options"] == {"mode": "endless", "calling": "jijiji"}
+    res = client.patch(url, json={"options": {"calling": "nozhai"}},
+                       headers=users[0]["headers"])
+    assert res.get_json()["room"]["options"] == {"mode": "endless", "calling": "nozhai"}
+    assert client.patch(url, json={"options": {"calling": "vegas"}},
+                        headers=users[0]["headers"]).status_code == 400
 
     client.post(f"/api/v1/rooms/{room['id']}/start", headers=users[0]["headers"])
     assert _state(client, room, users[1])["mode"] == "endless"
+    assert _state(client, room, users[1])["calling"] == "nozhai"
     late = client.patch(url, json={"options": {"mode": "knockout"}},
                         headers=users[0]["headers"])
     assert late.status_code == 409  # not once the game started
@@ -331,7 +502,7 @@ def test_api_host_picks_the_mode_in_the_lobby(client, make_user):
 
 def test_api_options_at_creation_and_other_games_have_none(client, make_user):
     users, room = _table(client, make_user, options={"mode": "endless"})
-    assert room["options"] == {"mode": "endless"}
+    assert room["options"] == {"mode": "endless", "calling": "jijiji"}
     other = make_user("chess")
     ttt = client.post("/api/v1/rooms", json={"gameType": "tictactoe"},
                       headers=other["headers"]).get_json()["room"]

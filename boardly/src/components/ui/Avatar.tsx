@@ -1,7 +1,9 @@
 import { Image } from "expo-image";
 import { View, type ViewStyle } from "react-native";
 
+import type { MascotLook } from "@/api/client";
 import { Emblem } from "@/components/icons";
+import { MascotPortrait } from "@/features/mascot/MascotPortrait";
 import { fontFamily, useTheme } from "@/theme";
 import { AppText } from "./AppText";
 
@@ -20,8 +22,14 @@ export interface AvatarProps {
   radius?: number;
   /** Full address of a profile picture; the initial shows without one. */
   imageUri?: string | null;
+  /** Their mascot, shown when there is no picture; the initial shows
+   *  when there is neither. */
+  mascot?: MascotLook | null;
   style?: ViewStyle;
 }
+
+/** The warm backdrop a mascot stands on inside the circle. */
+const MASCOT_BG = "#FCEBD2";
 
 // Deterministic pastel pairs from the design (bg / initial color).
 const TINTS: { bg: string; fg: string }[] = [
@@ -49,6 +57,7 @@ export function Avatar({
   ringColor,
   radius,
   imageUri,
+  mascot,
   style,
 }: AvatarProps) {
   const tint = tintFor(name);
@@ -61,7 +70,7 @@ export function Avatar({
           width: size,
           height: size,
           borderRadius: radius ?? size / 2,
-          backgroundColor: tint.bg,
+          backgroundColor: !imageUri && mascot ? MASCOT_BG : tint.bg,
           alignItems: "center",
           justifyContent: "center",
           borderWidth: ringColor ? 3 : 0,
@@ -76,6 +85,8 @@ export function Avatar({
             contentFit="cover"
             accessibilityLabel={name}
           />
+        ) : mascot ? (
+          <MascotPortrait look={mascot} size={size} />
         ) : (
           <AppText
             style={{

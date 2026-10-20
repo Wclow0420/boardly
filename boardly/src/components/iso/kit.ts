@@ -9,9 +9,21 @@
 // so a builder reads like a list of parts: set them with setView,
 // setOrigin and setInk (or withView) before building.
 
+/** A fill that runs from one colour to the next along a line (`from`
+ *  to `to`, in the drawing), or out from a point (`radius`). */
+export interface Grad {
+  colors: string[];
+  from: Pt;
+  to?: Pt;
+  radius?: number;
+}
+
 export interface Shape {
   d: string;
+  /** The flat colour (and what plain renderers draw). */
   fill?: string;
+  /** Engraved: the fill as a gradient, lit from the upper left. */
+  grad?: Grad;
   stroke?: string;
   strokeWidth?: number;
   opacity?: number;
@@ -114,12 +126,39 @@ export function setInk(next: RoomInk) {
 export const CARPET = { fill: "#262B45", edge: "#A87C3A" };
 
 export const STONE: Tones = ["#56628C", "#3D476B", "#2C3454"];
-export const WOOD: Tones = ["#8A6548", "#674A36", "#4A3527"];
+export const WOOD: Tones = ["#9A7250", "#74533A", "#53392A"];
 export const LEAF: Tones = ["#4C8F6C", "#3A7256", "#2B5742"];
 export const GOLD: Tones = ["#F0C87A", "#D9A95B", "#A87C3A"];
 export const BOOKS = ["#8E3B3F", "#3A7256", "#D9A95B", "#5A6FA8", "#B4683C"];
 
 export const n = (v: number) => Math.round(v * 100) / 100;
+
+// ── engraving ───────────────────────────────────────────────────────
+// Every part is drawn the house way: each face filled with a gradient
+// of its own colour (lit from the upper left), a dark ink outline of that
+// colour, a line of light along the lit edge, and grain on wood.
+
+/** `hex` mixed toward white (amount > 0) or black (amount < 0); colours
+ *  that aren't #rrggbb come back as they are. */
+export function tone(hex: string, amount: number): string {
+  if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return hex;
+  const to = amount > 0 ? 255 : 0;
+  const a = Math.abs(amount);
+  return `#${[1, 3, 5]
+    .map((i) => {
+      const c = parseInt(hex.slice(i, i + 2), 16);
+      return Math.round(c + (to - c) * a)
+        .toString(16)
+        .padStart(2, "0");
+    })
+    .join("")}`;
+}
+
+/** The ink a colour is outlined in: itself, much darker. */
+export const inkOf = (fill: string) => tone(fill, -0.62);
+
+/** Tones whose faces show a grain (wood, planks). */
+export const GRAINED = new WeakSet<Tones>([WOOD]);
 
 export const P = (x: number, y: number, z = 0): Pt => [
   view.cx + (x + origin.col - y - origin.row) * 0.866 * view.scale,
@@ -130,12 +169,20 @@ export const path = (pts: Pt[], close = true) =>
   pts.map(([x, y], i) => `${i ? "L" : "M"}${n(x)} ${n(y)}`).join(" ") +
   (close ? " Z" : "");
 
-export const poly = (pts: V3[], fill: string, stroke: string = INK.line): Shape => ({
+export const poly = (pts: V3[], fill: string, stroke?: string): Shape => ({
   d: path(pts.map(([x, y, z]) => P(x, y, z))),
   fill,
-  stroke,
-  strokeWidth: 0.5,
+  stroke: stroke ?? inkOf(fill),
+  strokeWidth: 0.55,
 });
+
+/** A face with its gradient: lightest at `from`, darkest at `to`. */
+function face(pts: V3[], fill: string, from: V3, to: V3, light: number, dark: number): Shape {
+  return {
+    ...poly(pts, fill),
+    grad: { colors: [tone(fill, light), fill, tone(fill, -dark)], from: P(...from), to: P(...to) },
+  };
+}
 
 export const line = (pts: V3[], stroke: string = INK.line, strokeWidth = 0.5): Shape => ({
   d: path(pts.map(([x, y, z]) => P(x, y, z)), false),
@@ -151,16 +198,57 @@ export function box(
   w: number,
   d: number,
   h: number,
-  [top, lit, shade]: Tones
+  tones: Tones
 ): Shape[] {
   const X = x + w;
   const Y = y + d;
   const Z = z + h;
-  return [
-    poly([[X, y, z], [X, Y, z], [X, Y, Z], [X, y, Z]], shade),
-    poly([[x, Y, z], [X, Y, z], [X, Y, Z], [x, Y, Z]], lit),
-    poly([[x, y, Z], [X, y, Z], [X, Y, Z], [x, Y, Z]], top),
+  const [top, lit, shade] = tones;
+  const shapes: Shape[] = [
+    face([[X, y, z], [X, Y, z], [X, Y, Z], [X, y, Z]], shade, [X, y, Z], [X, Y, z], 0.06, 0.28),
+    face([[x, Y, z], [X, Y, z], [X, Y, Z], [x, Y, Z]], lit, [x, Y, Z], [X, Y, z], 0.14, 0.22),
+    face([[x, y, Z], [X, y, Z], [X, Y, Z], [x, Y, Z]], top, [x, y, Z], [X, Y, Z], 0.2, 0.1),
   ];
+  const s = view.scale;
+  // the grain along a wooden face's long side
+  if (GRAINED.has(tones)) {
+    const vein = tone(lit, -0.4);
+    if (w * s > 8 && h * s > 5) {
+      const along = w >= h;
+      for (const f of [0.3, 0.62]) {
+        shapes.push({
+          ...line(
+            along
+              ? [[x + w * 0.04, Y, z + h * f], [X - w * 0.04, Y, z + h * (f + 0.04)]]
+              : [[x + w * f, Y, z + h * 0.05], [x + w * (f + 0.06), Y, Z - h * 0.05]],
+            vein,
+            0.4,
+          ),
+          opacity: 0.55,
+        });
+      }
+    }
+    if (w * s > 8 && d * s > 8) {
+      const along = w >= d;
+      for (const f of [0.35, 0.68]) {
+        shapes.push({
+          ...line(
+            along
+              ? [[x + w * 0.05, y + d * f, Z], [X - w * 0.05, y + d * (f + 0.05), Z]]
+              : [[x + w * f, y + d * 0.05, Z], [x + w * (f + 0.05), Y - d * 0.05, Z]],
+            tone(top, -0.32),
+            0.4,
+          ),
+          opacity: 0.5,
+        });
+      }
+    }
+  }
+  // a line of light along the lit top edge
+  if (w * s > 5) {
+    shapes.push({ ...line([[x + w * 0.04, Y, Z], [X - w * 0.12, Y, Z]], "#FFFFFF", 0.55), opacity: 0.4 });
+  }
+  return shapes;
 }
 
 /** A flat patch on the floor or on top of something. */
@@ -208,15 +296,28 @@ export function cylinder(x: number, y: number, z: number, r: number, h: number, 
     {
       d: `M${n(bx - rx)} ${n(ty)} L${n(bx - rx)} ${n(by)} A${n(rx)} ${n(ry)} 0 0 0 ${n(bx + rx)} ${n(by)} L${n(bx + rx)} ${n(ty)} Z`,
       fill: lit,
-      stroke: INK.line,
-      strokeWidth: 0.5,
+      // round: light on the left, falling away to the right
+      grad: { colors: [tone(lit, 0.22), lit, tone(lit, -0.32)], from: [bx - rx * 0.7, ty], to: [bx + rx, ty] },
+      stroke: inkOf(lit),
+      strokeWidth: 0.55,
     },
     {
       d: `M${n(bx - rx)} ${n(ty)} A${n(rx)} ${n(ry)} 0 1 0 ${n(bx + rx)} ${n(ty)} A${n(rx)} ${n(ry)} 0 1 0 ${n(bx - rx)} ${n(ty)} Z`,
       fill: top,
-      stroke: INK.line,
-      strokeWidth: 0.5,
+      grad: { colors: [tone(top, 0.2), top, tone(top, -0.12)], from: [bx - rx, ty - ry], to: [bx + rx, ty + ry] },
+      stroke: inkOf(top),
+      strokeWidth: 0.55,
     },
+    ...(rx > 3
+      ? [
+          {
+            d: `M${n(bx - rx * 0.55)} ${n(ty + ry * 0.9)} L${n(bx - rx * 0.55)} ${n(by + ry * 0.75)}`,
+            stroke: "#FFFFFF",
+            strokeWidth: 0.6,
+            opacity: 0.35,
+          },
+        ]
+      : []),
   ];
 }
 
@@ -239,6 +340,11 @@ export function ball(at: V3, radius: number, fill: string, stroke?: string, opac
   return {
     d: `M${n(cx - r)} ${n(cy)} a${r} ${r} 0 1 0 ${2 * r} 0 a${r} ${r} 0 1 0 ${-2 * r} 0 Z`,
     fill,
+    // a solid ball is lit from the upper left; a glow stays soft
+    grad:
+      opacity === undefined && r > 1.4
+        ? { colors: [tone(fill, 0.35), fill, tone(fill, -0.35)], from: [cx - r * 0.35, cy - r * 0.4], radius: r * 1.5 }
+        : undefined,
     stroke,
     strokeWidth: stroke ? 0.5 : undefined,
     opacity,

@@ -309,7 +309,7 @@ def player_card_of(user_id):
     user = db.session.get(User, user_id)
     if user is None or user.deleted_at is not None:
         return api_error("not_found", "User not found", 404)
-    card = player_card(user.id)
+    card = player_card(user.id, user.showcase_badges)
     return {
         "card": {
             "user": user.to_dict(),
@@ -319,7 +319,14 @@ def player_card_of(user_id):
             "wins": card["wins"],
             "bestStreak": card["bestStreak"],
             "favourite": card["favourite"],
-            "badges": [b for b in card["badges"] if b["unlockedAt"]],
+            # only the four they show, never their progress
+            "badges": [
+                {k: v for k, v in b.items() if k != "progress"}
+                for key in card["showcase"]
+                for b in card["badges"]
+                if b["key"] == key
+            ],
+            "badgeCount": sum(1 for b in card["badges"] if b["tier"]),
             "together": _together(me.id, {user.id}).get(user.id),
             "presence": presence.presence_of([user.id])[user.id] if is_friend else None,
             "playing": presence.playing([user.id]).get(user.id) if is_friend else None,

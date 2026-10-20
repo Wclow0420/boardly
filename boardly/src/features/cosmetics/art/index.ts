@@ -6,26 +6,63 @@ import { CROWN_ART } from "./crowns";
 import { EARNED_ART } from "./earned";
 import { EPIC_ART } from "./epic";
 import { FALLEN_ART } from "./fallen";
+import { ELEMENTS_ART } from "./elements";
 import { FRAME_ART } from "./frames";
+import { HERALDRY_ART } from "./heraldry";
 import type { ArtBorderDrawing } from "./kit";
 import { LEGENDARY_ART } from "./legendary";
-import { RARE_ART } from "./rare";
+import { RADIANT_ART } from "./radiant";
+import { ABYSS_ART } from "./abyss";
+import { CURRENTS_ART } from "./currents";
+import { DRAGON_ART } from "./dragon";
+import { FESTIVAL_ART } from "./festival";
+import { GRANDBOARD_ART } from "./grandboard";
+import { HEAVENS_ART } from "./heavens";
+import { INFERNO_ART } from "./inferno";
+import { MECHANICS_ART } from "./mechanics";
+import { GARDEN_ART } from "./garden";
+import { HONOURS_ART } from "./honours";
+import { MAJESTY_ART } from "./majesty";
+import { RADIANCE_ART } from "./radiance";
+import { NOCTURNE_ART } from "./nocturne";
+import { SOLAR_ART } from "./solar";
+import { TEMPEST_ART } from "./tempest";
+import { TABLETOP_ART } from "./tabletop";
 import { RIM_ART } from "./rimBorders";
 import { SERAPH_ART } from "./seraph";
 
 export const ART: Record<string, ArtBorderDrawing> = {
-  ...RARE_ART,
+  ...TABLETOP_ART,
+  ...GARDEN_ART,
   ...EPIC_ART,
   ...LEGENDARY_ART,
   ...EARNED_ART,
   ...FRAME_ART,
+  ...HERALDRY_ART,
+  ...RADIANT_ART,
+  ...ELEMENTS_ART,
   ...CROWN_ART,
   ...RIM_ART,
   ...SERAPH_ART,
   ...FALLEN_ART,
   ...CREST_ART,
   ...BAROQUE_ART,
+  // enhanced versions, over the originals above
+  ...SOLAR_ART,
+  ...TEMPEST_ART,
+  ...NOCTURNE_ART,
+  ...MAJESTY_ART,
+  ...ABYSS_ART,
+  ...CURRENTS_ART,
+  ...RADIANCE_ART,
+  ...HONOURS_ART,
+  ...DRAGON_ART,
+  ...FESTIVAL_ART,
+  ...GRANDBOARD_ART,
+  ...HEAVENS_ART,
+  ...INFERNO_ART,
+  ...MECHANICS_ART,
 };
 
-export { BorderClockProvider, useBorderClock } from "./kit";
+export { BorderClockProvider, useBorderClock, useMayMove } from "./kit";
 export type { ArtBorderDrawing } from "./kit";

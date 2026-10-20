@@ -2,8 +2,9 @@
 // company) are here; every game lists its own in its definition
 // (GameDefinition.badges).
 
+import { BOARDLY_FRAMES } from "@/components/badges/frames/boardly";
 import { BADGE_GLYPHS as G } from "@/components/badges/glyphs";
-import type { BadgeArt } from "@/components/badges/types";
+import type { BadgeArt, BadgeStyle } from "@/components/badges/types";
 import { lidColors } from "@/features/games/GameBox";
 import { getGame } from "@/games/registry";
 
@@ -11,24 +12,26 @@ import { getGame } from "@/games/registry";
 export const BOARDLY_FACE = "#1F4E5F";
 
 const GENERAL: Record<string, BadgeArt> = {
-  "boardly.firstTable": { glyph: G.meeple, loop: "bob" },
-  "boardly.firstWin": { glyph: G.trophy, loop: "pulse" },
-  "boardly.regular": { glyph: G.die, loop: "tumble" },
-  "boardly.streak": { glyph: G.flame, loop: "flicker" },
-  "boardly.company": { glyph: G.people, loop: "bob" },
-  "boardly.veteran": { glyph: G.laurel, loop: "pulse" },
-  "boardly.champion": { glyph: G.star, loop: "spin" },
-  "boardly.legend": { glyph: G.crown, loop: "pulse" },
+  "boardly.regular": { glyph: G.die, emoji: "🎲", loop: "tumble" },
+  "boardly.champion": { glyph: G.trophy, emoji: "🏆", loop: "pulse" },
+  "boardly.streak": { glyph: G.flame, emoji: "🔥", loop: "flicker" },
+  "boardly.company": { glyph: G.people, emoji: "🤝", loop: "bob" },
 };
 
-const FALLBACK: BadgeArt = { glyph: G.star, loop: "pulse" };
+const FALLBACK: BadgeArt = { glyph: G.star, emoji: "★", loop: "pulse" };
 
-/** A badge's art and its enamel colour. */
+/** A badge's art, its enamel colour and the frames it wears. */
 export function badgeArt(
   key: string,
   gameType: string | null,
-): { art: BadgeArt; face: string } {
-  if (!gameType) return { art: GENERAL[key] ?? FALLBACK, face: BOARDLY_FACE };
-  const art = getGame(gameType)?.badges?.[key] ?? FALLBACK;
-  return { art, face: art.face ?? lidColors(gameType)[0] };
+): { art: BadgeArt; face: string; frames: BadgeStyle } {
+  if (!gameType)
+    return { art: GENERAL[key] ?? FALLBACK, face: BOARDLY_FACE, frames: BOARDLY_FRAMES };
+  const game = getGame(gameType);
+  const art = game?.badges?.[key] ?? FALLBACK;
+  return {
+    art,
+    face: art.face ?? lidColors(gameType)[0],
+    frames: game?.badgeFrames ?? BOARDLY_FRAMES,
+  };
 }

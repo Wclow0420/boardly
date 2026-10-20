@@ -5,18 +5,24 @@ turn, players bid on how many dice of one face there are on the whole
 table ("4 fives"), each bid higher than the last, until someone calls
 the last bid a lie:
 
-- Opening bid: more dice than there are players (2 players: 3+); an
-  opening zhai bid may be as many as there are players.
 - A raise is more dice, or as many dice of a higher face, where faces
   rank 2 < 3 < 4 < 5 < 6 < 1.
-- The opening bid picks the round's kind: zhai (斋, 1s count only as
-  1s) or kaizhai (开斋, 1s are wild and count as any face). Bidding 1s
-  is always zhai.
-- A zhai round may break the fast (开斋, also called 飞): the next bid
-  makes 1s wild again but must call at least double the dice. Once a
-  round is kaizhai it stays kaizhai — no more zhai, so no more 1s.
-- 豹子 (five of a kind): a cup whose five dice all count for the bid
-  counts as six (two 1s + three 3s are six 3s when 1s are wild).
+- A bid is zhai (斋, 1s count only as 1s) or kaizhai (开斋 / 飞, 1s are
+  wild and count as any face). Bidding 1s is always zhai. Once a bid
+  makes the round kaizhai it stays kaizhai: no more zhai, so no more 1s.
+- How low a bid may go and when it may be kaizhai depend on the way of
+  calling the host picked in the lobby (`calling`, rules.py):
+  - jijiji (几几几, the South China / HK / Macau bar rule): thresholds
+    ONE / ZHAI / FEI by the players still in (3 players: 3 / 4 / 5).
+    ONE to ZHAI-1 dice: only 1s; ZHAI to FEI-1: zhai only; FEI and up:
+    zhai or kaizhai freely, no doubling.
+  - classic (经典): open with more dice than players, or as many zhai;
+    breaking zhai (开斋) needs at least double the dice.
+  - nozhai (不玩斋): 1s are always wild and can't be called; every bid
+    is kaizhai; open with more dice than players.
+- 豹子: a cup whose five dice all count for the bid counts as six (two
+  1s + three 3s are six 3s when 1s are wild). 大豹子: five of the very
+  same number (five 3s; or five 1s when they're wild) counts as seven.
 - 散骰 (all five faces different): you may show your cup to the table
   and shake again, any time before your first bid of the round.
 - Open (开): the player whose turn it is calls the last bid a lie.
@@ -35,6 +41,7 @@ Full state (server only — clients get `view_for`):
 {
   "numPlayers": 3,
   "mode": "knockout" | "endless",
+  "calling": "jijiji" | "classic" | "nozhai",   # missing: classic
   "dice": [[1, 4, 4, 6, 2], [], ...],   # by seat; [] once out
   "cups": [0, 2, 5],                    # cups drunk, by seat
   "turn": 0,                            # whose turn to bid or open
@@ -45,6 +52,7 @@ Full state (server only — clients get `view_for`):
   "endVotes": [],                       # endless: seats voting to stop
   "rerolls": [{"seat": 1, "dice": [...]}],  # this round's 散骰 rerolls
   "reveal": null | {...},               # how the last round ended
+  "counterWins": [0, 1, 0],             # counter-splits (反劈) won, by seat
   "phase": "bidding" | "split" | "finished",
   "winner": null | seat,
   "winners": null | [seats]             # endless: fewest cups (ties)
@@ -63,25 +71,31 @@ Moves:
 
 import random
 
-from app.games.base import BaseGame, GameError, Badge
+from app.games.base import BaseGame, GameError, Badge, QUICK_WINS, RARE
+from app.games.liarsdice.bot import liarsdice as bot_policy
+from app.games.liarsdice.rules import CALLINGS, bid_error, calling_of
+from app.games.liarsdice.rules import face_rank  # noqa: F401  (tests import it from here)
 
 DICE_EACH = 5
 KNOCKOUT_CUPS = 5
 DRINKS = {"open": 1, "split": 2, "counter": 4}
 
 
-def face_rank(face: int) -> int:
-    """1 is the top face: 2 < 3 < 4 < 5 < 6 < 1."""
-    return 7 if face == 1 else face
-
-
 def hand_count(hand: list[int], face: int, zhai: bool) -> int:
-    """Dice in one cup that count for a bid on `face`. A full cup that all
-    counts (豹子 — five of a kind, wild 1s included when kaizhai) counts
-    one extra: two 1s and three 3s are six 3s, but only when 1s are wild."""
+    """Dice in one cup that count for a bid on `face`, plus its bonus."""
     wild = not zhai and face != 1
     found = sum(1 for d in hand if d == face or (wild and d == 1))
-    return found + 1 if found == len(hand) == DICE_EACH else found
+    return found + leopard_bonus(hand, face, zhai)
+
+
+def leopard_bonus(hand: list[int], face: int, zhai: bool) -> int:
+    """A cup whose five dice all count for `face` counts extra: 豹子 (two 1s
+    and three 3s, when 1s are wild) one more, six; 大豹子 (five of the very
+    same number) two more, seven."""
+    wild = not zhai and face != 1
+    if len(hand) != DICE_EACH or not all(d == face or (wild and d == 1) for d in hand):
+        return 0
+    return 2 if len(set(hand)) == 1 else 1
 
 
 def counts(dice: list[list[int]], face: int, zhai: bool) -> int:
@@ -102,10 +116,23 @@ class LiarsDice(BaseGame):
     tag = "party"
 
     badges = [
-        Badge("liarsdice.firstWin", "bronze", 1, series="wins"),
-        Badge("liarsdice.bluffer", "gold", 10, series="wins"),
+        # every win
+        Badge("liarsdice.bluffer", QUICK_WINS),
+        # win without drinking a single cup
+        Badge(
+            "liarsdice.sober",
+            RARE,
+            lambda o: o.won and (o.facts or {}).get("cups") == 0,
+        ),
+        # win a counter-split (反劈), the four-cup showdown
+        Badge(
+            "liarsdice.counter",
+            RARE,
+            lambda o: (o.facts or {}).get("counterWins", 0) > 0,
+        ),
     ]
-    options = {"mode": ["knockout", "endless"]}
+    options = {"mode": ["knockout", "endless"], "calling": CALLINGS}
+    has_bots = True
 
     def __init__(self, rng: random.Random | None = None):
         self.rng = rng or random.SystemRandom()
@@ -114,16 +141,23 @@ class LiarsDice(BaseGame):
         return [self.rng.randint(1, 6) for _ in range(DICE_EACH)]
 
     def initial_state(
-        self, num_players: int, rng: random.Random | None = None, mode: str = "knockout"
+        self,
+        num_players: int,
+        rng: random.Random | None = None,
+        mode: str = "knockout",
+        calling: str = "jijiji",
     ) -> dict:
         if not self.min_players <= num_players <= self.max_players:
             raise GameError("This game needs 2 to 10 players")
         if mode not in self.options["mode"]:
             raise GameError("Unknown mode")
+        if calling not in CALLINGS:
+            raise GameError("Unknown way of calling")
         rng = rng or self.rng
         return {
             "numPlayers": num_players,
             "mode": mode,
+            "calling": calling,
             "dice": [self._roll() for _ in range(num_players)],
             "cups": [0] * num_players,
             "turn": rng.randrange(num_players),
@@ -134,13 +168,16 @@ class LiarsDice(BaseGame):
             "endVotes": [],
             "rerolls": [],
             "reveal": None,
+            "counterWins": [0] * num_players,
             "phase": "bidding",
             "winner": None,
             "winners": None,
         }
 
     def new_state(self, num_players: int, options: dict) -> dict:
-        return self.initial_state(num_players, mode=options["mode"])
+        return self.initial_state(
+            num_players, mode=options["mode"], calling=options.get("calling", "jijiji")
+        )
 
     # ------------------------------------------------------------ moves
 
@@ -201,25 +238,12 @@ class LiarsDice(BaseGame):
         if not 1 <= quantity <= total:
             raise GameError(f"There are only {total} dice on the table")
 
-        last = state["bid"]
-        # Bidding 1s is always zhai
-        zhai = bool(move.get("zhai")) or face == 1
-        if last is None:
-            # A zhai opening may call as many dice as there are players
-            least = len(active) if zhai else len(active) + 1
-            if quantity < least:
-                raise GameError(f"Open with at least {least} dice")
-        elif last["zhai"] and not zhai:
-            # Breaking the fast: 1s are wild again, at double the dice
-            if quantity < 2 * last["quantity"]:
-                raise GameError(
-                    f"Breaking zhai needs at least {2 * last['quantity']} dice"
-                )
-        elif zhai and not last["zhai"]:
-            # Once the fast is broken the round stays kaizhai
-            raise GameError("This round is kaizhai — no going back to zhai")
-        elif (quantity, face_rank(face)) <= (last["quantity"], face_rank(last["face"])):
-            raise GameError("Bid higher than the last call")
+        calling = calling_of(state)
+        # Bidding 1s is always zhai (under nozhai they can't be bid at all)
+        zhai = bool(move.get("zhai")) or (face == 1 and calling != "nozhai")
+        error = bid_error(calling, len(active), state["bid"], quantity, face, zhai)
+        if error:
+            raise GameError(error)
 
         bid = {"quantity": quantity, "face": face, "zhai": zhai, "seat": seat}
         return {
@@ -259,11 +283,16 @@ class LiarsDice(BaseGame):
 
         cups = list(state["cups"])
         cups[loser] += drink
+        counter_wins = list(state.get("counterWins") or [0] * state["numPlayers"])
+        if kind == "counter":
+            # the counter-split's winner: whichever of the two didn't drink
+            counter_wins[bid["seat"] if loser == challenger else challenger] += 1
         if not self._endless(state):
             cups[loser] = min(KNOCKOUT_CUPS, cups[loser])
         state = {
             **state,
             "cups": cups,
+            "counterWins": counter_wins,
             "phase": "bidding",
             "split": None,
             "reveal": {
@@ -360,10 +389,23 @@ class LiarsDice(BaseGame):
             return {"draw": True}
         return {"winnerSeat": state["winner"]}
 
+    def player_outcome(self, state: dict, seat: int) -> dict:
+        """For the badges: cups drunk, and counter-splits won."""
+        wins = state.get("counterWins") or []
+        return {
+            "facts": {
+                "cups": state["cups"][seat],
+                "counterWins": wins[seat] if seat < len(wins) else 0,
+            }
+        }
+
     def on_abandon(self, state: dict, seat: int) -> dict:
         if state["phase"] == "finished":
             return state
         return {**state, "phase": "finished", "winner": None, "winners": None}
+
+    def bot_move(self, view, seat, rng):
+        return bot_policy(view, seat, rng)
 
     # ------------------------------------------------------------- view
 
@@ -374,6 +416,7 @@ class LiarsDice(BaseGame):
         return {
             "numPlayers": n,
             "mode": state.get("mode", "knockout"),
+            "calling": calling_of(state),
             "phase": state["phase"],
             "turn": state["turn"],
             "round": state["round"],

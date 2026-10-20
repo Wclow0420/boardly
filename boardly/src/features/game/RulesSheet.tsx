@@ -16,11 +16,14 @@ import {
 } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { Emblem, InfoIcon } from "@/components/icons";
-import { AppText, Button, Chip, IconButton } from "@/components/ui";
+import { BackIcon, ChevronRightIcon, Emblem, InfoIcon } from "@/components/icons";
+import { AppText, Button, IconButton } from "@/components/ui";
 import { getGame } from "@/games/registry";
 import type { RulesPage } from "@/games/types";
 import { useTheme } from "@/theme";
+import { GiltCard } from "./Popup";
+import { RuleTabs } from "./rules/RuleTabs";
+import { RULE_SECTIONS, SECTION_EMBLEM, type RuleSection } from "./rules/standard";
 import { RulesText } from "./RulesText";
 
 const CARD_MAX_WIDTH = 440;
@@ -56,11 +59,14 @@ export interface RulesSheetProps {
   gameName: string;
   visible: boolean;
   onClose: () => void;
+  /** Its first page has been drawn (dev/rules times the opening). */
+  onShown?: () => void;
 }
 
 interface Page {
   key: string;
   title: string;
+  emoji?: string;
   content: React.ReactNode;
 }
 
@@ -69,9 +75,10 @@ export function RulesSheet({
   gameName,
   visible,
   onClose,
+  onShown,
 }: RulesSheetProps) {
   const { t } = useTranslation();
-  const { colors, radius, spacing } = useTheme();
+  const { colors, spacing } = useTheme();
   const pagerRef = useRef<ScrollView>(null);
   // Each page gets the pager's exact size. Without a fixed height a page
   // grows to fit its content and has nothing left to scroll.
@@ -82,11 +89,18 @@ export function RulesSheet({
   const custom: RulesPage[] | undefined = getGame(gameKey)?.rulePages;
   let pages: Page[];
   if (custom) {
-    pages = custom.map(({ key, titleKey, Content }) => ({
-      key,
-      title: t(titleKey),
-      content: <Content />,
-    }));
+    // in the standard order (features/game/rules/standard); a page
+    // without a section keeps its place after them
+    const rank = (section?: RuleSection) => (section ? RULE_SECTIONS.indexOf(section) : RULE_SECTIONS.length);
+    pages = [...custom]
+      .map((page, i) => ({ page, i }))
+      .sort((a, b) => rank(a.page.section) - rank(b.page.section) || a.i - b.i)
+      .map(({ page: { key, titleKey, section, Content } }) => ({
+        key,
+        title: titleKey ? t(titleKey) : t(`rules.sections.${section ?? "overview"}`),
+        emoji: section ? SECTION_EMBLEM[section] : undefined,
+        content: <Content />,
+      }));
   } else {
     const sections = t(`rules.${gameKey}.sections`, {
       returnObjects: true,
@@ -95,7 +109,8 @@ export function RulesSheet({
     pages = [
       {
         key: "overview",
-        title: t("rules.overview"),
+        title: t("rules.sections.overview"),
+        emoji: SECTION_EMBLEM.overview,
         content: (
           <AppText variant="body" color="textMuted">
             {t(`rules.${gameKey}.intro`)}
@@ -175,16 +190,7 @@ export function RulesSheet({
           onPress={close}
           style={StyleSheet.absoluteFill}
         />
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              borderRadius: radius.xxl,
-            },
-          ]}
-        >
+        <GiltCard style={styles.card} fill>
           <View style={[styles.header, { padding: spacing.xl, paddingBottom: 0 }]}>
             <View style={styles.grow}>
               <AppText variant="caption" color="textMuted">
@@ -199,26 +205,14 @@ export function RulesSheet({
             </IconButton>
           </View>
 
-          <View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{
-                paddingHorizontal: spacing.xl,
-                paddingVertical: spacing.md,
-                gap: spacing.sm,
-              }}
-            >
-              {pages.map((page, i) => (
-                <Chip
-                  key={page.key}
-                  label={page.title}
-                  selected={i === index}
-                  onPress={() => goTo(i)}
-                />
-              ))}
-            </ScrollView>
-          </View>
+          <RuleTabs
+            labels={pages.map((page) => (page.emoji ? `${page.emoji} ${page.title}` : page.title))}
+            index={index}
+            onPick={goTo}
+            padX={spacing.xl}
+            padY={spacing.md}
+            gap={spacing.sm}
+          />
 
           <View
             style={styles.grow}
@@ -240,22 +234,28 @@ export function RulesSheet({
                 onScrollBeginDrag={endJump}
                 scrollEventThrottle={32}
               >
-                {pages.map((page) => (
-                  <ScrollView
-                    key={page.key}
-                    style={{ width, height: pager.height }}
-                    nestedScrollEnabled
-                    contentContainerStyle={{
-                      paddingHorizontal: spacing.xl,
-                      paddingBottom: spacing.lg,
-                    }}
-                  >
-                    <AppText variant="title" style={{ marginBottom: spacing.md }}>
-                      {page.title}
-                    </AppText>
-                    {page.content}
-                  </ScrollView>
-                ))}
+                {pages.map((page, i) =>
+                  // only the page in view and its neighbours are built: a
+                  // game's pages can hold dozens of pictures
+                  Math.abs(i - index) <= 1 ? (
+                    <ScrollView
+                      key={page.key}
+                      onLayout={i === index ? () => requestAnimationFrame(() => onShown?.()) : undefined}
+                      style={{ width, height: pager.height }}
+                      nestedScrollEnabled
+                      showsVerticalScrollIndicator={false}
+                      contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.lg }}
+                    >
+                      <View style={styles.pageTitle}>
+                        {page.emoji ? <Emblem emoji={page.emoji} size={22} /> : null}
+                        <AppText variant="title">{page.title}</AppText>
+                      </View>
+                      {page.content}
+                    </ScrollView>
+                  ) : (
+                    <View key={page.key} style={{ width, height: pager.height }} />
+                  ),
+                )}
               </ScrollView>
             ) : null}
           </View>
@@ -267,7 +267,8 @@ export function RulesSheet({
             ]}
           >
             <Button
-              label="‹"
+              label=""
+              leftIcon={<BackIcon size={16} />}
               variant="secondary"
               size="sm"
               disabled={index === 0}
@@ -298,14 +299,15 @@ export function RulesSheet({
               />
             ) : (
               <Button
-                label="›"
+                label=""
+                leftIcon={<ChevronRightIcon size={16} />}
                 size="sm"
                 onPress={() => goTo(index + 1)}
                 style={styles.arrow}
               />
             )}
           </View>
-        </View>
+        </GiltCard>
       </View>
     </Modal>
   );
@@ -324,9 +326,8 @@ const styles = StyleSheet.create({
     maxWidth: CARD_MAX_WIDTH,
     height: "84%",
     maxHeight: 680,
-    borderWidth: 1,
-    overflow: "hidden",
   },
+  pageTitle: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
   header: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
   footer: { flexDirection: "row", alignItems: "center", gap: 12 },
   arrow: { width: 52, paddingHorizontal: 0 },

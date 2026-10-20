@@ -183,16 +183,30 @@ def _drive(app, room_id, done=lambda room_id: True) -> None:
             return
 
 
-def _bot_move(room, session):
-    """(seat, move) of the first bot in seat order the game waits on."""
+def _bot_seats(room) -> list[int]:
+    return sorted(p.seat for p in room.players if p.user is not None and p.user.is_bot)
+
+
+def _bot_move(room, session, seats=None):
+    """(seat, move) of the first bot in seat order (of `seats`, or all of
+    them) the game waits on."""
     game = get_game(session.game_type)
-    for player in sorted(room.players, key=lambda p: p.seat):
-        if player.user is None or not player.user.is_bot:
-            continue
-        move = game.bot_move(game.view_for(session.state, player.seat), player.seat, _rng)
+    for seat in seats if seats is not None else _bot_seats(room):
+        move = game.bot_move(game.view_for(session.state, seat), seat, _rng)
         if move is not None:
-            return player.seat, move
+            return seat, move
     return None
+
+
+def _waiting_bots(room, session) -> list[int]:
+    """Every bot the game is waiting on right now: one in a game of turns,
+    several when everyone chooses at once (a vote, a night's orders)."""
+    game = get_game(session.game_type)
+    return [
+        seat
+        for seat in _bot_seats(room)
+        if game.bot_move(game.view_for(session.state, seat), seat, _rng) is not None
+    ]
 
 
 def _session(room, lock=False):
@@ -210,7 +224,10 @@ def _step(app, room_id):
     if room is None or room.status != "playing":
         return False
     session = _session(room)
-    if session is None or _bot_move(room, session) is None:
+    if session is None:
+        return False
+    waiting = _waiting_bots(room, session)
+    if not waiting:
         return False
 
     # Think for a moment, like a player would
@@ -221,17 +238,31 @@ def _step(app, room_id):
 
     room = db.session.get(Room, room_id)
     session = _session(room, lock=True)
-    choice = _bot_move(room, session) if session is not None else None
-    if choice is None:
+    if session is None:
+        db.session.rollback()
+        return True
+    # The bots that were waiting all move now, together: one save and one
+    # broadcast rather than a pause and a broadcast each. A bot whose turn
+    # only comes after them waits for the next step.
+    moved = 0
+    result = None
+    for seat in waiting:
+        choice = _bot_move(room, session, [seat])
+        if choice is None:
+            continue  # someone moved meanwhile, or no longer its turn
+        _, move = choice
+        try:
+            result = apply_move(room, session, seat, move)
+        except GameError as err:
+            db.session.rollback()
+            log.warning("Bot move %s at table %s refused: %s", move, room_id, err)
+            return None
+        moved += 1
+        if result is not None:
+            break
+    if not moved:
         db.session.rollback()
         return True  # someone moved meanwhile: look again
-    seat, move = choice
-    try:
-        result = apply_move(room, session, seat, move)
-    except GameError as err:
-        db.session.rollback()
-        log.warning("Bot move %s at table %s refused: %s", move, room_id, err)
-        return None
     db.session.commit()
-    announce_move(room, result)
+    announce_move(room, result, session)
     return True

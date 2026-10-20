@@ -28,6 +28,8 @@ Full state (server only — clients get `view_for`):
 }
 
 Moves:
+  {"type": "pick", "team": [seats]}          leader, phase "team" (the
+      team so far, shown to everyone as it's picked; changes nothing else)
   {"type": "propose", "team": [seats]}       leader, phase "team"
   {"type": "vote", "approve": bool}          everyone, phase "vote"
   {"type": "quest", "card": "success"|"fail"}  team members, phase "quest"
@@ -36,7 +38,7 @@ Moves:
 
 import random
 
-from app.games.base import BaseGame, GameError, Badge, won_as
+from app.games.base import BaseGame, GameError, Badge, FEAT, RARE, WINS, won_as
 
 EVIL_ROLES = {"assassin", "morgana", "mordred", "oberon", "minion"}
 
@@ -87,14 +89,18 @@ class Avalon(BaseGame):
     tile_color = "#EDE4FF"
     category = "faction"
     tag = "faction"
+    has_bots = True
 
     badges = [
-        Badge("avalon.firstOp", "bronze", 1, won_as("good")),
-        Badge("avalon.mole", "silver", 1, won_as("evil")),
-        Badge("avalon.hitman", "gold", 1,
+        Badge("avalon.firstOp", FEAT, won_as("good")),
+        Badge("avalon.mole", FEAT, won_as("evil")),
+        Badge("avalon.hitman", RARE,
               lambda o: o.won and o.role == "assassin"
               and (o.facts or {}).get("reason") == "assassination"),
-        Badge("avalon.spymaster", "legendary", 25, series="wins"),
+        # the Handler steers the agents home and the Hitman misses them
+        Badge("avalon.handler", RARE,
+              lambda o: o.won and not o.abandoned and o.role == "merlin"),
+        Badge("avalon.spymaster", WINS),
     ]
 
     def initial_state(self, num_players: int, rng: random.Random | None = None) -> dict:
@@ -129,6 +135,7 @@ class Avalon(BaseGame):
             raise GameError("Invalid move")
 
         handlers = {
+            "pick": self._pick,
             "propose": self._propose,
             "vote": self._vote,
             "quest": self._quest,
@@ -138,6 +145,25 @@ class Avalon(BaseGame):
         if handler is None:
             raise GameError("Unknown move type")
         return handler(state, seat, move)
+
+    def _pick(self, state, seat, move):
+        """The leader's picks so far, before proposing: everyone watches
+        the spotlights move. Never more than the team's size."""
+        if state["phase"] != "team":
+            raise GameError("Not choosing a team right now")
+        if seat != state["leader"]:
+            raise GameError("Only the leader picks the team")
+        n = state["numPlayers"]
+        team = move.get("team")
+        size = QUEST_SIZES[n][state["quest"]]
+        if (
+            not isinstance(team, list)
+            or len(team) > size
+            or not all(type(s) is int and 0 <= s < n for s in team)
+            or len(set(team)) != len(team)
+        ):
+            raise GameError(f"Pick up to {size} different players")
+        return {**state, "team": sorted(team)}
 
     def _propose(self, state, seat, move):
         if state["phase"] != "team":
@@ -151,8 +177,8 @@ class Avalon(BaseGame):
         if (
             not isinstance(team, list)
             or len(team) != size
-            or len(set(team)) != size
             or not all(type(s) is int and 0 <= s < n for s in team)
+            or len(set(team)) != size
         ):
             raise GameError(f"Pick exactly {size} different players")
 
@@ -267,6 +293,12 @@ class Avalon(BaseGame):
         if state["roles"][target] == "merlin":
             return self._finish(state, "evil", "assassination")
         return self._finish(state, "good", "quests")
+
+    def bot_move(self, view, seat, rng):
+        # Imported here: the policy reads this module's tables
+        from app.games.avalon.bot import avalon as bot_policy
+
+        return bot_policy(view, seat, rng)
 
     @staticmethod
     def _finish(state, winner, reason):

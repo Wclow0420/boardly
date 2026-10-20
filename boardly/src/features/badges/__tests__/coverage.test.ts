@@ -11,7 +11,12 @@ jest.mock("@shopify/react-native-skia", () => ({}));
 
 const LOCALES = { en, zh, ms } as Record<
   string,
-  { badges: Record<string, Record<string, { name?: string; desc?: string }>> }
+  {
+    badges: Record<
+      string,
+      Record<string, { name?: string; desc_other?: string }>
+    >;
+  }
 >;
 
 it("names and describes every game's badges in every language", () => {
@@ -22,7 +27,9 @@ it("names and describes every game's badges in every language", () => {
       if (prefix !== game.key) missing.push(`${key}: not keyed by its game`);
       for (const [lang, locale] of Object.entries(LOCALES)) {
         const text = locale.badges?.[prefix]?.[name];
-        if (!text?.name || !text?.desc) missing.push(`${key} (${lang})`);
+        // the ask takes the level's goal as a count
+        if (!text?.name || !text?.desc_other?.includes("{{count}}"))
+          missing.push(`${key} (${lang})`);
       }
     }
   }

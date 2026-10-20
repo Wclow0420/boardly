@@ -2,28 +2,31 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Callable
 
-# Badge tiers, rarest last
-TIERS = ("bronze", "silver", "gold", "legendary")
+# A badge's levels, rarest last: every badge has all four
+TIERS = ("bronze", "silver", "gold", "diamond")
+
+# Goals for the four levels, by how hard the thing is to do once
+FEAT = (1, 5, 15, 40)  # winning on a side, a common way to win
+RARE = (1, 3, 8, 20)  # a feat that takes luck or skill
+WINS = (3, 10, 25, 60)  # all wins at a game with sides
+QUICK_WINS = (1, 5, 15, 40)  # all wins at a short game
 
 
 @dataclass(frozen=True)
 class Badge:
-    """An achievement: earned once `goal` of a player's finished games
-    match `match`. `match` gets that game's outcome row (SessionPlayer:
-    won, side, role, facts...). Wins handed over by someone walking out
-    never count: a game's own badges skip those games entirely, and the
-    default `match` (a win) skips them too.
+    """A mission, earned in four levels (TIERS): bronze once `goals[0]`
+    of a player's finished games match `match`, silver at `goals[1]`,
+    and so on to diamond. `match` gets that game's outcome row
+    (SessionPlayer: won, side, role, facts...). Wins handed over by
+    someone walking out never count: a game's own badges skip those games
+    entirely, and the default `match` (a win) skips them too.
 
     The app names it from badges.<key> in its locales and draws it from
     the game's badge list (see boardly/AGENTS.md)."""
 
     key: str
-    tier: str
-    goal: int = 1
+    goals: tuple[int, int, int, int]
     match: Callable[[Any], bool] = lambda outcome: outcome.won and not outcome.abandoned
-    # Badges that count the same thing with bigger goals are levels of one
-    # series ("wins": 1, 10, 25...): the app shows the next level up.
-    series: str | None = None
 
 
 def won_as(side: str) -> Callable[[Any], bool]:

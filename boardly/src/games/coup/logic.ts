@@ -35,6 +35,8 @@ export interface CoupPlayer {
   cards: CoupCard[];
 }
 
+export type LoseWhy = "challenge" | "coup" | "assassinate";
+
 export type LogEvent =
   | { t: "action"; actor: number; action: ActionType; target: number | null }
   | {
@@ -47,7 +49,9 @@ export type LogEvent =
     }
   | { t: "block"; seat: number; role: Role }
   | { t: "blocked"; seat: number }
-  | { t: "lose"; seat: number; role: Role }
+  /** `why`: lost a challenge, or the target of a coup / assassination
+   *  (absent in games started before the server said). */
+  | { t: "lose"; seat: number; role: Role; why?: LoseWhy }
   | { t: "out"; seat: number };
 
 export interface CoupState {
@@ -68,6 +72,8 @@ export interface CoupState {
   waitingOn: number[];
   /** Cards to choose from — only sent to the player exchanging. */
   exchange: Role[] | null;
+  /** Who is turning a card over right now, and why. */
+  losing?: { seat: number; why: LoseWhy | null } | null;
   log: LogEvent[];
   winner: number | null;
 }
@@ -80,14 +86,32 @@ export interface ActionSpec {
   needsTarget: boolean;
   /** Roles that block this action. */
   blockers: Role[];
+  /** Anyone at the table may block it, not just the target. */
+  anyoneBlocks?: boolean;
 }
 
 export const COUP_COST = 7;
 export const FORCED_COUP_AT = 10;
 
+// --- Setup, mirrored from the backend engine (COPIES_PER_ROLE,
+// STARTING_COINS and the two-player rule in initial_state). Used by the
+// rules pages.
+
+export const PLAYER_COUNTS = [2, 3, 4, 5, 6] as const;
+export const COPIES_PER_ROLE = 3;
+export const CARDS_EACH = 2;
+export const STARTING_COINS = 2;
+/** Cards in the deck at the start. */
+export const DECK_SIZE = 5 * COPIES_PER_ROLE;
+
+/** Cash the first player starts with: one less with two players. */
+export function firstPlayerCoins(numPlayers: number): number {
+  return numPlayers === 2 ? STARTING_COINS - 1 : STARTING_COINS;
+}
+
 export const ACTIONS: ActionSpec[] = [
   { type: "income", cost: 0, claim: null, needsTarget: false, blockers: [] },
-  { type: "foreignAid", cost: 0, claim: null, needsTarget: false, blockers: ["duke"] },
+  { type: "foreignAid", cost: 0, claim: null, needsTarget: false, blockers: ["duke"], anyoneBlocks: true },
   { type: "tax", cost: 0, claim: "duke", needsTarget: false, blockers: [] },
   { type: "steal", cost: 0, claim: "captain", needsTarget: true, blockers: ["captain", "ambassador"] },
   { type: "exchange", cost: 0, claim: "ambassador", needsTarget: false, blockers: [] },
@@ -153,4 +177,35 @@ export function toggleKeep(selected: number[], index: number, max: number): numb
  *  are responding at once. */
 export function currentSeat(state: CoupState): number {
   return state.waitingOn.length === 1 ? state.waitingOn[0] : -1;
+}
+
+export const ROLES: Role[] = ["duke", "assassin", "captain", "ambassador", "contessa"];
+
+/** Who has to respond to the claim on the table now (everyone the game
+ *  is waiting on in a challenge or block window). */
+export function claimWindow(state: CoupState): boolean {
+  return state.phase === "challengeAction" || state.phase === "block" || state.phase === "challengeBlock";
+}
+
+/** Who can still answer the claim on the table: those waited on plus
+ *  those who've already let it go. */
+export function respondersOf(state: CoupState): number[] {
+  return [...new Set([...state.passed, ...state.waitingOn])].sort((a, b) => a - b);
+}
+
+/** How many turns have been taken (each action starts one). */
+export function turnCount(state: CoupState): number {
+  return state.log.filter((e) => e.t === "action").length;
+}
+
+/** Players still holding a face-down card. */
+export function aliveCount(state: CoupState): number {
+  return state.players.filter((p) => p.alive).length;
+}
+
+/** The claim on the table right now: who claims which role, and for what. */
+export function claimOf(state: CoupState): { seat: number; role: Role | null; block: boolean } | null {
+  if (state.phase === "challengeBlock" && state.block) return { seat: state.block.seat, role: state.block.role, block: true };
+  if (state.action && claimWindow(state)) return { seat: state.action.actor, role: state.action.claim, block: false };
+  return null;
 }

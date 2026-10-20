@@ -31,6 +31,8 @@ import { GameOverBadges } from "@/features/badges/GameOverBadges";
 import { useAlreadyInRoomRedirect } from "@/features/home/hooks";
 import { useLeaveRoom, useRoom } from "@/features/lobby/hooks";
 import { useGameName } from "@/games/names";
+import type { StageChrome } from "@/games/types";
+import { cloneElement, type ReactElement } from "react";
 import { getGame } from "@/games/registry";
 import { ThemeScope, fontFamily, useTheme } from "@/theme";
 import { successHaptic, tapHaptic } from "@/utils/haptics";
@@ -68,6 +70,9 @@ function GameScreenBody({
   const room = roomQuery.data;
   const session = room?.session ?? null;
   const makeMove = useMakeMove(roomCode, room);
+  // moves that only show something to the table (a leader's picks so
+  // far): sent without holding the board up
+  const quietMove = useMakeMove(roomCode, room);
   const rematch = useRematch(room);
   const leaveRoom = useLeaveRoom(room?.id);
   const leaveSheetRef = useRef<GorhomBottomSheetModal>(null);
@@ -273,6 +278,11 @@ function GameScreenBody({
     </>
   ) : null;
 
+  const moveError = makeMove.isError
+    ? makeMove.error instanceof ApiError
+      ? makeMove.error.message
+      : t("common.errorTitle")
+    : null;
   const board = (
     <Board
       state={state}
@@ -284,11 +294,12 @@ function GameScreenBody({
         username: p.username,
         borderId: p.borderId,
         avatarUrl: p.avatarUrl,
+        mascot: p.mascot,
       }))}
       busy={makeMove.isPending}
       sessionId={String(session.id)}
       finished={!inProgress}
-      onMove={(move) => makeMove.mutate(move)}
+      onMove={(move, options) => (options?.quiet ? quietMove : makeMove).mutate(move)}
     />
   );
 
@@ -331,6 +342,77 @@ function GameScreenBody({
       />
     </View>
   ) : null;
+
+  // A stage game splits the after-game: what was earned under the result,
+  // the two ways on from it on the plinth.
+  const earned =
+    !inProgress && mySeat >= 0 ? (
+      <View style={{ gap: spacing.md }}>
+        <EarnedCoins sessionId={session.id} />
+        <GameOverBadges gameType={room.gameType} />
+      </View>
+    ) : null;
+  const onward = !inProgress ? (
+    <View style={{ gap: 6, alignSelf: "stretch" }}>
+      {mySeat >= 0 && rematch.isError ? (
+        <AppText variant="caption" color="danger" align="center">
+          {rematch.error instanceof ApiError
+            ? t([`errors.${rematch.error.code}`, rematch.error.message])
+            : t("common.errorTitle")}
+        </AppText>
+      ) : mySeat >= 0 && room.rematchCode ? (
+        <AppText variant="caption" color="textMuted" align="center">
+          {t("game.rematchOpen")}
+        </AppText>
+      ) : null}
+      <View style={{ flexDirection: "row", gap: spacing.md }}>
+        <Button
+          label={t("game.backHome")}
+          variant={mySeat >= 0 ? "secondary" : "primary"}
+          style={{ flex: 1 }}
+          onPress={() => router.dismissTo("/")}
+        />
+        {mySeat >= 0 ? (
+          <Button
+            label={t(room.rematchCode ? "game.joinRematch" : "game.playAgain")}
+            style={{ flex: 1 }}
+            loading={rematch.isPending}
+            onPress={() =>
+              rematch.mutate(undefined, {
+                onSuccess: (next) => router.replace(`/lobby/${next.code}`),
+                onError: (err) => redirectIfInRoom(err),
+              })
+            }
+          />
+        ) : null}
+      </View>
+    </View>
+  ) : null;
+
+  // Games that fill the whole screen with their stage, header and all
+  if (gameDef.layout === "stage") {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <StageBoard
+          board={board}
+          onBack={handleBack}
+          onRules={hasRules ? () => setRulesOpen(true) : undefined}
+          error={moveError}
+          afterGame={earned}
+          onward={onward}
+        />
+        {hasRules ? (
+          <RulesSheet
+            gameKey={room.gameType}
+            gameName={gameName(room.gameType, room.game?.name)}
+            visible={rulesOpen}
+            onClose={() => setRulesOpen(false)}
+          />
+        ) : null}
+        {leaveSheet}
+      </View>
+    );
+  }
 
   // Games that draw their own table (players, status, result)
   if (gameDef.layout === "custom") {
@@ -376,6 +458,7 @@ function GameScreenBody({
                 name={player.username}
                 borderId={player.borderId}
                 avatarUrl={player.avatarUrl}
+                mascot={player.mascot}
                 size={34}
               />
               <View style={styles.playerText}>
@@ -484,3 +567,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
+
+/** A stage board, handed the screen's controls. */
+function StageBoard({ board, ...stage }: StageChrome & { board: ReactElement<{ stage?: StageChrome }> }) {
+  return cloneElement(board, { stage });
+}

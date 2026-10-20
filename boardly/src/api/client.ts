@@ -122,6 +122,13 @@ export interface AuthUser {
   coins?: number;
   /** Paid borders you have unlocked. Only sent for your own account. */
   ownedBorders?: string[];
+  /** Their mascot as dressed (features/mascot). */
+  mascot?: MascotLook;
+  /** Mascot items you have bought ("hat:crown"). Your own account only. */
+  ownedMascot?: string[];
+  /** The badges you picked to show on your card (empty: the four best).
+   *  Your own account only. */
+  showcaseBadges?: string[];
   /** A bot the server plays. */
   isBot?: boolean;
 }
@@ -153,10 +160,18 @@ export interface GameInfo {
   options?: Record<string, string[]>;
 }
 
+/** A mascot's look: its skin, colour and what it wears in each slot. */
+export interface MascotLook {
+  skin: string;
+  colour: string;
+  wear: Record<string, string>;
+}
+
 export interface RoomPlayerInfo {
   userId: string;
   username: string;
   borderId: string | null;
+  mascot?: MascotLook;
   avatarUrl?: string | null;
   seat: number;
   ready: boolean;
@@ -191,6 +206,8 @@ export interface GameSessionInfo {
   winnerUserId: string | null;
   /** Every winner (team games have several); empty for no winner. */
   winnerUserIds: string[];
+  /** Moves made so far: of two copies, the higher is the newer. */
+  version?: number;
 }
 
 export type FriendRelation = "friend" | "incoming" | "outgoing" | "none";
@@ -225,7 +242,10 @@ export interface FriendCard {
   wins: number;
   bestStreak: number;
   favourite: string | null;
+  /** Only the badges they show on their card (up to four). */
   badges: BadgeRecord[];
+  /** How many badges they have earned in all. */
+  badgeCount: number;
   together: Together | null;
   presence: "online" | "inGame" | "offline" | null;
   playing: string | null;
@@ -259,18 +279,21 @@ export interface GameRecord {
   sides: Partial<Record<"good" | "evil", SideRecord>>;
 }
 
+export type BadgeLevel = "bronze" | "silver" | "gold" | "diamond";
+
+/** A mission, earned in four levels. */
 export interface BadgeRecord {
   /** "<game key>.<name>", or "boardly.<name>" for Boardly's own. */
   key: string;
   gameType: string | null;
-  tier: "bronze" | "silver" | "gold" | "legendary";
-  /** Badges counting the same thing with bigger goals share a series
-   *  ("played", "wins"): each is a level of it. */
-  series: string | null;
-  goal: number;
-  progress: number;
-  /** When it was earned (ISO), null while locked. */
-  unlockedAt: string | null;
+  /** What it takes to reach bronze, silver, gold and diamond. */
+  goals: [number, number, number, number];
+  /** How far I am (my own card only; capped at the diamond goal). */
+  progress?: number;
+  /** The highest level reached, null before bronze. */
+  tier: BadgeLevel | null;
+  /** When each level reached was reached (ISO). */
+  unlocked: Partial<Record<BadgeLevel, string>>;
 }
 
 export interface UserStats {
@@ -282,8 +305,10 @@ export interface UserStats {
   favourite: string | null;
   games: GameRecord[];
   badges: BadgeRecord[];
-  /** When the latest finished game ended (ISO); badges unlocked at
-   *  exactly this time were earned in it. */
+  /** The keys of the (up to four) badges my card shows. */
+  showcase: string[];
+  /** When the latest finished game ended (ISO); levels reached at
+   *  exactly this time were reached in it. */
   lastGameAt: string | null;
 }
 
@@ -310,6 +335,28 @@ export const api = {
         `/auth/me/borders/${encodeURIComponent(borderId)}/buy`,
         { method: "POST" }
       ),
+
+    /** Dress the mascot in things already owned. */
+    wearMascot: (look: MascotLook) =>
+      request<{ user: AuthUser }>("/auth/me/mascot", {
+        method: "PUT",
+        body: JSON.stringify({ look }),
+      }),
+
+    /** Buy what the look wears that isn't owned yet, and put it on. */
+    buyMascot: (look: MascotLook) =>
+      request<{ user: AuthUser }>("/auth/me/mascot/buy", {
+        method: "POST",
+        body: JSON.stringify({ look }),
+      }),
+
+    /** The badges (up to four, earned) to show on my card; [] for the
+     *  four best. */
+    setShowcase: (badges: string[]) =>
+      request<{ user: AuthUser }>("/auth/me/showcase", {
+        method: "PUT",
+        body: JSON.stringify({ badges }),
+      }),
 
     setBorder: (borderId: string) =>
       request<{ user: AuthUser }>("/auth/me", {

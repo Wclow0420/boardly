@@ -282,6 +282,18 @@ export const UI_EMBLEMS = {
     { d: disc(24, 31.5, 12), shine: "M14.6 27A10 10 0 0 1 19.6 21.8" },
     { d: STAR_SMALL, m: "ivory", ink: 1 },
   ],
+  // the wardrobe: an oak cupboard, doors ajar on a hanging coat
+  wardrobe: [
+    { d: rrect(7, 6, 34, 36, 3), m: "wood", vein: "M24 9V39", shine: "M10 9V38" },
+    { d: "M13.6 11H34.4V37H13.6Z", m: "#3A2418", ink: 1 },
+    { d: "M24 13.4V16.4M18 21.4Q24 15.4 30 21.4", m: "silver", ink: 0 },
+    { line: "M24 13.6V16.4M17.4 21.6L24 16.4L30.6 21.6", color: "#C9D0DA", w: 1.4 },
+    { d: "M17.6 21.4H30.4L32 36H16Z", m: "#C2203A", ink: 1.1, round: true },
+    { d: "M7 6H16.6L19 42H7Z", m: "wood", t: "skewY(-8) translate(0 1)", ink: 1.2, shine: "M9.6 9V38" },
+    { d: "M31.4 6H41V42H29Z", m: "wood", t: "skewY(8) translate(0 -6.6)", ink: 1.2 },
+    { d: `${disc(16.4, 25, 1.3)}${disc(31.6, 25, 1.3)}`, ink: 0.8 },
+    { d: rrect(5, 41, 38, 3.6, 1.4), m: "wood", ink: 1.1 },
+  ],
   // Tic-Tac-Toe's ⭕: a little board, a gold X and a silver O on it
   noughts: [
     { d: rrect(4, 4, 40, 40, 6), m: "wood", vein: "M17.3 7V41M30.7 7V41M7 17.3H41M7 30.7H41", shine: "M7 9V39" },

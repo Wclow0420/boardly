@@ -11,7 +11,9 @@ import { Platform, Share } from "react-native";
  *  installed and a "get the app" page when it isn't. Other builds have
  *  no website behind them and use their own scheme (boardly-dev://). */
 export function inviteLink(code: string): string {
-  const origin = Constants.expoConfig?.extra?.LINK_ORIGIN as string | null;
+  // only a string is an origin (a build without one has had odd values)
+  const raw: unknown = Constants.expoConfig?.extra?.LINK_ORIGIN;
+  const origin = typeof raw === "string" && raw.startsWith("http") ? raw : null;
   return origin && Platform.OS !== "web"
     ? `${origin}/join/${code}`
     : Linking.createURL(`join/${code}`);

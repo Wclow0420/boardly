@@ -1,11 +1,7 @@
-// Double Agent's artwork. Every slot is optional: without an image the
-// game draws a placeholder (the role's emoji, a glow for the backdrop).
-// To add art, put the file in assets/games/double-agent/ (sizes in that
-// folder's README) and register it here, for example:
-//
-//   export const ROLE_ART: Partial<Record<Role, ImageSourcePropType>> = {
-//     merlin: require("../../../assets/games/double-agent/role-handler.png"),
-//   };
+// Double Agent's artwork. The roles are drawn, not pictures: each is its
+// engraved portrait (emblems.ts) on its card face (cards.ts), in the game
+// and in the rules. The images here are the backdrop, logo and mission
+// cards (sizes in assets/games/double-agent/README).
 //
 // Role ids are the engine's internal ones: merlin = Handler,
 // percival = Bodyguard, servant = Field Agent, assassin = Hitman,
@@ -13,26 +9,10 @@
 
 import type { ImageSourcePropType } from "react-native";
 
-import type { Role } from "./logic";
-
 export const BACKDROP: ImageSourcePropType | undefined = require("../../../assets/games/double-agent/backdrop.webp");
 export const LOGO: ImageSourcePropType | undefined = require("../../../assets/games/double-agent/logo-trimmed.png");
 export const SUCCESS_CARD: ImageSourcePropType | undefined = require("../../../assets/games/double-agent/card-success.png");
 export const FAIL_CARD: ImageSourcePropType | undefined = require("../../../assets/games/double-agent/card-fail.png");
-
-// The "-cut" files are the uploaded portraits with their white studio
-// background made transparent, so they sit on the dark theme. The logo
-// is logo.png cropped, brightened and given a soft halo.
-export const ROLE_ART: Partial<Record<Role, ImageSourcePropType>> = {
-  merlin: require("../../../assets/games/double-agent/role-handler-cut.png"),
-  percival: require("../../../assets/games/double-agent/role-bodyguard-cut.png"),
-  servant: require("../../../assets/games/double-agent/role-field-agent-cut.png"),
-  assassin: require("../../../assets/games/double-agent/role-hitman.png"),
-  morgana: require("../../../assets/games/double-agent/role-decoy-cut.png"),
-  mordred: require("../../../assets/games/double-agent/role-sleeper-cut.png"),
-  oberon: require("../../../assets/games/double-agent/role-wildcard.png"),
-  minion: require("../../../assets/games/double-agent/role-mole.png"),
-};
 
 export const SKIN_COLORS = {
   background: "#0B1114",

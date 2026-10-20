@@ -12,6 +12,11 @@ export interface TicTacToeState {
   moves: { seat: number; cell: number }[];
 }
 
+/** Each seat's mark (seat 0 the cross), and the seat that moves first:
+ *  the server's initial_state. */
+export const SYMBOLS = ["X", "O"] as const;
+export const FIRST_SEAT = 0;
+
 export const WIN_LINES: [number, number, number][] = [
   [0, 1, 2], [3, 4, 5], [6, 7, 8],
   [0, 3, 6], [1, 4, 7], [2, 5, 8],

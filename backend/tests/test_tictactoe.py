@@ -1,6 +1,8 @@
 """Reference engine tests — every game engine gets a file like this.
 Engines are stateless and pure, so no app/db fixtures are needed."""
 
+from types import SimpleNamespace
+
 import pytest
 
 from app.games.base import GameError
@@ -64,3 +66,26 @@ def test_draw():
     # X O X / X O O / O X X — full board, no line
     state = play([(0, 0), (1, 1), (0, 2), (1, 4), (0, 3), (1, 5), (0, 7), (1, 6), (0, 8)])
     assert game.get_result(state) == {"draw": True}
+
+
+# ------------------------------------------------------------ badges
+
+
+def _row(state, seat):
+    won = (game.get_result(state) or {}).get("winnerSeat") == seat
+    return SimpleNamespace(won=won, abandoned=False, side=None,
+                           **game.player_outcome(state, seat))
+
+
+def test_fork_badge_needs_two_threats_before_the_last_block():
+    fork = next(b for b in game.badges if b.key == "tictactoe.fork")
+    # X: centre, corner, corner — threatens 0-3-6 and 2-4-6 at once
+    state = play([(0, 4), (1, 1), (0, 0), (1, 8), (0, 6), (1, 3), (0, 2)])
+    assert game.get_result(state) == {"winnerSeat": 0}
+    assert game.player_outcome(state, 0) == {"role": "X", "facts": {"fork": True}}
+    assert fork.match(_row(state, 0)) and not fork.match(_row(state, 1))
+    # a plain win: one threat, left open
+    state = play([(0, 0), (1, 3), (0, 1), (1, 4), (0, 2)])
+    assert game.player_outcome(state, 0)["facts"] == {"fork": False}
+    assert not fork.match(_row(state, 0))
+    assert game.player_outcome(state, 1)["role"] == "O"

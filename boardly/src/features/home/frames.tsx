@@ -1,1 +1,1 @@
-export { Frame, Ribbon, type FrameProps } from "@/components/ui";
+export { Frame, SectionTitle, type FrameProps } from "@/components/ui";

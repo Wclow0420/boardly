@@ -24,10 +24,16 @@ export interface Reveal {
   out: boolean;
 }
 
+/** The way of calling the host picked in the lobby (backend rules.py):
+ *  几几几 (South China / HK / Macau), classic (经典), or no zhai (不玩斋). */
+export type Calling = "jijiji" | "classic" | "nozhai";
+
 export interface LiarsDiceState {
   numPlayers: number;
   /** knockout: out at maxCups; endless: nobody is out, vote to stop. */
   mode: "knockout" | "endless";
+  /** Missing in games saved before it existed: those play classic. */
+  calling?: Calling;
   /** "split": someone split (劈) the bid, waiting on the bidder. */
   phase: "bidding" | "split" | "finished";
   turn: number;
@@ -49,6 +55,48 @@ export interface LiarsDiceState {
   winner: number | null;
   /** Endless: fewest cups when the table stopped (ties share it). */
   winners: number[] | null;
+}
+
+/** Dice in every cup. */
+export const DICE_EACH = 5;
+/** Cups that knock you out in a knockout game. */
+export const KNOCKOUT_CUPS = 5;
+/** Cups the loser drinks: open (开), split (劈), counter-split (反劈). */
+export const DRINKS = { open: 1, split: 2, counter: 4 } as const;
+/** The table sizes the game plays at. */
+export const PLAYER_COUNTS = [2, 3, 4, 5, 6, 7, 8, 9, 10];
+/** The ways of calling, in the lobby's order. */
+export const CALLINGS: Calling[] = ["jijiji", "classic", "nozhai"];
+
+/** 几几几's thresholds by the players still in: [ONE, ZHAI, FEI]. From ONE
+ *  only 1s, from ZHAI any face zhai, from FEI kaizhai too. 2-4 are the
+ *  owner's house rule; 5+ "fei at least 1.5x the players, rounded up". */
+export const JIJIJI: Record<number, readonly [number, number, number]> = {
+  2: [2, 3, 3],
+  3: [3, 4, 5],
+  4: [4, 5, 7],
+  5: [5, 6, 8],
+  6: [6, 7, 9],
+  7: [7, 8, 11],
+  8: [8, 9, 12],
+  9: [9, 10, 14],
+  10: [10, 11, 15],
+};
+
+/** 几几几's [ONE, ZHAI, FEI] for this many players still in. */
+export function thresholds(players: number): readonly [number, number, number] {
+  return JIJIJI[Math.max(2, Math.min(10, players))];
+}
+
+/** The table's way of calling (classic for games saved before it). */
+export function callingOf(state: Pick<LiarsDiceState, "calling">): Calling {
+  return state.calling && CALLINGS.includes(state.calling) ? state.calling : "classic";
+}
+
+/** Classic's smallest first call with this many players in: above the
+ *  player count, or equal to it zhai. */
+export function openingFor(players: number, zhai: boolean): number {
+  return zhai ? players : players + 1;
 }
 
 /** 1 is the top face: 2 < 3 < 4 < 5 < 6 < 1. */
@@ -102,68 +150,201 @@ export function totalDice(state: LiarsDiceState): number {
   return state.diceCount.reduce((a, b) => a + b, 0);
 }
 
-/** Smallest count that breaks the fast (开斋) after a zhai bid. */
-export function breakZhaiMin(state: LiarsDiceState): number | null {
-  return state.bid?.zhai ? state.bid.quantity * 2 : null;
+/** Why a call can't be made (or null when it can): what the screen says
+ *  under a greyed call and over the plinth. */
+export type BidProblem =
+  | { code: "total"; total: number }
+  | { code: "min"; min: number }
+  | { code: "onesOnly"; min: number }
+  | { code: "fei"; min: number }
+  | { code: "double"; min: number }
+  | { code: "kaizhaiRound" }
+  | { code: "onesZhai" }
+  | { code: "noOnes" }
+  | { code: "noZhai" }
+  | { code: "raise" };
+
+/** The kind a call is stored as: 1s are always zhai (and can't be called
+ *  at all with no zhai). */
+export function storedZhai(state: LiarsDiceState, face: number, zhai: boolean): boolean {
+  return zhai || (face === 1 && callingOf(state) !== "nozhai");
 }
 
-/** Smallest opening count: above the player count, or equal to it zhai. */
-export function openingMin(state: LiarsDiceState, zhai: boolean): number {
+/** Whether the round is kaizhai (开斋): 1s wild, and no going back. With
+ *  no zhai every round is. */
+export function isKaizhai(state: LiarsDiceState): boolean {
+  return callingOf(state) === "nozhai" || (state.bid !== null && !state.bid.zhai);
+}
+
+/** Why (quantity, face, zhai) can't be called next — the server's
+ *  rules.bid_error, mirrored — leaving aside how many dice there are. */
+function ruleProblem(state: LiarsDiceState, quantity: number, face: number, zhaiAsked: boolean): BidProblem | null {
+  const calling = callingOf(state);
   const players = activeSeats(state).length;
-  return zhai ? players : players + 1;
+  const last = state.bid;
+  const zhai = storedZhai(state, face, zhaiAsked);
+  const above =
+    last === null || quantity > last.quantity || (quantity === last.quantity && faceRank(face) > faceRank(last.face));
+
+  if (calling === "nozhai") {
+    if (face === 1) return { code: "noOnes" };
+    if (zhai) return { code: "noZhai" };
+    if (last === null && quantity < players + 1) return { code: "min", min: players + 1 };
+    return above ? null : { code: "raise" };
+  }
+  if (zhai && last !== null && !last.zhai) return { code: "kaizhaiRound" };
+  if (face === 1 && !zhai) return { code: "onesZhai" };
+
+  if (calling === "jijiji") {
+    const [one, leastZhai, fei] = thresholds(players);
+    if (quantity < one) return { code: "min", min: one };
+    if (quantity < leastZhai && face !== 1) return { code: "onesOnly", min: leastZhai };
+    if (!zhai && quantity < fei) return { code: "fei", min: fei };
+    return above ? null : { code: "raise" };
+  }
+  // classic
+  if (last === null) {
+    const least = openingFor(players, zhai);
+    return quantity >= least ? null : { code: "min", min: least };
+  }
+  // breaking the fast (开斋): 1s wild again, at double the dice
+  if (last.zhai && !zhai) return quantity >= last.quantity * 2 ? null : { code: "double", min: last.quantity * 2 };
+  return above ? null : { code: "raise" };
+}
+
+/** Kinds of problem no count can fix. */
+const NEVER = new Set(["kaizhaiRound", "onesZhai", "noOnes", "noZhai"]);
+
+/** Why a call can't be made now, or null when it can. */
+export function bidProblem(state: LiarsDiceState, quantity: number, face: number, zhai: boolean): BidProblem | null {
+  if (face < 1 || face > 6 || quantity < 1) return { code: "raise" };
+  const rule = ruleProblem(state, quantity, face, zhai);
+  if (rule) return rule;
+  const total = totalDice(state);
+  return quantity > total ? { code: "total", total } : null;
 }
 
 /** Whether (quantity, face, zhai) is a legal next bid. */
-export function isValidBid(
-  state: LiarsDiceState,
-  quantity: number,
-  face: number,
-  zhai: boolean
-): boolean {
-  if (face < 1 || face > 6 || quantity < 1 || quantity > totalDice(state)) return false;
-  const last = state.bid;
-  const isZhai = zhai || face === 1;
-  if (last === null) return quantity >= openingMin(state, isZhai);
-  // Breaking the fast: 1s are wild again, at double the dice
-  if (last.zhai && !isZhai) return quantity >= last.quantity * 2;
-  // Once kaizhai, the round stays kaizhai (so no 1s either)
-  if (!last.zhai && isZhai) return false;
-  return (
-    quantity > last.quantity ||
-    (quantity === last.quantity && faceRank(face) > faceRank(last.face))
-  );
+export function isValidBid(state: LiarsDiceState, quantity: number, face: number, zhai: boolean): boolean {
+  return bidProblem(state, quantity, face, zhai) === null;
 }
 
-/** Whether this round is kaizhai (开斋): 1s wild, and no going back. */
-export function isKaizhai(state: LiarsDiceState): boolean {
-  return state.bid !== null && !state.bid.zhai;
+/** The fewest dice of `face`, of this kind, the rules allow next (maybe
+ *  more than the table holds), or null if that kind can't be called on
+ *  the face at all (kaizhai 1s never). Every rule set is monotone in
+ *  the count. */
+export function leastCall(state: LiarsDiceState, face: number, zhai: boolean): number | null {
+  // a call of 1s is always zhai: there's no kaizhai call of them
+  if (face === 1 && !zhai) return null;
+  for (let quantity = 1; quantity <= 10 * DICE_EACH + 1; quantity++) {
+    const problem = ruleProblem(state, quantity, face, zhai);
+    if (problem === null) return quantity;
+    if (NEVER.has(problem.code)) return null;
+  }
+  return null;
 }
 
-/** A sensible starting point for the bid picker: the smallest raise. */
-export function suggestedBid(state: LiarsDiceState): { quantity: number; face: number } {
-  // (a zhai round keeps going zhai unless the player breaks it)
-  const last = state.bid;
-  if (last === null) {
+/** The smallest opening of a kind for the players still in. */
+export function openingMin(state: LiarsDiceState, zhai: boolean): number {
+  const players = activeSeats(state).length;
+  const calling = callingOf(state);
+  if (calling === "jijiji") return thresholds(players)[zhai ? 1 : 2];
+  if (calling === "nozhai") return players + 1;
+  return openingFor(players, zhai);
+}
+
+/** One of the calls the plinth offers: exactly what a tap sends. */
+export interface CallChoice {
+  /** null: no count of this kind can be called on the face. */
+  quantity: number | null;
+  face: number;
+  zhai: boolean;
+  /** Why it's greyed, or null when it can be called. */
+  problem: BidProblem | null;
+  /** The 几几几 opening's call of 1s, whatever face is picked. */
+  ones?: boolean;
+}
+
+/** What the call scene offers for a face and the count I've nudged to:
+ *  the faces to pick from, the main call's count (shown between − and
+ *  +), how far it goes, and each call button with its exact call. The
+ *  buttons rise together with the count, each from its own least. */
+export interface CallPlan {
+  faces: number[];
+  face: number;
+  /** The least the main call may be (− stops here). */
+  base: number;
+  /** The main call's count, shown between − and +. */
+  count: number;
+  /** Dice on the table (+ stops here). */
+  total: number;
+  choices: CallChoice[];
+}
+
+export function callPlan(state: LiarsDiceState, face: number, wanted = 0): CallPlan {
+  const kaizhai = isKaizhai(state);
+  const total = totalDice(state);
+  // 几几几 opens with a button of its own for 1s
+  const ones = state.bid === null && callingOf(state) === "jijiji";
+  const faces = kaizhai || ones ? [2, 3, 4, 5, 6] : [1, 2, 3, 4, 5, 6];
+  const f = faces.includes(face) ? face : faces[faces.length - 1];
+  // the kinds offered, the main one (whose count is shown) first
+  const kinds = kaizhai ? [false] : [true, false];
+  const leasts = kinds.map((zhai) => leastCall(state, f, zhai));
+  const base = leasts[0] ?? 1;
+  const count = Math.max(base, Math.min(wanted, total));
+  const step = count - base;
+  const choice = (least: number | null, cf: number, zhai: boolean): CallChoice => {
+    const quantity = least === null ? null : least + step;
     return {
-      quantity: activeSeats(state).length + 1,
-      face: state.myDice[0] === 1 ? 2 : (state.myDice[0] ?? 2),
+      quantity,
+      face: cf,
+      zhai,
+      problem: quantity === null ? { code: cf === 1 ? "onesZhai" : "noZhai" } : bidProblem(state, quantity, cf, zhai),
     };
-  }
-  if (last.face === 1) return { quantity: last.quantity + 1, face: 2 };
-  if (last.face === 6) {
-    // 1 tops 6 in a zhai round; kaizhai rounds have no 1s
-    return last.zhai ? { quantity: last.quantity, face: 1 } : { quantity: last.quantity + 1, face: 2 };
-  }
-  return { quantity: last.quantity, face: last.face + 1 };
+  };
+  const choices = kinds.map((zhai, i) => choice(leasts[i], f, zhai));
+  if (ones) choices.unshift({ ...choice(leastCall(state, 1, true), 1, true), ones: true });
+  return { faces, face: f, base, count, total, choices };
 }
 
-/** How many of my dice count for a face. */
-/** How many dice in one cup count for a face. A full cup that all
- *  counts (豹子 — five of a kind, wild 1s included when kaizhai) counts
- *  one extra: two 1s + three 3s are six 3s, but only when 1s are wild. */
+/** The face to start the picker on: the one I hold most of (1s count
+ *  for every face, so they don't decide), the higher on a tie. */
+export function favouriteFace(dice: number[]): number {
+  let best = 6;
+  let most = -1;
+  for (let face = 6; face >= 2; face--) {
+    const n = dice.filter((d) => d === face).length;
+    if (n > most) {
+      best = face;
+      most = n;
+    }
+  }
+  return best;
+}
+
+/** The face the picker opens on: the one just called (to raise it), else
+ *  the one I hold most of — or, when no call can be made on it, the first
+ *  face from the top that has one. */
+export function startFace(state: LiarsDiceState): number {
+  const callable = (face: number) => callPlan(state, face).choices.some((c) => !c.ones && c.problem === null);
+  const first = state.bid && state.bid.face !== 1 ? state.bid.face : favouriteFace(state.myDice);
+  if (callable(first)) return first;
+  return [1, 6, 5, 4, 3, 2].find((face) => callPlan(state, face).face === face && callable(face)) ?? first;
+}
+
+/** How many dice in one cup count for a face, plus its bonus. */
 export function myCount(dice: number[], face: number, zhai: boolean): number {
   const found = dice.filter((d) => d === face || (!zhai && face !== 1 && d === 1)).length;
-  return isLeopard(dice, face, zhai) ? found + 1 : found;
+  return found + leopardBonus(dice, face, zhai);
+}
+
+/** A cup whose five dice all count for a face counts extra: 豹子 (two 1s
+ *  and three 3s, when 1s are wild) one more, six; 大豹子 (five of the very
+ *  same number) two more, seven. */
+export function leopardBonus(dice: number[], face: number, zhai: boolean): number {
+  if (!isLeopard(dice, face, zhai)) return 0;
+  return dice.every((d) => d === dice[0]) ? 2 : 1;
 }
 
 /** Whether a cup is 豹子 for this face: all five dice count. */

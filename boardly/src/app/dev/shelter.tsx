@@ -2,6 +2,7 @@
 // to look at on a device without playing a game. Open with
 // boardly-dev://dev/shelter.
 
+import type { MascotLook } from "@/api/client";
 import { Redirect } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
@@ -47,7 +48,15 @@ const SAMPLES: Record<string, ShelterState> = {
   vote: { ...base, phase: "vote" },
   over: { ...base, phase: "finished", winner: "infected", winReason: "famine", canAct: false, roles: ["survivor", "infected", "survivor", "survivor", "survivor"] },
 };
-const NAMES = ["You", "Ming", "Hua", "Qiang", "Mei"].map((username, seat) => ({ seat, userId: `u${seat}`, username, borderId: null, avatarUrl: null }));
+/** Each player's mascot, so the house shows them as they'd look. */
+const LOOKS: MascotLook[] = [
+  { skin: "glossy", colour: "#F5922E", wear: { eyes: "dots", mouth: "smile", hat: "beanie", top: "sweater" } },
+  { skin: "glossy", colour: "#3A78D8", wear: { eyes: "googly", mouth: "grin", top: "hoodie" } },
+  { skin: "gingerbread", colour: "#F5922E", wear: { eyes: "icing", mouth: "icing" } },
+  { skin: "robot", colour: "#F5922E", wear: { eyes: "determined", mouth: "flat", hand: "lantern" } },
+  { skin: "panda", colour: "#EDEDED", wear: { eyes: "sleepy", mouth: "cat" } },
+];
+const NAMES = ["You", "Ming", "Hua", "Qiang", "Mei"].map((username, seat) => ({ seat, userId: `u${seat}`, username, borderId: null, avatarUrl: null, mascot: LOOKS[seat] }));
 
 export default function ShelterPreview() {
   const { colors, spacing } = useTheme();

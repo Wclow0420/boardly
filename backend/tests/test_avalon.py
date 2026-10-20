@@ -99,6 +99,29 @@ def test_rejects_bad_teams(team):
         propose(start(), team)
 
 
+def test_the_leaders_picks_are_shown_as_they_go():
+    state = start()
+    state = game.apply_move(state, 0, {"type": "pick", "team": [3]})
+    assert game.view_for(state, 2)["team"] == [3]
+    state = game.apply_move(state, 0, {"type": "pick", "team": [3, 1]})
+    assert game.view_for(state, 4)["team"] == [1, 3]
+    assert state["phase"] == "team"
+    with pytest.raises(GameError):
+        game.apply_move(state, 1, {"type": "pick", "team": [1]})
+    with pytest.raises(GameError):
+        game.apply_move(state, 0, {"type": "pick", "team": [0, 1, 2]})
+    with pytest.raises(GameError):
+        game.apply_move(state, 0, {"type": "pick", "team": [1, 1]})
+    with pytest.raises(GameError):
+        game.apply_move(state, 0, {"type": "pick", "team": [9]})
+    state = game.apply_move(state, 0, {"type": "pick", "team": []})
+    assert state["team"] == []
+    state = propose(state, [0, 1])
+    assert state["phase"] == "vote" and state["team"] == [0, 1]
+    with pytest.raises(GameError):
+        game.apply_move(state, 0, {"type": "pick", "team": [2]})
+
+
 def test_unknown_and_malformed_moves():
     state = start()
     for move in ({}, {"type": "nope"}, {"type": None}, "vote", None):
@@ -438,3 +461,31 @@ def test_leaving_mid_game_ends_it_and_reveals_roles(client, make_user):
     assert payload["session"]["winnerUserIds"] == []
     assert payload["session"]["state"]["winReason"] == "abandoned"
     assert sorted(payload["session"]["state"]["roles"]) == sorted(ROLE_SETS[5])
+
+
+# --------------------------------------------------------------- badges
+
+
+def test_badges_match_each_sides_wins_and_the_feats():
+    from types import SimpleNamespace
+
+    def row(state, seat):
+        out = game.player_outcome(state, seat)
+        won = seat in game.get_result(state)["winnerSeats"]
+        return SimpleNamespace(won=won, abandoned=False, **out)
+
+    badge = {b.key: b for b in game.badges}
+    assert list(badge) == [
+        "avalon.firstOp", "avalon.mole", "avalon.hitman", "avalon.handler", "avalon.spymaster",
+    ]
+    missed = game.apply_move(good_wins_three(), 3, {"type": "assassinate", "target": 1})
+    found = game.apply_move(good_wins_three(), 3, {"type": "assassinate", "target": 0})
+    # seat 0 is the Handler, 3 the Hitman
+    assert badge["avalon.firstOp"].match(row(missed, 2))
+    assert badge["avalon.handler"].match(row(missed, 0))
+    assert not badge["avalon.handler"].match(row(missed, 1))
+    assert not badge["avalon.handler"].match(row(found, 0))
+    assert badge["avalon.mole"].match(row(found, 4))
+    assert badge["avalon.hitman"].match(row(found, 3))
+    assert not badge["avalon.hitman"].match(row(found, 4))
+    assert not badge["avalon.hitman"].match(row(missed, 3))

@@ -2,7 +2,7 @@
 // gradient, engraved, and outlined in ink. Icons and emblems are built
 // from these (see ./icons).
 
-import { useId, type ReactNode } from "react";
+import { memo, useId, type ReactNode } from "react";
 import Svg, {
   Circle,
   Defs,
@@ -13,7 +13,7 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 
-import { shadeOf, type EmblemData, type Shade } from "./emblem";
+import { LIGHT, shadeOf, type EmblemData, type Shade } from "./emblem";
 import { JEWELS, type Jewel } from "./shapes";
 
 /** A gradient id that's safe in url(#…). */
@@ -31,6 +31,10 @@ export function Engraved({
   shine,
   evenOdd,
   ink = 1.5,
+  vw = 0.9,
+  sw = 1.1,
+  round,
+  op,
 }: {
   d: string;
   material?: Shade;
@@ -43,18 +47,32 @@ export function Engraved({
   /** Cut holes (rings, keyholes) with the even-odd rule. */
   evenOdd?: boolean;
   ink?: number;
+  /** Widths of the vein and shine lines. */
+  vw?: number;
+  sw?: number;
+  /** Lit like something round, from the upper left. */
+  round?: boolean;
+  /** See-through, for soft shadows and highlights. */
+  op?: number;
 }) {
   const id = useGradientId();
   const { colors, ink: inkColor, vein: veinColor } = shadeOf(material, tint);
   const rule = evenOdd ? "evenodd" : "nonzero";
+  const stops = colors.map((color, i) => (
+    <Stop key={i} offset={i / (colors.length - 1)} stopColor={color} />
+  ));
   return (
-    <G>
+    <G opacity={op}>
       <Defs>
-        <LinearGradient id={id} x1="0" y1="0" x2="1" y2="1">
-          {colors.map((color, i) => (
-            <Stop key={i} offset={i / (colors.length - 1)} stopColor={color} />
-          ))}
-        </LinearGradient>
+        {round ? (
+          <RadialGradient id={id} cx={LIGHT.cx} cy={LIGHT.cy} r={LIGHT.r}>
+            {stops}
+          </RadialGradient>
+        ) : (
+          <LinearGradient id={id} x1="0" y1="0" x2="1" y2="1">
+            {stops}
+          </LinearGradient>
+        )}
       </Defs>
       <Path d={d} fill={`url(#${id})`} fillRule={rule} />
       {vein ? (
@@ -62,7 +80,7 @@ export function Engraved({
           d={vein}
           fill="none"
           stroke={veinColor}
-          strokeWidth={0.9}
+          strokeWidth={vw}
           strokeLinecap="round"
         />
       ) : null}
@@ -72,7 +90,7 @@ export function Engraved({
           fill="none"
           stroke="#FFFFFF"
           strokeOpacity={0.85}
-          strokeWidth={1.1}
+          strokeWidth={sw}
           strokeLinecap="round"
         />
       ) : null}
@@ -133,38 +151,47 @@ export function JewelDot({
   );
 }
 
-/** An icon's canvas: 48 × 48 units drawn at `size` points. */
+/** An icon's canvas: 48 × 48 units drawn at `size` points wide (or a
+ *  drawing of another `box`, such as a figure, at its own proportions). */
 export function EmblemSvg({
   size,
+  box = [48, 48],
+  view,
   children,
 }: {
   size: number;
+  box?: [number, number];
+  /** Show only this part of the box: [x, y, width, height]. */
+  view?: [number, number, number, number];
   children: ReactNode;
 }) {
+  const [x, y, w, h] = view ?? [0, 0, box[0], box[1]];
   return (
-    <Svg width={size} height={size} viewBox="0 0 48 48">
+    <Svg width={size} height={(size * h) / w} viewBox={`${x} ${y} ${w} ${h}`}>
       {children}
     </Svg>
   );
 }
 
-/** An emblem written as data (see ./emblem), at `size` points; "tint"
- *  parts take `color`. */
-export function EmblemGlyph({
-  data,
-  size,
-  color,
-}: {
-  data: EmblemData;
-  size: number;
-  color?: string;
-}) {
+/** An emblem's parts, to place inside an Svg of your own (in the
+ *  emblem's own units); "tint" parts take `color`. */
+export function EmblemParts({ data, color }: { data: EmblemData; color?: string }) {
   return (
-    <EmblemSvg size={size}>
+    <>
       {data.map((part, i) => {
         const body =
           "dark" in part ? (
             <Path d={part.dark} fill="#1A1008" />
+          ) : "line" in part ? (
+            <Path
+              d={part.line}
+              fill="none"
+              stroke={part.color}
+              strokeWidth={part.w}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity={part.op}
+            />
           ) : "jewel" in part ? (
             <JewelDot x={part.x} y={part.y} r={part.r} jewel={part.jewel} />
           ) : (
@@ -176,6 +203,10 @@ export function EmblemGlyph({
               shine={part.shine}
               evenOdd={part.evenOdd}
               ink={part.ink}
+              vw={part.vw}
+              sw={part.sw}
+              round={part.round}
+              op={part.op}
             />
           );
         return (
@@ -184,6 +215,28 @@ export function EmblemGlyph({
           </G>
         );
       })}
-    </EmblemSvg>
+    </>
   );
 }
+
+/** An emblem written as data (see ./emblem), at `size` points; "tint"
+ *  parts take `color`. */
+export const EmblemGlyph = memo(function EmblemGlyph({
+  data,
+  size,
+  color,
+  box,
+  view,
+}: {
+  data: EmblemData;
+  size: number;
+  color?: string;
+  box?: [number, number];
+  view?: [number, number, number, number];
+}) {
+  return (
+    <EmblemSvg size={size} box={box} view={view}>
+      <EmblemParts data={data} color={color} />
+    </EmblemSvg>
+  );
+});

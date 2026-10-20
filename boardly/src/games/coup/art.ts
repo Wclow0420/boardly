@@ -1,11 +1,7 @@
-// Hustle's artwork. Every slot is optional: without an image the game
-// draws a placeholder (emoji in a tinted circle, a glow for the
-// backdrop). To add art, put the file in assets/games/hustle/ (sizes in
-// that folder's README) and register it here, for example:
-//
-//   export const ROLE_ART: Partial<Record<Role, ImageSourcePropType>> = {
-//     duke: require("../../../assets/games/hustle/role-boss.png"),
-//   };
+// Hustle's artwork. The roles are drawn, not pictures: each is a faceless
+// meeple portrait (emblems.ts), standing in its card's enamel window
+// (cards.tsx) and on its own in the rules. The images here are the backdrop, logo and
+// card back (sizes in assets/games/hustle/README).
 
 import type { ImageSourcePropType } from "react-native";
 
@@ -16,20 +12,13 @@ export const BACKDROP: ImageSourcePropType | undefined = require("../../../asset
 export const LOGO: ImageSourcePropType | undefined = require("../../../assets/games/hustle/logo-trimmed.png");
 export const CARD_BACK: ImageSourcePropType | undefined = require("../../../assets/games/hustle/card-back.png");
 
-export const ROLE_ART: Partial<Record<Role, ImageSourcePropType>> = {
-  duke: require("../../../assets/games/hustle/role-boss.png"),
-  assassin: require("../../../assets/games/hustle/role-enforcer.png"),
-  captain: require("../../../assets/games/hustle/role-pickpocket.png"),
-  ambassador: require("../../../assets/games/hustle/role-fixer.png"),
-  contessa: require("../../../assets/games/hustle/role-auntie.png"),
-};
-
 /** Picture badges for the actions, drawn in place of the tinted circle.
  *  None: each action is its engraved emblem (ACTION_EMOJI, drawn by
  *  <Emblem>) in a circle of its tint, in the app's own style. */
 export const ACTION_ART: Partial<Record<ActionType, ImageSourcePropType>> = {};
 
-/** Placeholder glyphs used until art is registered above. */
+/** The roles' emoji, for lines of text; pictured, a role is its
+ *  portrait (ROLE_EMBLEMS in emblems.ts). */
 export const ROLE_EMOJI: Record<Role, string> = {
   duke: "🕴️",
   assassin: "👊",
