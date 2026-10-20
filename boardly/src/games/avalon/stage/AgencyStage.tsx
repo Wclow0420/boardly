@@ -3,23 +3,30 @@
 // five operations as folders, today's under the lamp, the operation's
 // name on the plaque) and what's at stake on enamel tags under it: the
 // team's size, two fail cards when that's what it takes, and how many
-// teams have been turned down in a row.
+// teams have been turned down in a row. The scene fills the middle: my
+// role card, the satchel of tools and the hint line sit on the plinth
+// (the stage's dock).
 
 import { LinearGradient } from "expo-linear-gradient";
-import type { ReactNode } from "react";
-import { StyleSheet, View, useWindowDimensions } from "react-native";
+import type { ReactNode, RefObject } from "react";
+import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { AppText, BezelOverlay } from "@/components/ui";
-import { GameStage, type StageLook } from "@/features/game/stage/GameStage";
+import { GameStage, useStageSize, type StageDock, type StageLook } from "@/features/game/stage/GameStage";
 import { fontFamily } from "@/theme";
 import { MAX_REJECTIONS, teamSize, type AvalonState } from "../logic";
 import { CaseHeader } from "./CaseHeader";
 import { headerLayout, type FileState } from "./headerArt";
 
 /** The agency at night: sea-green ink, a warm desk lamp. */
-export const AGENCY: StageLook = { sky: ["#17292F", "#0D181C", "#081013"], glow: "#E8A04A", jewel: "emerald" };
+export const AGENCY: StageLook = {
+  sky: ["#17292F", "#0D181C", "#081013"],
+  glow: "#E8A04A",
+  jewel: "emerald",
+  popup: { enamel: ["#2E7A72", "#16403F", "#0A2224"], jewel: "emerald", glow: "#FFD58A" },
+};
 
 /** A small enamel tag under the header. */
 function Tag({ children, tone = "plain" }: { children: ReactNode; tone?: "plain" | "warn" }) {
@@ -40,8 +47,8 @@ export function AgencyStage({
   subtitle,
   sceneKey,
   centre,
-  tools,
-  hint,
+  dock,
+  handRef,
   bottom,
   overlays,
   onBack,
@@ -56,8 +63,10 @@ export function AgencyStage({
   subtitle: string;
   sceneKey: string;
   centre: ReactNode;
-  tools?: ReactNode;
-  hint?: ReactNode;
+  /** My role card, the satchel of tools and the hint line, on the plinth. */
+  dock: StageDock;
+  /** Set on the card in my hand: where the dealt role card is put away. */
+  handRef?: RefObject<View | null>;
   bottom: ReactNode;
   overlays?: ReactNode;
   onBack?: () => void;
@@ -70,7 +79,7 @@ export function AgencyStage({
 }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width } = useStageSize();
   const live = state.phase !== "finished";
   const files: FileState[] = state.questSizes.map((_, q) => {
     const result = state.questResults[q];
@@ -118,8 +127,8 @@ export function AgencyStage({
       }
       sceneKey={sceneKey}
       centre={centre}
-      tools={tools}
-      hint={hint}
+      dock={dock}
+      handRef={handRef}
       bottom={bottom}
       overlays={overlays}
       onBack={onBack}
@@ -149,4 +158,4 @@ const styles = StyleSheet.create({
   pipOn: { backgroundColor: "#F0605D", borderColor: "#5A0612" },
 });
 
-export { StageInsets, stageText } from "@/features/game/stage/GameStage";
+export { StageInsets, stageText, useStageSize } from "@/features/game/stage/GameStage";

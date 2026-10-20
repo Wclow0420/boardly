@@ -2,7 +2,8 @@
 // states, to look at on a device without a table of players. Open with
 // boardly-dev://dev/liarsdice?sample=<name> (the `dev` tab on the left
 // lists them; add &perf=1 for the frame rate, &lang=zh for Chinese, and
-// &narrow=1 to see the plinth's calls as wide as on a 375pt phone; the
+// &narrow=375 to lay the whole stage out as on a phone that wide, &error=1
+// for a move that didn't go through; the
 // lobby's settings are at boardly-dev://dev/lobby?sample=diceRules).
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -14,9 +15,9 @@ import { scheduleOnRN } from "react-native-worklets";
 
 import { AppText, Button } from "@/components/ui";
 import { RulesSheet } from "@/features/game/RulesSheet";
-import { CallGrid } from "@/games/liarsdice/CallScene";
+import { StageWidth } from "@/features/game/stage/GameStage";
 import { LiarsDiceBoard } from "@/games/liarsdice/LiarsDiceBoard";
-import { callPlan, startFace, type Bid, type LiarsDiceState, type Reveal } from "@/games/liarsdice/logic";
+import type { Bid, LiarsDiceState, Reveal } from "@/games/liarsdice/logic";
 import type { ShakeStep } from "@/games/liarsdice/ShakeScene";
 import { shakenKey } from "@/games/liarsdice/useShaken";
 import { GAMES } from "@/games/registry";
@@ -202,8 +203,9 @@ export default function LiarsDicePreview() {
 
 function Samples() {
   const { colors, spacing } = useTheme();
-  const { sample: asked, perf, lang, narrow } = useLocalSearchParams<{
+  const { sample: asked, perf, lang, narrow, error } = useLocalSearchParams<{
     sample?: string;
+    error?: string;
     perf?: string;
     lang?: string;
     narrow?: string;
@@ -260,6 +262,8 @@ function Samples() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {seeded === run ? (
+        <StageWidth.Provider value={narrow ? Number(narrow) : null}>
+        <View style={narrow ? { width: Number(narrow), flex: 1, alignSelf: "center", overflow: "hidden" } : { flex: 1 }}>
         <LiarsDiceBoard
           key={run}
           devShake={shake}
@@ -272,6 +276,7 @@ function Samples() {
           finished={false}
           onMove={onMove}
           stage={{
+            error: error === "1" ? "That call is too low." : null,
             onBack: () => router.back(),
             onRules: () => setRules(true),
             onward: (
@@ -282,8 +287,9 @@ function Samples() {
             ),
           }}
         />
+        </View>
+        </StageWidth.Provider>
       ) : null}
-      {narrow === "1" ? <NarrowCalls state={state} /> : null}
       <Pressable onPress={() => setPicking(true)} style={[styles.devTab, { borderColor: colors.primary }]}>
         <AppText variant="tiny">{perf === "1" ? `dev\n${fps}` : "dev"}</AppText>
       </Pressable>
@@ -311,32 +317,7 @@ function Samples() {
   );
 }
 
-/** The plinth's calls at a 375pt phone's width (375 less the plinth's
- *  40 each side), over the top of the page. */
-function NarrowCalls({ state }: { state: LiarsDiceState }) {
-  const open = useSharedValue(0);
-  const split = useSharedValue(0);
-  return (
-    <View style={styles.narrow} pointerEvents="box-none">
-      <View style={{ width: 375 - 80 }}>
-        <CallGrid
-          plan={callPlan(state, startFace(state))}
-          canLie={state.bid !== null}
-          busy={false}
-          openHold={open}
-          splitHold={split}
-          holdKey="narrow"
-          onCall={() => {}}
-          onOpen={() => {}}
-          onSplit={() => {}}
-        />
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  narrow: { position: "absolute", top: 300, left: 0, right: 0, alignItems: "center", backgroundColor: "rgba(0,0,0,0.7)", paddingVertical: 12 },
   devTab: {
     position: "absolute",
     left: 0,

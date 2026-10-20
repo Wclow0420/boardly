@@ -27,6 +27,11 @@ import { FlipCard } from "../cards";
 import type { Role } from "../logic";
 
 const CARD = 120;
+/** The least room the lineup under the card needs: two rows of players
+ *  past five, one row otherwise. */
+const LINEUP_MIN = { one: 190, two: 270 };
+/** The title, the verdict and the gaps round the card. */
+const WORDS_H = 135;
 const TURN_AT = 900;
 
 export const Showdown = memo(function Showdown({
@@ -35,6 +40,7 @@ export const Showdown = memo(function Showdown({
   caught,
   verdict,
   lineup,
+  crowd = false,
 }: {
   /** "Ming calls Hua's bluff" */
   title: string;
@@ -44,8 +50,14 @@ export const Showdown = memo(function Showdown({
   /** What follows: who loses a card. */
   verdict: string;
   lineup: ReactNode;
+  /** Two rows of players under the card. */
+  crowd?: boolean;
 }) {
   const [{ w }, onLayout] = useBox();
+  // the card shrinks on a short stage, so the players under it stay clear
+  // of the verdict
+  const [{ h: tall }, onWrap] = useBox();
+  const card = tall > 0 ? Math.max(84, Math.min(CARD, (tall - WORDS_H - LINEUP_MIN[crowd ? "two" : "one"]) / 1.4 - 20)) : CARD;
   const flip = useSharedValue(0);
   const shake = useSharedValue(0);
   const burst = useSharedValue(0);
@@ -71,9 +83,9 @@ export const Showdown = memo(function Showdown({
     return () => clearTimeout(thud);
   }, [caught, flip, shake, burst]);
   const shaking = useAnimatedStyle(() => ({ transform: [{ translateX: shake.value * 7 }, { rotate: `${shake.value * 3}deg` }] }));
-  const cardH = (CARD * 140) / 100;
+  const cardH = (card * 140) / 100;
   return (
-    <View style={styles.wrap}>
+    <View style={styles.wrap} onLayout={onWrap}>
       <AppText style={styles.title} numberOfLines={2}>
         {title}
       </AppText>
@@ -86,11 +98,13 @@ export const Showdown = memo(function Showdown({
           </View>
         ) : null}
         <Animated.View style={shaking}>
-          <FlipCard role={role} width={CARD} flip={flip} />
+          <FlipCard role={role} width={card} flip={flip} />
           {caught ? (
             <Animated.View entering={ZoomIn.delay(TURN_AT + 200).duration(260)} style={styles.stampAt} pointerEvents="none">
               <View style={styles.stamp}>
-                <AppText style={styles.stampText} numberOfLines={1}>BLUFF</AppText>
+                <AppText style={[styles.stampText, { fontSize: (22 * card) / CARD, lineHeight: (28 * card) / CARD }]} numberOfLines={1}>
+                  BLUFF
+                </AppText>
               </View>
             </Animated.View>
           ) : null}

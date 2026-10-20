@@ -1,8 +1,9 @@
 // Development only: Hustle's board in every moment of a game, with
 // sample states, to look at on a device without playing. Open with
 // boardly-dev://dev/coup?sample=<name> (the `dev` tab on the left lists
-// them; add &perf=1 for the frame rate). The samples sit at the largest
-// table, six players; `duel` is two.
+// them; add &perf=1 for the frame rate, &w=375 to lay the stage out as a
+// narrow phone, &lang=zh for another language). The samples sit at the
+// largest table, six players; `duel` is two.
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
@@ -13,9 +14,11 @@ import { scheduleOnRN } from "react-native-worklets";
 
 import { AppText, Button } from "@/components/ui";
 import { RulesSheet } from "@/features/game/RulesSheet";
+import { StageWidth } from "@/features/game/stage/GameStage";
 import { CoupBoard } from "@/games/coup/CoupBoard";
 import type { ActionType, CoupCard, CoupState, LogEvent, Role } from "@/games/coup/logic";
 import { GAMES } from "@/games/registry";
+import { useLocale } from "@/i18n/LocaleContext";
 import { ThemeScope, useTheme } from "@/theme";
 
 const hidden = (role: Role | null): CoupCard => ({ revealed: false, role });
@@ -71,6 +74,8 @@ const act = (actor: number, type: ActionType, target: number | null = null) => (
 const SAMPLES: Record<string, { state: CoupState; deal?: boolean; reveal?: boolean | number }> = {
   deal: { state: S({ log: [], turn: 3, waitingOn: [3], players: PLAYERS.map((p, i) => (i === 0 ? p : { coins: 2, alive: true, cards: [hidden(null), hidden(null)] })) }), deal: true },
   table: { state: S({}) },
+  // one of my cards already lost: it lies face up, struck, in my hand
+  wounded: { state: S({ players: PLAYERS.map((p, i) => (i === 0 ? { ...p, cards: [hidden("duke"), lost("ambassador")] } : p)) }) },
   felt: { state: S({ turn: 0, waitingOn: [0] }) },
   forced: { state: S({ turn: 0, waitingOn: [0], players: PLAYERS.map((p, i) => (i === 0 ? { ...p, coins: 10 } : p)) }) },
   claim: {
@@ -273,7 +278,12 @@ export default function HustlePreview() {
 
 function HustleSamples() {
   const { colors, spacing } = useTheme();
-  const { sample: asked, perf } = useLocalSearchParams<{ sample?: string; perf?: string }>();
+  const { sample: asked, perf, w: narrow, lang } = useLocalSearchParams<{ sample?: string; perf?: string; w?: string; lang?: string }>();
+  // &lang=zh (en, ms): look at a moment in another language
+  const { language, setLanguage } = useLocale();
+  useEffect(() => {
+    if ((lang === "en" || lang === "zh" || lang === "ms") && lang !== language) setLanguage(lang);
+  }, [lang, language, setLanguage]);
   const [sample, setSample] = useState(asked && SAMPLES[asked] ? asked : "table");
   // a new deep link to this page picks its sample
   const [lastAsked, setLastAsked] = useState(asked);
@@ -299,6 +309,8 @@ function HustleSamples() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {seeded === sample ? (
+        <StageWidth.Provider value={narrow ? Number(narrow) : null}>
+        <View style={narrow ? { width: Number(narrow), flex: 1, alignSelf: "center", overflow: "hidden" } : { flex: 1 }}>
         <CoupBoard
           key={sample}
           sessionId={session}
@@ -320,6 +332,8 @@ function HustleSamples() {
             ),
           }}
         />
+        </View>
+        </StageWidth.Provider>
       ) : null}
       <Pressable onPress={() => setPicking(true)} style={[styles.devTab, { borderColor: colors.primary }]}>
         <AppText variant="tiny">{perf === "1" ? `dev\n${fps}` : "dev"}</AppText>

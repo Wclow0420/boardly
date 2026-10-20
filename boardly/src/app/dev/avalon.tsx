@@ -1,7 +1,8 @@
 // Development only: Double Agent's board in every moment of a game, with
 // sample states, to look at on a device without playing. Open with
 // boardly-dev://dev/avalon?sample=<name> (the `dev` tab on the left
-// lists them; add &perf=1 for the frame rate).
+// lists them; add &perf=1 for the frame rate, &w=375 to lay the stage out
+// as a narrow phone, &lang=zh for another language).
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
@@ -12,10 +13,12 @@ import { scheduleOnRN } from "react-native-worklets";
 
 import { AppText, Button } from "@/components/ui";
 import { RulesSheet } from "@/features/game/RulesSheet";
+import { StageWidth } from "@/features/game/stage/GameStage";
 import { AvalonBoard } from "@/games/avalon/AvalonBoard";
 import type { AvalonState, Role } from "@/games/avalon/logic";
 import { setPiecesKey } from "@/games/avalon/useSetPieces";
 import { GAMES } from "@/games/registry";
+import { useLocale } from "@/i18n/LocaleContext";
 import { ThemeScope, useTheme } from "@/theme";
 
 const ROLES5: Role[] = ["merlin", "percival", "assassin", "servant", "morgana"];
@@ -308,7 +311,17 @@ export default function AvalonPreview() {
 
 function AvalonSamples() {
   const { colors, spacing } = useTheme();
-  const { sample: asked, perf } = useLocalSearchParams<{ sample?: string; perf?: string }>();
+  const { sample: asked, perf, w: narrow, lang } = useLocalSearchParams<{
+    sample?: string;
+    perf?: string;
+    w?: string;
+    lang?: string;
+  }>();
+  // &lang=zh (en, ms): look at a moment in another language
+  const { language, setLanguage } = useLocale();
+  useEffect(() => {
+    if ((lang === "en" || lang === "zh" || lang === "ms") && lang !== language) setLanguage(lang);
+  }, [lang, language, setLanguage]);
   const [sample, setSample] = useState(asked && SAMPLES[asked] ? asked : "team");
   const [rules, setRules] = useState(false);
   const [picking, setPicking] = useState(false);
@@ -342,6 +355,8 @@ function AvalonSamples() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {seeded === session ? (
+        <StageWidth.Provider value={narrow ? Number(narrow) : null}>
+        <View style={narrow ? { width: Number(narrow), flex: 1, alignSelf: "center", overflow: "hidden" } : { flex: 1 }}>
         <AvalonBoard
           key={session}
           sessionId={session}
@@ -364,6 +379,8 @@ function AvalonSamples() {
             ),
           }}
         />
+        </View>
+        </StageWidth.Provider>
       ) : null}
       {/* the samples, behind a small tab on the left edge */}
       <Pressable onPress={() => setPicking(true)} style={[styles.devTab, { borderColor: colors.primary }]}>

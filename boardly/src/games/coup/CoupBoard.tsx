@@ -5,19 +5,21 @@
 // choose my action, the player I aim it at, a claim the room may
 // challenge or block, a challenge settled (once per device), someone put
 // out, the card I must turn over, the cards I swap, and the ending with
-// every hand face up. My own hand is always in reach: the top tool down
-// the side is my two cards, small, and opens them large.
+// every hand face up. The scene fills the whole middle; the stage's dock
+// keeps the rest on the plinth: my two cards in my hand at its left (a
+// tap lifts them, face up, to the middle), the record and the roles in
+// the satchel at its right, and the one line that matters now on its
+// crest, the rest behind its info stud.
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { StyleSheet, View } from "react-native";
+import Animated, { FadeIn, useSharedValue } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
 
 import { AppText, Button } from "@/components/ui";
 import { Journal } from "@/features/game/Journal";
-import { Popup, type PopupLook } from "@/features/game/Popup";
-import { stageText } from "@/features/game/stage/GameStage";
-import { ToolButton } from "@/features/game/stage/parts";
+import { Popup } from "@/features/game/Popup";
+import { stageText, useStageSize, type StageDock, type StageHint, type StageTool } from "@/features/game/stage/GameStage";
 import { shortName } from "@/features/game/stage/PlayerName";
 import type { Light, Plate, Standing } from "@/features/game/stage/StageLineup";
 import { asLook } from "@/features/mascot/dress";
@@ -29,10 +31,11 @@ import { ACTION_EMOJI, ROLE_EMOJI } from "./art";
 import { RoleCard } from "./cards";
 import { CardRow, type RowCard } from "./den/CardRow";
 import { ClaimScene } from "./den/ClaimScene";
-import { DenStage, DenTag } from "./den/DenStage";
+import { DEN_POPUP, DenStage, DenTag } from "./den/DenStage";
 import type { DenTile } from "./den/DenSign";
 import { Ending } from "./den/Ending";
 import { Felt } from "./den/Felt";
+import { HAND_RATIO, HandBacks, HandFace, type HandCard } from "./den/HandDock";
 import { Showdown } from "./den/Showdown";
 import { TableLineup } from "./den/TableLineup";
 import {
@@ -58,10 +61,7 @@ import {
 import { describe, hustlePages } from "./pages";
 import { useSetPieces } from "./useSetPieces";
 
-/** The den's popups: a crimson lacquer sign, a jade jewel. */
-const DEN_POPUP: PopupLook = { enamel: ["#D2384A", "#8A1424", "#4A0812"], jewel: "emerald", glow: "#FFB45E" };
-
-type Panel = "hand" | "record" | "roles";
+type Panel = "record" | "roles";
 type Staged = { at: number; event: Extract<LogEvent, { t: "challenge" } | { t: "out" }> };
 
 /** What I've picked in the moment on the stage, tagged with its step. */
@@ -87,6 +87,13 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
   const task = over ? null : taskFor(state, mySeat);
   const me = state.players[mySeat];
   const [panel, setPanel] = useState<Panel | null>(null);
+  // the dock's hand lifted, satchel open or hint opened: the scene rests
+  const [docked, setDocked] = useState(false);
+  const { width: stageWidth, height: stageHeight } = useStageSize();
+  // bumped when my dealt cards land in my hand: they bounce there
+  const [landed, setLanded] = useState(0);
+  const landing = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(landing.current), []);
 
   const nameOf = useCallback(
     (seat: number) => (seat === mySeat ? t("game.you") : (players.find((p) => p.seat === seat)?.username ?? `#${seat + 1}`)),
@@ -187,7 +194,7 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
                     ? `doomed-${state.log.length}`
                     : "table";
   const kind = scene.split("-")[0];
-  const paused = panel !== null;
+  const paused = panel !== null || docked;
 
   // ── lights on the stage ──
   const lightsOf = (fn: (seat: number) => Light) => Object.fromEntries(seats.map((s) => [s, fn(s)])) as Record<number, Light>;
@@ -223,9 +230,28 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
   const roleName = (role: Role) => t(`coup.roles.${role}.name`);
   const enabled = me ? ACTIONS.filter((a) => canTake(state, mySeat, a.type)).map((a) => a.type) : [];
 
+  // ── how far this device has watched: the header, the record and my
+  // own hand never run ahead of the stage. While a challenge or a player
+  // out is still to be shown here, the cards lost and the players out
+  // since (and a game won by it) are left off until that moment has
+  // played ──
+  const cut = staged ? staged.at : state.log.length;
+  const unseenLost: Record<number, number> = {};
+  const myUnseen: Role[] = [];
+  let unseenOut = 0;
+  for (let at = cut; at < state.log.length; at++) {
+    const event = state.log[at];
+    if (event.t === "lose") {
+      unseenLost[event.seat] = (unseenLost[event.seat] ?? 0) + 1;
+      if (event.seat === mySeat) myUnseen.push(event.role);
+    }
+    if (event.t === "out") unseenOut++;
+  }
+
   let centre: ReactNode = null;
-  let hint: ReactNode = null;
+  let lip: StageHint | null = null;
   let bottom: ReactNode = null;
+  const lipTitle = (key: string) => t(`coup.lip.titles.${key}`);
 
   const waitingLine = (
     <AppText style={stageText.strong} numberOfLines={2}>
@@ -234,13 +260,6 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
         : t("coup.stage.moving")}
     </AppText>
   );
-  // the last few things that happened, for the hint over the plinth
-  const recent = state.log.slice(-2).map((e) => describe(e, t, userOf));
-  const recentLines = recent.map((line, i) => (
-    <AppText key={i} style={[stageText.hint, i < recent.length - 1 && styles.faded]} numberOfLines={2}>
-      {line}
-    </AppText>
-  ));
 
   if (kind === "show" && staged?.event.t === "challenge") {
     const e = staged.event;
@@ -259,34 +278,36 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
           lights: lightsOf((s) => (s === loser ? "red" : s === e.challenger || s === e.claimant ? "lit" : "dim")),
           bare: true,
         })}
+        crowd={people.length > 5}
       />
     );
     bottom = <Button label={t("coup.stage.continue")} size="lg" style={styles.main} onPress={goOn} />;
   } else if (kind === "out" && staged?.event.t === "out") {
     const seat = staged.event.seat;
-    centre = lineup({ lights: lightsOf((s) => (s === seat ? "red" : out(s) ? "dim" : "soft")), struck: seat });
-    hint = (
-      <>
-        <AppText style={stageText.strong} numberOfLines={2}>
-          {seat === mySeat ? t("coup.stage.youOut") : t("coup.stage.out", { name: nameOf(seat) })}
-        </AppText>
-        <AppText style={stageText.hint} numberOfLines={2}>
-          {t("coup.stage.left", { count: aliveCount(state) })}
-        </AppText>
-      </>
+    const gone = seat === mySeat ? t("coup.stage.youOut") : t("coup.stage.out", { name: userOf(seat) });
+    centre = (
+      <View style={StyleSheet.absoluteFill}>
+        {lineup({ lights: lightsOf((s) => (s === seat ? "red" : out(s) ? "dim" : "soft")), struck: seat })}
+        <Animated.View entering={FadeIn.delay(700).duration(400)} style={styles.outAt} pointerEvents="none">
+          <AppText style={[styles.sceneTitle, styles.outTitle]} numberOfLines={2}>
+            {gone}
+          </AppText>
+        </Animated.View>
+      </View>
     );
+    lip = { line: t("coup.stage.left", { count: aliveCount(state) }), title: lipTitle("out") };
     bottom = <Button label={t("coup.stage.continue")} size="lg" style={styles.main} onPress={goOn} />;
   } else if (kind === "deal" && me) {
     const cards: RowCard[] = me.cards.flatMap((c, i) => (c.role ? [{ key: String(i), role: c.role, lost: c.revealed }] : []));
-    centre = <CardRow cards={cards} dealt />;
-    hint = (
-      <>
-        <AppText style={stageText.strong}>{t("coup.deal.title")}</AppText>
-        <AppText style={stageText.hint} numberOfLines={3}>
-          {t("coup.deal.hint")}
+    centre = (
+      <View style={styles.deal}>
+        <AppText style={styles.sceneTitle} numberOfLines={1}>
+          {t("coup.deal.title")}
         </AppText>
-      </>
+        <CardRow cards={cards} dealt maxWidth={170} />
+      </View>
     );
+    lip = { line: t("coup.lip.deal"), more: [t("coup.deal.hint")], title: lipTitle("deal") };
     bottom = (
       <Button
         label={t("coup.deal.go")}
@@ -295,6 +316,9 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
         onPress={() => {
           tapHaptic();
           mark({ dealt: true });
+          // the cards land in my hand once the curtain opens on the table
+          clearTimeout(landing.current);
+          landing.current = setTimeout(() => setLanded((n) => n + 1), 1100);
         }}
       />
     );
@@ -304,6 +328,7 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
       <AppText style={stageText.strong}>{state.winner === mySeat ? t("game.youWin") : t("coup.result.none")}</AppText>
     );
   } else if (kind === "felt") {
+    const forced = me !== undefined && me.coins >= FORCED_COUP_AT;
     centre = (
       <Felt
         enabled={busy ? [] : enabled}
@@ -314,11 +339,9 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
         }}
       />
     );
-    hint = (
-      <AppText style={stageText.hint} numberOfLines={2}>
-        {me && me.coins >= FORCED_COUP_AT ? t("coup.prompt.mustCoup") : t("coup.stage.feltHint")}
-      </AppText>
-    );
+    lip = forced
+      ? { line: t("coup.prompt.mustCoup"), more: [t("coup.prompt.forced")], title: lipTitle("felt") }
+      : { line: t("coup.lip.felt"), more: [t("coup.stage.feltHint")], title: lipTitle("felt") };
     bottom = action ? (
       <Button
         label={`${ACTION_EMOJI[action]} ${actionName(action)}`}
@@ -328,7 +351,9 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
         onPress={() => send({ type: "action", action })}
       />
     ) : (
-      <AppText style={stageText.strong}>{t("coup.stage.pickAction")}</AppText>
+      <AppText style={stageText.strong} numberOfLines={2}>
+        {t("coup.stage.pickAction")}
+      </AppText>
     );
   } else if (kind === "aim" && action) {
     const targets = targetsFor(state, mySeat);
@@ -341,28 +366,28 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
       },
       aim: target,
     });
-    hint = (
-      <>
-        <AppText style={stageText.hint} numberOfLines={2}>
-          {t(`coup.aim.${action}`)}
-        </AppText>
-        <Pressable accessibilityRole="button" hitSlop={8} onPress={() => choose({ action: null, target: null })}>
-          <AppText style={[stageText.hint, styles.link]}>{`↩  ${t("coup.aim.back")}`}</AppText>
-        </Pressable>
-      </>
-    );
+    lip = { line: t(`coup.aim.${action}`), more: [t(`coup.lip.aimMore.${action}`)], title: lipTitle("aim") };
     bottom =
       target !== null ? (
         <HoldButton
           key={`${step}|${target}`}
-          label={t(`coup.aim.hold.${action}`, { name: nameOf(target) })}
+          label={t(`coup.aim.do.${action}`, { name: shortName(nameOf(target), 10) })}
           tone="bad"
           progress={hold}
           disabled={busy}
           onDone={() => onMove({ type: "action", action, target })}
         />
       ) : (
-        <AppText style={stageText.strong}>{t("coup.aim.pick")}</AppText>
+        <Button
+          label={`↩  ${t("coup.aim.back")}`}
+          variant="secondary"
+          size="md"
+          style={styles.main}
+          onPress={() => {
+            tapHaptic();
+            choose({ action: null, target: null });
+          }}
+        />
       );
   } else if (kind === "claim" && claim && state.action) {
     const a = state.action;
@@ -407,23 +432,22 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
         })}
       />
     );
-    hint = (
-      <AppText style={stageText.hint} numberOfLines={2}>
-        {answering
-          ? t(blockPhase ? "coup.prompt.block" : "coup.prompt.challenge")
-          : answered === "pass"
-            ? t("coup.claim.youLet")
-            : t(blockPhase ? "coup.claim.watchBlock" : "coup.claim.watch")}
-      </AppText>
-    );
+    lip = answering
+      ? blockPhase
+        ? { line: t("coup.prompt.block"), more: [t("coup.lip.blockMore")], title: lipTitle("claim") }
+        : { line: t("coup.lip.challenge"), more: [t("coup.lip.challengeMore")], title: lipTitle("claim") }
+      : {
+          line: answered === "pass" ? t("coup.claim.youLet") : t(blockPhase ? "coup.claim.watchBlock" : "coup.lip.watch"),
+          title: lipTitle("claim"),
+        };
     bottom = answering ? (
       <View style={styles.pair}>
         <View style={styles.half}>
           <Button
             label={t("coup.claim.letGo")}
             variant="secondary"
-            size="lg"
-            style={styles.main}
+            size="md"
+            style={styles.letGo}
             disabled={busy}
             onPress={() => {
               choose({ answered: "pass" });
@@ -431,12 +455,13 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
             }}
           />
         </View>
-        <View style={styles.half}>
+        <View style={styles.wide}>
           {blockPhase ? (
             <HoldButton
               key={`${step}|${blockAs}`}
-              label={t("coup.claim.holdBlock")}
+              label={t("coup.claim.blockName", { name: shortName(nameOf(a.actor), 7) })}
               tone="plain"
+              compact
               progress={holdAlt}
               disabled={busy}
               onDone={() => {
@@ -447,8 +472,9 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
           ) : (
             <HoldButton
               key={step}
-              label={t("coup.claim.holdChallenge")}
+              label={t("coup.claim.challengeName", { name: shortName(nameOf(claim.seat), 7) })}
               tone="bad"
+              compact
               progress={holdAlt}
               disabled={busy}
               onDone={() => {
@@ -480,35 +506,29 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
     centre = (
       <CardRow
         cards={cards}
+        maxWidth={170}
         onPress={(key) => {
           hold.set(0);
           choose({ card: Number(key) });
         }}
       />
     );
-    hint = (
-      <>
-        <AppText style={stageText.strong} numberOfLines={2}>
-          {loseWhy(state, losing?.why ?? null, userOf, t)}
-        </AppText>
-        <AppText style={stageText.hint} numberOfLines={2}>
-          {t("coup.lose.hint")}
-        </AppText>
-      </>
-    );
+    lip = { line: loseWhy(state, losing?.why ?? null, userOf, t), more: [t("coup.lose.hint")], title: lipTitle("lose") };
     const role = picked !== null ? me.cards[picked]?.role : null;
     bottom =
       picked !== null && role ? (
         <HoldButton
           key={`${step}|${picked}`}
-          label={t("coup.lose.hold", { role: roleName(role) })}
+          label={t("coup.lose.do", { role: roleName(role) })}
           tone="bad"
           progress={hold}
           disabled={busy}
           onDone={() => onMove({ type: "reveal", card: picked })}
         />
       ) : (
-        <AppText style={stageText.strong}>{t("coup.prompt.reveal")}</AppText>
+        <AppText style={stageText.strong} numberOfLines={2}>
+          {t("coup.lip.tapCard")}
+        </AppText>
       );
   } else if (kind === "exchange" && state.exchange && me) {
     const need = handOf(state, mySeat).length;
@@ -520,12 +540,8 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
       mark: keep.includes(i) ? "keep" : "none",
       tag: keep.includes(i) ? t("coup.swap.keep") : i >= mine ? t("coup.swap.new") : undefined,
     }));
-    centre = <CardRow cards={cards} maxWidth={120} onPress={(key) => choose({ keep: toggleKeep(keep, Number(key), need) })} />;
-    hint = (
-      <AppText style={stageText.hint} numberOfLines={2}>
-        {t("coup.prompt.exchange", { count: need })}
-      </AppText>
-    );
+    centre = <CardRow cards={cards} maxWidth={150} onPress={(key) => choose({ keep: toggleKeep(keep, Number(key), need) })} />;
+    lip = { line: t("coup.prompt.exchange", { count: need }), more: [t("coup.lip.exchangeMore")], title: lipTitle("exchange") };
     bottom = (
       <Button
         label={`${t("coup.keep")} (${keep.length}/${need})`}
@@ -544,11 +560,7 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
       aim: blow ? losing.seat : null,
       held: true,
     });
-    hint = (
-      <AppText style={stageText.hint} numberOfLines={2}>
-        {loseWhy(state, losing.why, userOf, t)}
-      </AppText>
-    );
+    lip = { line: loseWhy(state, losing.why, userOf, t), title: lipTitle("table") };
     bottom = (
       <AppText style={stageText.strong} numberOfLines={2}>
         {t("coup.prompt.losing", { name: userOf(losing.seat) })}
@@ -558,7 +570,13 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
     // the table: whose turn it is under the brightest lamp
     const acting = state.phase === "exchange" && state.action ? state.action.actor : state.turn;
     centre = lineup({ lights: lightsOf((s) => (out(s) ? "dim" : s === acting ? "lit" : "soft")) });
-    hint = recentLines;
+    // the latest thing that happened on the crest, the few before it
+    // behind its info stud
+    const recent = state.log
+      .slice(Math.max(0, cut - 5), cut)
+      .map((e) => describe(e, t, userOf))
+      .reverse();
+    lip = recent.length > 0 ? { line: recent[0], more: recent.slice(1), title: lipTitle("table") } : null;
     bottom =
       state.phase === "exchange" ? (
         <AppText style={stageText.strong} numberOfLines={2}>
@@ -571,29 +589,17 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
       );
   }
 
+  // a move that didn't go through says so first, whatever the moment
   if (stage?.error && !over) {
-    hint = (
-      <>
-        {hint}
-        <AppText style={[stageText.hint, styles.error]} numberOfLines={2}>
-          {stage.error}
-        </AppText>
-      </>
-    );
+    lip = {
+      line: stage.error,
+      tone: "#FF8A80",
+      title: lip?.title ?? lipTitle("table"),
+      more: lip ? [lip.line, ...(lip.more ?? [])] : [],
+    };
   }
 
   // ── the header: whose turn, how many still in, everyone's tile ──
-  // It never runs ahead of the stage: while a challenge or a player out
-  // is still to be shown here, the cards lost and the players out since
-  // (and a game won by it) are left off until that moment has played
-  const cut = staged ? staged.at : state.log.length;
-  const unseenLost: Record<number, number> = {};
-  let unseenOut = 0;
-  for (let at = cut; at < state.log.length; at++) {
-    const event = state.log[at];
-    if (event.t === "lose") unseenLost[event.seat] = (unseenLost[event.seat] ?? 0) + 1;
-    if (event.t === "out") unseenOut++;
-  }
   const goneSeat = staged?.event.t === "out" ? staged.event.seat : null;
   const overShown = over && !staged;
   // a game ended by the moment still to be shown: still the turn it
@@ -632,15 +638,48 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
     total: state.numPlayers,
   });
 
-  const tools = (
-    <>
-      <HandTool label={t("coup.tools.hand")} roles={me?.cards ?? []} onPress={() => setPanel("hand")} />
-      <ToolButton emoji="📜" label={t("coup.tools.record")} onPress={() => setPanel("record")} />
-      <ToolButton emoji="🎭" label={t("coup.tools.roles")} onPress={() => setPanel("roles")} />
-    </>
-  );
+  // ── the dock: my two cards in my hand, the lookups in the satchel ──
+  // my cards as this device has seen them: one lost in a moment still to
+  // be played here is still face down in my hand
+  const handKey = JSON.stringify([me?.cards ?? [], myUnseen]);
+  const handCards: HandCard[] = useMemo(() => {
+    const still = [...myUnseen];
+    return (me?.cards ?? []).map((c) => {
+      const at = c.revealed && c.role ? still.indexOf(c.role) : -1;
+      if (at >= 0) still.splice(at, 1);
+      return { role: c.role, lost: c.revealed && at < 0 };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- handKey stands for my cards
+  }, [handKey]);
+  const faceW = Math.min(330, stageWidth - 40, (stageHeight - 300) / HAND_RATIO);
+  const records = cut;
+  const [looked, setLooked] = useState(records);
+  const openPanel = (key: Panel) => {
+    tapHaptic();
+    setPanel(key);
+    if (key === "record") setLooked(records);
+  };
+  const tools: StageTool[] = [
+    { key: "record", emoji: "📜", label: t("coup.tools.record"), badge: records > looked, onPress: () => openPanel("record") },
+    { key: "roles", emoji: "🎭", label: t("coup.tools.roles"), onPress: () => openPanel("roles") },
+  ];
+  const dock: StageDock = {
+    hand:
+      me && !over && kind !== "deal"
+        ? {
+            label: t("coup.tools.handShort"),
+            back: (w) => <HandBacks width={w} cards={handCards} />,
+            face: <HandFace width={faceW} cards={handCards} title={t("coup.hand.title")} caption={t("coup.hand.secret")} />,
+            faceSize: { width: faceW, height: faceW * HAND_RATIO },
+            pulse: landed,
+          }
+        : undefined,
+    satchel: { tools },
+    hint: lip,
+    onOpen: setDocked,
+  };
+
   const away = kind === "show" || kind === "out" || kind === "ending" || kind === "deal";
-  const sideTools = !away;
 
   // until this device's memory of what it has watched is read, nothing is
   // shown: a reload in the middle of a moment mustn't flash its outcome
@@ -656,16 +695,19 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
         !over && me ? (
           <>
             <DenTag label={t("coup.tags.purse")} value={`$${me.coins}`} />
-            <DenTag label={t("coup.tags.deck")} value={String(state.deckCount)} color="#C8E8D8" />
+            {kind === "aim" ? (
+              <DenTag label="↩" value={t("coup.aim.back")} color="#FFD27A" onPress={() => choose({ action: null, target: null })} />
+            ) : (
+              <DenTag label={t("coup.tags.deck")} value={String(state.deckCount)} color="#C8E8D8" />
+            )}
           </>
         ) : undefined
       }
       sceneKey={scene}
-      centre={<View style={[StyleSheet.absoluteFill, sideTools && styles.besideTools]}>{centre}</View>}
-      tools={over ? undefined : tools}
+      centre={centre}
+      dock={dock}
       away={away}
       bleed={kind === "ending"}
-      hint={hint}
       bottom={bottom}
       onBack={stage?.onBack}
       onRules={stage?.onRules}
@@ -677,9 +719,7 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
           title={panel ? t(`coup.tools.${panel}`) : ""}
           onClose={() => setPanel(null)}
         >
-          {panel === "hand" ? (
-            <HandPanel state={state} mySeat={mySeat} />
-          ) : panel === "record" ? (
+          {panel === "record" ? (
             <Journal pages={hustlePages(state.log.slice(0, cut), mySeat, t, userOf)} emptyText={t("coup.journal.empty")} />
           ) : panel === "roles" ? (
             <RolesPanel />
@@ -702,52 +742,6 @@ function loseWhy(
   if (why === "coup") return t("coup.lose.coup", { name: nameOf(seat), actor });
   if (why === "assassinate") return t("coup.lose.assassinate", { name: nameOf(seat), actor });
   return t("coup.lose.challenge", { name: nameOf(seat) });
-}
-
-/** The top tool: my two cards, small and fanned; tap to see them large. */
-function HandTool({ label, roles, onPress }: { label: string; roles: CoupState["players"][number]["cards"]; onPress: () => void }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      hitSlop={6}
-      onPress={() => {
-        tapHaptic();
-        onPress();
-      }}
-      style={({ pressed }) => [styles.handTool, pressed && styles.pressed]}
-    >
-      <View style={styles.fan}>
-        {roles.map((card, i) =>
-          card.role ? (
-            <View key={i} style={[styles.fanCard, { left: i * 15, transform: [{ rotate: `${i ? 9 : -9}deg` }] }, card.revealed && styles.fanLost]}>
-              <RoleCard role={card.role} width={26} />
-            </View>
-          ) : null,
-        )}
-      </View>
-      <AppText style={styles.toolLabel} numberOfLines={1}>
-        {label}
-      </AppText>
-    </Pressable>
-  );
-}
-
-/** My cards, large, with what each does. */
-function HandPanel({ state, mySeat }: { state: CoupState; mySeat: number }) {
-  const { t } = useTranslation();
-  const me = state.players[mySeat];
-  if (!me) return null;
-  return (
-    <View style={styles.panelGap}>
-      <View style={styles.handRow}>
-        {me.cards.map((card, i) => (card.role ? <RoleCard key={i} role={card.role} width={138} lost={card.revealed} /> : null))}
-      </View>
-      <AppText variant="caption" color="textMuted" align="center">
-        {t("coup.hand.secret")}
-      </AppText>
-    </View>
-  );
 }
 
 /** Every role at a glance, and the actions anyone may take. */
@@ -777,25 +771,23 @@ const styles = StyleSheet.create({
   main: { alignSelf: "stretch" },
   pair: { flexDirection: "row", gap: 10, alignSelf: "stretch", alignItems: "center" },
   half: { flex: 1 },
-  besideTools: { right: 60 },
-  faded: { opacity: 0.7 },
-  link: { color: "#FFD27A", fontFamily: fontFamily.semiBold },
-  error: { color: "#FF8A80" },
-  handTool: { alignItems: "center", width: 62, gap: 1 },
-  pressed: { opacity: 0.6, transform: [{ scale: 0.94 }] },
-  fan: { width: 44, height: 40, marginBottom: 1 },
-  fanCard: { position: "absolute", top: 2 },
-  fanLost: { opacity: 0.4 },
-  toolLabel: {
-    fontFamily: fontFamily.semiBold,
-    fontSize: 10.5,
-    lineHeight: 13,
-    color: "#F1E6D2",
-    textShadowColor: "rgba(0,0,0,0.85)",
+  wide: { flex: 1.7 },
+  letGo: { alignSelf: "stretch", paddingHorizontal: 8 },
+  deal: { flex: 1, paddingTop: 10 },
+  sceneTitle: {
+    fontFamily: fontFamily.bold,
+    fontSize: 16,
+    lineHeight: 22,
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+    color: "#FFE7A8",
+    textAlign: "center",
+    textShadowColor: "rgba(0,0,0,0.9)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
+  outAt: { position: "absolute", left: 24, right: 24, top: 70, alignItems: "center" },
+  outTitle: { fontSize: 20, lineHeight: 26, color: "#FF9AA6", letterSpacing: 0.5, textTransform: "none" },
   panelGap: { gap: 12 },
-  handRow: { flexDirection: "row", gap: 12, justifyContent: "center" },
   rolesGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center" },
 });

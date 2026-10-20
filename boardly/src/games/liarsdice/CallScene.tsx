@@ -109,8 +109,7 @@ export function CallScene({
   const wildHave = myCount(state.myDice, face, false);
 
   return (
-    // with a call on the table two hint lines sit over the plinth: room for them
-    <View style={[styles.scene, { paddingTop: top, paddingBottom: state.bid ? 22 : 4 }]}>
+    <View style={[styles.scene, { paddingTop: top, paddingBottom: 4 }]}>
       <View style={styles.slateBox}>
         <Slate width={280} height={state.bid ? 80 : 62}>
           <AppText style={styles.heading} numberOfLines={1}>

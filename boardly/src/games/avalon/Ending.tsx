@@ -8,7 +8,7 @@
 
 import { Canvas, Group, Image as SkImage, Rect, Shader } from "@shopify/react-native-skia";
 import { useContext, useEffect, useMemo, type ReactNode } from "react";
-import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
   FadeIn,
@@ -34,7 +34,7 @@ import { markArt } from "./dossier/art";
 import { AURA, LIGHT, rgb } from "./dossier/fx";
 import { sideOf, type AvalonState } from "./logic";
 import { MiniRoleCard } from "./RoleCard";
-import { StageInsets } from "./stage/AgencyStage";
+import { StageInsets, useStageSize } from "./stage/AgencyStage";
 import { crestArt } from "./stage/headerArt";
 
 const STAGE_H = 230;
@@ -55,7 +55,7 @@ export function Ending({
 }) {
   const { t } = useTranslation();
   const insets = useContext(StageInsets);
-  const { width } = useWindowDimensions();
+  const { width } = useStageSize();
   const onScreen = useOnScreen();
   const clock = useIsoClock(paused || !onScreen);
   const good = state.winner !== "evil";

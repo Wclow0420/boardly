@@ -1116,9 +1116,7 @@
       "keep": "收好，保密"
     },
     "council": {
-      "pickHint": "为任务 {{n}} 挑选 {{count}} 人。大家都能看到你的选择。",
       "picking": "{{name}} 正在为任务挑选 {{count}} 人",
-      "voteHint": "为 {{name}} 的队伍投票：{{names}}",
       "lastChance": "再否决一次，内鬼就赢了。",
       "tally": "{{yes}} 票赞成，{{no}} 票反对"
     },
@@ -1129,8 +1127,6 @@
       "accomplished": "完成",
       "band": "绝密",
       "pick": "点击一枚印章来选择",
-      "holdApprove": "长按批准档案",
-      "holdSeal": "长按破坏档案",
       "agentsOnly": "特工只能批准档案。",
       "molesHint": "内鬼可以破坏任务，没人会知道是谁。",
       "played": "已交 {{done}}/{{total}} 张牌",
@@ -1139,7 +1135,6 @@
     },
     "shot": {
       "pick": "点击你认为是联络官的人",
-      "hold": "长按指认 {{name}}",
       "hint": "找出联络官，内鬼就能夺回胜利。"
     },
     "journal": {
@@ -1165,6 +1160,19 @@
       "twoFails": "第 {{op}} 次任务要 {{count}} 张失败牌才会失败",
       "oneFail": "一张失败牌就能让任务失败",
       "rejections": "连续 {{count}} 次组队被否决：内鬼获胜"
+    },
+    "lip": {
+      "pick": "为任务 {{n}} 挑选 {{count}} 人",
+      "pickSeen": "你每选一人，大家都能马上看到。",
+      "watch": "每选一人，灯就会亮起。",
+      "vote": "派这支队伍执行任务吗？",
+      "team": "队伍：{{names}}",
+      "missionEvil": "只会公开失败牌的数量。",
+      "twoFails": "本次任务要有 2 张失败牌才会失败。",
+      "shotWatch": "联络官一旦被找出，内鬼获胜。",
+      "approveIt": "批准档案",
+      "sealIt": "破坏档案",
+      "nameIt": "指认 {{name}}"
     }
   },
   "coup": {
@@ -1323,6 +1331,11 @@
         "steal": "按住扒窃 {{name}}",
         "assassinate": "按住教训 {{name}}",
         "coup": "按住砸 {{name}} 的场"
+      },
+      "do": {
+        "steal": "扒窃 {{name}}",
+        "assassinate": "付 $3 · 教训 {{name}}",
+        "coup": "付 $7 · 砸 {{name}} 的场"
       }
     },
     "claim": {
@@ -1344,7 +1357,9 @@
       "watch": "谁不信，谁就可以质疑。",
       "watchBlock": "能阻挡的人正在考虑。",
       "againstMe": "阻挡你的{{action}}",
-      "saysMe": "你说："
+      "saysMe": "你说：",
+      "challengeName": "质疑 {{name}}",
+      "blockName": "阻挡 {{name}}"
     },
     "lose": {
       "tag": "翻开",
@@ -1352,7 +1367,8 @@
       "hold": "按住翻开{{role}}",
       "coup": "{{actor}} 砸了 {{name}} 的场：要失去一张牌",
       "assassinate": "{{actor}} 教训了 {{name}}：要失去一张牌",
-      "challenge": "{{name}} 输了质疑：要失去一张牌"
+      "challenge": "{{name}} 输了质疑：要失去一张牌",
+      "do": "翻开{{role}}"
     },
     "swap": {
       "keep": "保留",
@@ -1367,7 +1383,8 @@
     "tools": {
       "hand": "你的牌",
       "record": "记录",
-      "roles": "角色"
+      "roles": "角色",
+      "handShort": "我的牌"
     },
     "tags": {
       "purse": "你的钱",
@@ -1392,6 +1409,31 @@
       "cardsShort": "{{count}} 张牌",
       "deck": "牌堆 {{size}} 张：每个角色 {{copies}} 张，发完剩 {{left}} 张",
       "forced": "手上有 {{count}} 块或更多时必须砸场"
+    },
+    "lip": {
+      "deal": "两张牌都没了就出局",
+      "watch": "谁不信，谁就可以质疑",
+      "felt": "双线框的行动要声称角色",
+      "aimMore": {
+        "steal": "从对方拿 $2。扒手或中间人可阻挡。",
+        "assassinate": "你付 $3，对方失去一张牌。大婶可阻挡。",
+        "coup": "你付 $7，对方失去一张牌。无法阻止。"
+      },
+      "challenge": "信，还是揭穿诈唬？",
+      "challengeMore": "质疑错了你失去一张牌；抓到诈唬则对方失去一张。",
+      "blockMore": "阻挡也是在声称角色：谁都可以质疑。",
+      "tapCard": "点选要放弃的牌",
+      "exchangeMore": "其余的放回牌堆。没人知道你留下了哪张。",
+      "titles": {
+        "deal": "你的牌",
+        "felt": "轮到你",
+        "aim": "选一名玩家",
+        "claim": "有人声称",
+        "lose": "失去一张牌",
+        "exchange": "换牌",
+        "table": "牌桌上",
+        "out": "出局"
+      }
     }
   },
   "manor": {
@@ -1689,7 +1731,7 @@
       "holdOpen": "开 · 1 杯",
       "holdSplit": "劈 · 2 杯",
       "holdCounter": "反劈 ×4",
-      "holdSplitThem": "按住劈 {{name}} · 2 杯",
+      "holdSplitThem": "劈 {{name}} · 2 杯",
       "liar": "开！",
       "continue": "继续",
       "counting": "正在数骰…",
@@ -1725,7 +1767,8 @@
         "wait": "散骰 —— 等这一劈结束",
         "good": "看好了？开始这一轮",
         "yourTurn": "轮到你叫了 —— 先摇骰"
-      }
+      },
+      "stopTool": "散场 {{votes}}/{{needed}}"
     },
     "openRule": {
       "jijiji": "{{one}} 个起叫 1 · {{zhai}} 个起斋 · {{fei}} 个起开斋",
@@ -1754,6 +1797,11 @@
       "calling": "{{name}}：{{rule}}",
       "drinks": "叫输要喝：开 {{open}} 杯，劈 {{split}} 杯，反劈 {{counter}} 杯",
       "knockout": "出局模式：喝满 {{count}} 杯就出局"
+    },
+    "house": {
+      "label": "本桌规矩",
+      "title": "本桌规矩",
+      "at": "按 {{count}} 人计"
     }
   },
   "nightwatch": {
@@ -2702,7 +2750,8 @@
     "plinth": {
       "mine": "轮到你 —— 落下你的{{mark}}",
       "placing": "正在落子…",
-      "theirs": "{{name}}正在思考…"
+      "theirs": "{{name}}正在思考…",
+      "tap": "点一个空格"
     },
     "marks": {
       "X": "叉",
@@ -2728,6 +2777,28 @@
       "firstShort": "{{mark}} 先手",
       "line": "{{cells}} 格棋盘，{{count}} 子连成一线即胜：横、竖或斜线",
       "lineShort": "{{count}} 子连线"
+    },
+    "hand": {
+      "label": "你的棋子",
+      "title": "你执{{mark}}",
+      "youFirst": "{{mark}}先走 —— 你先手",
+      "youSecond": "{{mark}}先走 —— 你后手"
+    },
+    "record": {
+      "title": "棋谱",
+      "empty": "还没有人落子。",
+      "move": "{{n}}. {{name}} —— {{mark}}，{{cell}}"
+    },
+    "cells": {
+      "0": "左上",
+      "1": "上中",
+      "2": "右上",
+      "3": "左中",
+      "4": "正中",
+      "5": "右中",
+      "6": "左下",
+      "7": "下中",
+      "8": "右下"
     }
   }
 }

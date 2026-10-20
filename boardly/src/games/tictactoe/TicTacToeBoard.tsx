@@ -2,50 +2,83 @@
 // the stage" in CLAUDE.md): the parlour crest across the top (the two
 // marks' medallions, whose turn it is, the moves counted in studs), the
 // inlaid board in the middle with both players standing under their
-// lamps below it, whose turn it is on the plinth. A mark drops onto its
-// square the moment it's tapped; three in a row lights up and is drawn
-// through, and a Continue takes the table behind the curtain to the
-// ending: the medal, the verdict, the winner crowned.
+// lamps below it, whose turn it is on the plinth. The plinth's dock holds
+// my mark as a token in my hand (MarkCard: tap, and it turns over into a
+// card saying which mark I play and that the cross moves first), the
+// moves so far in the satchel, and the one line that matters on the
+// crest. A mark drops onto its square the moment it's tapped; three in a
+// row lights up and is drawn through, and a Continue takes the table
+// behind the curtain to the ending: the medal, the verdict, the winner
+// crowned.
 
 import { useMemo, useState } from "react";
-import { StyleSheet, View, useWindowDimensions } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { Canvas, Image as SkImage } from "@shopify/react-native-skia";
 
-import { bakedSvg } from "@/components/badges/bake";
 import { AppText, Button, useBox } from "@/components/ui";
-import { GameStage, stageText, type StageLook } from "@/features/game/stage/GameStage";
+import { Journal, type JournalPage } from "@/features/game/Journal";
+import { Popup, type PopupLook } from "@/features/game/Popup";
+import {
+  GameStage,
+  stageText,
+  useStageSize,
+  type StageDock,
+  type StageHint,
+  type StageLook,
+} from "@/features/game/stage/GameStage";
+import { shortName } from "@/features/game/stage/PlayerName";
 import { StageLineup, type Light, type Standing } from "@/features/game/stage/StageLineup";
 import { asLook } from "@/features/mascot/dress";
-import { fontFamily } from "@/theme";
 import type { GameBoardProps } from "../types";
-import { markArt, type Mark } from "./art";
+import type { Mark } from "./art";
 import { BoardView } from "./BoardView";
 import { Crest } from "./Crest";
 import { crestLayout } from "./art";
 import { Ending } from "./Ending";
 import { isLegalMove, winningLine, type Cell, type TicTacToeState } from "./logic";
+import { MarkFace, MarkImage, MarkToken } from "./MarkCard";
 import { useEndSeen } from "./useEndSeen";
 
-/** A warm parlour by lamplight. */
-const PARLOUR: StageLook = { sky: ["#2C1D12", "#1A110A", "#0E0906"], glow: "#F2B84B", jewel: "sapphire" };
+/** A warm parlour by lamplight; its popups a sapphire sign. */
+const PARLOUR_POPUP: PopupLook = { enamel: ["#5A7ABE", "#22356A", "#0C1634"], jewel: "sapphire", glow: "#FFD58A" };
+const PARLOUR: StageLook = {
+  sky: ["#2C1D12", "#1A110A", "#0E0906"],
+  glow: "#F2B84B",
+  jewel: "sapphire",
+  popup: PARLOUR_POPUP,
+};
 
 const MARKS: Mark[] = ["X", "O"];
-/** The players' boards stop short of the stage's foot, leaving the lines
- *  over the plinth clear. */
+/** The players' boards stop a little short of the stage's foot. */
 const LIFT = 10;
+const Token = MarkImage;
 
-/** A mark on its own, small, for a line of text. */
-function Token({ kind, size }: { kind: Mark; size: number }) {
-  const image = bakedSvg(`ttt-token|${kind}`, size, size, () => markArt(kind, size));
-  return (
-    <View style={{ width: size, height: size }} pointerEvents="none">
-      <Canvas style={StyleSheet.absoluteFill}>
-        {image ? <SkImage image={image} x={0} y={0} width={size} height={size} /> : null}
-      </Canvas>
-    </View>
-  );
+type T = ReturnType<typeof useTranslation>["t"];
+
+/** The moves so far, as a Journal page: each mark, who put it down, and
+ *  on which square. */
+export function tttPages(state: TicTacToeState, nameOf: (seat: number) => string, t: T): JournalPage[] {
+  if (state.moves.length === 0) return [];
+  return [
+    {
+      key: "moves",
+      title: t("tictactoe.record.title"),
+      sections: [
+        {
+          key: "moves",
+          entries: state.moves.map((m, i) => ({
+            text: t("tictactoe.record.move", {
+              n: i + 1,
+              name: nameOf(m.seat),
+              mark: t(`tictactoe.marks.${MARKS[m.seat]}`),
+              cell: t(`tictactoe.cells.${m.cell}`),
+            }),
+          })),
+        },
+      ],
+    },
+  ];
 }
 
 /** Which way a line runs: a row, a column or a diagonal. */
@@ -64,7 +97,7 @@ export function TicTacToeBoard({
 }: GameBoardProps<TicTacToeState>) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width } = useStageSize();
   const step = state.moves.length;
 
   // my mark goes down the moment I tap; a move that failed is taken back
@@ -87,6 +120,8 @@ export function TicTacToeBoard({
 
   const nameOf = (seat: number) =>
     seat === mySeat ? t("game.you") : (players.find((p) => p.seat === seat)?.username ?? `#${seat + 1}`);
+  // a name inside a sentence, cut so the words round it still show
+  const short = (seat: number) => shortName(nameOf(seat));
   const people: Standing[] = [0, 1].map((seat) => ({
     seat,
     name: nameOf(seat),
@@ -103,7 +138,7 @@ export function TicTacToeBoard({
     winnerSeat !== null
       ? winnerSeat === mySeat
         ? t("tictactoe.result.youWin")
-        : t("tictactoe.result.winner", { name: nameOf(winnerSeat) })
+        : t("tictactoe.result.winner", { name: short(winnerSeat) })
       : full
         ? t("tictactoe.result.draw")
         : t("tictactoe.result.ended");
@@ -116,7 +151,7 @@ export function TicTacToeBoard({
     ? verdict
     : turnSeat === mySeat
       ? t("tictactoe.turn.mine")
-      : t("tictactoe.turn.theirs", { name: nameOf(turnSeat ?? 0) });
+      : t("tictactoe.turn.theirs", { name: short(turnSeat ?? 0) });
 
   const L = crestLayout(width, insets.top);
   const moves = state.moves.map((m) => MARKS[m.seat]);
@@ -128,6 +163,10 @@ export function TicTacToeBoard({
     onMove({ cell });
   };
 
+  // the moves so far, open from the satchel; the hand lifted or the
+  // moves out: the players under their lamps rest
+  const [record, setRecord] = useState(false);
+  const [docked, setDocked] = useState(false);
   const [box, onLayout] = useBox();
   // the board above, the two players below it on the boards
   const boardSize = Math.max(150, Math.min(box.w * 0.68, box.h - LIFT - 230));
@@ -150,7 +189,7 @@ export function TicTacToeBoard({
       {box.w > 0 ? (
         <>
           <View style={styles.lineup}>
-            <StageLineup people={people} lights={lights} crown={ended ? winnerSeat : null} paused={false} />
+            <StageLineup people={people} lights={lights} crown={ended ? winnerSeat : null} paused={docked || record} />
           </View>
           {[0, 1].map((seat) => (
             <View
@@ -173,29 +212,49 @@ export function TicTacToeBoard({
     </View>
   );
 
-  const hint = atEnding ? null : ended ? (
-    <>
-      <AppText style={[stageText.strong, styles.verdict, { color: winnerSeat === null ? "#FFD58A" : winnerSeat === mySeat || mySeat < 0 ? "#8CFFB0" : "#FF8A94" }]} numberOfLines={1}>
-        {verdict}
-      </AppText>
-      <AppText style={stageText.hint} numberOfLines={1}>
-        {reason}
-      </AppText>
-    </>
-  ) : (
-    <>
-      {myTurn ? (
-        <AppText style={stageText.hint} numberOfLines={2}>
-          {t("tictactoe.hint")}
-        </AppText>
-      ) : null}
-      {stage?.error ? (
-        <AppText style={[stageText.hint, styles.error]} numberOfLines={2}>
-          {stage.error}
-        </AppText>
-      ) : null}
-    </>
-  );
+  // the one line on the plinth's crest, the rest behind its info stud
+  const myMark = mySeat >= 0 ? MARKS[mySeat] : null;
+  const verdictTone = winnerSeat === null ? "#FFD58A" : winnerSeat === mySeat || mySeat < 0 ? "#8CFFB0" : "#FF8A94";
+  const lipNow: StageHint | null = atEnding
+    ? null
+    : ended
+      ? { line: reason, tone: verdictTone, more: [verdict] }
+      : myTurn && myMark
+        ? { line: t("tictactoe.plinth.mine", { mark: t(`tictactoe.marks.${myMark}`) }), more: [t("tictactoe.hint")] }
+        : null;
+  // a move that didn't go through says so first
+  const lip: StageHint | null =
+    stage?.error && !atEnding
+      ? { line: stage.error, tone: "#FF8A94", more: lipNow ? [lipNow.line, ...(lipNow.more ?? [])] : [] }
+      : lipNow;
+
+  // the dock: my mark in my hand, the moves so far in the satchel
+  const liftedW = Math.min(300, width - 80);
+  const dock: StageDock = {
+    // kept through the ending too, so the plinth's move stays centred
+    hand:
+      myMark
+        ? {
+            label: t("tictactoe.hand.label"),
+            back: (w) => <MarkToken kind={myMark} width={w} />,
+            face: <MarkFace kind={myMark} width={liftedW} />,
+            faceSize: { width: liftedW, height: liftedW * 1.4 },
+          }
+        : undefined,
+    satchel: {
+      tools: [
+        {
+          key: "moves",
+          emoji: "📜",
+          label: t("tictactoe.record.title"),
+          // every move is on the board already: no dot for new ones
+          onPress: () => setRecord(true),
+        },
+      ],
+    },
+    hint: lip,
+    onOpen: setDocked,
+  };
 
   const bottom = atEnding ? (
     (stage?.onward ?? <AppText style={stageText.strong}>{verdict}</AppText>)
@@ -206,10 +265,10 @@ export function TicTacToeBoard({
       {turnSeat !== null ? <Token kind={MARKS[turnSeat]} size={34} /> : null}
       <AppText style={[stageText.strong, styles.turnText]} numberOfLines={2}>
         {myTurn
-          ? t("tictactoe.plinth.mine", { mark: t(`tictactoe.marks.${MARKS[mySeat]}`) })
+          ? t("tictactoe.plinth.tap")
           : mySeat >= 0 && turnSeat === mySeat
             ? t("tictactoe.plinth.placing")
-            : t("tictactoe.plinth.theirs", { name: nameOf(turnSeat ?? 0) })}
+            : t("tictactoe.plinth.theirs", { name: short(turnSeat ?? 0) })}
       </AppText>
     </View>
   );
@@ -230,13 +289,18 @@ export function TicTacToeBoard({
       headerHeight={L.h}
       sceneKey={atEnding ? "ending" : "play"}
       centre={centre}
-      hint={hint}
+      dock={dock}
       bottom={bottom}
       onBack={stage?.onBack}
       onRules={stage?.onRules}
       away={atEnding}
       bleed={atEnding}
       look={PARLOUR}
+      overlays={
+        <Popup look={PARLOUR_POPUP} visible={record} title={t("tictactoe.record.title")} onClose={() => setRecord(false)}>
+          <Journal pages={tttPages(state, nameOf, t)} emptyText={t("tictactoe.record.empty")} order="oldest" />
+        </Popup>
+      }
     />
   );
 }
@@ -249,6 +313,4 @@ const styles = StyleSheet.create({
   main: { alignSelf: "stretch" },
   turn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, minHeight: 56 },
   turnText: { fontSize: 16, lineHeight: 21, flexShrink: 1 },
-  error: { color: "#FF8A94" },
-  verdict: { fontFamily: fontFamily.bold, fontSize: 15, letterSpacing: 1, textTransform: "uppercase" },
 });

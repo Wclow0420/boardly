@@ -1,8 +1,9 @@
 // The start of a game of Double Agent: the room goes dark and quiet (a
 // heartbeat in the hand, light pulsing at the screen's edges), then the
 // role card lies face down in the middle — the agency's back, the
-// Boardly meeple in gold. A tap turns it over; once read it flies to the
-// Role button beside the stage, where it can be looked at again. After
+// Boardly meeple in gold. A tap turns it over; once read it flies into
+// my hand on the plinth (the stage's dock), where it can be lifted and
+// looked at again. After
 // Seal the Manor's set piece (nightwatch/Immersion.tsx), in the agency's
 // words.
 
@@ -50,7 +51,7 @@ export function RoleIntro({
   visible: boolean;
   /** The colour of the player's side, shown once the card is turned. */
   tone: string;
-  /** Where the card is put away: the Role button. */
+  /** Where the card is put away: the card in my hand. */
   target: RefObject<View | null>;
   onLand: () => void;
   onDone: () => void;

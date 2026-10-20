@@ -7,7 +7,7 @@
 
 import { Canvas, Group, Image as SkImage } from "@shopify/react-native-skia";
 import { useContext, useEffect, type ReactNode } from "react";
-import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
   FadeIn,
@@ -22,7 +22,7 @@ import Animated, {
 
 import { bakedSvg } from "@/components/badges/bake";
 import { AppText } from "@/components/ui";
-import { StageInsets } from "@/features/game/stage/GameStage";
+import { StageInsets, useStageSize } from "@/features/game/stage/GameStage";
 import { Burst } from "@/features/game/stage/light";
 import { StageLineup, type Light, type Standing } from "@/features/game/stage/StageLineup";
 import { fontFamily } from "@/theme";
@@ -58,7 +58,7 @@ export function Ending({
   paused: boolean;
 }) {
   const insets = useContext(StageInsets);
-  const { width } = useWindowDimensions();
+  const { width } = useStageSize();
   const still = useReducedMotion();
   const kind: Mark | "draw" = winner === 0 ? "X" : winner === 1 ? "O" : "draw";
   const image = bakedSvg(`ttt-medal|${kind}`, MEDAL, MEDAL, () => medalArt(kind, MEDAL));

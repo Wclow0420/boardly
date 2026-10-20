@@ -1117,9 +1117,7 @@
       "keep": "Rahsiakan"
     },
     "council": {
-      "pickHint": "Pilih {{count}} untuk Misi {{n}}. Semua orang nampak pilihan anda.",
       "picking": "{{name}} sedang memilih {{count}} untuk misi",
-      "voteHint": "Undi pasukan {{name}}: {{names}}",
       "lastChance": "Satu lagi penolakan dan pengkhianat menang.",
       "tally": "{{yes}} setuju, {{no}} menolak"
     },
@@ -1130,8 +1128,6 @@
       "accomplished": "Selesai",
       "band": "Sulit",
       "pick": "Ketik setem untuk memilih",
-      "holdApprove": "Tahan untuk meluluskan fail",
-      "holdSeal": "Tahan untuk mensabotaj fail",
       "agentsOnly": "Ejen hanya boleh meluluskan fail.",
       "molesHint": "Pengkhianat boleh mensabotajnya. Tiada siapa akan tahu siapa.",
       "played": "{{done}} daripada {{total}} kad masuk",
@@ -1140,7 +1136,6 @@
     },
     "shot": {
       "pick": "Ketik orang yang anda rasa Pengendali",
-      "hold": "Tahan untuk menamakan {{name}}",
       "hint": "Namakan Pengendali dan pengkhianat merampas kemenangan."
     },
     "journal": {
@@ -1166,6 +1161,19 @@
       "twoFails": "Operasi ke-{{op}} hanya gagal dengan {{count}} kad gagal",
       "oneFail": "Satu kad gagal sudah cukup menggagalkan operasi",
       "rejections": "{{count}} pasukan ditolak berturut-turut: Pengkhianat menang"
+    },
+    "lip": {
+      "pick": "Pilih {{count}} untuk Misi {{n}}",
+      "pickSeen": "Semua orang nampak pilihan anda serta-merta.",
+      "watch": "Pilihan menyala sebaik dibuat.",
+      "vote": "Hantar pasukan ini ke misi?",
+      "team": "Pasukan: {{names}}",
+      "missionEvil": "Hanya bilangan kad gagal didedahkan.",
+      "twoFails": "Misi ini gagal hanya dengan 2 kad gagal.",
+      "shotWatch": "Jika Pengendali dijumpai, pengkhianat menang.",
+      "approveIt": "Luluskan fail",
+      "sealIt": "Sabotaj fail",
+      "nameIt": "Namakan {{name}}"
     }
   },
   "coup": {
@@ -1324,6 +1332,11 @@
         "steal": "Tahan untuk seluk saku {{name}}",
         "assassinate": "Tahan untuk belasah {{name}}",
         "coup": "Tahan untuk tutup kedai {{name}}"
+      },
+      "do": {
+        "steal": "Seluk saku {{name}}",
+        "assassinate": "Bayar $3 · Belasah {{name}}",
+        "coup": "Bayar $7 · Tutup kedai {{name}}"
       }
     },
     "claim": {
@@ -1345,7 +1358,9 @@
       "watch": "Sesiapa yang ragu boleh mencabar.",
       "watchBlock": "Yang boleh menghalang sedang berfikir.",
       "againstMe": "Menentang {{action}} anda",
-      "saysMe": "Anda berkata:"
+      "saysMe": "Anda berkata:",
+      "challengeName": "Cabar {{name}}",
+      "blockName": "Halang {{name}}"
     },
     "lose": {
       "tag": "BUKA",
@@ -1353,7 +1368,8 @@
       "hold": "Tahan untuk buka {{role}}",
       "coup": "{{actor}} menutup kedai {{name}}: satu kad hilang",
       "assassinate": "{{actor}} membelasah {{name}}: satu kad hilang",
-      "challenge": "{{name}} kalah cabaran: satu kad hilang"
+      "challenge": "{{name}} kalah cabaran: satu kad hilang",
+      "do": "Buka {{role}}"
     },
     "swap": {
       "keep": "SIMPAN",
@@ -1368,7 +1384,8 @@
     "tools": {
       "hand": "Kad anda",
       "record": "Rekod",
-      "roles": "Watak"
+      "roles": "Watak",
+      "handShort": "Kad saya"
     },
     "tags": {
       "purse": "Wang anda",
@@ -1393,6 +1410,31 @@
       "cardsShort": "{{count}} kad",
       "deck": "Dek {{size}} kad: {{copies}} bagi setiap watak, tinggal {{left}} selepas diagih",
       "forced": "Dengan ${{count}} atau lebih anda mesti Tutup Kedai"
+    },
+    "lip": {
+      "deal": "Hilang kedua-dua kad, anda terkeluar",
+      "watch": "Sesiapa yang ragu boleh mencabar",
+      "felt": "Kotak bergaris dua mengaku watak",
+      "aimMore": {
+        "steal": "Ambil $2 daripada mereka. Penyeluk Saku atau Orang Tengah boleh menghalangnya.",
+        "assassinate": "Anda bayar $3; mereka hilang kad. Makcik boleh menghalangnya.",
+        "coup": "Anda bayar $7; mereka hilang kad. Tiada apa boleh menghalangnya."
+      },
+      "challenge": "Percaya, atau bongkar tipunya?",
+      "challengeMore": "Cabaran yang salah, anda hilang kad; tipu yang tertangkap, mereka hilang kad.",
+      "blockMore": "Halangan juga mengaku watak: sesiapa boleh mencabarnya.",
+      "tapCard": "Ketik kad untuk dilepaskan",
+      "exchangeMore": "Selebihnya kembali ke dek. Tiada siapa tahu kad mana anda simpan.",
+      "titles": {
+        "deal": "Kad anda",
+        "felt": "Giliran anda",
+        "aim": "Pilih pemain",
+        "claim": "Satu pengakuan",
+        "lose": "Satu kad hilang",
+        "exchange": "Tukar kad",
+        "table": "Di meja",
+        "out": "Terkeluar"
+      }
     }
   },
   "manor": {
@@ -1694,7 +1736,7 @@
       "holdOpen": "Buka (开)",
       "holdSplit": "Belah (劈)",
       "holdCounter": "Balas ×4",
-      "holdSplitThem": "Tahan untuk belah {{name}} · 2 cawan",
+      "holdSplitThem": "Belah {{name}} · 2 cawan",
       "liar": "Tipu!",
       "continue": "Teruskan",
       "counting": "Mengira dadu…",
@@ -1730,7 +1772,8 @@
         "wait": "Berselerak — tunggu belahan selesai",
         "good": "Puas hati dengan dadu? Mulakan pusingan",
         "yourTurn": "Giliran anda — goncang dahulu"
-      }
+      },
+      "stopTool": "Henti {{votes}}/{{needed}}"
     },
     "openRule": {
       "jijiji": "1 dari {{one}} · zhai dari {{zhai}} · kaizhai dari {{fei}}",
@@ -1759,6 +1802,11 @@
       "calling": "{{name}}: {{rule}}",
       "drinks": "Panggilan kalah dibayar dengan cawan: buka {{open}}, belah {{split}}, balas {{counter}}",
       "knockout": "Kalah keluar: {{count}} cawan dan anda keluar"
+    },
+    "house": {
+      "label": "Peraturan",
+      "title": "Peraturan meja",
+      "at": "Untuk {{count}} pemain"
     }
   },
   "nightwatch": {
@@ -2707,7 +2755,8 @@
     "plinth": {
       "mine": "Giliran anda — letak {{mark}} anda",
       "placing": "Meletak tanda anda…",
-      "theirs": "{{name}} sedang berfikir…"
+      "theirs": "{{name}} sedang berfikir…",
+      "tap": "Ketik petak kosong"
     },
     "marks": {
       "X": "pangkah",
@@ -2733,6 +2782,28 @@
       "firstShort": "{{mark}} dahulu",
       "line": "{{count}} sebaris di papan {{cells}} petak menang: melintang, menegak atau pepenjuru",
       "lineShort": "{{count}} sebaris"
+    },
+    "hand": {
+      "label": "Tandamu",
+      "title": "Anda main {{mark}}",
+      "youFirst": "{{mark}} jalan dulu — itu anda",
+      "youSecond": "{{mark}} jalan dulu — anda membalas"
+    },
+    "record": {
+      "title": "Langkah",
+      "empty": "Belum ada langkah.",
+      "move": "{{n}}. {{name}} — {{mark}}, {{cell}}"
+    },
+    "cells": {
+      "0": "atas kiri",
+      "1": "atas tengah",
+      "2": "atas kanan",
+      "3": "tengah kiri",
+      "4": "tengah",
+      "5": "tengah kanan",
+      "6": "bawah kiri",
+      "7": "bawah tengah",
+      "8": "bawah kanan"
     }
   }
 }

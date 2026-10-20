@@ -9,7 +9,7 @@
 import { Canvas, Group, Image as SkImage } from "@shopify/react-native-skia";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useRef, useState } from "react";
-import { StyleSheet, View, useWindowDimensions } from "react-native";
+import { StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
   FadeIn,
@@ -24,6 +24,7 @@ import { useTranslation } from "react-i18next";
 
 import { bakedSvg } from "@/components/badges/bake";
 import { AppText, BezelOverlay } from "@/components/ui";
+import { useStageSize } from "@/features/game/stage/GameStage";
 import { fontFamily } from "@/theme";
 import { errorHaptic, heavyHaptic, successHaptic, tickHaptic } from "@/utils/haptics";
 import { cupArt } from "./art";
@@ -68,7 +69,7 @@ export function RevealScene({
 }) {
   const { t } = useTranslation();
   const still = useReducedMotion();
-  const { width } = useWindowDimensions();
+  const { width } = useStageSize();
   const { bid } = reveal;
   const rows = reveal.dice
     .map((hand, seat) => ({ seat, hand: [...hand].sort((a, b) => a - b) }))

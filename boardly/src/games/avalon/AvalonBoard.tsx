@@ -1,9 +1,12 @@
 // Double Agent on the stage (layout "stage"), after Seal the Manor: the
 // agency's case-file header across the top, every moment its own scene
-// in the middle behind the red curtain, the tools down the side, the
-// main move on the plinth.
+// filling the middle behind the red curtain, and the dock on the plinth:
+// my role card in my hand at its left (tap: it flies up and turns over),
+// the record and the agents in the satchel at its right, one hint line on
+// its crest (the rest behind ⓘ), the main move between them.
 //
-//   the deal     — the role card, face down, turned over and put away
+//   the deal     — the role card, face down, turned over and dealt into
+//                  my hand
 //   the team     — everyone on the stage (StageLineup); the leader's
 //                  picks step into the light as they're made, shown to
 //                  the table at once (a quiet "pick" move)
@@ -16,19 +19,20 @@
 //   the ending   — the verdict, every card face up, play again
 
 import { useEffect, useRef, useState } from "react";
-import { Animated, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
 
 import { AppText, Button } from "@/components/ui";
 import { Popup, type PopupLook } from "@/features/game/Popup";
+import { useStageSize, type StageDock, type StageHint, type StageTool } from "@/features/game/stage/GameStage";
+import { shortName } from "@/features/game/stage/PlayerName";
 import { StageLineup, type Light, type Plate } from "@/features/game/stage/StageLineup";
-import { ToolButton } from "@/features/game/stage/parts";
 import { asLook } from "@/features/mascot/dress";
 import { useTheme } from "@/theme";
 import { moveHaptic, tapHaptic } from "@/utils/haptics";
 import type { GameBoardProps } from "../types";
-import { Desk, RevealTitle, revealDelay, type DeskView } from "./dossier/Desk";
+import { Desk, REVEAL_FOOT, RevealTitle, revealDelay, type DeskView } from "./dossier/Desk";
 import type { StampKind } from "./dossier/art";
 import { Ending } from "./Ending";
 import { HoldButton } from "./HoldButton";
@@ -44,16 +48,16 @@ import {
 import { Agents, Record, type Names } from "./Panels";
 import { ROLE_CARD_W, RoleIntro } from "./RoleIntro";
 import { RoleCardBack, RoleCardFace } from "./RoleCard";
-import { AgencyStage, stageText } from "./stage/AgencyStage";
+import { AGENCY, AgencyStage, stageText } from "./stage/AgencyStage";
 import { useSetPieces } from "./useSetPieces";
 import { VoteButtons } from "./VoteButtons";
 
 /** The agency's popups: a sea-green sign, emerald jewels. */
-const AGENCY_POPUP: PopupLook = { enamel: ["#2E7A72", "#16403F", "#0A2224"], jewel: "emerald", glow: "#FFD58A" };
+const AGENCY_POPUP: PopupLook = AGENCY.popup!;
 
-/** The panels behind the buttons beside the stage. */
+/** The panels behind the tools in the satchel (my role card is in my
+ *  hand, at the plinth's other end). */
 const MENU = [
-  { key: "role", emoji: "🎭" },
   { key: "record", emoji: "📜" },
   { key: "agents", emoji: "👥" },
 ] as const;
@@ -65,6 +69,7 @@ type Pick = { step: string; team?: number[]; stamp?: StampKind; target?: number 
 export function AvalonBoard({ state, mySeat, players, busy, finished, sessionId, onMove, stage }: GameBoardProps<AvalonState>) {
   const { t } = useTranslation();
   const { colors, spacing } = useTheme();
+  const { width: stageWidth } = useStageSize();
 
   // Tagged with the step so picks clear themselves when the game moves
   // on (a rejected team brings a new leader, hence the proposal count)
@@ -107,8 +112,18 @@ export function AvalonBoard({ state, mySeat, players, busy, finished, sessionId,
     state.quest === 0 &&
     state.history.length === 0 &&
     state.questResults.length === 0;
+  // the card in my hand, where the dealt role card is put away; bumped
+  // when it lands there, once the deal's screen has faded (a card drawn
+  // while it fades isn't painted)
   const roleButton = useRef<View>(null);
-  const [bump] = useState(() => new Animated.Value(0));
+  const [landed, setLanded] = useState(0);
+  const landing = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (landing.current) clearTimeout(landing.current);
+    },
+    [],
+  );
 
   // ── the operation: my stamp, held, then brought down
   const hold = useSharedValue(0);
@@ -295,13 +310,20 @@ export function AvalonBoard({ state, mySeat, players, busy, finished, sessionId,
   }
 
   const showing = !pieces.ready || dealing ? null : panel;
-  const paused = showing !== null || dealing;
+  // the dock's hand lifted, satchel open or hint opened: the scene rests
+  const [docked, setDocked] = useState(false);
+  const paused = showing !== null || dealing || docked;
+  // a red dot on the satchel (and the record) for votes and operations
+  // revealed since the record was last opened
+  const recordNow = seen.history.length + seen.questResults.length;
+  const [looked, setLooked] = useState(recordNow);
   const openPanel = (key: Panel) => {
     tapHaptic();
     setPanel(key);
+    if (key === "record") setLooked(recordNow);
   };
 
-  // ── the lines over the plinth
+  // ── the plaque's second line: the phase, and the teams turned down
   const subtitle = [
     t(`avalon.phases.${shown.phase}`),
     shown.phase !== "finished" && shown.rejections > 0
@@ -311,54 +333,91 @@ export function AvalonBoard({ state, mySeat, players, busy, finished, sessionId,
     .filter(Boolean)
     .join(" · ");
   const leader = nameOf(state.leader);
-  const voteTitle = voteToShow
-    ? {
-        title: t(voteToShow.approved ? "avalon.reveal.approved" : "avalon.reveal.rejected"),
-        detail: t("avalon.council.tally", {
-          yes: voteToShow.votes.filter(Boolean).length,
-          no: voteToShow.votes.filter((v) => !v).length,
-        }),
-      }
-    : null;
-  const hint =
-    council && revealing && voteTitle && voteToShow ? (
-      <RevealTitle title={voteTitle.title} detail={voteTitle.detail} good={voteToShow.approved} />
-    ) : council && state.phase === "team" ? (
-      <AppText style={stageText.hint} numberOfLines={3}>
-        {task === "propose"
-          ? `👑  ${t("avalon.council.pickHint", { count: teamSize(state), n: state.quest + 1 })}`
-          : `👑  ${t("avalon.council.picking", { name: leader, count: teamSize(state) })}`}
-      </AppText>
-    ) : council ? (
-      <AppText style={stageText.hint} numberOfLines={3}>
-        {t("avalon.council.voteHint", { name: leader, names: names.namesOf(state.team) })}
-        {state.rejections === MAX_REJECTIONS - 1 ? `\n${t("avalon.council.lastChance")}` : ""}
-      </AppText>
-    ) : desk?.kind === "reveal" && missionToShow ? (
-      <RevealTitle
-        title={t(missionToShow.success ? "avalon.reveal.questSuccess" : "avalon.reveal.questFail")}
-        detail={
-          missionToShow.fails > 0 ? t("avalon.reveal.failCards", { count: missionToShow.fails }) : t("avalon.desk.noFails")
+  // ── the one line on the plinth's crest: the sentence that matters now;
+  // the rest of what the moment has to say behind its info stud
+  const lastChance = state.rejections === MAX_REJECTIONS - 1;
+  const twoFails = (state.failsRequired[state.quest] ?? 1) > 1;
+  const hintOf = (): StageHint | null => {
+    if (revealing) return null;
+    if (council && state.phase === "team") {
+      const warn = lastChance ? [t("avalon.council.lastChance")] : [];
+      return task === "propose"
+        ? {
+            line: `👑  ${t("avalon.lip.pick", { count: teamSize(state), n: state.quest + 1 })}`,
+            more: [t("avalon.lip.pickSeen"), ...warn],
+          }
+        : {
+            // the plinth says who is picking; the crest what to watch
+            line: t("avalon.lip.watch"),
+            more: [`👑  ${t("avalon.council.picking", { name: leader, count: teamSize(state) })}`, ...warn],
+          };
+    }
+    if (council) {
+      // who put this team forward, and who is on it
+      const proposed = `👑  ${t("avalon.vote.title", { name: leader })}`;
+      const teamLine = t("avalon.lip.team", { names: names.namesOf(state.team) });
+      if (iVoted) return { line: teamLine, more: [proposed] };
+      return lastChance
+        ? { line: t("avalon.council.lastChance"), tone: "#FF8A94", more: [t("avalon.lip.vote"), proposed, teamLine] }
+        : { line: t("avalon.lip.vote"), more: [proposed, teamLine] };
+    }
+    if (desk?.kind === "choose") {
+      const stakes = twoFails ? [t("avalon.lip.twoFails")] : [];
+      return evil
+        ? { line: t("avalon.lip.missionEvil"), more: [t("avalon.desk.molesHint"), ...stakes] }
+        : { line: t("avalon.desk.agentsOnly"), more: stakes };
+    }
+    if (desk?.kind === "gather") {
+      return {
+        line: t("avalon.desk.played", { done: state.questPlayed.length, total: state.team.length }),
+        more: twoFails ? [t("avalon.lip.twoFails")] : [],
+      };
+    }
+    if (lineup) {
+      return task === "assassinate"
+        ? { line: `🎯  ${t("avalon.assassinate.pick")}`, more: [t("avalon.shot.hint"), t("avalon.assassinate.explain")] }
+        : { line: t("avalon.lip.shotWatch"), more: [t("avalon.assassinate.explain")] };
+    }
+    return null;
+  };
+  const lipFound = hintOf();
+  const lipNow: StageHint | null = lipFound ? { title: t(`avalon.phases.${state.phase}`), ...lipFound } : null;
+  // a move that didn't go through says so first, whatever the moment
+  const lip: StageHint | null =
+    stage?.error && !revealing
+      ? {
+          line: stage.error,
+          tone: colors.danger,
+          title: t(`avalon.phases.${state.phase}`),
+          more: lipNow ? [lipNow.line, ...(lipNow.more ?? [])] : [],
         }
-        good={missionToShow.success}
-        delay={revealDelay(missionToShow.team.length)}
-      />
-    ) : desk?.kind === "choose" ? (
-      <AppText style={stageText.hint} numberOfLines={2}>
-        {t(evil ? "avalon.desk.molesHint" : "avalon.desk.agentsOnly")}
-      </AppText>
-    ) : desk?.kind === "gather" ? (
-      <AppText style={stageText.strong}>
-        {t("avalon.desk.played", { done: state.questPlayed.length, total: state.team.length })}
-      </AppText>
-    ) : lineup ? (
-      <AppText style={stageText.hint} numberOfLines={3}>
-        {task === "assassinate" ? t("avalon.shot.hint") : t("avalon.assassinate.explain")}
-      </AppText>
-    ) : stage?.error ? (
-      <AppText style={[stageText.hint, { color: colors.danger }]} numberOfLines={2}>
-        {stage.error}
-      </AppText>
+      : lipNow;
+
+  // the result of a reveal, big, in the scene: over the lamps' beams for
+  // a vote, under the file for an operation
+  const revealTitle =
+    revealing && voteToShow ? (
+      <View style={[styles.revealAt, styles.revealHigh]} pointerEvents="none">
+        <RevealTitle
+          title={t(voteToShow.approved ? "avalon.reveal.approved" : "avalon.reveal.rejected")}
+          detail={t("avalon.council.tally", {
+            yes: voteToShow.votes.filter(Boolean).length,
+            no: voteToShow.votes.filter((v) => !v).length,
+          })}
+          good={voteToShow.approved}
+        />
+      </View>
+    ) : revealing && missionToShow ? (
+      <View style={[styles.revealAt, styles.revealLow]} pointerEvents="none">
+        <RevealTitle
+          title={t(missionToShow.success ? "avalon.reveal.questSuccess" : "avalon.reveal.questFail")}
+          detail={
+            missionToShow.fails > 0 ? t("avalon.reveal.failCards", { count: missionToShow.fails }) : t("avalon.desk.noFails")
+          }
+          good={missionToShow.success}
+          delay={revealDelay(missionToShow.team.length)}
+        />
+      </View>
     ) : null;
 
   // ── the move on the plinth
@@ -408,7 +467,7 @@ export function AvalonBoard({ state, mySeat, players, busy, finished, sessionId,
       picked ? (
         <HoldButton
           key={`${step}|${picked}`}
-          label={t(picked === "approve" ? "avalon.desk.holdApprove" : "avalon.desk.holdSeal")}
+          label={t(picked === "approve" ? "avalon.lip.approveIt" : "avalon.lip.sealIt")}
           tone={picked === "approve" ? "good" : "bad"}
           progress={hold}
           disabled={busy}
@@ -423,11 +482,11 @@ export function AvalonBoard({ state, mySeat, players, busy, finished, sessionId,
       </AppText>
     ) : lineup && task === "assassinate" ? (
       struck !== null ? (
-        <AppText style={stageText.strong}>{`🎯  ${nameOf(struck)}`}</AppText>
+        <AppText style={stageText.strong} numberOfLines={1}>{`🎯  ${shortName(nameOf(struck), 18)}`}</AppText>
       ) : target !== null ? (
         <HoldButton
           key={`${step}|${target}`}
-          label={t("avalon.shot.hold", { name: nameOf(target) })}
+          label={t("avalon.lip.nameIt", { name: shortName(nameOf(target)) })}
           tone="bad"
           progress={hold}
           disabled={busy}
@@ -450,30 +509,45 @@ export function AvalonBoard({ state, mySeat, players, busy, finished, sessionId,
       </AppText>
     ) : null;
 
-  const tools = MENU.map(({ key, emoji }) => (
-    <Animated.View
-      key={key}
-      ref={key === "role" ? roleButton : undefined}
-      collapsable={false}
-      style={
-        key === "role"
-          ? { transform: [{ scale: bump.interpolate({ inputRange: [0, 1], outputRange: [1, 1.25] }) }] }
-          : undefined
-      }
-    >
-      <ToolButton emoji={emoji} label={t(`avalon.menu.${key}`)} onPress={() => openPanel(key)} />
-    </Animated.View>
-  ));
+  const tools: StageTool[] = MENU.map(({ key, emoji }) => ({
+    key,
+    emoji,
+    label: t(`avalon.menu.${key}`),
+    badge: key === "record" && recordNow > looked,
+    onPress: () => openPanel(key),
+  }));
+
+  // the dock on the plinth: my role card in my hand (its back showing
+  // until I lift it), the tools in the satchel, the hint on the crest
+  const liftedW = Math.min(300, stageWidth - 80);
+  const dock: StageDock = {
+    hand:
+      state.myRole && !over
+        ? {
+            label: t("avalon.menu.role"),
+            // while the card is being dealt the hand is empty: it lands there
+            back: (width) =>
+              dealing || landed < 0 ? <View style={{ width, height: width * 1.4 }} /> : <RoleCardBack width={width} />,
+            pulse: landed,
+            face: <RoleCardFace state={state} width={liftedW} namesOf={names.namesOf} />,
+            faceSize: { width: liftedW, height: liftedW * 1.4 },
+          }
+        : undefined,
+    satchel: { tools },
+    hint: lip,
+    onOpen: setDocked,
+  };
 
   const ending = over && !revealing && !stamping;
   const centre = ending ? (
-    <Ending state={state} mySeat={mySeat} nameOf={nameOf} afterGame={stage?.afterGame} paused={showing !== null} />
+    <Ending state={state} mySeat={mySeat} nameOf={nameOf} afterGame={stage?.afterGame} paused={showing !== null || docked} />
   ) : desk ? (
-    <View style={[StyleSheet.absoluteFill, desk.kind !== "reveal" && styles.besideTools]}>
+    <View style={StyleSheet.absoluteFill}>
       <Desk view={desk} hold={hold} paused={paused} />
+      {revealTitle}
     </View>
   ) : council ? (
-    <View style={[StyleSheet.absoluteFill, styles.besideTools]}>
+    <View style={StyleSheet.absoluteFill}>
       <StageLineup
         people={allSeats.map((seat) => ({ seat, name: nameOf(seat), look: lookOf(seat) }))}
         lights={councilLights}
@@ -483,6 +557,7 @@ export function AvalonBoard({ state, mySeat, players, busy, finished, sessionId,
         onPick={pickTeam}
         paused={paused}
       />
+      {revealTitle}
     </View>
   ) : lineup ? (
     <View style={StyleSheet.absoluteFill}>
@@ -524,11 +599,11 @@ export function AvalonBoard({ state, mySeat, players, busy, finished, sessionId,
       subtitle={subtitle}
       sceneKey={sceneKey}
       centre={centre}
-      tools={ending ? undefined : tools}
+      dock={dock}
+      handRef={roleButton}
       away={desk?.kind === "reveal" || lineup || ending}
       bleed={ending}
       stamp={stamp}
-      hint={hint}
       bottom={bottom}
       onBack={stage?.onBack}
       onRules={stage?.onRules}
@@ -540,12 +615,10 @@ export function AvalonBoard({ state, mySeat, players, busy, finished, sessionId,
               visible={dealing}
               tone={evil ? "#F0605D" : "#5EE0A8"}
               target={roleButton}
-              onLand={() =>
-                Animated.sequence([
-                  Animated.timing(bump, { toValue: 1, duration: 120, useNativeDriver: true }),
-                  Animated.spring(bump, { toValue: 0, friction: 4, useNativeDriver: true }),
-                ]).start()
-              }
+              onLand={() => {
+                setLanded(-1);
+                landing.current = setTimeout(() => setLanded(1), 450);
+              }}
               onDone={() => pieces.mark({ dealt: true })}
               back={<RoleCardBack width={ROLE_CARD_W} />}
             >
@@ -558,17 +631,7 @@ export function AvalonBoard({ state, mySeat, players, busy, finished, sessionId,
             title={showing ? t(`avalon.menu.${showing}`) : ""}
             onClose={() => setPanel(null)}
           >
-            {showing === "role" ? (
-              state.myRole ? (
-                <View style={{ alignItems: "center" }}>
-                  <RoleCardFace state={state} width={ROLE_CARD_W} namesOf={names.namesOf} />
-                </View>
-              ) : (
-                <AppText variant="body" color="textMuted">
-                  {t("common.emptyTitle")}
-                </AppText>
-              )
-            ) : showing === "record" ? (
+            {showing === "record" ? (
               <View style={{ gap: spacing.sm }}>
                 <Record state={seen} names={names} />
               </View>
@@ -584,6 +647,8 @@ export function AvalonBoard({ state, mySeat, players, busy, finished, sessionId,
 
 const styles = StyleSheet.create({
   main: { alignSelf: "stretch" },
-  besideTools: { right: 60 },
+  revealAt: { position: "absolute", left: 16, right: 16, alignItems: "center" },
+  revealHigh: { top: "26%" },
+  revealLow: { bottom: (REVEAL_FOOT - 47) / 2 },
   wait: { flex: 1, backgroundColor: "#0D181C" },
 });

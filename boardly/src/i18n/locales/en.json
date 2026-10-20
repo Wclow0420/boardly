@@ -1118,9 +1118,7 @@
       "keep": "Keep it secret"
     },
     "council": {
-      "pickHint": "Pick {{count}} for Operation {{n}}. Everyone sees your picks.",
       "picking": "{{name}} is picking {{count}} for the operation",
-      "voteHint": "Vote on {{name}}'s team: {{names}}",
       "lastChance": "One more rejection and the moles win.",
       "tally": "{{yes}} for, {{no}} against"
     },
@@ -1131,8 +1129,6 @@
       "accomplished": "Accomplished",
       "band": "Top secret",
       "pick": "Tap a stamp to choose",
-      "holdApprove": "Hold to approve the file",
-      "holdSeal": "Hold to sabotage the file",
       "agentsOnly": "Agents can only approve the file.",
       "molesHint": "A mole may sabotage it. No one will see who.",
       "played": "{{done}} of {{total}} cards in",
@@ -1141,7 +1137,6 @@
     },
     "shot": {
       "pick": "Tap the one you think is the Handler",
-      "hold": "Hold to name {{name}}",
       "hint": "Name the Handler and the moles steal the win."
     },
     "journal": {
@@ -1167,6 +1162,19 @@
       "twoFails": "Operation {{op}} only fails on {{count}} fail cards",
       "oneFail": "A single fail card sinks an operation",
       "rejections": "{{count}} teams turned down in a row: the Moles win"
+    },
+    "lip": {
+      "pick": "Pick {{count}} for Operation {{n}}",
+      "pickSeen": "Everyone sees your picks as you make them.",
+      "watch": "Picks light up as they're made.",
+      "vote": "Send this team on the operation?",
+      "team": "Team: {{names}}",
+      "missionEvil": "Only the number of fail cards is revealed.",
+      "twoFails": "This operation fails only with 2 fail cards.",
+      "shotWatch": "If the Handler is found, the moles win.",
+      "approveIt": "Approve the file",
+      "sealIt": "Sabotage the file",
+      "nameIt": "Name {{name}}"
     }
   },
   "coup": {
@@ -1326,6 +1334,11 @@
         "steal": "Hold to pickpocket {{name}}",
         "assassinate": "Hold to rough up {{name}}",
         "coup": "Hold to shut down {{name}}"
+      },
+      "do": {
+        "steal": "Pickpocket {{name}}",
+        "assassinate": "Pay $3 · Rough up {{name}}",
+        "coup": "Pay $7 · Shut down {{name}}"
       }
     },
     "claim": {
@@ -1347,7 +1360,9 @@
       "watch": "Anyone who doubts the claim can challenge it.",
       "watchBlock": "Whoever can block it is deciding.",
       "againstMe": "Against your {{action}}",
-      "saysMe": "You say:"
+      "saysMe": "You say:",
+      "challengeName": "Challenge {{name}}",
+      "blockName": "Block {{name}}"
     },
     "lose": {
       "tag": "TURN OVER",
@@ -1355,7 +1370,8 @@
       "hold": "Hold to turn over the {{role}}",
       "coup": "{{actor}} shut down {{name}}: a card goes",
       "assassinate": "{{actor}} roughed up {{name}}: a card goes",
-      "challenge": "{{name}} lost the challenge: a card goes"
+      "challenge": "{{name}} lost the challenge: a card goes",
+      "do": "Turn over the {{role}}"
     },
     "swap": {
       "keep": "KEEP",
@@ -1370,7 +1386,8 @@
     "tools": {
       "hand": "Your cards",
       "record": "Record",
-      "roles": "Roles"
+      "roles": "Roles",
+      "handShort": "My cards"
     },
     "tags": {
       "purse": "Your cash",
@@ -1395,6 +1412,31 @@
       "cardsShort": "{{count}} cards",
       "deck": "A deck of {{size}}: {{copies}} of each role, {{left}} left after the deal",
       "forced": "With ${{count}} or more you must Shut Down"
+    },
+    "lip": {
+      "deal": "Lose both cards and you're out",
+      "watch": "Anyone who doubts it may challenge",
+      "felt": "Double-ruled boxes claim a role",
+      "aimMore": {
+        "steal": "Takes $2 from them. A Pickpocket or a Fixer can block it.",
+        "assassinate": "Costs you $3; they lose a card. An Auntie can block it.",
+        "coup": "Costs you $7; they lose a card. Nothing can stop it."
+      },
+      "challenge": "Believe it, or call the bluff?",
+      "challengeMore": "A wrong challenge costs you a card; a caught bluff costs them one.",
+      "blockMore": "A block claims a role too: anyone may challenge it.",
+      "tapCard": "Tap the card to give up",
+      "exchangeMore": "The rest go back into the deck. Nobody sees which you kept.",
+      "titles": {
+        "deal": "Your cards",
+        "felt": "Your turn",
+        "aim": "Choose a player",
+        "claim": "A claim",
+        "lose": "A card goes",
+        "exchange": "Swap cards",
+        "table": "At the table",
+        "out": "Out of the game"
+      }
     }
   },
   "manor": {
@@ -1696,7 +1738,7 @@
       "holdOpen": "Open (开)",
       "holdSplit": "Split (劈)",
       "holdCounter": "Counter ×4",
-      "holdSplitThem": "Hold to split {{name}} · 2 cups",
+      "holdSplitThem": "Split {{name}} · 2 cups",
       "liar": "Liar!",
       "continue": "Continue",
       "counting": "Counting the dice…",
@@ -1732,7 +1774,8 @@
         "wait": "Scattered — wait for the split to be settled",
         "good": "Happy with your dice? Start the round",
         "yourTurn": "It's your call — shake first"
-      }
+      },
+      "stopTool": "Stop {{votes}}/{{needed}}"
     },
     "openRule": {
       "jijiji": "1s from {{one}} · zhai from {{zhai}} · kaizhai from {{fei}}",
@@ -1761,6 +1804,11 @@
       "calling": "{{name}}: {{rule}}",
       "drinks": "A lost call costs cups: open {{open}}, split {{split}}, counter-split {{counter}}",
       "knockout": "Knockout: {{count}} cups and you're out"
+    },
+    "house": {
+      "label": "Rules",
+      "title": "House rules",
+      "at": "For {{count}} at the table"
     }
   },
   "nightwatch": {
@@ -2709,7 +2757,8 @@
     "plinth": {
       "mine": "Your turn — place your {{mark}}",
       "placing": "Placing your mark…",
-      "theirs": "{{name}} is thinking…"
+      "theirs": "{{name}} is thinking…",
+      "tap": "Tap a free square"
     },
     "marks": {
       "X": "cross",
@@ -2735,6 +2784,28 @@
       "firstShort": "{{mark}} moves first",
       "line": "{{count}} in a row on a board of {{cells}} wins: across, down or corner to corner",
       "lineShort": "{{count}} in a row"
+    },
+    "hand": {
+      "label": "Your mark",
+      "title": "You play the {{mark}}",
+      "youFirst": "The {{mark}} moves first — that's you",
+      "youSecond": "The {{mark}} moves first — you answer it"
+    },
+    "record": {
+      "title": "Moves",
+      "empty": "No moves yet.",
+      "move": "{{n}}. {{name}} — {{mark}}, {{cell}}"
+    },
+    "cells": {
+      "0": "top left",
+      "1": "top middle",
+      "2": "top right",
+      "3": "middle left",
+      "4": "centre",
+      "5": "middle right",
+      "6": "bottom left",
+      "7": "bottom middle",
+      "8": "bottom right"
     }
   }
 }

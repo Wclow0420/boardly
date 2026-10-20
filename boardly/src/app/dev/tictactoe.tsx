@@ -1,8 +1,10 @@
 // Development only: Tic-Tac-Toe's stage in every moment, with sample
 // states, to look at on a device without a second player. Open with
 // boardly-dev://dev/tictactoe?sample=<name> (the `dev` tab on the left
-// lists them; add &perf=1 for the frame rate). The board is playable: a
-// stand-in opponent answers each move.
+// lists them; add &perf=1 for the frame rate, &lang=zh for Chinese,
+// &narrow=375 to lay the stage out as on a phone that wide, &error=1 for a
+// move that didn't go through). The board is playable: a stand-in
+// opponent answers each move.
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
@@ -13,8 +15,10 @@ import { scheduleOnRN } from "react-native-worklets";
 
 import { AppText, Button } from "@/components/ui";
 import { RulesSheet } from "@/features/game/RulesSheet";
+import { StageWidth } from "@/features/game/stage/GameStage";
 import { TicTacToeBoard } from "@/games/tictactoe/TicTacToeBoard";
 import { winningLine, type Cell, type TicTacToeState } from "@/games/tictactoe/logic";
+import { useLocale } from "@/i18n/LocaleContext";
 import { useTheme } from "@/theme";
 
 /** A state from the cells played, in order (seat 0 first). */
@@ -84,7 +88,18 @@ const place = (state: TicTacToeState, seat: number, cell: number): TicTacToeStat
 
 export default function TicTacToePreview() {
   const { colors, spacing } = useTheme();
-  const { sample: asked, perf } = useLocalSearchParams<{ sample?: string; perf?: string }>();
+  const { sample: asked, perf, lang, narrow, error } = useLocalSearchParams<{
+    sample?: string;
+    perf?: string;
+    lang?: string;
+    narrow?: string;
+    error?: string;
+  }>();
+  // &lang=zh (en, ms): look at a sample in another language
+  const { language, setLanguage } = useLocale();
+  useEffect(() => {
+    if ((lang === "en" || lang === "zh" || lang === "ms") && lang !== language) setLanguage(lang);
+  }, [lang, language, setLanguage]);
   const [sample, setSample] = useState(asked && SAMPLES[asked] ? asked : "start");
   // a new link picks its sample; a new sample starts from its state
   const [linked, setLinked] = useState(asked);
@@ -122,6 +137,8 @@ export default function TicTacToePreview() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {seeded === sample ? (
+        <StageWidth.Provider value={narrow ? Number(narrow) : null}>
+        <View style={narrow ? { width: Number(narrow), flex: 1, alignSelf: "center", overflow: "hidden" } : { flex: 1 }}>
         <TicTacToeBoard
           key={sample}
           sessionId={session}
@@ -146,6 +163,7 @@ export default function TicTacToePreview() {
             }, 250);
           }}
           stage={{
+            error: error === "1" ? "That square is already taken." : null,
             onBack: () => router.back(),
             onRules: () => setRules(true),
             // stand-ins for the game screen's own
@@ -157,6 +175,8 @@ export default function TicTacToePreview() {
             ),
           }}
         />
+        </View>
+        </StageWidth.Provider>
       ) : null}
       <Pressable onPress={() => setPicking(true)} style={[styles.devTab, { borderColor: colors.primary }]}>
         <AppText variant="tiny">{perf === "1" ? `dev\n${fps}` : "dev"}</AppText>

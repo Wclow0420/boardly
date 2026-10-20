@@ -124,6 +124,10 @@ export function Desk({ view, hold, paused }: { view: DeskView; hold: SV; paused:
   );
 }
 
+/** How much room the reveal leaves under the file: the verdict's words
+ *  (RevealTitle) are written there, in the scene. */
+export const REVEAL_FOOT = 56;
+
 /** The verdict's delay into the reveal, for the words under it. */
 export const revealDelay = (cards: number) => 600 + cards * 420 + 350;
 
@@ -629,7 +633,7 @@ function Reveal({
 }) {
   const { success, fails, total } = view;
   const kind: StampKind = success ? "approve" : "seal";
-  const P = pageAt(w, h, 0.42, 30);
+  const P = pageAt(w, h, 0.42, REVEAL_FOOT);
   const cards = useMemo(() => shuffled(total, fails, view.key), [total, fails, view.key]);
   const n = cards.length;
   const sc = Math.min(1.35, (w * 0.86) / (n * SLIP_W + (n - 1) * 10), (P.y - 24) / SLIP_H);
