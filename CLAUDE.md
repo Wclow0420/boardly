@@ -297,10 +297,25 @@ pieces it uses before building another. The owner loves its flow.
   the game's own **header** across the top (Seal the Manor: the
   stained-glass arch showing the rounds; design one per game, in the
   game's mood, drawn like a border and baked), **under** it a line of
-  tags (what's at stake now), the **middle**, **tools** down the right
-  (`ToolButton`: emblem + name, no boxes; panels open in the shared
-  `Popup`), **hint** lines over the plinth, and the main move **on the
-  plinth**. Back and rules are the corner studs.
+  tags (what's at stake now), the **middle** (the scene, full width),
+  and the main move **on the plinth**. Back and rules are the corner
+  studs.
+- **The dock** (`GameStage dock=`, `stage/Dock.tsx`; Seal the Manor is
+  the model, the other games still use the old tools column + hint
+  lines until switched): nothing sits over the scene. My **hand** at the
+  plinth's left (my role card's back; tap → it flies to the middle
+  turning over, tap → flies back into its slot), a **satchel** at its
+  right (the lookup tools fan out in ~0.2 s and take taps at once; a red
+  dot when something's unseen), and **one hint line** on the plinth's
+  crest with an ⓘ for the rest. Put instructions into the button labels
+  where you can ("Go to the Kitchen").
+- **No spoilers in the header**: the header, tags and record show only
+  what this device has watched (`useSetPieces` counters); a result fills
+  in with a small moment after its reveal (`nightwatch/shownNight.ts`).
+- Seal the Manor's rooms are flat-on stage sets filling the middle
+  (`nightwatch/flat/`, one `FlatRoomDef` per room); iso only for the
+  map. Tonight's event hangs from the arch as a medallion that rides
+  like the lift's floors.
 - Every moment is its own scene in the middle, never a popup: choosing,
   voting, playing a card, the reveal, the ending. Give each a `sceneKey`;
   the red curtain closes and opens between them and the plinth's move
