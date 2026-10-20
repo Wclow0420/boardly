@@ -300,9 +300,8 @@ pieces it uses before building another. The owner loves its flow.
   tags (what's at stake now), the **middle** (the scene, full width),
   and the main move **on the plinth**. Back and rules are the corner
   studs.
-- **The dock** (`GameStage dock=`, `stage/Dock.tsx`; Seal the Manor is
-  the model, the other games still use the old tools column + hint
-  lines until switched): nothing sits over the scene. My **hand** at the
+- **The dock** (`GameStage dock=`, `stage/Dock.tsx`; every game on the stage uses it; Seal the Manor is
+  the model): nothing sits over the scene. My **hand** at the
   plinth's left (my role card's back; tap → it flies to the middle
   turning over, tap → flies back into its slot), a **satchel** at its
   right (the lookup tools fan out in ~0.2 s and take taps at once; a red
