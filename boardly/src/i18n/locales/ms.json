@@ -1320,7 +1320,8 @@
       "proved": "{{claimant}} memang ada {{role}}! Kad itu masuk semula ke dek untuk kad baru, dan {{loser}} membuka satu kad.",
       "titleMe": "Anda mencabar {{claimant}}: betul {{role}}?",
       "caughtMe": "Tiada {{role}}! Tipu anda tertangkap — anda membuka satu kad.",
-      "provedMe": "{{claimant}} memang ada {{role}}! Kad itu masuk semula ke dek untuk kad baru, dan anda membuka satu kad."
+      "provedMe": "{{claimant}} memang ada {{role}}! Kad itu masuk semula ke dek untuk kad baru, dan anda membuka satu kad.",
+      "titleAtMe": "{{challenger}} mencabar anda: betul {{role}}?"
     },
     "aim": {
       "steal": "Ketik siapa untuk diseluk saku.",
@@ -1369,7 +1370,10 @@
       "coup": "{{actor}} menutup kedai {{name}}: satu kad hilang",
       "assassinate": "{{actor}} membelasah {{name}}: satu kad hilang",
       "challenge": "{{name}} kalah cabaran: satu kad hilang",
-      "do": "Buka {{role}}"
+      "do": "Buka {{role}}",
+      "challengeMe": "Anda kalah cabaran: satu kad hilang",
+      "coupMe": "{{actor}} menutup kedai anda: satu kad hilang",
+      "assassinateMe": "{{actor}} membelasah anda: satu kad hilang"
     },
     "swap": {
       "keep": "SIMPAN",
@@ -1916,8 +1920,8 @@
       "finished": "Permainan tamat"
     },
     "bar": {
-      "night": "Malam {{n}} daripada {{total}}",
-      "rejections": "pasukan ditolak: {{count}}/5",
+      "night": "Malam {{n}} / {{total}}",
+      "rejections": "{{count}}/5 ditolak",
       "trackHint": "Saiz pasukan setiap malam · ★ perlu dua kad gagal",
       "mission": "MISI MALAM INI",
       "next": "MISI SETERUSNYA",
@@ -2112,6 +2116,10 @@
       "record": "Rekod",
       "role": "Peranan",
       "watchers": "Pengawal"
+    },
+    "inRoom": {
+      "map": "Lihat peta",
+      "notebook": "Buka nota"
     },
     "scene": {
       "touch": "Sentuh tempat yang bercahaya untuk menggunakan bilik ini.",

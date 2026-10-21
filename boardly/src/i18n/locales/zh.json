@@ -1319,7 +1319,8 @@
       "proved": "{{claimant}} 真有{{role}}！这张牌洗回牌堆换一张新的，{{loser}} 翻开一张牌。",
       "titleMe": "你质疑 {{claimant}}：真是{{role}}？",
       "caughtMe": "没有{{role}}！你的诈唬被识破——你翻开一张牌。",
-      "provedMe": "{{claimant}} 真有{{role}}！这张牌洗回牌堆换一张新的，你翻开一张牌。"
+      "provedMe": "{{claimant}} 真有{{role}}！这张牌洗回牌堆换一张新的，你翻开一张牌。",
+      "titleAtMe": "{{challenger}} 质疑你：真是{{role}}？"
     },
     "aim": {
       "steal": "点选要扒窃的玩家。",
@@ -1368,7 +1369,10 @@
       "coup": "{{actor}} 砸了 {{name}} 的场：要失去一张牌",
       "assassinate": "{{actor}} 教训了 {{name}}：要失去一张牌",
       "challenge": "{{name}} 输了质疑：要失去一张牌",
-      "do": "翻开{{role}}"
+      "do": "翻开{{role}}",
+      "challengeMe": "你输了质疑：要失去一张牌",
+      "coupMe": "{{actor}} 砸了你的场：要失去一张牌",
+      "assassinateMe": "{{actor}} 教训了你：要失去一张牌"
     },
     "swap": {
       "keep": "保留",
@@ -1912,7 +1916,7 @@
     },
     "bar": {
       "night": "第{{n}}夜（共{{total}}夜）",
-      "rejections": "已否决 {{count}}/5 次",
+      "rejections": "否决 {{count}}/5",
       "trackHint": "每一夜的任务人数 · ★ 需要2张失败牌才算失败",
       "mission": "今晚任务",
       "next": "下一夜任务",
@@ -2107,6 +2111,10 @@
       "record": "记录",
       "role": "身份",
       "watchers": "守夜人"
+    },
+    "inRoom": {
+      "map": "查看地图",
+      "notebook": "打开笔记"
     },
     "scene": {
       "touch": "点一下发光的地方，使用这个房间。",

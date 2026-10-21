@@ -29,6 +29,7 @@ import {
   stoneSideWall,
   vaultArt,
 } from "../fittings";
+import { boxAround, inBox, manorMapArt, notebookArt, notebookOn, type Quad } from "../keepsakes";
 import { exitFoot, exitPlate, type FlatLayout } from "../layout";
 import {
   INK,
@@ -44,6 +45,7 @@ import {
   spillArt,
   svg,
 } from "../parts";
+import { box, stroke } from "./partsB";
 import { flatRoom, type FlatExit, type FlatFrame } from "./types";
 
 const LIGHT = "#FFD07A";
@@ -84,7 +86,34 @@ export function chapelPlan(L: FlatLayout, exits: FlatExit[]) {
     has("left") ? null : { x: bx0 + 26 * u, y: ceil + 46, w: 24 * u, h: 110 * u },
     has("right") ? null : { x: bx1 - 46 * u, y: ceil + 46, w: 24 * u, h: Math.min(110 * u, (lec ? lec.foot - lec.h - 30 : floorY - 60) - (ceil + 46)) },
   ];
+  // the manor's map in an oak frame on the right wall (no way out there),
+  // the notebook on a stone ledge under it
+  let wallMap: { box: { x: number; y: number; w: number; h: number }; quad: Quad } | undefined;
+  let ledge: { za: number; zb: number; y: number; d: number } | undefined;
+  let notebook: { x: number; y: number; w: number; h: number } | undefined;
+  let noteTilt = 0;
+  if (!has("frontRight")) {
+    const za = L.zEdge * 0.22;
+    const zb = L.zEdge * 0.66;
+    const y0 = floorY - L.wallH * 0.66;
+    const y1 = y0 + 40 * u;
+    const q: Quad = [at(bx1, y0, za), at(bx1, y0, zb), at(bx1, y1, zb), at(bx1, y1, za)];
+    const box = boxAround(q, 3);
+    wallMap = { box, quad: inBox(q, box) };
+    ledge = { za: za + 2, zb: zb - 2, y: floorY - L.wallH * 0.27, d: 8 };
+    const lz = (ledge.za + ledge.zb) / 2;
+    const [nx, ny] = at(bx1 - ledge.d / 2, ledge.y, lz);
+    const a = at(bx1 - ledge.d / 2, ledge.y, ledge.za);
+    const b = at(bx1 - ledge.d / 2, ledge.y, ledge.zb);
+    noteTilt = (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI;
+    notebook = notebookOn(nx, ny + 1, 24 * u);
+  }
   return {
+    map: wallMap?.box,
+    wallMap,
+    ledge,
+    notebook,
+    noteTilt,
     has,
     u,
     cx,
@@ -313,6 +342,20 @@ ${[0.35, 0.7].map((k) => `<path d="M${f(x - 4.2 * u)} ${f(foot - h * k)}Q${f(x)}
 <path d="M${f(x + 0.5)} ${f(deskY + bh)}l-1.2 6l1.2 -1.4l1.2 1.4Z" fill="#C2203A" stroke="#3A0408" stroke-width="0.4"/>`;
 }
 
+/** A stone ledge on the right wall on a carved corbel, the notebook's. */
+function ledgeArt(L: FlatLayout, P: ChapelPlan) {
+  const G = P.ledge;
+  if (!G) return "";
+  const x1 = L.bx1;
+  const x0 = x1 - G.d;
+  const mid = (G.za + G.zb) / 2;
+  const paint = { front: "url(#fslh)", top: "url(#fsl)", side: "url(#fslh)", ink: STONE_INK, width: 0.7 };
+  return `${box(L, x1 - G.d * 0.55, x1, G.y + 4, G.y + 12, mid - 6, mid + 6, paint)}
+${box(L, x1 - G.d * 0.3, x1, G.y + 12, G.y + 16, mid - 4, mid + 4, paint)}
+${box(L, x0, x1, G.y, G.y + 4, G.za, G.zb, paint)}
+<path d="${stroke(L, [[x0, G.y + 0.6, G.za + 1], [x0, G.y + 0.6, G.zb - 1]])}" stroke="#fff" stroke-opacity="0.4" stroke-width="0.6"/>`;
+}
+
 /** The whole chapel, still: everything but what lives. */
 export function chapelArt(L: FlatLayout, P: ChapelPlan, exits: FlatExit[]) {
   const { w, h, ceil, floorY, bx0, bx1 } = L;
@@ -350,6 +393,7 @@ export function chapelArt(L: FlatLayout, P: ChapelPlan, exits: FlatExit[]) {
   out.push(greatWindowArt(P.win));
   out.push(altarArt(L, P));
   out.push(lecternArt(P));
+  out.push(ledgeArt(L, P));
   for (const e of exits) {
     const p = exitPlate(L, e.side);
     if ("wall" in p && p.wall !== undefined) out.push(bracketArt(p.wall, p.x, p.y, p.w, p.h));
@@ -392,6 +436,8 @@ export const chapel = flatRoom({
   plan: chapelPlan,
   art: chapelArt,
   propArt: crossArt,
+  mapArt: (P) => (P.wallMap ? manorMapArt(P.wallMap.box.w, P.wallMap.box.h, "oak", P.wallMap.quad) : ""),
+  notebookArt: (P) => (P.notebook ? notebookArt(P.notebook.w, P.notebook.h, P.noteTilt) : ""),
   motion: () => ({ kind: "pop", lift: 6, scale: 0.12 }),
   payoff: { burst: { kind: "beam", size: 70, color: "#FFD98A", duration: 1800 }, haptic: "bless" },
   images: (L, P) => ({

@@ -111,6 +111,11 @@ export interface RoomSceneProps {
   onExit: (room: number) => void;
   /** The room's book can be opened; it glows until it has been. */
   book?: { label: string; unread: boolean; onOpen: () => void };
+  /** The manor's map and my notebook as things in the room (a room drawn
+   *  flat on): tapped, they open the satchel's Map and Notebook; the
+   *  notebook wears the satchel's red dot while something in it is new. */
+  map?: { label: string; onOpen: () => void };
+  notebook?: { label: string; unseen: boolean; onOpen: () => void };
   /** Tonight's event, shown in the room: blackout, fog, storm... */
   event?: NightEvent | null;
   /** Something covers the room (a popup): it stops moving. */

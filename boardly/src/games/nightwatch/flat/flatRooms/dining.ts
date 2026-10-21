@@ -18,6 +18,7 @@ import { MATERIALS } from "@/components/engraved/shapes";
 import { rrect } from "@/components/engraved/trim";
 import { BODY, LIFT } from "@/features/mascot/rig";
 import type { Side } from "../../roomScenes";
+import { manorMapArt, notebookArt, notebookOn } from "../keepsakes";
 import { exitFoot, exitPlate, type FlatLayout } from "../layout";
 import {
   INK,
@@ -57,7 +58,7 @@ const VELVET = ["#C2203A", "#8A1424", "#4A0610"];
 const LIGHT = "#FFB45E";
 
 /** Where the dining room's pieces stand, for a layout. */
-export function diningPlan(L: FlatLayout, _exits: FlatExit[]) {
+export function diningPlan(L: FlatLayout, exits: FlatExit[]) {
   const { bx0, bx1, ceil, floorY, wallH, vx, at, k } = L;
   const W = bx1 - bx0;
   const rail = Math.round(floorY - wallH * 0.27);
@@ -120,7 +121,27 @@ export function diningPlan(L: FlatLayout, _exits: FlatExit[]) {
   const [gx, gy] = at(vx, table.top, gz);
   const gh = Math.round(28 * gs);
   const prop = { x: gx - gh * 1.15, y: gy - gh - 4, w: gh * 2.3, h: gh + 7 };
+  // the manor's map in gilt over the right door (no way out's plate over
+  // it), the notebook on the sideboard between the tureen and a candlestick
+  const D = L.doors.right;
+  const u = Math.min(1.25, Math.max(0.85, W / 290));
+  const mapTop = ceil + 8;
+  const mapRoom = D.y - 11 - 9 - 6 - mapTop;
+  const mw = Math.round(Math.min(40 * u, D.w * 0.8, mapRoom * 1.25));
+  const mh = Math.round(mw * 0.8);
+  const map = exits.some((e) => e.side === "frontRight")
+    ? undefined
+    : { x: Math.round(D.x + D.w / 2 - mw / 2), y: Math.round(mapTop + (mapRoom - mh) / 2), w: mw, h: mh };
+  const nz = ((side.z0 + side.z1) / 2 + side.z1 - 8) / 2;
+  const [nx, ny] = at(side.x0 + 10, side.top, nz);
+  const na = at(side.x0 + 10, side.top, nz - 10);
+  const nb = at(side.x0 + 10, side.top, nz + 10);
+  const noteTilt = (Math.atan2(nb[1] - na[1], nb[0] - na[0]) * 180) / Math.PI;
+  const notebook = notebookOn(nx, ny + 1, 24 * k(nz));
   return {
+    map,
+    notebook,
+    noteTilt,
     rail,
     table,
     tw,
@@ -693,6 +714,8 @@ export const dining = flatRoom({
   art: diningArt,
   // the prop itself is the space the goblets rise in; they are drawn by `onProp`
   propArt: (P) => svg(P.prop.w, P.prop.h, ""),
+  mapArt: (P) => (P.map ? manorMapArt(P.map.w, P.map.h, "gilt") : ""),
+  notebookArt: (P) => notebookArt(P.notebook.w, P.notebook.h, P.noteTilt),
   motion: () => ({ kind: "pop", lift: 7, scale: 0.18 }),
   payoff: {
     burst: { kind: "sparks", size: 30, color: "#F0C87A", duration: 800 },

@@ -17,6 +17,7 @@ import { linear, radial } from "@/components/engraved/panel";
 import { MATERIALS } from "@/components/engraved/shapes";
 import { rrect } from "@/components/engraved/trim";
 import type { Side } from "../../roomScenes";
+import { manorMapArt, notebookArt, notebookOn } from "../keepsakes";
 import { exitFoot, exitPlate, type FlatLayout } from "../layout";
 import {
   INK,
@@ -105,7 +106,24 @@ export function cellarPlan(L: FlatLayout, _exits: FlatExit[]) {
     const [, y0] = at(d.x, spring - Math.sqrt(Math.max(0, 1 - u * u)) * r * 0.62, d.z);
     return { x, y0, y1, s: k(d.z) };
   });
+  // the manor's map chalked on a slate hung from a nail high on the back
+  // wall, left of the lantern under the vault; the notebook left on the
+  // top crate by the left wall
+  const u = Math.min(1.25, Math.max(0.85, W / 290));
+  const r = W / 2;
+  const vault = (x: number) => spring - Math.sqrt(Math.max(0, 1 - ((x - vx) / r) ** 2)) * r * 0.62;
+  const sx0 = bx0 + 5;
+  const sx1 = lx - 8 * ls;
+  const mw = Math.round(Math.min(36 * u, sx1 - sx0));
+  const mh = Math.round(mw * 0.98);
+  const mx = Math.round(sx0 + (sx1 - sx0 - mw) / 2);
+  const my = Math.round(Math.min(Math.max(vault(mx + 2) - mh * 0.2 + 4, vault(mx + mw / 2) + 2), rack.y0 - 6 - mh));
+  const map = { x: mx, y: my, w: mw, h: mh };
+  const [nx, ny] = at(bx0 + 12, floorY - 54, 38);
+  const notebook = notebookOn(nx + 1, ny + 1, 21 * k(38));
   return {
+    map,
+    notebook,
     spring,
     niche,
     casks,
@@ -642,6 +660,8 @@ export const cellar = flatRoom({
   plan: cellarPlan,
   art: cellarArt,
   propArt: shaftArt,
+  mapArt: (P) => manorMapArt(P.map.w, P.map.h, "slate"),
+  notebookArt: (P) => notebookArt(P.notebook.w, P.notebook.h, -4),
   // the lid slides (onProp); the shaft under it stays put
   motion: () => ({ kind: "pop", lift: 0, scale: 0 }),
   payoff: { burst: { kind: "puff", size: 44, color: "#05060B", duration: 1400, dark: true }, haptic: "thud" },
