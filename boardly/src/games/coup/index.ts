@@ -2,6 +2,7 @@ import { BADGE_GLYPHS as G } from "@/components/badges/glyphs";
 import type { GameDefinition } from "../types";
 import { BACKDROP, LOGO, SKIN_COLORS } from "./art";
 import { BADGE_FRAMES } from "./badgeFrames";
+import { DenBoxArt } from "./BoxArt";
 import { CoupBoard } from "./CoupBoard";
 import {
   CARDS_EACH,
@@ -33,6 +34,7 @@ export const coup: GameDefinition<CoupState> = {
     logo: LOGO,
     taglineKey: "coup.tagline",
   },
+  boxArt: DenBoxArt,
   needsMe: (state, mySeat) =>
     state.phase !== "finished" && taskFor(state, mySeat) !== null,
   badges: {
