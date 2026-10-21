@@ -24,7 +24,7 @@ import { useTranslation } from "react-i18next";
 
 import type { Jewel } from "@/components/engraved/shapes";
 import { BackIcon, Emblem } from "@/components/icons";
-import { AppText, BezelOverlay, IconButton } from "@/components/ui";
+import { AppText, BezelOverlay, IconButton, TallGradient } from "@/components/ui";
 import { fontFamily } from "@/theme";
 import { Popup, type PopupLook } from "../Popup";
 import {
@@ -231,7 +231,7 @@ export function GameStage({
 
   return (
     <View style={styles.screen}>
-      <LinearGradient colors={look.sky} style={StyleSheet.absoluteFill} />
+      <TallGradient colors={look.sky} />
       <Glow size={520} color={look.glow} style={{ top: height * 0.24, left: width * 0.5 - 260 }} />
 
       {/* everything between the header and the plinth is behind the

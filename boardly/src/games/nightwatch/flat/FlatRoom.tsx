@@ -121,6 +121,11 @@ function exitsOf(room: number, collapsed: number[], lockedDoor: number[] | null)
 
 export function FlatRoom(props: RoomSceneProps) {
   const [box, setBox] = useState<{ w: number; h: number } | null>(null);
+  // the scene mounts once the box is known, a render later: it's back
+  // from under a moment if the room was when it mounted (and until the
+  // player goes to another room)
+  const [back, setBack] = useState(props.entered ? props.room : null);
+  if (back !== null && back !== props.room) setBack(null);
   const def = FLAT_ROOMS[ROOMS[props.room]];
   if (!def) return <RoomScene {...props} />;
   return (
@@ -132,7 +137,7 @@ export function FlatRoom(props: RoomSceneProps) {
         setBox((b) => (b && b.w === w && b.h === h ? b : { w, h }));
       }}
     >
-      {box && box.w > 100 && box.h > 260 ? <FlatScene key={def.id} {...props} def={def} w={box.w} h={box.h} /> : null}
+      {box && box.w > 100 && box.h > 260 ? <FlatScene key={def.id} {...props} entered={back === props.room} def={def} w={box.w} h={box.h} /> : null}
     </View>
   );
 }
@@ -155,6 +160,7 @@ function FlatScene({
   onExit,
   event = null,
   paused = false,
+  entered = false,
   secretDoors = NO_DOORS,
   arrival,
   onArrived,
@@ -224,9 +230,13 @@ function FlatScene({
     };
   }, []);
 
-  // walking into the room: it comes up out of the dark
+  // walking into the room: it comes up out of the dark (not when it's
+  // back from under a moment: it had come up long before)
+  const back = useRef(entered);
   useEffect(() => {
-    if (still) return;
+    const returning = back.current;
+    back.current = false;
+    if (still || returning) return;
     enter.set(0);
     enter.set(withTiming(1, { duration: 420, easing: Easing.out(Easing.cubic) }));
   }, [room, still, enter]);

@@ -39,3 +39,5 @@ export { TableBackdrop } from "./TableBackdrop";
 export { Texture, type TextureKind, type TextureProps } from "./Texture";
 export { Medallion } from "./Medallion";
 export { AvatarStage, StageContext, type Stage } from "./AvatarStage";
+export { TallGradient } from "./TallGradient";
+export { StillPicture, record } from "./StillPicture";

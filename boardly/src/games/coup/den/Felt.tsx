@@ -3,15 +3,14 @@
 // and I lay my chip on one. What I can't afford, or can't choose with
 // ten dollars in hand, lies under a shadow.
 
-import { Canvas, Image as SkImage } from "@shopify/react-native-skia";
 import { memo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, ZoomIn } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
 
-import { bakedSvg } from "@/components/badges/bake";
+import { stillSvg } from "@/components/badges/bake";
 import { Emblem } from "@/components/icons";
-import { AppText, useBox } from "@/components/ui";
+import { AppText, StillPicture, useBox } from "@/components/ui";
 import { fontFamily } from "@/theme";
 import { tapHaptic } from "@/utils/haptics";
 import { ACTION_EMOJI, ROLE_EMOJI } from "../art";
@@ -34,15 +33,14 @@ export const Felt = memo(function Felt({
   const { t } = useTranslation();
   const [{ w, h }, onLayout] = useBox();
   const boxes = w > 0 ? feltLayout(w, h, ROWS) : [];
-  const image = w > 0 ? bakedSvg(`hustle-felt|${Math.round(w)}x${Math.round(h)}`, w, h, () => feltArt(w, h, boxes, CLAIMS)) : null;
+  // a still view: a picture of the felt, not a baked copy of its pixels
+  const picture = w > 0 ? stillSvg(`hustle-felt|${Math.round(w)}x${Math.round(h)}`, w, h, () => feltArt(w, h, boxes, CLAIMS)) : null;
   const icon = boxes.length ? Math.min(38, boxes[0].h * 0.42) : 0;
   return (
     <View style={styles.wrap} onLayout={onLayout}>
-      {image ? (
+      {picture ? (
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <Canvas style={StyleSheet.absoluteFill}>
-            <SkImage image={image} x={0} y={0} width={w} height={h} />
-          </Canvas>
+          <StillPicture picture={picture} />
         </View>
       ) : null}
       {boxes.map((b, i) => {

@@ -565,10 +565,17 @@ export function NightwatchBoard({
   const flat = useContext(FlatPreview);
   const Room = flat ? FlatRoom : RoomScene;
   const flatHere = flat && room !== null && FLAT_ROOMS[ROOMS[room]] !== undefined;
+  // a moment covering the room: the room is let go meanwhile (it is
+  // hidden and still under it, and a room with everyone in it costs
+  // ~50 MB to keep), and comes back as it was, not walked into again
+  const covered = !!(rite || lineup || council || atLetter || atPatrol);
+  const [cover, setCover] = useState<{ on: boolean; back: number | null }>({ on: covered, back: null });
+  if (cover.on !== covered) setCover({ on: covered, back: covered ? null : room });
   const scene =
     room !== null ? (
       <Room
         room={room}
+        entered={cover.back !== null && cover.back === room}
         active={task === "room"}
         onTouch={() => {
           tapHaptic();
@@ -868,14 +875,15 @@ export function NightwatchBoard({
       />
     ) : (
       <>
-        {/* the room stays put under a moment, hidden and still */}
+        {/* the map stays put under a moment, hidden and still; a room is
+            let go (see `covered`) */}
         <View
           style={[
             flatHere ? styles.sceneFull : styles.grow,
-            rite || lineup || council || atLetter || atPatrol ? styles.hidden : null,
+            covered ? styles.hidden : null,
           ]}
         >
-          {scene}
+          {covered && room !== null ? null : scene}
         </View>
         {rite ? (
           <View style={[StyleSheet.absoluteFill, rite.kind === "reveal" && styles.riteAbove]}>

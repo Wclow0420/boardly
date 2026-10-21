@@ -120,6 +120,9 @@ export interface RoomSceneProps {
   event?: NightEvent | null;
   /** Something covers the room (a popup): it stops moving. */
   paused?: boolean;
+  /** The room is back from under a moment that covered it (it was let
+   *  go meanwhile): it's shown as it was, not walked into. */
+  entered?: boolean;
   /** Secret doors joining two diagonal rooms, for good. */
   secretDoors?: number[][];
   /** The player has just come in this way: they are shown walking in. */
@@ -265,6 +268,7 @@ export function RoomScene({
   book,
   event = null,
   paused = false,
+  entered = false,
   secretDoors = NO_DOORS,
   arrival,
   onArrived,
@@ -418,10 +422,14 @@ export function RoomScene({
   }, [active, still, resting, motion.kind, pulse, beckon]);
 
   // walking into a room: it comes up out of the dark
+  const fromUnder = useRef(entered);
   useEffect(() => {
     cancelAnimation(act);
     act.value = 0;
-    if (still) return;
+    // back from under a moment: it had come up long before
+    const returning = fromUnder.current;
+    fromUnder.current = false;
+    if (still || returning) return;
     enter.setValue(0);
     const walk = Animated.timing(enter, {
       toValue: 1,

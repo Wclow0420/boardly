@@ -370,6 +370,14 @@ pieces it uses before building another. The owner loves its flow.
   children, `useDerivedValue` with deps, shaders through `shader()` (one
   compile each), still art through `bakedSvg`/`bakedDrawing` (one image,
   in the budgeted cache), a mascot through `MascotFigure` (baked per look).
+- Still art on a canvas that never redraws: record it once as a picture
+  (`stillSvg` in `bake.ts`) and show it with `StillPicture`
+  (`components/ui`) — a picture costs KB, a baked image MB, and the
+  canvas would keep a second copy. `bakedSvg` is for canvases that redraw
+  every frame. A full-screen gradient is `TallGradient` (drawn narrow and
+  stretched), never a full-size `LinearGradient`. Unmount a scene a
+  moment covers instead of hiding it. These took every game page from
+  +105–194 MB to +55–103 MB over Home.
 - Never hold more than the screen shows: long lists are FlashList;
   small still borders are pictures; a canvas per item is a cost.
 - An animation must not restart when an update arrives (depend on the

@@ -4,7 +4,7 @@
 // move), and shared with the concept sheets in scripts/. See "The house
 // drawing style" in AGENTS.md.
 
-import { acanthus, curl, fmt, ribbon, type Pt } from "./shapes";
+import { INKS, MATERIALS, acanthus, curl, fmt, ribbon, type Pt } from "./shapes";
 
 /** A rounded rectangle. */
 export function rrect(x: number, y: number, w: number, h: number, r: number) {
@@ -43,6 +43,26 @@ export function bezel(
     ),
     shine: `M${fmt([x + k * 0.8, y + t * 0.42])}H${(x + Math.min(w * 0.42, w - k)).toFixed(2)}`,
   };
+}
+
+/** A bezel laid over a whole piece w × h, as SVG markup: the same
+ *  drawing as the BezelOverlay in components/ui, for a piece repeated down
+ *  a page, where one still picture each is far lighter than a tree of SVG
+ *  views. */
+export function bezelSvg(w: number, h: number, r: number, t: number, metal: "gold" | "silver" = "gold") {
+  const b = bezel(w, h, r, t);
+  const { ink, vein } = INKS[metal];
+  const stops = MATERIALS[metal]
+    .map((c, i, all) => `<stop offset="${i / (all.length - 1)}" stop-color="${c}"/>`)
+    .join("");
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+<defs><linearGradient id="r" x1="0" y1="0" x2="1" y2="1">${stops}</linearGradient></defs>
+<path d="${b.rim}" fill-rule="evenodd" fill="url(#r)"/>
+<path d="${b.groove}" fill="none" stroke="${vein}" stroke-width="0.55" stroke-opacity="0.85"/>
+<path d="${b.shine}" stroke="#FFFFFF" stroke-width="0.9" stroke-opacity="0.9" stroke-linecap="round"/>
+<path d="${b.outer}" fill="none" stroke="${ink}" stroke-width="1.1"/>
+<path d="${b.face}" fill="none" stroke="${ink}" stroke-width="0.8"/>
+</svg>`;
 }
 
 /** The scrolls curling off the left end of a plaque `h` tall, whose left

@@ -1,13 +1,14 @@
-// The mascot, alive: its layers recorded once and baked into images,
-// moved on the UI thread. It breathes, blinks, sways what it holds and flutters
-// what it wears on its back. MascotFigure is the figure on its own (for
-// a game scene, a card); MascotStage adds the hop when you tap it. Both
-// stand still with reduced motion, or when `paused`.
+// The mascot, alive: its layers recorded once into pictures, each drawn
+// once on a still view of its own and moved on the UI thread. It
+// breathes, blinks, sways what it holds and flutters what it wears on its
+// back. MascotFigure is the figure on its own (for a game scene, a card);
+// MascotStage adds the hop when you tap it. Both stand still with reduced
+// motion, or when `paused`.
 
 import { onMemoryWarning } from "@/utils/memory";
-import { Canvas, Image, Skia, type SkImage, type SkPicture } from "@shopify/react-native-skia";
-import { useEffect, useMemo } from "react";
-import { PixelRatio, Pressable, StyleSheet, View } from "react-native";
+import type { SkPicture } from "@shopify/react-native-skia";
+import { useEffect, useMemo, type ReactNode } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -21,6 +22,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { recordEmblem } from "@/components/engraved/picture";
+import { StillPicture, record } from "@/components/ui/StillPicture";
 import { tapHaptic } from "@/utils/haptics";
 import { dressLayers, type Look } from "./dress";
 import { BOX, GRIP, LIFT } from "./rig";
@@ -36,23 +38,6 @@ const HOLD = { x: GRIP[0], y: GRIP[1] + LIFT };
  *  sword at the sides. The figure's place on the page stays its box. */
 const PAD = { x: 22, top: 30, bottom: 6 };
 
-/** A layer's picture painted once into an image covering the box and the
- *  room round it, at `scale` points per unit and the screen's density:
- *  each frame then draws an image, not every shape of the outfit. */
-function bakeLayer(picture: SkPicture, scale: number): SkImage | null {
-  const density = scale * Math.min(PixelRatio.get(), 2.5);
-  const w = BOX[0] + 2 * PAD.x;
-  const h = BOX[1] + PAD.top + PAD.bottom;
-  const surface = Skia.Surface.Make(Math.ceil(w * density), Math.ceil(h * density));
-  if (!surface) return null;
-  const c = surface.getCanvas();
-  c.scale(density, density);
-  c.translate(PAD.x, PAD.top);
-  c.drawPicture(picture);
-  surface.flush();
-  return surface.makeImageSnapshot();
-}
-
 /** What a look is, as a string: two looks that read the same are the same
  *  look, even when the server sends them as new objects every update. */
 export const lookKey = (look: Look) =>
@@ -62,35 +47,37 @@ export const lookKey = (look: Look) =>
     .map(([slot, id]) => `${slot}:${id}`)
     .join(",")}`;
 
-type Baked = { back: SkImage | null; body: SkImage | null; eyes: SkImage | null; hat: SkImage | null; hand: SkImage | null };
+type Layers = { back: SkPicture | null; body: SkPicture | null; eyes: SkPicture | null; hat: SkPicture | null; hand: SkPicture | null };
 
-/** Baked figures, by look and size, shared by every copy on screen and
- *  kept across screens and games — the oldest let go past a limit, so a
- *  long evening of rematches doesn't fill the memory. */
-const BAKED = new Map<string, Baked>();
-const KEEP = 32;
-onMemoryWarning(() => BAKED.clear());
-function bakedFigure(look: Look, scale: number): Baked {
-  const key = `${lookKey(look)}@${scale.toFixed(3)}`;
-  const hit = BAKED.get(key);
+/** Each look's layers recorded into pictures, shared by every copy on
+ *  screen at any size and kept across screens and games — the oldest let
+ *  go past a limit, so a long evening of rematches doesn't fill the
+ *  memory. A layer's canvas draws its picture once and keeps the pixels
+ *  (the living is native transforms of the views), so there's no baked
+ *  image to hold as well: a picture is a list of shapes, not pixels. */
+const RECORDED = new Map<string, Layers>();
+const KEEP = 64;
+onMemoryWarning(() => RECORDED.clear());
+function recordedFigure(look: Look): Layers {
+  const key = lookKey(look);
+  const hit = RECORDED.get(key);
   if (hit) {
     // most recently used goes to the back of the line
-    BAKED.delete(key);
-    BAKED.set(key, hit);
+    RECORDED.delete(key);
+    RECORDED.set(key, hit);
     return hit;
   }
   const dressed = dressLayers(look);
-  const bake = (data: Parameters<typeof recordEmblem>[0]) =>
-    data.length ? bakeLayer(recordEmblem(data, undefined, BOX), scale) : null;
+  const layer = (data: Parameters<typeof recordEmblem>[0]) => (data.length ? recordEmblem(data, undefined, BOX) : null);
   const made = {
-    back: bake(dressed.back),
-    body: bake(dressed.body),
-    eyes: bake(dressed.eyes),
-    hat: bake(dressed.hat),
-    hand: bake(dressed.hand),
+    back: layer(dressed.back),
+    body: layer(dressed.body),
+    eyes: layer(dressed.eyes),
+    hat: layer(dressed.hat),
+    hand: layer(dressed.hand),
   };
-  BAKED.set(key, made);
-  while (BAKED.size > KEEP) BAKED.delete(BAKED.keys().next().value!);
+  RECORDED.set(key, made);
+  while (RECORDED.size > KEEP) RECORDED.delete(RECORDED.keys().next().value!);
   return made;
 }
 
@@ -121,7 +108,7 @@ export function MascotFigure({
   const scale = width / BOX[0];
   const key = lookKey(look);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- the key is the look
-  const layers = useMemo(() => bakedFigure(look, scale), [key, scale]);
+  const layers = useMemo(() => recordedFigure(look), [key]);
 
   const offset = seedOf(seed) * 10;
   // its own time, in seconds: a steady run on the UI thread, started once
@@ -164,47 +151,77 @@ export function MascotFigure({
       ],
     };
   });
-  const blink = useAnimatedStyle(() => {
-    const phase = t.get() % 3.6;
-    const shut = phase < 0.14 ? Math.sin((phase / 0.14) * Math.PI) * 0.9 : 0;
-    return { transform: [{ scaleY: 1 - shut }] };
-  });
-  const sway = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${Math.sin(t.get() * 1.6) * 0.09}rad` }],
-  }));
-  const flutter = useAnimatedStyle(() => ({
-    transform: [{ scaleX: 1 + Math.sin(t.get() * 3) * 0.035 }],
-  }));
-
-  // nothing worn in a slot: no canvas for it
-  const layer = (image: SkImage | null, style?: object, origin?: [number, number, number]) =>
-    image ? (
-    <Animated.View style={[StyleSheet.absoluteFill, origin ? { transformOrigin: origin } : null, style]}>
-      <StillLayer image={image} width={area.width} height={area.height} />
-    </Animated.View>
+  // each layer a still view, moved by native transforms; nothing worn in
+  // a slot: no view for it (nor a motion to run)
+  const fixed = (picture: SkPicture | null) =>
+    picture ? (
+      <View style={StyleSheet.absoluteFill}>
+        <StillLayer picture={picture} scale={scale} width={area.width} height={area.height} />
+      </View>
+    ) : null;
+  const moving = (picture: SkPicture | null, motion: Motion, origin: [number, number, number]) =>
+    picture ? (
+      <MovingLayer t={t} motion={motion} origin={origin}>
+        <StillLayer picture={picture} scale={scale} width={area.width} height={area.height} />
+      </MovingLayer>
     ) : null;
 
   return (
     // the canvases spill past the box on every side; the box is the layout
     <View style={{ width, height }} pointerEvents="none">
       <Animated.View style={[styles.area, area, { transformOrigin: at(FEET.x, FEET.y) }, whole]}>
-        {layer(layers.back, flutter, at(50, FEET.y))}
-        {layer(layers.body)}
-        {layer(layers.eyes, blink, at(50, EYE_LINE))}
-        {layer(layers.hat)}
-        {layer(layers.hand, sway, at(HOLD.x, HOLD.y))}
+        {moving(layers.back, "flutter", at(50, FEET.y))}
+        {fixed(layers.body)}
+        {moving(layers.eyes, "blink", at(50, EYE_LINE))}
+        {fixed(layers.hat)}
+        {moving(layers.hand, "sway", at(HOLD.x, HOLD.y))}
       </Animated.View>
     </View>
   );
 }
 
-/** A baked layer on a canvas of its own, drawn once. */
-function StillLayer({ image, width, height }: { image: SkImage | null; width: number; height: number }) {
-  return (
-    <Canvas style={{ width, height }}>
-      {image ? <Image image={image} x={0} y={0} width={width} height={height} /> : null}
-    </Canvas>
+/** How a layer moves of its own: the eyes blink, what's held sways, what's
+ *  worn on the back flutters. */
+type Motion = "blink" | "sway" | "flutter";
+
+/** A layer that moves by itself, on the figure's own time `t`. */
+function MovingLayer({
+  t,
+  motion,
+  origin,
+  children,
+}: {
+  t: SharedValue<number>;
+  motion: Motion;
+  origin: [number, number, number];
+  children: ReactNode;
+}) {
+  const style = useAnimatedStyle(() => {
+    const now = t.get();
+    if (motion === "blink") {
+      const phase = now % 3.6;
+      const shut = phase < 0.14 ? Math.sin((phase / 0.14) * Math.PI) * 0.9 : 0;
+      return { transform: [{ scaleY: 1 - shut }] };
+    }
+    if (motion === "sway") return { transform: [{ rotate: `${Math.sin(now * 1.6) * 0.09}rad` }] };
+    return { transform: [{ scaleX: 1 + Math.sin(now * 3) * 0.035 }] };
+  });
+  return <Animated.View style={[StyleSheet.absoluteFill, { transformOrigin: origin }, style]}>{children}</Animated.View>;
+}
+
+/** A layer on a still view of its own, drawn once: the box `scale`
+ *  points a unit, with the room round it. */
+function StillLayer({ picture, scale, width, height }: { picture: SkPicture; scale: number; width: number; height: number }) {
+  const placed = useMemo(
+    () =>
+      record((c) => {
+        c.scale(scale, scale);
+        c.translate(PAD.x, PAD.top);
+        c.drawPicture(picture);
+      }),
+    [picture, scale],
   );
+  return <StillPicture picture={placed} style={{ width, height }} />;
 }
 
 const styles = StyleSheet.create({

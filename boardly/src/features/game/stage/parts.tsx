@@ -4,8 +4,8 @@
 // its name); the plinth the main button stands on. Their art is baked
 // once (components/badges/bake.ts); the sway is one native transform.
 
-import { Canvas, Image as SkImage } from "@shopify/react-native-skia";
-import { useEffect, type ReactNode } from "react";
+import { Skia } from "@shopify/react-native-skia";
+import { useEffect, useMemo, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
@@ -18,9 +18,9 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-import { bakedSvg } from "@/components/badges/bake";
+import { bakedSvg, stillSvg } from "@/components/badges/bake";
 import { Emblem } from "@/components/icons";
-import { AppText } from "@/components/ui";
+import { AppText, StillPicture, record } from "@/components/ui";
 import { useOnScreen } from "@/hooks/useOnScreen";
 import { fontFamily } from "@/theme";
 import { tapHaptic } from "@/utils/haptics";
@@ -68,7 +68,27 @@ export function HangingSign({
 }) {
   const L = signLayout(width, drop);
   const h = L.drop + L.h + 6;
-  const image = bakedSvg(`sign|${enamel.join()}|${drop}`, width, h, () => hangingSign(L, enamel));
+  // drawn once (the sway is the view's): a picture, not a baked copy of
+  // its pixels
+  const base = stillSvg(`sign|${enamel.join()}|${drop}`, width, h, () => hangingSign(L, enamel));
+  const kinds = seals.map((seal) => seal.kind).join();
+  const picture = useMemo(
+    () =>
+      record((c) => {
+        if (base) c.drawPicture(base);
+        seals.forEach((seal, i) => {
+          const img = stillSvg(`seal|${seal.kind}`, SEAL, SEAL, () => sealArt(seal.kind));
+          const x = width / 2 + (i - (seals.length - 1) / 2) * (SEAL + 4) - SEAL / 2;
+          if (!img) return;
+          c.save();
+          c.translate(x, L.drop + 64);
+          c.drawPicture(img);
+          c.restore();
+        });
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `kinds` stands for `seals`
+    [base, kinds, width, L.drop],
+  );
   const sway = useSway(1.4, 5200);
   const style = useAnimatedStyle(() => ({
     transformOrigin: "top",
@@ -76,14 +96,7 @@ export function HangingSign({
   }));
   return (
     <Animated.View style={[{ width, height: h }, style]} pointerEvents="none">
-      <Canvas style={StyleSheet.absoluteFill}>
-        {image ? <SkImage image={image} x={0} y={0} width={width} height={h} /> : null}
-        {seals.map((seal, i) => {
-          const img = bakedSvg(`seal|${seal.kind}`, SEAL, SEAL, () => sealArt(seal.kind));
-          const x = width / 2 + (i - (seals.length - 1) / 2) * (SEAL + 4) - SEAL / 2;
-          return img ? <SkImage key={i} image={img} x={x} y={L.drop + 64} width={SEAL} height={SEAL} /> : null;
-        })}
-      </Canvas>
+      <StillPicture picture={picture} />
       <View style={[styles.signText, { top: L.drop + 26 }]}>
         <AppText style={styles.title} numberOfLines={1}>
           {title}
@@ -162,12 +175,12 @@ export function Plinth({
   inset?: { left: number; right: number };
   children: ReactNode;
 }) {
-  const image = bakedSvg("plinth", width, height, () => plinth(width, height));
+  // a still view keeps the pixels it drew: it's handed a picture, not a
+  // baked image (which would be a second copy)
+  const picture = stillSvg("plinth", width, height, () => plinth(width, height));
   return (
     <View style={{ width, height }}>
-      <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
-        {image ? <SkImage image={image} x={0} y={0} width={width} height={height} /> : null}
-      </Canvas>
+      <StillPicture picture={picture} />
       <View style={[styles.plinthBody, inset ? { paddingLeft: inset.left, paddingRight: inset.right } : null]}>
         {children}
       </View>
@@ -227,9 +240,17 @@ const GLOW_SHRINK = 4;
 export function Glow({ size, color, style }: { size: number; color: string; style?: object }) {
   const s = Math.round(size / GLOW_SHRINK);
   const image = bakedSvg(`glow|${color}`, s, s, () => glowArt(s, color));
+  const picture = useMemo(
+    () =>
+      record((c) => {
+        if (image) c.drawImageRect(image, Skia.XYWHRect(0, 0, image.width(), image.height()), Skia.XYWHRect(0, 0, s, s), Skia.Paint());
+      }),
+    [image, s],
+  );
   return (
     <View style={[{ position: "absolute", width: size, height: size }, style]} pointerEvents="none">
-      <Canvas
+      <StillPicture
+        picture={picture}
         style={{
           position: "absolute",
           width: s,
@@ -238,9 +259,7 @@ export function Glow({ size, color, style }: { size: number; color: string; styl
           top: (size - s) / 2,
           transform: [{ scale: size / s }],
         }}
-      >
-        {image ? <SkImage image={image} x={0} y={0} width={s} height={s} /> : null}
-      </Canvas>
+      />
     </View>
   );
 }
