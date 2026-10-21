@@ -272,10 +272,10 @@ function WallButton({
     () => stillSvg(`me-btn|${emoji}|${face}|${size}`, size, size + 3, () => buttonArt(size, face, emblemData(emoji))),
     [emoji, face, size],
   );
-  const lw = size + 22;
-  const lh = 19;
+  const lw = size + 20;
+  const lh = 16;
   const plate = useMemo(() => stillSvg(`me-label|${lw}`, lw, lh + 2, () => labelArt(lw, lh)), [lw]);
-  const ds = 22;
+  const ds = 18;
   const ruby = useMemo(() => (dot > 0 ? stillSvg(`me-dot|${ds}`, ds, ds, () => dotArt(ds)) : null), [dot]);
   return (
     <Pressable
@@ -293,8 +293,8 @@ function WallButton({
       ]}
     >
       <StillPicture picture={art} style={{ position: "absolute", left: (lw - size) / 2, top: 0, width: size, height: size + 3 }} />
-      <StillPicture picture={plate} style={{ position: "absolute", left: 0, top: size - 4, width: lw, height: lh + 2 }} />
-      <View style={[styles.label, { top: size - 4, width: lw, height: lh }]}>
+      <StillPicture picture={plate} style={{ position: "absolute", left: 0, top: size - 2, width: lw, height: lh + 2 }} />
+      <View style={[styles.label, { top: size - 2, width: lw, height: lh }]}>
         <AppText style={styles.labelText} numberOfLines={1}>
           {label}
         </AppText>
@@ -387,9 +387,9 @@ const styles = StyleSheet.create({
   },
   marqueeLong: { fontSize: 12, lineHeight: 17, letterSpacing: 0.2 },
   label: { position: "absolute", left: 0, alignItems: "center", justifyContent: "center", paddingHorizontal: 6 },
-  labelText: { fontFamily: fontFamily.bold, fontSize: 11, lineHeight: 14, color: TABLE.cream, ...shadow },
+  labelText: { fontFamily: fontFamily.bold, fontSize: 9.5, lineHeight: 12, color: TABLE.cream, ...shadow },
   dot: { position: "absolute", top: -3, alignItems: "center", justifyContent: "center" },
-  dotText: { fontFamily: fontFamily.bold, fontSize: 10.5, lineHeight: 13, color: "#FFFFFF", ...shadow },
+  dotText: { fontFamily: fontFamily.bold, fontSize: 9, lineHeight: 11, color: "#FFFFFF", ...shadow },
   keyText: { position: "absolute", left: 0, right: 0, top: 0, bottom: 0, justifyContent: "center" },
   keyLabel: { fontFamily: fontFamily.bold, fontSize: 13, lineHeight: 17, color: TABLE.cream, ...shadow },
   keyLong: { fontSize: 11.5, lineHeight: 15 },

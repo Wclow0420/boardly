@@ -5,7 +5,7 @@
 // flicker and dust drifts and twinkles in the spotlight.
 //
 // Cheap by construction: one canvas, one picture a frame, round only
-// what moves (the marquee's crest down to my meeple's head, between the
+// what moves (the marquee's crest down to the medallion, between the
 // lamps' light), never the whole page; the needle and hub baked once,
 // every paint made once per mounted copy and only its alpha set a frame.
 // (Measured: a dozen animated native views for the dust cost more, and
@@ -71,13 +71,13 @@ export const LobbyLife = memo(function LobbyLife({
   scene: SkPicture | null;
   clock: SharedValue<number>;
 }) {
-  const { marquee: Q, frame, opening: O, beam, mascot, sconces, bulbs, cx, dial } = L;
-  // one canvas round only what moves: the marquee's crest down to my
-  // meeple's head, between the lamps' light
+  const { marquee: Q, frame, opening: O, beam, medallion, sconces, bulbs, cx, dial } = L;
+  // one canvas round only what moves: the marquee's crest down to the
+  // medallion (behind me), between the lamps' light
   const x0 = Math.min(Q.x - 6, frame.x - GLOW / 2);
   const x1 = Math.max(Q.x + Q.w + 6, frame.x + frame.w + GLOW / 2);
   const y0 = Q.y - 28;
-  const y1 = Math.max(O.y + GLOW, mascot.y + mascot.h * 0.2);
+  const y1 = Math.max(O.y + GLOW, medallion.y - medallion.ry);
   const box = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
   const len = dial.R - 12;
   const P = useMemo(() => {
@@ -141,7 +141,7 @@ export const LobbyLife = memo(function LobbyLife({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the box is the layout's
   }, [Q.x, Q.y, Q.w, Q.h, len, scene, L.w, L.h, L.top]);
-  // the dust rises from the meeple's head to the lintel
+  // the dust rises through the spotlight from the medallion to the lintel
   const top = beam.top + 4;
   const foot = y1;
 

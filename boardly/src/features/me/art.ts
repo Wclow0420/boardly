@@ -7,8 +7,8 @@
 // sunburst behind the floor dial, the chevron frieze on the lintel,
 // fluted pilasters, a pair of closed brass leaves with a sunburst across
 // the seam), the wall lamps' bodies, a marble floor running toward us
-// with the brass medallion set in it, the spotlight's beam and pool, and
-// a palm in a brass planter in each corner. Drawn in the house style:
+// with the brass medallion set in it, the spotlight's beam and pool.
+// Drawn in the house style:
 // gradients lit from the upper left, an ink outline, grooves and one
 // line of shine. What moves (the bulbs, the lamps' light, the needle,
 // the dust in the beam, the sweep) is drawn live by LobbyLife.
@@ -416,8 +416,6 @@ ${moulding(Q.x, Q.y, Q.w, Q.h, 9, 5, "mqm")}
 <path d="M${f(Q.x + 14)} ${Q.y + 11.5}H${f(Q.x + Q.w * 0.5)}" stroke="#fff" stroke-opacity="0.28" stroke-width="1.6" stroke-linecap="round"/>
 ${bulbs}`;
 
-  // the palms, a brass planter each, in the corners in front
-  const palms = L.palms.map((p, i) => palmArt(p.x, p.y, p.s, p.flip, `mp${i}`)).join("");
 
   return svg(
     w,
@@ -436,8 +434,7 @@ ${sill}
 ${light}
 ${sconces}
 ${medallion}
-${marquee}
-${palms}`,
+${marquee}`,
   );
 }
 
@@ -449,77 +446,6 @@ function starPath(x: number, y: number, r: number) {
     return `${f(x + Math.cos(a) * rr)} ${f(y + Math.sin(a) * rr)}`;
   });
   return `M${pts.join("L")}Z`;
-}
-
-/** A palm in a ribbed brass planter, its foot at (x, y), `s` its scale;
- *  `flip` mirrors it (the right-hand one). The fronds fan out from the
- *  pot, the back ones darker. */
-function palmArt(x: number, y: number, s: number, flip: boolean, id: string) {
-  const potH = 40;
-  const top = -potH;
-  // each frond an arching stem with narrow leaflets off both sides,
-  // shorter toward its tip, drooping as the stem bends over
-  const fronds: [number, number][] = [
-    [-70, 84],
-    [-46, 108],
-    [-22, 122],
-    [2, 112],
-    [24, 124],
-    [48, 106],
-    [72, 82],
-  ];
-  const frondPath = (deg: number, len: number) => {
-    const a = (deg * Math.PI) / 180;
-    const bend = 0.22 + Math.abs(deg) / 200;
-    // the stem: up and out along its angle, bending down toward the tip
-    const at = (u: number): [number, number, number] => {
-      const x = Math.sin(a) * len * u;
-      const y = -Math.cos(a) * len * u + bend * len * 0.55 * u * u;
-      const dx = Math.sin(a) * len;
-      const dy = -Math.cos(a) * len + bend * len * 1.1 * u;
-      return [x, y, Math.atan2(dy, dx)];
-    };
-    let d = "";
-    let vein = "";
-    const N = 11;
-    for (let i = 1; i <= N; i++) {
-      const u = 0.12 + (0.88 * i) / N;
-      const [x, y, th] = at(u);
-      const ll = len * 0.27 * (1 - u * 0.6);
-      const ww = 3 * (1 - u * 0.4);
-      for (const side of [-1, 1]) {
-        const ang = th + side * (0.7 - u * 0.15);
-        const tx = x + Math.cos(ang) * ll;
-        const ty = y + Math.sin(ang) * ll + ll * 0.3;
-        const nx = -Math.sin(ang) * ww;
-        const ny = Math.cos(ang) * ww;
-        const mx = (x + tx) / 2;
-        const my = (y + ty) / 2;
-        d += `M${f(x)} ${f(y)}Q${f(mx + nx)} ${f(my + ny)} ${f(tx)} ${f(ty)}Q${f(mx - nx)} ${f(my - ny)} ${f(x)} ${f(y)}Z`;
-      }
-    }
-    const pts = Array.from({ length: 9 }, (_, i) => at(i / 8));
-    vein = `M${pts.map(([x, y]) => `${f(x)} ${f(y)}`).join("L")}`;
-    return { d, vein };
-  };
-  // back row first (every other frond), then the front
-  const order = [1, 3, 5, 0, 6, 2, 4];
-  const leaves: EmblemData = order.flatMap((i) => {
-    const [deg, len] = fronds[i];
-    const back = i % 2 === 1;
-    const { d, vein } = frondPath(deg, len);
-    return [
-      { d, m: back ? "#4A7A30" : "leaf", ink: 0.45, t: `translate(0 ${top + 2})` },
-      { line: vein, color: back ? "#2A4A1A" : "#4A7A2A", w: 1.6, t: `translate(0 ${top + 2})` },
-    ];
-  });
-  const pot: EmblemData = [
-    { d: `M-22 ${top}L22 ${top}L16 0L-16 0Z`, m: "gold", vein: `M-20 ${top + 12}L20 ${top + 12}M-18 ${top + 22}L18 ${top + 22}M-17 ${top + 30}L17 ${top + 30}`, vw: 0.8, shine: `M-18 ${top + 3}L-14 -4`, ink: 1.2 },
-    { d: rrect(-25, top - 5, 50, 8, 2.5), m: "gold", shine: `M-21 ${top - 3.4}L4 ${top - 3.4}`, ink: 1.1 },
-    { d: rrect(-18, -3, 36, 5, 2), m: "bronze", ink: 1 },
-  ];
-  const k = flip ? -s : s;
-  return `<g transform="translate(${f(x)} ${f(y)}) scale(${f(k)} ${f(s)})"><path d="${oval(0, 2, 26, 5)}" fill="#000" fill-opacity="0.45"/>${toSvgBody(leaves, undefined, `${id}l`)}${toSvgBody(pot, undefined, `${id}p`)}</g>`;
 }
 
 // ------------------------------------------------------------- the pieces
