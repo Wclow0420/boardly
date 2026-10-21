@@ -46,11 +46,12 @@ import Animated, {
   type SharedValue,
 } from "react-native-reanimated";
 
-import { bakedSvg } from "@/components/badges/bake";
+import { bakedSvg, stillSvg } from "@/components/badges/bake";
+import { bezelSvg } from "@/components/engraved/trim";
 import { Emblem } from "@/components/icons";
 import { NOISE } from "@/components/iso/noise";
 import { useIsoClock } from "@/components/iso";
-import { AppText, BezelOverlay, useBox } from "@/components/ui";
+import { AppText, StillPicture, useBox } from "@/components/ui";
 import { MascotFigure, lookKey } from "@/features/mascot/MascotStage";
 import { topOf, type Look } from "@/features/mascot/dress";
 import { BOX } from "@/features/mascot/rig";
@@ -441,6 +442,9 @@ function Slash({ x, y, size, go }: { x: number; y: number; size: number; go: Sha
   );
 }
 
+/** How tall a name plate is. */
+const PLATE_H = 18;
+
 const PLATE_FACE = {
   name: ["#3A2A1A", "#22160C"],
   voted: ["#3A2A1A", "#22160C"],
@@ -485,7 +489,7 @@ function NamePlate({
           <LinearGradient colors={PLATE_FACE[shown] as unknown as [string, string]} style={StyleSheet.absoluteFill} />
         </Animated.View>
       ) : null}
-      <BezelOverlay r={6} t={1.6} />
+      <PlateBezel width={width} />
       <View style={styles.plateRow}>
         {plate === "voted" ? <View style={styles.seal} /> : null}
         {shown ? (
@@ -495,6 +499,34 @@ function NamePlate({
         ) : null}
         <PlayerName name={name} style={[styles.name, bright && styles.nameBright]} />
       </View>
+    </Animated.View>
+  );
+}
+
+/** The plate's gold rim: one still picture (a BezelOverlay is a dozen SVG
+ *  views, and a big table has ten plates). */
+function PlateBezel({ width }: { width: number }) {
+  const picture = stillSvg("plate-bezel", width, PLATE_H, () => bezelSvg(width, PLATE_H, 6, 1.6));
+  return <StillPicture picture={picture} style={{ position: "absolute", left: 0, top: 0, width, height: PLATE_H }} />;
+}
+
+/** The leader's crown, resting on the head (or on the hat) of a mascot
+ *  `size` wide and `height` tall; it tilts a little. */
+function Crown({ look, size, height }: { look: Look; size: number; height: number }) {
+  const sway = useSharedValue(0);
+  useEffect(() => {
+    sway.set(withRepeat(withSequence(withTiming(1, { duration: 1400 }), withTiming(-1, { duration: 1400 })), -1, true));
+    return () => cancelAnimation(sway);
+  }, [sway]);
+  const tilt = useAnimatedStyle(() => ({ transform: [{ rotate: `${sway.value * 4}deg` }] }));
+  const crownSize = Math.max(16, size * 0.3);
+  const top = (topOf(look) / BOX[1]) * height;
+  return (
+    <Animated.View
+      style={[styles.crown, { top: top - crownSize * 0.78, transformOrigin: [crownSize / 2, crownSize, 0] }, tilt]}
+      pointerEvents="none"
+    >
+      <Emblem emoji="👑" size={crownSize} />
     </Animated.View>
   );
 }
@@ -532,16 +564,9 @@ const Walker = memo(function Walker({
   const walk = useSharedValue(0);
   const fall = useSharedValue(0);
   const shade = useSharedValue(shadeOf(light));
-  const sway = useSharedValue(0);
   useEffect(() => {
     walk.set(withDelay(delay, withTiming(1, { duration: 1300, easing: Easing.out(Easing.quad) })));
   }, [walk, delay]);
-  // only a crown sways
-  useEffect(() => {
-    if (!crowned) return;
-    sway.set(withRepeat(withSequence(withTiming(1, { duration: 1400 }), withTiming(-1, { duration: 1400 })), -1, true));
-    return () => cancelAnimation(sway);
-  }, [crowned, sway]);
   useEffect(() => {
     shade.set(withTiming(shadeOf(light), { duration: 350 }));
   }, [light, shade]);
@@ -566,10 +591,6 @@ const Walker = memo(function Walker({
       ],
     };
   });
-  // the crown rests on the head, or on the hat; it tilts a little
-  const crownSize = Math.max(16, size * 0.3);
-  const top = (topOf(person.look) / BOX[1]) * height;
-  const tilt = useAnimatedStyle(() => ({ transform: [{ rotate: `${sway.value * 4}deg` }] }));
   const plateW = Math.max(56, size + 10);
   return (
     <Animated.View style={[styles.walker, { width: size, height, transformOrigin: [size / 2, height, 0] }, style]}>
@@ -584,14 +605,7 @@ const Walker = memo(function Walker({
       >
         <MascotFigure look={person.look} width={size} seed={String(person.seat)} paused={paused} />
       </Pressable>
-      {crowned ? (
-        <Animated.View
-          style={[styles.crown, { top: top - crownSize * 0.78, transformOrigin: [crownSize / 2, crownSize, 0] }, tilt]}
-          pointerEvents="none"
-        >
-          <Emblem emoji="👑" size={crownSize} />
-        </Animated.View>
-      ) : null}
+      {crowned ? <Crown look={person.look} size={size} height={height} /> : null}
       <View style={[styles.plateAt, { top: height - 2, left: (size - plateW) / 2, width: plateW }]} pointerEvents="none">
         <NamePlate name={person.name} plate={plate} delay={plateDelay} width={plateW} bright={light === "lit" || light === "red" || light === "green"} />
       </View>
@@ -603,7 +617,7 @@ const styles = StyleSheet.create({
   walker: { position: "absolute", left: 0, top: 0 },
   crown: { position: "absolute", left: 0, right: 0, alignItems: "center" },
   plateAt: { position: "absolute", alignItems: "center" },
-  plate: { height: 18, borderRadius: 6, overflow: "hidden", justifyContent: "center" },
+  plate: { height: PLATE_H, borderRadius: 6, overflow: "hidden", justifyContent: "center" },
   plateRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 3, paddingHorizontal: 5 },
   seal: {
     width: 8,

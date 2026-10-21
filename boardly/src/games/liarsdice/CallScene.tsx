@@ -226,6 +226,14 @@ function CallButton({ choice, busy, onCall }: { choice: CallChoice; busy: boolea
 /** Rows of the grid on the plinth, each 48 tall with 8 between. */
 export const callGridHeight = (rows: number) => rows * 48 + (rows - 1) * 8;
 
+/** Narrower than this, a call's count, die and kind are cramped. */
+const CALL_MIN = 82;
+
+/** Whether `count` calls in a row would be cramped in `room` (the
+ *  plinth's width between my hand and the satchel): then 几几几's three
+ *  opening calls stack, the 1s alone over the other two. */
+export const stacksCalls = (room: number, count: number) => count === 3 && (room - 2 * 8) / 3 < CALL_MIN;
+
 /** The plinth on my turn: the calls in a row, and under them (with a call
  *  on the table) Open and Split, held. */
 export function CallGrid({
@@ -239,6 +247,7 @@ export function CallGrid({
   onOpen,
   onSplit,
   lift = 0,
+  stacked = false,
 }: {
   plan: CallPlan;
   /** A call is on the table: Open and Split are offered. */
@@ -253,15 +262,27 @@ export function CallGrid({
   onSplit: () => void;
   /** How far to lift the grid into the plinth's top on a short screen. */
   lift?: number;
+  /** The three opening calls are cramped in a row (`stacksCalls`): the 1s
+   *  go alone on top, centred, as wide as each of the two under them. */
+  stacked?: boolean;
 }) {
   const { t } = useTranslation();
+  const button = (choice: CallChoice) => (
+    <CallButton key={`${choice.ones ? "ones" : choice.zhai ? "zhai" : "kai"}`} choice={choice} busy={busy} onCall={onCall} />
+  );
+  const [first, ...rest] = plan.choices;
   return (
     <View style={[styles.grid, { marginTop: -lift }]}>
-      <View style={styles.gridRow}>
-        {plan.choices.map((choice) => (
-          <CallButton key={`${choice.ones ? "ones" : choice.zhai ? "zhai" : "kai"}`} choice={choice} busy={busy} onCall={onCall} />
-        ))}
-      </View>
+      {stacked && first ? (
+        <>
+          <View style={styles.gridTop}>
+            <View style={styles.gridTopCell}>{button(first)}</View>
+          </View>
+          <View style={styles.gridRow}>{rest.map(button)}</View>
+        </>
+      ) : (
+        <View style={styles.gridRow}>{plan.choices.map(button)}</View>
+      )}
       {canLie ? (
         <View style={styles.gridRow}>
           <View style={styles.cell}>
@@ -367,6 +388,9 @@ const styles = StyleSheet.create({
   },
   grid: { alignSelf: "stretch", gap: 8 },
   gridRow: { flexDirection: "row", gap: 8 },
+  // as wide as a cell of the two-wide row under it (half, less half its gap)
+  gridTop: { flexDirection: "row", justifyContent: "center" },
+  gridTopCell: { width: "50%", paddingHorizontal: 2, flexDirection: "row" },
   cell: { flex: 1 },
   call: {
     flex: 1,

@@ -16,6 +16,7 @@ import { linear, radial } from "@/components/engraved/panel";
 import { MATERIALS } from "@/components/engraved/shapes";
 import { rrect } from "@/components/engraved/trim";
 import type { Side } from "../../roomScenes";
+import { manorMapArt, notebookArt, notebookOn } from "../keepsakes";
 import { exitFoot, exitPlate, type FlatLayout } from "../layout";
 import {
   INK,
@@ -101,7 +102,26 @@ export function studyPlan(L: FlatLayout, exits: FlatExit[]) {
     { x: clx + 7.5, y: cTop - 37, s: 1 },
     { x: crx, y: crFoot - 24, s: 0.9 },
   ];
+  // the manor's map propped in a gilt frame on the bookcase's second
+  // shelf, the notebook lying on its fourth, both clear of the ladder
+  let map: { x: number; y: number; w: number; h: number } | undefined;
+  let notebook: typeof map;
+  if (bookcase) {
+    const [fx0, fy0] = at(bookcase.x, bookcase.y, bookcase.d);
+    const [fx1, fy1] = at(bookcase.x + bookcase.w, floorY, bookcase.d);
+    const inX0 = fx0 + 5;
+    const inX1 = fx1 - 5;
+    const iw = inX1 - inX0;
+    const sh = (fy1 - fy0 - 24) / 5;
+    const base = (s: number) => fy0 + 12 + sh * (s + 1) - 2.5;
+    const mw = Math.round(Math.min(34, iw * 0.52));
+    const mh = Math.round(Math.min(sh - 4, mw * 0.82));
+    map = { x: Math.round(inX1 - mw), y: Math.round(base(1) - mh + 1), w: mw, h: mh };
+    notebook = notebookOn(inX1 - iw * 0.26, base(3) + 1, Math.min(24, iw * 0.46));
+  }
   return {
+    map,
+    notebook,
     bookcase,
     cx,
     rail,
@@ -788,6 +808,8 @@ function studyLeaves(fx: FlatFrame, P: StudyPlan) {
 
 export const study = flatRoom({
   id: "study",
+  mapArt: (P) => (P.map ? manorMapArt(P.map.w, P.map.h, "gilt") : ""),
+  notebookArt: (P) => (P.notebook ? notebookArt(P.notebook.w, P.notebook.h) : ""),
   light: STUDY_LIGHT,
   plan: (L, exits) => {
     const P = studyPlan(L, exits);

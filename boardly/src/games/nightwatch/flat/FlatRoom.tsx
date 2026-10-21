@@ -47,7 +47,8 @@ import { doorBetween } from "../manorShapes";
 import { RoomScene, type RoomSceneProps } from "../RoomScene";
 import type { Payoff, Side } from "../roomScenes";
 import { FLAT_ROOMS } from "./flatRooms";
-import type { FlatExit, FlatFlame, FlatFrame, FlatRoomDef } from "./flatRooms/types";
+import type { Box, FlatExit, FlatFlame, FlatFrame, FlatRoomDef } from "./flatRooms/types";
+import { NOTEBOOK_GLINT, keepHit } from "./keepsakes";
 import { exitFoot, exitPlate, flatLayout, type FlatLayout, type Spot } from "./layout";
 import { flameArt, sealArt, shadowArt } from "./parts";
 
@@ -60,6 +61,9 @@ const PAPER = "#E9E2CF";
 const COLS = 3;
 const NO_DOORS: number[][] = [];
 const SCREENS = 4;
+/** The satchel's red dot (Dock). */
+const DOT = "#D8283C";
+const DOT_RIM = "#3A0408";
 
 /** How using the room feels in the hand (as the iso room). */
 function feel(haptic: Payoff["haptic"]) {
@@ -117,6 +121,11 @@ function exitsOf(room: number, collapsed: number[], lockedDoor: number[] | null)
 
 export function FlatRoom(props: RoomSceneProps) {
   const [box, setBox] = useState<{ w: number; h: number } | null>(null);
+  // the scene mounts once the box is known, a render later: it's back
+  // from under a moment if the room was when it mounted (and until the
+  // player goes to another room)
+  const [back, setBack] = useState(props.entered ? props.room : null);
+  if (back !== null && back !== props.room) setBack(null);
   const def = FLAT_ROOMS[ROOMS[props.room]];
   if (!def) return <RoomScene {...props} />;
   return (
@@ -128,7 +137,7 @@ export function FlatRoom(props: RoomSceneProps) {
         setBox((b) => (b && b.w === w && b.h === h ? b : { w, h }));
       }}
     >
-      {box && box.w > 100 && box.h > 260 ? <FlatScene key={def.id} {...props} def={def} w={box.w} h={box.h} /> : null}
+      {box && box.w > 100 && box.h > 260 ? <FlatScene key={def.id} {...props} entered={back === props.room} def={def} w={box.w} h={box.h} /> : null}
     </View>
   );
 }
@@ -151,11 +160,14 @@ function FlatScene({
   onExit,
   event = null,
   paused = false,
+  entered = false,
   secretDoors = NO_DOORS,
   arrival,
   onArrived,
   mascots,
   book,
+  map: mapTool,
+  notebook: noteTool,
   w,
   h,
 }: RoomSceneProps & { def: FlatRoomDef; w: number; h: number }) {
@@ -200,6 +212,9 @@ function FlatScene({
   const beckon = useSharedValue(0);
   const touched = useSharedValue(1);
   const enter = useSharedValue(1);
+  // the map and the notebook lift a little when tapped
+  const mapLift = useSharedValue(0);
+  const noteLift = useSharedValue(0);
 
   useEffect(() => {
     let live = true;
@@ -215,9 +230,13 @@ function FlatScene({
     };
   }, []);
 
-  // walking into the room: it comes up out of the dark
+  // walking into the room: it comes up out of the dark (not when it's
+  // back from under a moment: it had come up long before)
+  const back = useRef(entered);
   useEffect(() => {
-    if (still) return;
+    const returning = back.current;
+    back.current = false;
+    if (still || returning) return;
     enter.set(0);
     enter.set(withTiming(1, { duration: 420, easing: Easing.out(Easing.cubic) }));
   }, [room, still, enter]);
@@ -304,6 +323,9 @@ function FlatScene({
   const burstAt = def.payoff.at ? def.payoff.at(P) : [spot.x, spot.y];
   const bookOn = book && P.book ? P.book : null;
   const unread = bookOn !== null && !!book?.unread;
+  const mapOn: Box | null = mapTool && P.map && def.mapArt ? P.map : null;
+  const noteOn: Box | null = noteTool && P.notebook && def.notebookArt ? P.notebook : null;
+  const noteDot = noteOn !== null && !!noteTool?.unseen;
   const parts = useMemo(() => {
     const rows = [0, 1].map((row) => L.spots.find((s) => s.row === row)).filter((s): s is Spot => s !== undefined);
     const byRow = (make: (s: Spot) => SkImage | null) => {
@@ -332,8 +354,23 @@ function FlatScene({
     const stroke = Skia.Paint();
     stroke.setAntiAlias(true);
     stroke.setStyle(PaintStyle.Stroke);
+    const dot = Skia.Paint();
+    dot.setAntiAlias(true);
+    dot.setColor(Skia.Color(DOT));
+    const dotRim = Skia.Paint();
+    dotRim.setAntiAlias(true);
+    dotRim.setStyle(PaintStyle.Stroke);
+    dotRim.setStrokeWidth(1.5);
+    dotRim.setColor(Skia.Color(DOT_RIM));
+    const keyed = `${doorsKey}|${w}x${h}`;
+    const { mapArt, notebookArt } = def;
     return {
       prop: bakedSvg(`flat-${def.id}-prop`, prop.w, prop.h, () => def.propArt(P)),
+      map: P.map && mapArt ? bakedSvg(`flat-${def.id}-map|${keyed}`, P.map.w, P.map.h, () => mapArt(P)) : null,
+      note: P.notebook && notebookArt ? bakedSvg(`flat-${def.id}-note|${keyed}`, P.notebook.w, P.notebook.h, () => notebookArt(P)) : null,
+      dot,
+      dotRim,
+      glintPaint: screen(),
       img,
       screens: Array.from({ length: SCREENS }, screen),
       fill,
@@ -383,6 +420,33 @@ function FlatScene({
     };
     // what lives in this room of its own (moonlight, lightning in a window, a rope)
     if (under) under(fx, P);
+
+    // the map and the notebook: still, lifting a little when tapped, a
+    // faint glint on each now and then; the notebook's red dot
+    const keep = (img: SkImage | null, b: Box | null, lift: number, gx: number, gy: number, phase: number, dot: boolean) => {
+      if (!img || !b) return;
+      const ax = b.x + b.w / 2;
+      const ay = b.y + b.h;
+      c.save();
+      if (lift > 0.001) {
+        c.translate(ax, ay - 2.5 * lift);
+        c.scale(1 + 0.05 * lift, 1 + 0.05 * lift);
+        c.translate(-ax, -ay);
+      }
+      draw(img, b.x, b.y, b.w, b.h);
+      const p = (time + phase) % 7.5;
+      if (p < 0.8) {
+        X.glintPaint.setAlphaf(0.5 * Math.sin((p / 0.8) * Math.PI));
+        draw(X.halo, b.x + b.w * gx - 7, b.y + b.h * gy - 7, 14, 14, X.glintPaint);
+      }
+      if (dot) {
+        c.drawCircle(b.x + b.w - 2, b.y + 3, 4.2, X.dot);
+        c.drawCircle(b.x + b.w - 2, b.y + 3, 4.2, X.dotRim);
+      }
+      c.restore();
+    };
+    keep(X.map, mapOn, mapLift.get(), 0.2, 0.22, 0, false);
+    keep(X.note, noteOn, noteLift.get(), NOTEBOOK_GLINT[0], NOTEBOOK_GLINT[1], 3.6, noteDot);
 
     // a secret door's cold glow in its corner
     for (let i = 0; i < passages.length; i++) {
@@ -469,7 +533,7 @@ function FlatScene({
       draw(X.plate[s.row], s.x - pw / 2, s.y + 1, pw, PLATE_H);
     }
     return rec.finishRecordingAsPicture();
-  }, [parts, P, motion, w, h, active, unread, sealed, passageKey, spotKey, shadowKey, walking]);
+  }, [parts, P, motion, w, h, active, unread, sealed, passageKey, spotKey, shadowKey, walking, mapOn, noteOn, noteDot]);
 
   // the payoff's glow and the night's weather, over the room
   const lantern = me ? { x: me.spot.x, y: me.spot.y - me.spot.size * 0.7 } : { x: w / 2, y: h * 0.75 };
@@ -502,6 +566,11 @@ function FlatScene({
     };
   };
   const reach = Math.max(spot.rx * 1.14, 44);
+  // the map or the notebook tapped: it lifts, and opens what the satchel does
+  const openKeep = (lift: typeof mapLift, open: () => void) => {
+    if (!still) lift.set(withSequence(withTiming(1, { duration: 110 }), glide(0, 280)));
+    open();
+  };
 
   return (
     <Animated.View style={[{ width: w, height: h }, enterStyle]}>
@@ -641,6 +710,23 @@ function FlatScene({
             styles.round,
             { left: bookOn.x - bookOn.r - 8, top: bookOn.y - bookOn.r - 8, width: bookOn.r * 2 + 16, height: bookOn.r * 2 + 16 },
           ]}
+        />
+      ) : null}
+      {/* over the working object's: a tap on them never uses the room */}
+      {mapTool && mapOn ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={mapTool.label}
+          onPress={() => openKeep(mapLift, mapTool.onOpen)}
+          style={[styles.abs, keepHit(mapOn, P.mapTap)]}
+        />
+      ) : null}
+      {noteTool && noteOn ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={noteTool.label}
+          onPress={() => openKeep(noteLift, noteTool.onOpen)}
+          style={[styles.abs, keepHit(noteOn, P.noteTap)]}
         />
       ) : null}
     </Animated.View>

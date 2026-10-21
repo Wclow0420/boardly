@@ -111,10 +111,18 @@ export interface RoomSceneProps {
   onExit: (room: number) => void;
   /** The room's book can be opened; it glows until it has been. */
   book?: { label: string; unread: boolean; onOpen: () => void };
+  /** The manor's map and my notebook as things in the room (a room drawn
+   *  flat on): tapped, they open the satchel's Map and Notebook; the
+   *  notebook wears the satchel's red dot while something in it is new. */
+  map?: { label: string; onOpen: () => void };
+  notebook?: { label: string; unseen: boolean; onOpen: () => void };
   /** Tonight's event, shown in the room: blackout, fog, storm... */
   event?: NightEvent | null;
   /** Something covers the room (a popup): it stops moving. */
   paused?: boolean;
+  /** The room is back from under a moment that covered it (it was let
+   *  go meanwhile): it's shown as it was, not walked into. */
+  entered?: boolean;
   /** Secret doors joining two diagonal rooms, for good. */
   secretDoors?: number[][];
   /** The player has just come in this way: they are shown walking in. */
@@ -260,6 +268,7 @@ export function RoomScene({
   book,
   event = null,
   paused = false,
+  entered = false,
   secretDoors = NO_DOORS,
   arrival,
   onArrived,
@@ -413,10 +422,14 @@ export function RoomScene({
   }, [active, still, resting, motion.kind, pulse, beckon]);
 
   // walking into a room: it comes up out of the dark
+  const fromUnder = useRef(entered);
   useEffect(() => {
     cancelAnimation(act);
     act.value = 0;
-    if (still) return;
+    // back from under a moment: it had come up long before
+    const returning = fromUnder.current;
+    fromUnder.current = false;
+    if (still || returning) return;
     enter.setValue(0);
     const walk = Animated.timing(enter, {
       toValue: 1,

@@ -7,7 +7,7 @@
 // and puffs steam). An oak mantel of copper pots and candles over it;
 // copper pans hung from a rack under the beams; the servants' bells over
 // the hall door; the long scrubbed table down the left wall with a loaf,
-// eggs, flour and greens, a rack of plates and strings of onions over
+// greens and the notebook left at its far end, a rack of plates and strings of onions over
 // it; a rag rug on the flags before the fire. As SVG markup, baked once
 // (FlatRoom); the cauldron, the fire, the steam and the sparks live.
 
@@ -17,6 +17,7 @@ import { linear, radial } from "@/components/engraved/panel";
 import { MATERIALS } from "@/components/engraved/shapes";
 import { rrect } from "@/components/engraved/trim";
 import type { Side } from "../../roomScenes";
+import { manorMapArt, notebookArt, notebookOn } from "../keepsakes";
 import { exitFoot, exitPlate, type FlatLayout } from "../layout";
 import {
   INK,
@@ -90,7 +91,24 @@ export function kitchenPlan(L: FlatLayout, _exits: FlatExit[]) {
   const rack = { z: 62, y: ceil + wallH * 0.1, x0: vx - W * 0.24, x1: vx + W * 0.19 };
   const table = { x0: bx0 + 4, x1: bx0 + 44, top: floorY - wallH * 0.2, z0: 36, z1: Math.min(132, L.zEdge * 1.02) };
   const fire = { x: fx - ow * 1.3, y: fy - 60, w: ow * 2.6, h: 120 };
+  // the manor's map pinned up on the lime-wash high on the left, clear of
+  // the pans and the door's plate; the notebook on the far end of the
+  // long table
+  const u = Math.min(1.25, Math.max(0.85, W / 290));
+  const D = L.doors.left;
+  const [rx0] = at(rack.x0, rack.y, rack.z);
+  const mx0 = bx0 + 6;
+  const mx1 = rx0 - 10;
+  const mw = Math.round(Math.min(36 * u, mx1 - mx0));
+  const mh = Math.round(mw * 0.8);
+  const mapRoom = D.y - 11 - 9 - 6 - (ceil + 10);
+  const map = { x: Math.round(mx0 + (mx1 - mx0 - mw) / 2), y: Math.round(ceil + 10 + Math.max(0, (mapRoom - mh) * 0.45)), w: mw, h: mh };
+  const nz = table.z0 + 10;
+  const [nx, ny] = at((table.x0 + table.x1) / 2, table.top, nz);
+  const notebook = notebookOn(nx, ny + 1, 18 * k(nz));
   return {
+    map,
+    notebook,
     dado,
     breast,
     open,
@@ -397,12 +415,12 @@ function tableArt(L: FlatLayout, P: KitchenPlan) {
     `<path d="${stroke(L, [[T.x1 - 3, floorY - 12, T.z0 + 3], [T.x1 - 3, floorY - 12, T.z1 - 3]])}" stroke="${WOOD_INK}" stroke-width="2.6"/>`,
     box(L, T.x0, T.x1, T.top, T.top + 5, T.z0, T.z1, { front: "url(#ktoph)", top: "url(#ktop)", side: "url(#ktoph)" }),
   );
-  // what's on it: a loaf on its board, a bowl of eggs, flour, a cabbage,
-  // a brown jug
+  // what's on it: a loaf on its board, a cabbage, a brown jug (and at its
+  // far end the notebook, drawn live)
   const item = (x: number, z: number) => ({ p: at(x, T.top, z), s: k(z) });
-  const loaf = item((T.x0 + T.x1) / 2 + 4, T.z0 + 16);
-  const eggs = item((T.x0 + T.x1) / 2, T.z0 + 42);
-  const cab = item((T.x0 + T.x1) / 2 + 6, T.z0 + 66);
+  const len = T.z1 - T.z0;
+  const loaf = item((T.x0 + T.x1) / 2 + 4, T.z0 + len * 0.4);
+  const cab = item((T.x0 + T.x1) / 2 + 6, T.z0 + len * 0.7);
   const jug = item((T.x0 + T.x1) / 2 - 4, T.z1 - 10);
   {
     const [x, y] = loaf.p;
@@ -411,18 +429,6 @@ function tableArt(L: FlatLayout, P: KitchenPlan) {
       `<path d="${oval(x, y, 11 * s, 3 * s)}" fill="url(#poak)" stroke="${WOOD_INK}" stroke-width="0.6"/>`,
       `<path d="M${f(x - 9 * s)} ${f(y - 1)}C${f(x - 9 * s)} ${f(y - 9 * s)} ${f(x + 9 * s)} ${f(y - 9 * s)} ${f(x + 9 * s)} ${f(y - 1)}Z" fill="url(#kloaf)" stroke="#4A2408" stroke-width="0.7"/>`,
       `<path d="M${f(x - 4 * s)} ${f(y - 6 * s)}l2 2M${f(x)} ${f(y - 7 * s)}l2 2M${f(x + 4 * s)} ${f(y - 6 * s)}l2 2" stroke="#F0D0A0" stroke-width="0.8"/>`,
-    );
-  }
-  {
-    const [x, y] = eggs.p;
-    const s = eggs.s;
-    out.push(
-      `<path d="M${f(x - 8 * s)} ${f(y - 5 * s)}Q${f(x - 7 * s)} ${f(y)} ${f(x)} ${f(y)}Q${f(x + 7 * s)} ${f(y)} ${f(x + 8 * s)} ${f(y - 5 * s)}Z" fill="url(#bchina)" stroke="#3A4250" stroke-width="0.6"/>`,
-      ...[-3.5, 0, 3.5].map(
-        (dx, i) =>
-          `<path d="${oval(x + dx * s, y - 6.5 * s - (i === 1 ? 1.4 * s : 0), 2.6 * s, 3.2 * s)}" fill="${i === 1 ? "#F4EEDF" : "#E8C8A0"}" stroke="#6A4A2A" stroke-width="0.5"/>`,
-      ),
-      `<path d="M${f(x - 8 * s)} ${f(y - 5 * s)}h${f(16 * s)}" stroke="#2A5AA8" stroke-width="0.9"/>`,
     );
   }
   {
@@ -640,6 +646,8 @@ export const kitchen = flatRoom({
   plan: kitchenPlan,
   art: kitchenArt,
   propArt: cauldronArt,
+  mapArt: (P) => manorMapArt(P.map.w, P.map.h, "pinned"),
+  notebookArt: (P) => notebookArt(P.notebook.w, P.notebook.h, 8),
   motion: (P) => ({ kind: "swing", x: P.hook.x, y: P.hook.y, degrees: 7, ring: true }),
   payoff: {
     burst: { kind: "puff", size: 38, color: "#EDE8DC", duration: 1200 },

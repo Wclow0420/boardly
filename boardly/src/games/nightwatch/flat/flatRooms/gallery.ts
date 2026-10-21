@@ -2,13 +2,14 @@
 // rooms/gallery.ts): plum silk walls hung with a gold trellis over an oak
 // wainscot, under the coffered ceiling, a long violet carpet running up
 // the chequered marble to the great landscape in its gilt frame (the
-// manor on its hill under the moon), a brass sconce either side; a
-// still life over the crown in its glass case on the left, behind a
-// velvet rope on brass stanchions; a marble bust on its column; and in
-// the middle the gilt writing table with the visitors' book open on it,
-// the inkwell and the quill that works the room (touched, it dips and
-// writes, sparks of violet). As SVG markup, baked once (FlatRoom); the
-// quill, the flames and a slow light across the gilt are drawn live.
+// manor on its hill under the moon), a brass sconce either side; the
+// manor's map in gilt over the crown in its glass case on the left (the
+// notebook left on the case), behind a velvet rope on brass stanchions;
+// a marble bust on its column; and in the middle the gilt writing table
+// with the visitors' book open on it, the inkwell and the quill that
+// works the room (touched, it dips and writes, sparks of violet). As SVG
+// markup, baked once (FlatRoom); the quill, the flames, the map, the
+// notebook and a slow light across the gilt are drawn live.
 
 import { linear, radial } from "@/components/engraved/panel";
 import { rrect } from "@/components/engraved/trim";
@@ -23,6 +24,7 @@ import {
   runnerArt,
   sconce,
 } from "../fittings";
+import { manorMapArt, notebookArt, notebookOn } from "../keepsakes";
 import { exitFoot, exitPlate, type FlatLayout } from "../layout";
 import {
   INK,
@@ -77,7 +79,20 @@ export function galleryPlan(L: FlatLayout, exits: FlatExit[]) {
   const caseBox = { x: (leftX0 + leftX1) / 2, w: Math.min(48 * u, leftX1 - leftX0 - 6), foot: floorY };
   // the right: a bust on its column, between the table and the door
   const bustX = has("right") ? (table.x1 + L.doors.right.x - 6) / 2 : bx1 - 34 * u;
+  // the left: the manor's map in gilt among the pictures, over the
+  // crown's case; the notebook left lying on the case's top
+  let map: { x: number; y: number; w: number; h: number } | undefined;
+  let notebook: typeof map;
+  if (!has("left")) {
+    const sw = Math.round(Math.min(46 * u, leftX1 - leftX0 - 8));
+    map = { x: Math.round((leftX0 + leftX1) / 2 - sw / 2), y: Math.round(ceil + 62), w: sw, h: Math.round(sw * 0.86) };
+    const [sx, sy] = at(caseBox.x, floorY, 16);
+    const caseTop = sy - 46 * u - 34 * u;
+    notebook = notebookOn(sx + caseBox.w * 0.2, caseTop - 3.5, Math.min(21 * u, caseBox.w * 0.56));
+  }
   return {
+    map,
+    notebook,
     has,
     u,
     cx,
@@ -185,27 +200,6 @@ ${windows}
 <rect x="${f(x)}" y="${f(y + h * 0.8)}" width="${f(w)}" height="${f(h * 0.2)}" fill="#22305A"/>
 <path d="M${f(mx - 6 * s)} ${f(y + h * 0.84)}h${f(12 * s)}M${f(mx - 4 * s)} ${f(y + h * 0.89)}h${f(8 * s)}M${f(mx - 2 * s)} ${f(y + h * 0.94)}h${f(4 * s)}" stroke="#DCE8FF" stroke-opacity="0.75" stroke-width="1"/>
 <path d="M${f(x)} ${f(y + h * 0.8)}H${f(x + w)}" stroke="#0A0E1A" stroke-opacity="0.6" stroke-width="0.8"/>
-<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" fill="url(#gvarn)"/>`;
-}
-
-/** A still life: a dark ground, a vase of flowers, a pear and grapes on
- *  a ledge. */
-function stillLifeArt(x: number, y: number, w: number, h: number) {
-  const vx = x + w * 0.45;
-  const vy = y + h * 0.8;
-  const flowers = [
-    [-0.2, 0.32, "#E05A6A"],
-    [0.05, 0.22, "#F4EEDF"],
-    [0.22, 0.34, "#F2A03A"],
-    [-0.05, 0.42, "#C2203A"],
-    [0.15, 0.5, "#E8C0F0"],
-  ] as const;
-  return `<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" fill="#24141A"/>
-<rect x="${f(x)}" y="${f(y + h * 0.82)}" width="${f(w)}" height="${f(h * 0.18)}" fill="#4A2E1A"/>
-${flowers.map(([dx, dy]) => `<path d="M${f(vx)} ${f(vy - h * 0.18)}L${f(vx + dx * w)} ${f(y + dy * h)}" stroke="#2E5A2A" stroke-width="0.8"/>`).join("")}
-<path d="M${f(vx - w * 0.1)} ${f(vy)}Q${f(vx - w * 0.16)} ${f(vy - h * 0.12)} ${f(vx - w * 0.05)} ${f(vy - h * 0.2)}H${f(vx + w * 0.05)}Q${f(vx + w * 0.16)} ${f(vy - h * 0.12)} ${f(vx + w * 0.1)} ${f(vy)}Z" fill="#3A6AC8" stroke="#0A1430" stroke-width="0.5"/>
-${flowers.map(([dx, dy, c]) => `<circle cx="${f(vx + dx * w)}" cy="${f(y + dy * h)}" r="${f(w * 0.08)}" fill="${c}" stroke="#2A1010" stroke-width="0.4"/>`).join("")}
-<circle cx="${f(x + w * 0.78)}" cy="${f(vy - h * 0.04)}" r="${f(w * 0.07)}" fill="#C8B040" stroke="#3A2A08" stroke-width="0.4"/>
 <rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" fill="url(#gvarn)"/>`;
 }
 
@@ -419,9 +413,6 @@ export function galleryArt(L: FlatLayout, P: GalleryPlan, exits: FlatExit[]) {
   out.push(giltFrame(pic.x, pic.y, pic.w, pic.h, landscapeArt(pic.x, pic.y, pic.w, pic.h), "gpic", true));
   out.push(...P.sconces.map((s) => s.markup));
   if (!P.has("left")) {
-    const sw = Math.min(46 * P.u, P.leftX1 - P.leftX0 - 8);
-    const sx = (P.leftX0 + P.leftX1) / 2 - sw / 2;
-    out.push(giltFrame(sx, ceil + 62, sw, sw * 1.25, stillLifeArt(sx, ceil + 62, sw, sw * 1.25), "gstl"));
     out.push(crownCaseArt(L, P));
     out.push(ropeArt(L, P.leftX0 + 4, P.leftX1 - 4, 40));
   }
@@ -472,6 +463,8 @@ export const gallery = flatRoom({
   plan: galleryPlan,
   art: galleryArt,
   propArt: quillArt,
+  mapArt: (P) => (P.map ? manorMapArt(P.map.w, P.map.h, "gilt") : ""),
+  notebookArt: (P) => (P.notebook ? notebookArt(P.notebook.w, P.notebook.h) : ""),
   motion: (P) => ({ kind: "swing", x: P.ink.x, y: P.ink.y - 2, degrees: 20 }),
   payoff: {
     burst: { kind: "sparks", size: 40, color: "#B58CFF", duration: 900 },

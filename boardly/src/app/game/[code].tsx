@@ -94,6 +94,17 @@ function GameScreenBody({
     }
   }, [sessionStatus, iWon]);
 
+  // A move that timed out on a slow line may still have gone through: once
+  // the table has moved on from where it was sent, its "something went
+  // wrong" goes (a move the server refused keeps its reason).
+  const version = session?.version;
+  const sentAt = useRef<number | undefined>(undefined);
+  const lostMove = makeMove.isError && !(makeMove.error instanceof ApiError);
+  const resetMove = makeMove.reset;
+  useEffect(() => {
+    if (lostMove && version !== sentAt.current) resetMove();
+  }, [lostMove, version, resetMove]);
+
   if (roomQuery.isPending) {
     return (
       <Screen>
@@ -299,7 +310,11 @@ function GameScreenBody({
       busy={makeMove.isPending}
       sessionId={String(session.id)}
       finished={!inProgress}
-      onMove={(move, options) => (options?.quiet ? quietMove : makeMove).mutate(move)}
+      onMove={(move, options) => {
+        if (options?.quiet) return quietMove.mutate(move);
+        sentAt.current = session.version;
+        makeMove.mutate(move);
+      }}
     />
   );
 
@@ -369,13 +384,15 @@ function GameScreenBody({
         <Button
           label={t("game.backHome")}
           variant={mySeat >= 0 ? "secondary" : "primary"}
-          style={{ flex: 1 }}
+          // two side by side on the plinth: a slimmer edge keeps "Back to
+          // Home" on one line
+          style={{ flex: 1, paddingHorizontal: 12 }}
           onPress={() => router.dismissTo("/")}
         />
         {mySeat >= 0 ? (
           <Button
             label={t(room.rematchCode ? "game.joinRematch" : "game.playAgain")}
-            style={{ flex: 1 }}
+            style={{ flex: 1, paddingHorizontal: 12 }}
             loading={rematch.isPending}
             onPress={() =>
               rematch.mutate(undefined, {

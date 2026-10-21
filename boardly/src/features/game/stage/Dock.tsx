@@ -108,14 +108,17 @@ const STUD = { d: 44, side: 6, top: 53 };
 const STUD_CARD = 20;
 const LABEL_H = 14;
 
-/** How far in from each end the plinth's move sits. */
-export function dockInsets(width: number, dock: StageDock) {
+/** How far in from each end the plinth's move sits (with a hand and a
+ *  satchel, or either). */
+export function dockInsets(width: number, dock: { hand?: unknown; satchel?: unknown }) {
   const compact = width < DOCK_COMPACT;
   const end = compact ? STUD.side + STUD.d + 6 : 0;
-  return {
-    left: dock.hand ? (compact ? end : HAND.left + HAND.w + 18) : 40,
-    right: dock.satchel ? (compact ? end : SATCHEL.right + SATCHEL.w + 8) : 40,
-  };
+  const left = dock.hand ? (compact ? end : HAND.left + HAND.w + 18) : 40;
+  const right = dock.satchel ? (compact ? end : SATCHEL.right + SATCHEL.w + 8) : 40;
+  // the same at both ends, so the move stays in the middle of the screen
+  // when only one of the two is there (a hand put away when the game ends)
+  const side = Math.max(left, right);
+  return { left: side, right: side };
 }
 
 /** Where the satchel's (or its stud's) middle is, from the plinth's top
@@ -234,7 +237,7 @@ export function HandSlot({
       style={({ pressed }) => [styles.hand, pressed && styles.handPressed]}
     >
       {card(HAND.w, styles.handCard)}
-      <AppText style={styles.label} numberOfLines={1}>
+      <AppText style={[styles.label, styles.handLabel]} numberOfLines={1}>
         {hand.label}
       </AppText>
     </Pressable>
@@ -764,6 +767,9 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     shadowOffset: { width: 1, height: 3 },
   },
+  // the hand's name may run wider than the card ("Your mark"), up to the
+  // screen's edge, centred under it
+  handLabel: { width: HAND.w + 2 * HAND.left, textAlign: "center" },
   satchel: {
     position: "absolute",
     right: SATCHEL.right,

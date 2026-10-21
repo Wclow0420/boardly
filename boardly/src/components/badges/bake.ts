@@ -55,6 +55,10 @@ function keep(k: string, image: SkImage | null, bytes: number) {
   }
 }
 
+/** The markup's own size would win over the size asked for: say w × h. */
+const sized = (markup: string, w: number, h: number) =>
+  markup.replace(/^(\s*<svg\b[^>]*?)\swidth="[^"]*"\s+height="[^"]*"/, `$1 width="${w}" height="${h}"`);
+
 export function bakedSvg(key: string, w: number, h: number, markup: () => string): SkImage | null {
   const k = `${key}|${Math.round(w)}x${Math.round(h)}`;
   const hit = images.get(k);
@@ -64,10 +68,7 @@ export function bakedSvg(key: string, w: number, h: number, markup: () => string
     return hit.image;
   }
   const scale = Math.max(2, PixelRatio.get());
-  // the markup's own size would win over the size asked for: say w × h
-  const svg = Skia.SVG.MakeFromString(
-    markup().replace(/^(\s*<svg\b[^>]*?)\swidth="[^"]*"\s+height="[^"]*"/, `$1 width="${w}" height="${h}"`),
-  );
+  const svg = Skia.SVG.MakeFromString(sized(markup(), w, h));
   const surface = Skia.Surface.Make(Math.ceil(w * scale), Math.ceil(h * scale));
   let image: SkImage | null = null;
   if (svg && surface) {
@@ -79,6 +80,45 @@ export function bakedSvg(key: string, w: number, h: number, markup: () => string
   }
   keep(k, image, Math.ceil(w * scale) * Math.ceil(h * scale) * 4);
   return image;
+}
+
+// ── still pictures ──────────────────────────────────────────────────
+
+/** Recorded drawings, kept like the images but costing next to nothing:
+ *  a picture is the list of what to draw, not its pixels. */
+const stills = new Map<string, SkPicture | null>();
+const STILLS = 160;
+
+function keepStill(k: string, picture: SkPicture | null) {
+  stills.set(k, picture);
+  while (stills.size > STILLS) stills.delete(stills.keys().next().value!);
+}
+
+/** `markup` (w × h) recorded once into a picture, for a canvas that draws
+ *  it once and never again (still, or moved only by native transforms of
+ *  its view). Such a canvas already holds the pixels it drew: a baked
+ *  image of the same art would be a second copy (and a third, uploaded to
+ *  the GPU) kept for nothing. Parsed once per `key` and size and kept, so
+ *  a page opens as fast as with an image. A canvas that redraws every
+ *  frame (something on it moves) wants `bakedSvg` instead. */
+export function stillSvg(key: string, w: number, h: number, markup: () => string): SkPicture | null {
+  const k = `${key}|${Math.round(w)}x${Math.round(h)}`;
+  if (stills.has(k)) {
+    const hit = stills.get(k)!;
+    stills.delete(k);
+    stills.set(k, hit);
+    return hit;
+  }
+  const svg = Skia.SVG.MakeFromString(sized(markup(), w, h));
+  let picture: SkPicture | null = null;
+  if (svg) {
+    const recorder = Skia.PictureRecorder();
+    const c = recorder.beginRecording(Skia.XYWHRect(0, 0, w, h));
+    c.drawSvg(svg, w, h);
+    picture = recorder.finishRecordingAsPicture();
+  }
+  keepStill(k, picture);
+  return picture;
 }
 
 // ── badges ──────────────────────────────────────────────────────────
@@ -137,6 +177,7 @@ const pictures = new Map<string, SkPicture>();
 onMemoryWarning(() => {
   images.clear();
   held = 0;
+  stills.clear();
   svgs.clear();
   pictures.clear();
 });

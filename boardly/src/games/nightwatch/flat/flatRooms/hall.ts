@@ -23,6 +23,7 @@ import {
   runnerArt,
   sconce,
 } from "../fittings";
+import { manorMapArt, notebookArt, notebookOn } from "../keepsakes";
 import { exitFoot, exitPlate, type FlatLayout } from "../layout";
 import {
   INK,
@@ -91,7 +92,23 @@ export function hallPlan(L: FlatLayout, exits: FlatExit[]) {
     has("left") ? null : sconce(L.doors.left.x + L.doors.left.w / 2, floorY - wallH * 0.48, u),
     has("right") ? null : sconce(L.doors.right.x + L.doors.right.w / 2, floorY - wallH * 0.48, u),
   ].filter((s) => s !== null);
+  // the manor's map in gilt over the left door, between its plate and
+  // the way out's plate on its bracket; the notebook left on the stairs,
+  // on the stone beside the carpet a few steps up
+  const D = L.doors.left;
+  const mapTop = has("frontLeft") ? ceil + 36 + 9 + 5 : ceil + 10;
+  const mapRoom = D.y - 11 - 9 - 5 - mapTop;
+  const mh = Math.round(Math.min(mapRoom, 34 * u));
+  const mw = Math.round(Math.min(mh * (mh < 26 ? 1.5 : 1.28), D.w * 0.9));
+  const map = mh >= 14 ? { x: Math.round(D.x + D.w / 2 - mw / 2), y: Math.round(mapTop + (mapRoom - mh) / 2), w: mw, h: mh } : undefined;
+  const step = 4;
+  const zs = 28 * u - (step + 0.5) * STEP * u;
+  const [nx, ny] = at(cx - stairHalf * 0.81, floorY - (step + 1) * rise, zs);
+  const notebook = notebookOn(nx, ny + 1, 21 * u * L.k(zs));
   return {
+    map,
+    mapTap: map && { x: map.x - 8, y: mapTop - 1, w: map.w + 16, h: mapRoom + 2 },
+    notebook,
     has,
     u,
     cx,
@@ -469,6 +486,8 @@ export const hall = flatRoom({
   plan: hallPlan,
   art: hallArt,
   propArt: chandelierArt,
+  mapArt: (P) => (P.map ? manorMapArt(P.map.w, P.map.h, "gilt") : ""),
+  notebookArt: (P) => notebookArt(P.notebook.w, P.notebook.h),
   motion: (P) => ({ kind: "swing", x: P.pivot.x, y: P.pivot.y, degrees: 5, ring: true }),
   payoff: {
     burst: { kind: "glow", size: 80, color: "#FFB45E", duration: 900 },

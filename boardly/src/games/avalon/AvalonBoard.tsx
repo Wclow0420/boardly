@@ -323,15 +323,9 @@ export function AvalonBoard({ state, mySeat, players, busy, finished, sessionId,
     if (key === "record") setLooked(recordNow);
   };
 
-  // ── the plaque's second line: the phase, and the teams turned down
-  const subtitle = [
-    t(`avalon.phases.${shown.phase}`),
-    shown.phase !== "finished" && shown.rejections > 0
-      ? t("avalon.stage.rejections", { count: shown.rejections, max: MAX_REJECTIONS })
-      : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  // ── the plaque's second line: the phase (the teams turned down are on
+  // the tag right under it; both on one line were cut off)
+  const subtitle = t(`avalon.phases.${shown.phase}`);
   const leader = nameOf(state.leader);
   // ── the one line on the plinth's crest: the sentence that matters now;
   // the rest of what the moment has to say behind its info stud

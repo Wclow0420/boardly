@@ -3,6 +3,7 @@ import type { GameDefinition } from "../types";
 import { BACKDROP, LOGO, SKIN_COLORS } from "./art";
 import { AvalonBoard } from "./AvalonBoard";
 import { BADGE_FRAMES } from "./badgeFrames";
+import { AgencyBoxArt } from "./BoxArt";
 import {
   MAX_REJECTIONS,
   PLAYER_COUNTS,
@@ -35,6 +36,7 @@ export const avalon: GameDefinition<AvalonState> = {
     logo: LOGO,
     taglineKey: "avalon.tagline",
   },
+  boxArt: AgencyBoxArt,
   needsMe: (state, mySeat) =>
     state.phase !== "finished" && pendingAction(state, mySeat) !== null,
   badges: {

@@ -26,6 +26,7 @@ import {
   rounded,
   stoneSideWall,
 } from "../fittings";
+import { manorMapArt, notebookArt, notebookOn } from "../keepsakes";
 import { exitFoot, exitPlate, type FlatLayout } from "../layout";
 import {
   INK,
@@ -96,6 +97,14 @@ export function belltowerPlan(L: FlatLayout, exits: FlatExit[]) {
   const lantern = { x: (chest.x0 + chest.x1) / 2, foot: chestTop - 1 };
   const stick = candlestick(shelf.x1 - 9, shelf.y, 10, 12, 0.8);
   const flames = [{ x: lantern.x, y: lantern.foot - 21, s: 0.85 }, stick.flame];
+  // the manor's map nailed to the frame's right post, the notebook left
+  // on the lid of the oil barrel
+  const mapW = Math.round(30 * u);
+  const mapH = Math.round(24 * u);
+  const map = { x: Math.round(posts[1] + postW / 2 - mapW / 2), y: Math.round(winTop + winH * 0.42), w: mapW, h: mapH };
+  const barrelX = (shelf.x0 + shelf.x1) / 2 - 4;
+  const [bx, bfoot] = L.at(barrelX, floorY, 12);
+  const notebook = has("left") ? undefined : notebookOn(bx + 1, bfoot - 32 * L.k(12) + 4, 21 * u);
   // the moonlight from the openings, its own box
   const shaft = { x: bx0 - 30, y: winTop + winW / 2, w: W + 60, h: L.at(0, floorY, 150)[1] + 12 - (winTop + winW / 2) };
   return {
@@ -125,6 +134,9 @@ export function belltowerPlan(L: FlatLayout, exits: FlatExit[]) {
     stick,
     shaft,
     floorY,
+    map,
+    barrelX,
+    notebook,
   };
 }
 export type BelltowerPlan = ReturnType<typeof belltowerPlan>;
@@ -543,7 +555,7 @@ export function belltowerArt(L: FlatLayout, P: BelltowerPlan, exits: FlatExit[])
   if (!P.has("right")) out.push(openingArt(P.wins[1], 1, false));
   if (!P.has("right")) out.push(pealBoardArt(P.chest.x0 + 4, P.wins[1].y + P.wins[1].h + 12, P.chest.x1 - P.chest.x0 - 8, 34));
   out.push(frameArt(L, P));
-  if (!P.has("left")) out.push(shelfArt(P), barrelArt(L, (P.shelf.x0 + P.shelf.x1) / 2 - 4, 22, 32));
+  if (!P.has("left")) out.push(shelfArt(P), barrelArt(L, P.barrelX, 22, 32));
   if (!P.has("right")) out.push(chestArt(L, P));
   out.push(coilArt(P.coil.x, P.coil.y));
   for (const e of exits) {
@@ -640,6 +652,8 @@ export const belltower = flatRoom({
   plan: belltowerPlan,
   art: belltowerArt,
   propArt: bellArt,
+  mapArt: (P) => manorMapArt(P.map.w, P.map.h, "pinned"),
+  notebookArt: (P) => (P.notebook ? notebookArt(P.notebook.w, P.notebook.h) : ""),
   motion: (P) => ({ kind: "swing", x: P.pivot.x, y: P.pivot.y, degrees: 16, ring: true }),
   payoff: {
     burst: { kind: "rings", size: 60, color: "#F0C87A", duration: 1400 },

@@ -1,6 +1,7 @@
 import { BADGE_GLYPHS as G } from "@/components/badges/glyphs";
 import type { GameDefinition } from "../types";
 import { BADGE_FRAMES } from "./badgeFrames";
+import { PubBoxArt } from "./BoxArt";
 import { LiarsDiceBoard } from "./LiarsDiceBoard";
 import { currentSeat, taskFor, type LiarsDiceState } from "./logic";
 import { liarsTableNotes } from "./notes";
@@ -53,6 +54,7 @@ export const liarsdice: GameDefinition<LiarsDiceState> = {
     backdrop: ["#4A1414", "rgba(20,12,12,0)"],
     taglineKey: "liarsdice.tagline",
   },
+  boxArt: PubBoxArt,
   needsMe: (state, mySeat) => taskFor(state, mySeat) !== null,
   badges: {
     "liarsdice.bluffer": { glyph: G.die, emoji: "🎲", loop: "tumble" },

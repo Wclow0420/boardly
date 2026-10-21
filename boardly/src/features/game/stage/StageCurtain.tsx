@@ -5,7 +5,6 @@
 // panels move by native transforms, gathering toward their sides as they
 // open. With reduce motion on, the scene simply changes.
 
-import { Canvas, Image as SkImage } from "@shopify/react-native-skia";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, {
@@ -19,9 +18,9 @@ import Animated, {
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 
-import { bakedSvg } from "@/components/badges/bake";
+import { stillSvg } from "@/components/badges/bake";
 import type { Jewel } from "@/components/engraved/shapes";
-import { useBox } from "@/components/ui";
+import { StillPicture, useBox } from "@/components/ui";
 import { moveHaptic } from "@/utils/haptics";
 import { curtainPanel, valance } from "./curtainArt";
 
@@ -49,6 +48,14 @@ export function StageCurtain({
   const [held, setHeld] = useState<{ key: string; node: ReactNode }>(() => ({ key: sceneKey, node: children }));
   if (held.key === sceneKey && held.node !== children) setHeld({ key: sceneKey, node: children });
   const changing = held.key !== sceneKey;
+  // the panels are only drawn while the curtain moves: three canvases the
+  // size of the stage cost ~40 MB to keep, even unseen
+  const [drawn, setDrawn] = useState(false);
+  if (changing && !drawn) setDrawn(true);
+  const changingRef = useRef(changing);
+  useEffect(() => {
+    changingRef.current = changing;
+  });
 
   // the latest onSwap, without restarting the close when it changes
   const swapRef = useRef(onSwap);
@@ -68,10 +75,19 @@ export function StageCurtain({
         withDelay(
           still ? 0 : 340,
           withTiming(0, { duration: still ? 0 : 760, easing: Easing.out(Easing.cubic) }, (done) => {
-            if (done) drop.set(withTiming(0, { duration: 380, easing: Easing.in(Easing.quad) }));
+            if (done)
+              drop.set(
+                withTiming(0, { duration: 380, easing: Easing.in(Easing.quad) }, (open) => {
+                  if (open) scheduleOnRN(rest);
+                }),
+              );
           }),
         ),
       );
+    };
+    // open again: put the panels away, unless another change has begun
+    const rest = () => {
+      if (!changingRef.current) setDrawn(false);
     };
     const closed = () => {
       if (!still) moveHaptic();
@@ -102,29 +118,27 @@ export function StageCurtain({
   const top = useAnimatedStyle(() => ({ transform: [{ translateY: -(1 - drop.value) * (VALANCE_H + 10) }] }));
   const shown = useAnimatedStyle(() => ({ opacity: shut.value > 0.001 || drop.value > 0.001 ? 1 : 0 }));
 
-  const panelL = w > 0 ? bakedSvg(`curtain|left`, half, h, () => curtainPanel(half, h, "left")) : null;
-  const panelR = w > 0 ? bakedSvg(`curtain|right`, half, h, () => curtainPanel(half, h, "right")) : null;
-  const pelmet = w > 0 ? bakedSvg(`valance|${jewel}`, w, VALANCE_H, () => valance(w, VALANCE_H, jewel)) : null;
+  // still views moved by native transforms: pictures (a view keeps the
+  // pixels it drew, so a baked image would be a second copy), recorded
+  // once, ready before the curtain first moves
+  const art = w > 0;
+  const panelL = art ? stillSvg(`curtain|left`, half, h, () => curtainPanel(half, h, "left")) : null;
+  const panelR = art ? stillSvg(`curtain|right`, half, h, () => curtainPanel(half, h, "right")) : null;
+  const pelmet = art ? stillSvg(`valance|${jewel}`, w, VALANCE_H, () => valance(w, VALANCE_H, jewel)) : null;
 
   return (
     <View style={StyleSheet.absoluteFill} onLayout={onLayout}>
       {changing ? held.node : children}
-      {w > 0 ? (
+      {w > 0 && drawn ? (
         <Animated.View style={[StyleSheet.absoluteFill, shown]} pointerEvents={changing ? "auto" : "none"}>
           <Animated.View style={[styles.panel, { left: 0, width: half, height: h, transformOrigin: [0, h / 2, 0] }, left]}>
-            <Canvas style={StyleSheet.absoluteFill}>
-              {panelL ? <SkImage image={panelL} x={0} y={0} width={half} height={h} /> : null}
-            </Canvas>
+            <StillPicture picture={panelL} />
           </Animated.View>
           <Animated.View style={[styles.panel, { right: 0, width: half, height: h, transformOrigin: [half, h / 2, 0] }, right]}>
-            <Canvas style={StyleSheet.absoluteFill}>
-              {panelR ? <SkImage image={panelR} x={0} y={0} width={half} height={h} /> : null}
-            </Canvas>
+            <StillPicture picture={panelR} />
           </Animated.View>
           <Animated.View style={[styles.valance, { width: w, height: VALANCE_H }, top]}>
-            <Canvas style={StyleSheet.absoluteFill}>
-              {pelmet ? <SkImage image={pelmet} x={0} y={0} width={w} height={VALANCE_H} /> : null}
-            </Canvas>
+            <StillPicture picture={pelmet} />
           </Animated.View>
         </Animated.View>
       ) : null}

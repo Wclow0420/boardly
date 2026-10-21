@@ -1322,7 +1322,8 @@
       "proved": "{{claimant}} had the {{role}}! It goes back in the deck for a new card, and {{loser}} turns a card over.",
       "titleMe": "You call {{claimant}}'s bluff: the {{role}}?",
       "caughtMe": "No {{role}}! Your bluff is caught — you turn a card over.",
-      "provedMe": "{{claimant}} had the {{role}}! It goes back in the deck for a new card, and you turn a card over."
+      "provedMe": "{{claimant}} had the {{role}}! It goes back in the deck for a new card, and you turn a card over.",
+      "titleAtMe": "{{challenger}} calls your bluff: the {{role}}?"
     },
     "aim": {
       "steal": "Tap who to pickpocket.",
@@ -1371,7 +1372,10 @@
       "coup": "{{actor}} shut down {{name}}: a card goes",
       "assassinate": "{{actor}} roughed up {{name}}: a card goes",
       "challenge": "{{name}} lost the challenge: a card goes",
-      "do": "Turn over the {{role}}"
+      "do": "Turn over the {{role}}",
+      "challengeMe": "You lost the challenge: a card goes",
+      "coupMe": "{{actor}} shut you down: a card goes",
+      "assassinateMe": "{{actor}} roughed you up: a card goes"
     },
     "swap": {
       "keep": "KEEP",
@@ -1919,7 +1923,7 @@
     },
     "bar": {
       "night": "Night {{n}} of {{total}}",
-      "rejections": "rejected teams: {{count}}/5",
+      "rejections": "{{count}}/5 rejected",
       "trackHint": "Team size each night · ★ needs two fail cards",
       "mission": "TONIGHT'S MISSION",
       "next": "NEXT MISSION",
@@ -2114,6 +2118,10 @@
       "record": "Record",
       "role": "Role",
       "watchers": "Watchers"
+    },
+    "inRoom": {
+      "map": "Look at the map",
+      "notebook": "Open your notebook"
     },
     "scene": {
       "touch": "Touch the glowing spot to use this room.",

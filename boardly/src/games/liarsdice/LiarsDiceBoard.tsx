@@ -41,6 +41,7 @@ import {
   type StageLook,
   type StageTool,
 } from "@/features/game/stage/GameStage";
+import { dockInsets } from "@/features/game/stage/Dock";
 import { shortName } from "@/features/game/stage/PlayerName";
 import type { Light, Standing } from "@/features/game/stage/StageLineup";
 import { asLook } from "@/features/mascot/dress";
@@ -49,7 +50,7 @@ import { fontFamily } from "@/theme";
 import { moveHaptic, tapHaptic } from "@/utils/haptics";
 import type { GameBoardProps } from "../types";
 import { denLayout, type DieTone } from "./art";
-import { CallGrid, CallScene, callGridHeight, openRule } from "./CallScene";
+import { CallGrid, CallScene, callGridHeight, openRule, stacksCalls } from "./CallScene";
 import { Den } from "./Den";
 import { Ending } from "./Ending";
 import { BOARD_DROP, BOARD_TUCK, HangingBoard, type Flight } from "./HangingBoard";
@@ -390,7 +391,14 @@ export function LiarsDiceBoard({
   // the grid on the plinth: a second row (Open, Split) once there's a call;
   // lifted into the plinth's top on a screen with no home bar to spare,
   // but never up into the hint's cartouche on the crest
-  const gridRows = state.bid ? 2 : 1;
+  // (the three opening calls of 几几几 stack 1 + 2 when a row of them would
+  // be cramped between the hand and the satchel)
+  const room = (() => {
+    const at = dockInsets(width, { hand: true, satchel: true });
+    return width - at.left - at.right;
+  })();
+  const stacked = !state.bid && stacksCalls(room, plan.choices.length);
+  const gridRows = state.bid || stacked ? 2 : 1;
   const gridLift = Math.min(20, Math.max(0, callGridHeight(gridRows) + 6 - (PLINTH_H - 46 + insets.bottom)));
   const bottom =
     scene === "reveal" ? (
@@ -455,6 +463,7 @@ export function LiarsDiceBoard({
         splitHold={splitHold}
         holdKey={step}
         lift={gridLift}
+        stacked={stacked}
         onCall={call}
         onOpen={() => send({ type: "challenge" }, `🔍 ${t("liarsdice.stage.liar")}`)}
         onSplit={() => send({ type: "split", bids: state.bids.length }, `🪓 ${t("liarsdice.stage.liar")}`)}

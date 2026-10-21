@@ -52,6 +52,16 @@ export interface FlatPlan {
   propFlames?: FlatFlame[];
   /** A book that can be opened and read (the chapel's record). */
   book?: { x: number; y: number; r: number };
+  /** The manor's map somewhere in the room and the notebook lying in it
+   *  (keepsakes.ts), their still images' boxes: tapped, they open the
+   *  satchel's Map and Notebook. Smaller than the working object and to
+   *  the side, clear of the ways out, their plates and the people. */
+  map?: Box;
+  notebook?: Box;
+  /** Where they can be tapped, when the room needs it tighter than their
+   *  box with a little room round it (keepsakes.ts, keepHit). */
+  mapTap?: Box;
+  noteTap?: Box;
 }
 
 /** How the working object moves when touched (and stirs while it waits).
@@ -108,6 +118,10 @@ export interface FlatRoomDef<P extends FlatPlan = FlatPlan> {
   art: (L: FlatLayout, plan: P, exits: FlatExit[]) => string;
   /** The working object's still image (plan.prop's size). */
   propArt: (plan: P) => string;
+  /** The map's and the notebook's still images (plan.map's and
+   *  plan.notebook's sizes), in the room's own materials. */
+  mapArt?: (plan: P) => string;
+  notebookArt?: (plan: P) => string;
   motion: (plan: P) => FlatMotion;
   /** What using it looks like (a burst at the touch spot, or at `at`)
    *  and feels like in the hand. */

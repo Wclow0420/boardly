@@ -176,6 +176,10 @@ export function HoldButton({
           <AppText
             style={[styles.label, compact && styles.labelCompact, { color: look.text }]}
             numberOfLines={1}
+            // a compact button's label (a move and a name, in a grid) gives
+            // a little in size before its end is cut
+            adjustsFontSizeToFit={compact}
+            minimumFontScale={0.8}
           >
             {label}
           </AppText>

@@ -17,6 +17,7 @@ import { Skia } from "@shopify/react-native-skia";
 import { linear, radial } from "@/components/engraved/panel";
 import { MATERIALS } from "@/components/engraved/shapes";
 import type { Side } from "../../roomScenes";
+import { manorMapArt, notebookArt, notebookOn } from "../keepsakes";
 import { exitFoot, exitPlate, type FlatLayout } from "../layout";
 import {
   INK,
@@ -85,7 +86,28 @@ export function gardenPlan(L: FlatLayout, _exits: FlatExit[]) {
     const [sx, sy] = at(x, floorY - 18 - rnd(i * 17) * 40, z);
     return { x: sx, y: sy, s: k(z) };
   });
+  // the manor's map on a weathered board on an oak post between the well
+  // and the dining room's gate, under a little shingled roof; the
+  // notebook left on the board's ledge
+  const u = Math.min(1.25, Math.max(0.85, W / 290));
+  const bz = 20;
+  const bk = k(bz);
+  const [wellPost] = at(vx + well.r + 1, 0, well.z);
+  const gate = L.doors.right.x - 7;
+  const mapW = Math.round(Math.min(30 * u, gate - wellPost - 6));
+  const mapH = Math.round(mapW * 0.8);
+  const bcx = (wellPost + gate) / 2 + 1;
+  const [, bfoot] = at(vx, floorY, bz);
+  const bBottom = Math.round(bfoot - wallH * 0.36 * bk);
+  const map = { x: Math.round(bcx - mapW / 2), y: bBottom - mapH, w: mapW, h: mapH };
+  const shelfY = bBottom + Math.round(16 * u);
+  const notebook = notebookOn(bcx, shelfY, Math.min(22 * u, mapW * 0.8));
   return {
+    map,
+    mapTap: { x: map.x - 7, y: map.y - Math.round(11 * u), w: map.w + 14, h: map.h + Math.round(11 * u) + 2 },
+    notebook,
+    noteTap: { x: notebook.x - 8, y: bBottom + 2, w: notebook.w + 16, h: shelfY + 8 - (bBottom + 2) },
+    board: { x: bcx, foot: bfoot, bottom: bBottom, w: mapW, h: mapH, shelf: shelfY, u },
     wallTop,
     hedgeTop,
     well,
@@ -336,6 +358,26 @@ function lampArt(P: GardenPlan) {
 <circle cx="${f(x)}" cy="${f(top - lh - 5.5 * s)}" r="${f(1.3 * s)}" fill="url(#pgd)" stroke="${INK}" stroke-width="0.4"/>`;
 }
 
+/** The map's board: an oak post, a weathered backboard (the map is drawn
+ *  on it live), a little shingled roof, the ledge under it on two
+ *  brackets. */
+function boardArt(P: GardenPlan) {
+  const { x, foot, bottom, w, h, shelf, u } = P.board;
+  const top = bottom - h;
+  const pw = 3.6 * u;
+  const roofW = w / 2 + 5 * u;
+  const lw = w / 2 + 2;
+  return `<path d="${oval(x, foot, 8 * u, 2.2 * u)}" fill="#000" fill-opacity="0.45"/>
+<rect x="${f(x - pw / 2)}" y="${f(top - 3)}" width="${f(pw)}" height="${f(foot - top + 2)}" fill="url(#poakh)" stroke="${WOOD_INK}" stroke-width="0.7"/>
+<path d="M${f(x - pw / 2 + 0.8)} ${f(shelf + 6)}V${f(foot - 2)}" stroke="#F0D0A8" stroke-opacity="0.35" stroke-width="0.6"/>
+<rect x="${f(x - w / 2 - 2)}" y="${f(top - 2)}" width="${f(w + 4)}" height="${f(h + 4)}" fill="url(#poakd)" stroke="${WOOD_INK}" stroke-width="0.8"/>
+<path d="M${f(x - roofW)} ${f(top - 2)}L${f(x)} ${f(top - 10 * u)}L${f(x + roofW)} ${f(top - 2)}Z" fill="url(#gshingle)" stroke="${WOOD_INK}" stroke-width="0.8"/>
+<path d="M${f(x - roofW * 0.66)} ${f(top - 4.6 * u)}H${f(x + roofW * 0.66)}M${f(x - roofW * 0.33)} ${f(top - 7.3 * u)}H${f(x + roofW * 0.33)}" stroke="${WOOD_INK}" stroke-opacity="0.6" stroke-width="0.6"/>
+<path d="M${f(x - roofW + 1)} ${f(top - 2.6)}L${f(x)} ${f(top - 9.4 * u)}" stroke="#F0B890" stroke-opacity="0.45" stroke-width="0.7"/>
+<path d="M${f(x - lw + 3)} ${f(shelf + 1)}L${f(x - pw / 2)} ${f(shelf + 7)}M${f(x + lw - 3)} ${f(shelf + 1)}L${f(x + pw / 2)} ${f(shelf + 7)}" stroke="${WOOD_INK}" stroke-width="1.6"/>
+<rect x="${f(x - lw)}" y="${f(shelf)}" width="${f(lw * 2)}" height="2.6" fill="url(#poakh)" stroke="${WOOD_INK}" stroke-width="0.6"/>`;
+}
+
 /** The well: a ring of dressed stone round the dark water, two oak posts,
  *  the winch between them, the shingled roof over it. */
 function wellArt(L: FlatLayout, P: GardenPlan) {
@@ -443,7 +485,7 @@ export function gardenArt(L: FlatLayout, P: GardenPlan, exits: FlatExit[]) {
   }
   out.push(hedgeSideWall(L, "left", P.hedgeTop), hedgeSideWall(L, "right", P.hedgeTop));
   out.push(bedArt(L, "left"), bedArt(L, "right"));
-  out.push(lampArt(P), wellArt(L, P));
+  out.push(lampArt(P), wellArt(L, P), boardArt(P));
   for (const e of exits) {
     const p = exitPlate(L, e.side);
     out.push(plateBox(p.x, p.y, p.w, p.h, `pl${e.side}`));
@@ -555,6 +597,8 @@ export const garden = flatRoom({
   plan: (L, exits) => ({ ...gardenPlan(L, exits), lift: Math.round(LIFT * L.k(62)) }),
   art: gardenArt,
   propArt: bucketArt,
+  mapArt: (P) => manorMapArt(P.map.w, P.map.h, "iron"),
+  notebookArt: (P) => notebookArt(P.notebook.w, P.notebook.h),
   motion: (P) => ({ kind: "pop", lift: P.lift, scale: 0 }),
   payoff: {
     burst: { kind: "ripples", size: 30, color: "#9CB8FF", duration: 1300 },
