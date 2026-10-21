@@ -1,13 +1,13 @@
 // The Me page's still art, as SVG markup recorded once into pictures
-// (stillSvg): the ground-floor lobby of the Boardly building, seen flat
-// on. Walnut panelling with gilt beading and a brass dado rail, the
-// cornice along the ceiling, the marquee sign hung from it (crimson
+// (stillSvg): the Boardly building's penny arcade, seen flat on. Its
+// striped wall, carpet and machines (arcade.ts), the cornice along the
+// ceiling, the marquee sign hung from it (crimson
 // enamel in a gold moulding, a stepped crest with an emerald, a ring of
 // glass bulbs), the lift's door in the Games tab's language (a brass
 // sunburst behind the floor dial, the chevron frieze on the lintel,
 // fluted pilasters, a pair of closed brass leaves with a sunburst across
-// the seam), the wall lamps' bodies, a marble floor running toward us
-// with the brass medallion set in it, the spotlight's beam and pool.
+// the seam), the wall lamps' bodies, the brass medallion set in the
+// carpet, the spotlight's beam and pool.
 // Drawn in the house style:
 // gradients lit from the upper left, an ink outline, grooves and one
 // line of shine. What moves (the bulbs, the lamps' light, the needle,
@@ -17,6 +17,7 @@ import { toSvgBody, type EmblemData } from "@/components/engraved/emblem";
 import { linear, moulding, radial } from "@/components/engraved/panel";
 import { INKS, MATERIALS } from "@/components/engraved/shapes";
 import { rrect } from "@/components/engraved/trim";
+import { arcadeDefs, arcadeFloor, arcadeMachines, arcadeWall } from "./arcade";
 import type { MeLayout } from "./layout";
 
 const f = (n: number) => +n.toFixed(2);
@@ -70,21 +71,15 @@ ${radial("mface", ["#2A3550", "#141A2A", "#080B12"], undefined, 0.5, 0.75, 0.8)}
 
 /** The whole lobby, w × h, everything that never moves. */
 export function lobbyArt(L: MeLayout) {
-  const { w, h, cx, frame, opening: O, floorY, dado, horizon, dial, medallion: M, beam } = L;
+  const { w, h, cx, frame, opening: O, floorY, dial, medallion: M, beam } = L;
   const R = dial.R;
 
   const defs = `<defs>${COMMON_DEFS}
-${lit("mwall", ["#5E3C22", "#4A2E1A", "#3A2414"], 0, 0, 0, h)}
-${lit("mpanel", ["#8A5A34", "#6E4526", "#55341C"], 0, 0, 60, 120)}
-${lit("mwains", ["#4A2E18", "#341F10", "#24150A"], 0, dado, 0, floorY)}
-${linear("mwpanel", ["#5A381E", "#3E2614", "#2E1C0E"])}
 ${lit("mpil", ["#FFF2B8", "#E2B04A", "#9A6B1E", "#C8902E"], 0, 0, frame.pil, 0)}
 ${lit("mleaf", ["#3E2716", "#2A180C", "#1E1008"], 0, O.y, 0, O.y + O.h)}
 ${lit("mray", ["#F0CC72", "#E2B04A", "#9A6B1E"], 0, dial.y - L.fan, 0, dial.y)}
 ${linear("mbronze", ["#E2A266", "#C27A3E", "#6E3A16"])}
 ${linear("mwalnut", ["#4A2C18", "#2E1A0E", "#1E1008"])}
-${lit("mcream", ["#E6D6B8", "#CDB894", "#A8946E"], 0, floorY, 0, h)}
-${lit("mdark", ["#5A3A22", "#3E2716", "#24150A"], 0, floorY, 0, h)}
 ${lit("mceil", ["#120A04", "#24160C"], 0, 0, 0, L.cornice)}
 ${lit("mbeam", ["#FFE7B0", "#FFE7B0", "#FFE7B0"], 0, beam.top, 0, beam.foot, [0, 0.075, 0.04])}
 ${lit("mshine", ["#FFD58A", "#FFD58A"], 0, floorY, 0, h, [0.22, 0])}
@@ -94,43 +89,11 @@ ${radial("mvign", ["#000000", "#000000"], [0, 0.62], 0.5, 0.42, 0.78)}
 ${radial("mlamp", ["#FFD58A", "#FFD58A"], [0.32, 0])}
 ${radial("mbulb", ["#FFF6E0", "#C8A060", "#5A3A10"], undefined, 0.35, 0.3, 0.75)}
 ${radial("mstone", ["#FFFFFF", "#F4EEDF", "#D8CCB0"], undefined, 0.4, 0.3, 0.8)}
+${arcadeDefs(L)}
 </defs>`;
 
-  // ---- the wall: walnut, tall raised panels with gilt beading above the
-  // brass dado rail, square ones in the wainscot below
+  // ---- the arcade's wall, its carpet and its machines (arcade.ts)
   const wallTop = L.cornice + 10;
-  const pw = 58;
-  const n = Math.ceil(w / pw) + 1;
-  const x0 = cx - (n * pw) / 2;
-  const upper = Array.from({ length: n }, (_, i) => {
-    const x = x0 + i * pw + 7;
-    const y = wallTop + 14;
-    const ph = dado - 12 - y;
-    if (ph < 20) return "";
-    return `<path d="${rrect(x, y + 2, pw - 14, ph, 3)}" fill="#000" fill-opacity="0.35"/><path d="${rrect(x, y, pw - 14, ph, 3)}" fill="url(#mpanel)" stroke="#1E1008" stroke-width="1"/><path d="${rrect(x + 4, y + 4, pw - 22, ph - 8, 2)}" fill="none" stroke="url(#mgold)" stroke-width="1.1"/><path d="${rrect(x + 4, y + 4, pw - 22, ph - 8, 2)}" fill="none" stroke="${INK}" stroke-opacity="0.5" stroke-width="0.4"/><path d="M${f(x + 2)} ${f(y + 1.6)}H${f(x + pw * 0.5)}" stroke="#fff" stroke-opacity="0.25" stroke-width="0.9" stroke-linecap="round"/>`;
-  }).join("");
-  const grain = Array.from({ length: Math.ceil(w / 9) }, (_, i) => {
-    const x = i * 9 + ((i * 37) % 5);
-    return `<path d="M${x} ${wallTop}C${x + 3} ${f(dado * 0.4)} ${x - 3} ${f(dado * 0.7)} ${x + 1} ${dado}" fill="none" stroke="#1A0E06" stroke-opacity="${i % 3 ? 0.14 : 0.22}" stroke-width="0.8"/>`;
-  }).join("");
-  const lower = Array.from({ length: n }, (_, i) => {
-    const x = x0 + i * pw + 6;
-    const y = dado + 12;
-    const ph = floorY - 12 - y;
-    if (ph < 10) return "";
-    return `<path d="${rrect(x, y, pw - 12, ph, 2)}" fill="url(#mwpanel)" stroke="#120804" stroke-width="1"/><path d="M${f(x + 2)} ${f(y + 1.5)}H${f(x + pw * 0.45)}" stroke="#fff" stroke-opacity="0.16" stroke-width="0.8" stroke-linecap="round"/>`;
-  }).join("");
-  const wall = `
-<rect width="${w}" height="${h}" fill="url(#mwall)"/>
-${grain}
-${upper}
-<rect y="${dado}" width="${w}" height="${f(floorY - dado)}" fill="url(#mwains)"/>
-${lower}
-<rect y="${dado - 3}" width="${w}" height="7" fill="url(#mgoldv)" stroke="${INK}" stroke-width="0.9"/>
-<path d="M0 ${dado + 0.5}H${w}" stroke="${VEIN}" stroke-width="0.6"/>
-<path d="M0 ${dado - 1.6}H${w}" stroke="#fff" stroke-opacity="0.55" stroke-width="0.8"/>
-<rect y="${floorY - 10}" width="${w}" height="10" fill="#1A0E06"/>
-<path d="M0 ${floorY - 10}H${w}" stroke="url(#mgold)" stroke-width="1.6"/>`;
 
   // ---- the ceiling and its cornice: a gilt moulding with dentils
   const dentils = Array.from({ length: Math.ceil(w / 10) }, (_, i) =>
@@ -143,45 +106,6 @@ ${lower}
 ${dentils}
 <path d="M0 ${wallTop}H${w}" stroke="url(#mgold)" stroke-width="1.6"/>
 <path d="M0 ${wallTop + 2}H${w}" stroke="#000" stroke-opacity="0.45" stroke-width="3"/>`;
-
-  // ---- the floor: marble squares running toward us, cream and walnut
-  const depth = floorY - horizon;
-  const tile = depth * 0.17;
-  const rows: number[] = [floorY];
-  for (let k = 1; rows[rows.length - 1] < h && k < 30; k++) rows.push(horizon + depth / (1 - k * 0.1));
-  const J = Math.ceil(w / 2 / tile) + 2;
-  const at = (j: number, y: number) => cx + j * tile * ((y - horizon) / depth);
-  let cream = "";
-  let dark = "";
-  for (let k = 0; k < rows.length - 1; k++) {
-    const y0 = rows[k];
-    const y1 = Math.min(rows[k + 1], h + 40);
-    for (let j = -J; j < J; j++) {
-      const d = `M${f(at(j, y0))} ${f(y0)}L${f(at(j + 1, y0))} ${f(y0)}L${f(at(j + 1, y1))} ${f(y1)}L${f(at(j, y1))} ${f(y1)}Z`;
-      if ((j + k) % 2 === 0) cream += d;
-      else dark += d;
-    }
-  }
-  const joints =
-    rows.map((y) => `M0 ${f(y)}H${w}`).join("") +
-    Array.from({ length: 2 * J + 1 }, (_, i) => {
-      const j = i - J;
-      return `M${f(at(j, floorY))} ${floorY}L${f(at(j, h + 40))} ${h + 40}`;
-    }).join("");
-  // a few soft veins across the cream stones
-  const veins = Array.from({ length: 7 }, (_, i) => {
-    const y = floorY + ((i * 53) % Math.max(1, h - floorY));
-    const x = (i * 97) % w;
-    return `<path d="M${x} ${f(y)}c18 4 30 -6 52 2s30 10 46 4" fill="none" stroke="#A89878" stroke-opacity="0.25" stroke-width="0.8"/>`;
-  }).join("");
-  const floor = `
-<rect y="${floorY}" width="${w}" height="${f(h - floorY)}" fill="url(#mdark)"/>
-<path d="${cream}" fill="url(#mcream)"/>
-<path d="${dark}" fill="url(#mdark)"/>
-${veins}
-<path d="${joints}" stroke="#1A0E06" stroke-opacity="0.55" stroke-width="0.8" fill="none"/>
-<rect x="${f(O.x - 20)}" y="${floorY}" width="${f(O.w + 40)}" height="${f(h - floorY)}" fill="url(#mshine)"/>
-<rect y="${floorY}" width="${w}" height="6" fill="#000" fill-opacity="0.3"/>`;
 
   // ---- the lift's door
   const fx = frame.x;
@@ -421,10 +345,11 @@ ${bulbs}`;
     w,
     h,
     `${defs}
-${wall}
+${arcadeWall(L)}
 ${ceiling}
-${floor}
+${arcadeFloor(L)}
 <rect width="${w}" height="${h}" fill="url(#mvign)"/>
+${arcadeMachines(L)}
 ${sunburst}
 ${dialArt}
 ${doors}

@@ -1,6 +1,7 @@
 // Where everything stands on the Me page, for a page w × h whose content
-// starts `top` down (under the status bar): the lobby of the Boardly
-// building, seen flat on. The marquee under the header, the floor dial
+// starts `top` down (under the status bar): the Boardly building's penny
+// arcade, seen flat on, the lift in the middle of its back wall and the
+// machines lined up either side of it. The marquee under the header, the floor dial
 // over the lift's door, the door between its brass pilasters, the floor
 // running toward us, and my meeple on the brass medallion in the
 // spotlight, the hero of the page, the lift a low backdrop behind it.
@@ -16,6 +17,18 @@ export const FEET_K = 118.4 / BOX[1];
 export interface Pos {
   x: number;
   y: number;
+}
+
+/** The arcade's machines. */
+export type MachineKind = "claw" | "fortune" | "pinball" | "viewer";
+
+export interface Machine {
+  kind: MachineKind;
+  /** Its box: the top of its crest to its feet on the floor. */
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 }
 
 export interface MeLayout {
@@ -36,9 +49,8 @@ export interface MeLayout {
   /** The door's frame: lintel, pilasters, and the opening between. */
   frame: { x: number; w: number; lintel: number; lintelH: number; pil: number };
   opening: { x: number; y: number; w: number; h: number };
-  /** Where the wall meets the floor, and the top of the wainscot. */
+  /** Where the wall meets the floor. */
   floorY: number;
-  dado: number;
   /** The horizon the floor's lines run to. */
   horizon: number;
   /** The brass medallion in the floor (centre, radii). */
@@ -49,6 +61,17 @@ export interface MeLayout {
   beam: { top: number; topW: number; foot: number; footW: number };
   /** The two wall lamps on the pilasters. */
   sconces: Pos[];
+  /** The arcade machines along the wall either side of the lift, and
+   *  the prize shelf over the shortest. */
+  machines: Machine[];
+  shelf: { x: number; y: number; w: number; h: number };
+  /** The brass rail the strings of bulbs hang from, and their bulbs. */
+  rail: number;
+  festoon: Pos[];
+  /** Bulbs on the machines that chase (the claw's sign, the backglass). */
+  chase: Pos[];
+  /** The claw: where its cable hangs from, and how long it is. */
+  claw: { x: number; y: number; len: number; size: number };
   /** The round buttons down each side: centres, size. */
   button: number;
   left: Pos[];
@@ -111,7 +134,6 @@ export function meLayout(w: number, h: number, top: number): MeLayout {
   const frameW = Math.min(Math.round(w * 0.42), 184);
   const frame = { x: r(cx - frameW / 2), w: frameW, lintel: dialY, lintelH, pil };
   const opening = { x: frame.x + pil, y: openingY, w: frameW - 2 * pil, h: doorH };
-  const dado = r(floorY - Math.min(80, doorH * 0.32));
   const horizon = r(opening.y + opening.h * 0.42);
 
   // the marquee hung just over the sunburst
@@ -153,6 +175,67 @@ export function meLayout(w: number, h: number, top: number): MeLayout {
   const left = [0, 1, 2].map((i) => ({ x: col, y: first + i * step }));
   const right = [0, 1, 2].map((i) => ({ x: w - col, y: first + i * step }));
 
+  // the machines stand along the wall either side of the lift: the tall
+  // ones (a claw crane, a pinball) beside it, the low ones (a fortune
+  // teller, a picture viewer) at the walls' ends under the buttons, so the
+  // buttons stay clear over them
+  const mTop = r(Math.max(left[2].y - 4, floorY - 300));
+  const mH = floorY + 4 - mTop;
+  const gap = 3;
+  const lx0 = 3;
+  const lx1 = frame.x - 5;
+  const rx0 = frame.x + frameW + 5;
+  const rx1 = w - 3;
+  const lw = lx1 - lx0;
+  const rw = rx1 - rx0;
+  const tellW = r(lw * 0.46);
+  const pinW = r(rw * 0.56);
+  const low = (k: number) => ({ y: r(floorY + 4 - mH * k), h: r(mH * k) });
+  const machines: Machine[] = [
+    { kind: "claw", x: lx0 + tellW + gap, y: mTop, w: lw - tellW - gap, h: mH },
+    { kind: "fortune", x: lx0, ...low(0.8), w: tellW },
+    { kind: "pinball", x: rx0, y: mTop, w: pinW, h: mH },
+    { kind: "viewer", x: rx0 + pinW + gap, ...low(0.66), w: rw - pinW - gap },
+  ];
+  const viewer = machines[3];
+  const shelf = { x: viewer.x, y: r(mTop + 2), w: viewer.w, h: r(viewer.y - mTop - 8) };
+
+  // the strings of bulbs, scalloped along the rail over the machines
+  const rail = r(mTop - 14);
+  const festoon: Pos[] = [];
+  for (const [a, b] of [
+    [0, lx1],
+    [rx0, w],
+  ]) {
+    const n = Math.max(4, Math.round((b - a) / 14));
+    for (let i = 0; i <= n; i++) {
+      const t = i / n;
+      const sag = 7 * Math.abs(Math.sin(t * Math.PI * Math.max(2, Math.round((b - a) / 50))));
+      festoon.push({ x: r(a + (b - a) * t), y: r(rail + 2 + sag) });
+    }
+  }
+
+  // the claw crane's sign bulbs and the pinball backglass's ring
+  const claw = machines[0];
+  const signH = r(claw.h * 0.13);
+  const chase: Pos[] = [];
+  const cn = Math.max(3, Math.round((claw.w - 10) / 11));
+  for (let i = 0; i <= cn; i++) chase.push({ x: r(claw.x + 5 + ((claw.w - 10) * i) / cn), y: r(claw.y + signH - 1) });
+  const pin = machines[2];
+  const gx = pin.x + 4;
+  const gy = pin.y + 4;
+  const gw = pin.w - 8;
+  const gh = r(pin.h * 0.42) - 8;
+  const pa = Math.max(3, Math.round(gw / 11));
+  const pd = Math.max(4, Math.round(gh / 11));
+  for (let i = 0; i <= pa; i++) chase.push({ x: r(gx + (gw * i) / pa), y: gy });
+  for (let i = 1; i <= pd; i++) chase.push({ x: gx + gw, y: r(gy + (gh * i) / pd) });
+  for (let i = pa - 1; i >= 0; i--) chase.push({ x: r(gx + (gw * i) / pa), y: gy + gh });
+  for (let i = pd - 1; i >= 1; i--) chase.push({ x: gx, y: r(gy + (gh * i) / pd) });
+
+  const caseTop = claw.y + signH + 4;
+  const clawHang = { x: r(claw.x + claw.w * 0.5), y: r(caseTop + 5), len: r(claw.h * 0.16), size: r(Math.min(18, claw.w * 0.32)) };
+
   return {
     w,
     h,
@@ -166,12 +249,17 @@ export function meLayout(w: number, h: number, top: number): MeLayout {
     frame,
     opening,
     floorY,
-    dado,
     horizon,
     medallion,
     mascot,
     beam,
     sconces,
+    machines,
+    shelf,
+    rail,
+    festoon,
+    chase,
+    claw: clawHang,
     button,
     left,
     right,

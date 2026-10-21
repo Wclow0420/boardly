@@ -1,23 +1,26 @@
-// What lives in the lobby, over its still art (art.ts), on one clock.
+// What lives in the arcade, over its still art (art.ts), on one clock.
+// The claw crane's claw swings on its cable, the bulbs on its sign and
+// round the pinball's backglass chase.
 // The marquee's bulbs chase round the sign and a light sweeps its gold
 // moulding, glints flare on its emerald and on the dial's ruby, the
 // dial's needle rests on L with the faintest tremble, the wall lamps
 // flicker and dust drifts and twinkles in the spotlight.
 //
-// Cheap by construction: one canvas, one picture a frame, round only
-// what moves (the marquee's crest down to the medallion, between the
-// lamps' light), never the whole page; the needle and hub baked once,
-// every paint made once per mounted copy and only its alpha set a frame.
+// Cheap by construction: one canvas, one picture a frame, from the
+// marquee's crest down to the medallion, behind me (the still room under
+// it baked into its background, so it's opaque); the needle, hub and
+// claw baked once, every paint made once per mounted copy and only its alpha set a frame.
 // (Measured: a dozen animated native views for the dust cost more, and
 // each extra canvas costs a frame's present of its own.)
 
-import { Canvas, FillType, Picture, Skia, TileMode, vec, type SkCanvas, type SkImage, type SkPaint, type SkPath, type SkPicture } from "@shopify/react-native-skia";
+import { Canvas, FillType, PaintStyle, Picture, Skia, TileMode, vec, type SkCanvas, type SkImage, type SkPaint, type SkPath, type SkPicture } from "@shopify/react-native-skia";
 import { memo, useMemo } from "react";
 import { useDerivedValue, type SharedValue } from "react-native-reanimated";
 
 import { bakedDrawing, bakedSvg } from "@/components/badges/bake";
 import { rrect } from "@/components/engraved/trim";
 import { HUB, NEEDLE_W, hubArt, needleArt } from "@/features/games/lift/art";
+import { clawArt } from "./arcade";
 import { NEEDLE_REST } from "./art";
 import type { MeLayout } from "./layout";
 
@@ -71,11 +74,11 @@ export const LobbyLife = memo(function LobbyLife({
   scene: SkPicture | null;
   clock: SharedValue<number>;
 }) {
-  const { marquee: Q, frame, opening: O, beam, medallion, sconces, bulbs, cx, dial } = L;
+  const { marquee: Q, opening: O, beam, medallion, sconces, bulbs, chase, claw, machines, cx, dial } = L;
   // one canvas round only what moves: the marquee's crest down to the
-  // medallion (behind me), between the lamps' light
-  const x0 = Math.min(Q.x - 6, frame.x - GLOW / 2);
-  const x1 = Math.max(Q.x + Q.w + 6, frame.x + frame.w + GLOW / 2);
+  // medallion (behind me), across the machines either side
+  const x0 = 0;
+  const x1 = L.w;
   const y0 = Q.y - 28;
   const y1 = Math.max(O.y + GLOW, medallion.y - medallion.ry);
   const box = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
@@ -106,6 +109,14 @@ export const LobbyLife = memo(function LobbyLife({
       mote,
       needle: bakedSvg(`me-needle|${len}`, NEEDLE_W, len + 18, () => needleArt(len)),
       hub: bakedSvg("me-hub", HUB, HUB, hubArt),
+      claw: bakedSvg(`me-claw|${claw.size}`, claw.size, claw.size, () => clawArt(claw.size)),
+      cable: (() => {
+        const p = paint();
+        p.setStyle(PaintStyle.Stroke);
+        p.setStrokeWidth(1);
+        p.setColor(Skia.Color("#C8B080"));
+        return p;
+      })(),
       plain: Skia.Paint(),
       // the lobby behind, baked once: the canvas is opaque, so nothing
       // under it is blended again every frame
@@ -116,6 +127,7 @@ export const LobbyLife = memo(function LobbyLife({
             // every bulb softly on
             bulb.setAlphaf(0.57);
             for (const b of bulbs) c.drawCircle(b.x, b.y, 2.5, bulb);
+            for (const b of chase) c.drawCircle(b.x, b.y, 1.9, bulb);
             bulb.setAlphaf(1);
           })
         : null,
@@ -136,11 +148,30 @@ export const LobbyLife = memo(function LobbyLife({
           c.drawCircle(0, 0, 2.5, bulb);
           c.restore();
         });
+        // the claw crane's sign and the pinball's backglass chase too
+        chase.forEach((b, i) => {
+          const k = (((i - step) % 4) + 4) % 4;
+          if (k !== 0 && k !== 3) return;
+          const on = k === 0 ? 1 : 0.45;
+          c.save();
+          c.translate(b.x, b.y);
+          c.scale(0.75, 0.75);
+          halo.setAlphaf(on);
+          c.drawCircle(0, 0, 8, halo);
+          bulb.setAlphaf(Math.min(1, on + 0.25));
+          c.drawCircle(0, 0, 2.5, bulb);
+          c.restore();
+        });
         return rec.finishRecordingAsPicture();
       }),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the box is the layout's
-  }, [Q.x, Q.y, Q.w, Q.h, len, scene, L.w, L.h, L.top]);
+  }, [Q.x, Q.y, Q.w, Q.h, len, scene, L.w, L.h, L.top, claw.size]);
+  // the jewels that glint: the claw crane's crest, the pinball's star
+  const gems = useMemo(() => {
+    const [clawBox, , pin] = machines;
+    return { cx: clawBox.x + clawBox.w / 2, cy: clawBox.y + 1.8, px: pin.x + pin.w / 2, py: pin.y + pin.h * 0.42 * 0.36 };
+  }, [machines]);
   // the dust rises through the spotlight from the medallion to the lintel
   const top = beam.top + 4;
   const foot = y1;
@@ -196,12 +227,23 @@ export const LobbyLife = memo(function LobbyLife({
     const hs = 19;
     draw(c, P.hub, cx - hs / 2, dial.y - hs / 2, hs, hs, P.plain);
 
-    // glints: the marquee's emerald and corner, the dial's ruby
+    // the claw swinging a few degrees on its cable
+    c.save();
+    c.translate(claw.x, claw.y);
+    c.rotate(Math.sin(t * 1.3) * 4 + Math.sin(t * 3.1) * 0.8, 0, 0);
+    c.drawLine(0, 0, 0, claw.len, P.cable);
+    draw(c, P.claw, -claw.size / 2, claw.len - 2, claw.size, claw.size, P.plain);
+    c.restore();
+
+    // glints: the marquee's emerald and corner, the dial's ruby, the
+    // claw crane's crest and the pinball's star
     glint(c, P.star, P.glint, t, cx, Q.y - 19, 6, 0);
     glint(c, P.star, P.glint, t, Q.x + 6, Q.y + 5, 4.5, 4.1);
     glint(c, P.star, P.glint, t, cx, dial.y, 5, 2.2);
+    glint(c, P.star, P.glint, t, gems.cx, gems.cy, 4.5, 1.1);
+    glint(c, P.star, P.glint, t, gems.px, gems.py, 5, 3.3);
     return rec.finishRecordingAsPicture();
-  }, [P, bulbs, sconces, box.x, box.y, box.w, box.h, top, foot, cx, len, dial.y, Q.x, Q.y, Q.w, Q.h]);
+  }, [P, bulbs, sconces, box.x, box.y, box.w, box.h, top, foot, cx, len, dial.y, Q.x, Q.y, Q.w, Q.h, claw, gems]);
 
   return (
     <Canvas opaque style={{ position: "absolute", left: box.x, top: box.y, width: box.w, height: box.h }} pointerEvents="none">
