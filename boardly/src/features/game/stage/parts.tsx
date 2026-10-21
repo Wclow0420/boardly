@@ -219,12 +219,28 @@ const styles = StyleSheet.create({
   plinthBody: { position: "absolute", left: 0, right: 0, top: 46, alignItems: "center", paddingHorizontal: 40 },
 });
 
+/** How much smaller the glow is drawn than it shows: a soft gradient looks
+ *  the same stretched, and a full-size canvas and image cost ~30 MB. */
+const GLOW_SHRINK = 4;
+
 /** A soft pool of the game's light behind the scene. */
 export function Glow({ size, color, style }: { size: number; color: string; style?: object }) {
-  const image = bakedSvg(`glow|${color}`, size, size, () => glowArt(size, color));
+  const s = Math.round(size / GLOW_SHRINK);
+  const image = bakedSvg(`glow|${color}`, s, s, () => glowArt(s, color));
   return (
-    <Canvas style={[{ position: "absolute", width: size, height: size }, style]} pointerEvents="none">
-      {image ? <SkImage image={image} x={0} y={0} width={size} height={size} /> : null}
-    </Canvas>
+    <View style={[{ position: "absolute", width: size, height: size }, style]} pointerEvents="none">
+      <Canvas
+        style={{
+          position: "absolute",
+          width: s,
+          height: s,
+          left: (size - s) / 2,
+          top: (size - s) / 2,
+          transform: [{ scale: size / s }],
+        }}
+      >
+        {image ? <SkImage image={image} x={0} y={0} width={s} height={s} /> : null}
+      </Canvas>
+    </View>
   );
 }

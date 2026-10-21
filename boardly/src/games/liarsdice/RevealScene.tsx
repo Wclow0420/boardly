@@ -177,9 +177,18 @@ export function RevealScene({
                 {bonus(k) ? <AppText style={styles.bonus}>{`  🐆+${bonus(k)}`}</AppText> : null}
               </AppText>
               {loser ? (
-                <Animated.View entering={ZoomIn.duration(320)} style={[styles.stamp, { top: two ? 1 : rowH / 2 - 11 }]}>
-                  <AppText style={styles.stampText}>{`🍺 +${reveal.drink}${reveal.out ? ` · ${t("liarsdice.stage.out")}` : ""}`}</AppText>
-                </Animated.View>
+                // knocked out, in a row of its own: "out" goes under the
+                // cups, so the stamp stays clear of the fifth die
+                two || !reveal.out ? (
+                  <Animated.View entering={ZoomIn.duration(320)} style={[styles.stamp, { top: two ? 1 : rowH / 2 - 11 }]}>
+                    <AppText style={styles.stampText}>{`🍺 +${reveal.drink}${reveal.out ? ` · ${t("liarsdice.stage.out")}` : ""}`}</AppText>
+                  </Animated.View>
+                ) : (
+                  <Animated.View entering={ZoomIn.duration(320)} style={[styles.stamp, styles.stampTall, { top: rowH / 2 - 17 }]}>
+                    <AppText style={[styles.stampText, styles.stampLine]}>{`🍺 +${reveal.drink}`}</AppText>
+                    <AppText style={[styles.stampText, styles.stampLine]}>{t("liarsdice.stage.out")}</AppText>
+                  </Animated.View>
+                )
               ) : null}
             </View>
           );
@@ -243,6 +252,8 @@ const styles = StyleSheet.create({
   bonus: { fontFamily: fontFamily.bold, color: "#FFD58A" },
   stamp: { position: "absolute", right: 6, paddingHorizontal: 6, borderRadius: 6, backgroundColor: "#2A0408" },
   stampText: { fontFamily: fontFamily.bold, fontSize: 11.5, lineHeight: 20, color: "#FFE0E0" },
+  stampTall: { paddingHorizontal: 5, paddingVertical: 2, alignItems: "center" },
+  stampLine: { lineHeight: 15, textAlign: "center" },
   verdict: { minHeight: 46, alignItems: "center", paddingHorizontal: 20 },
   verdictTitle: { fontFamily: fontFamily.bold, fontSize: 20, lineHeight: 25, letterSpacing: 1.2, textTransform: "uppercase", ...shadow },
   verdictLine: { fontFamily: fontFamily.medium, fontSize: 13, lineHeight: 18, color: "#F1E6D2", textAlign: "center", ...shadow },

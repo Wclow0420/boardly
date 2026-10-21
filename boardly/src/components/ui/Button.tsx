@@ -114,6 +114,8 @@ export function Button({
               : typography.label.fontFamily,
           fontSize: sizeStyle.fontSize,
           color: labelColor,
+          // a label that has to wrap stays centred on the button
+          textAlign: "center",
         }}
       >
         {label}

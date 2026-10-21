@@ -266,7 +266,7 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
     const loser = e.caught ? e.claimant : e.challenger;
     centre = (
       <Showdown
-        title={t(e.challenger === mySeat ? "coup.show.titleMe" : "coup.show.title", { challenger: nameOf(e.challenger), claimant: nameOf(e.claimant), role: roleName(e.role) })}
+        title={t(e.challenger === mySeat ? "coup.show.titleMe" : e.claimant === mySeat ? "coup.show.titleAtMe" : "coup.show.title", { challenger: nameOf(e.challenger), claimant: nameOf(e.claimant), role: roleName(e.role) })}
         role={e.role}
         caught={e.caught}
         verdict={t(`coup.show.${e.caught ? "caught" : "proved"}${loser === mySeat ? "Me" : ""}`, {
@@ -513,7 +513,7 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
         }}
       />
     );
-    lip = { line: loseWhy(state, losing?.why ?? null, userOf, t), more: [t("coup.lose.hint")], title: lipTitle("lose") };
+    lip = { line: loseWhy(state, losing?.why ?? null, userOf, mySeat, t), more: [t("coup.lose.hint")], title: lipTitle("lose") };
     const role = picked !== null ? me.cards[picked]?.role : null;
     bottom =
       picked !== null && role ? (
@@ -560,7 +560,7 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
       aim: blow ? losing.seat : null,
       held: true,
     });
-    lip = { line: loseWhy(state, losing.why, userOf, t), title: lipTitle("table") };
+    lip = { line: loseWhy(state, losing.why, userOf, mySeat, t), title: lipTitle("table") };
     bottom = (
       <AppText style={stageText.strong} numberOfLines={2}>
         {t("coup.prompt.losing", { name: userOf(losing.seat) })}
@@ -602,10 +602,10 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
   // ── the header: whose turn, how many still in, everyone's tile ──
   const goneSeat = staged?.event.t === "out" ? staged.event.seat : null;
   const overShown = over && !staged;
-  // a game ended by the moment still to be shown: still the turn it
-  // happened in
+  // a moment still to be shown here (a challenge settled, a game ended by
+  // it): still the turn it happened in, whatever has been played since
   let turnShown = state.turn;
-  if (over && staged) {
+  if (staged) {
     for (let at = cut - 1; at >= 0; at--) {
       const event = state.log[at];
       if (event.t === "action") {
@@ -633,7 +633,14 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
       ? t("coup.den.yourTurn")
       : t("coup.den.turn", { name: shortName(nameOf(turnShown)) });
   const subtitle = t("coup.den.subtitle", {
-    n: Math.max(1, turnCount(state)),
+    // the turn of the moment on the stage; the turn being chosen counts
+    // too (its action isn't in the log yet)
+    n: Math.max(
+      1,
+      staged
+        ? state.log.slice(0, cut).filter((e) => e.t === "action").length
+        : turnCount(state) + (state.phase === "action" && !over ? 1 : 0),
+    ),
     left: aliveCount(state) + unseenOut,
     total: state.numPlayers,
   });
@@ -665,7 +672,7 @@ export function CoupBoard({ state, mySeat, players, busy, finished, sessionId, o
   ];
   const dock: StageDock = {
     hand:
-      me && !over && kind !== "deal"
+      me && !overShown && kind !== "deal"
         ? {
             label: t("coup.tools.handShort"),
             back: (w) => <HandBacks width={w} cards={handCards} />,
@@ -735,13 +742,16 @@ function loseWhy(
   state: CoupState,
   why: string | null,
   nameOf: (seat: number) => string,
+  mySeat: number,
   t: (k: string, o?: Record<string, unknown>) => string,
 ) {
   const seat = state.losing?.seat ?? state.waitingOn[0] ?? -1;
   const actor = state.action ? nameOf(state.action.actor) : "";
-  if (why === "coup") return t("coup.lose.coup", { name: nameOf(seat), actor });
-  if (why === "assassinate") return t("coup.lose.assassinate", { name: nameOf(seat), actor });
-  return t("coup.lose.challenge", { name: nameOf(seat) });
+  // my own card going: said to me, not by my name
+  const me = seat === mySeat ? "Me" : "";
+  if (why === "coup") return t(`coup.lose.coup${me}`, { name: nameOf(seat), actor });
+  if (why === "assassinate") return t(`coup.lose.assassinate${me}`, { name: nameOf(seat), actor });
+  return t(`coup.lose.challenge${me}`, { name: nameOf(seat) });
 }
 
 /** Every role at a glance, and the actions anyone may take. */
