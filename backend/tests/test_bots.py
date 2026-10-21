@@ -7,6 +7,7 @@ import random
 from app.extensions import db
 from app.games import get_game
 from app.models import CoinReward, SessionPlayer, User
+from app.rewards import game_coins
 
 AUTH = "/api/v1/auth"
 ROOMS = "/api/v1/rooms"
@@ -145,12 +146,15 @@ def test_bots_play_a_whole_game_with_a_person(app, client, make_user):
     assert session["status"] == "finished"
     with app.app_context():
         rewards = CoinReward.query.filter_by(session_id=session["id"]).all()
-        # Only Alice is paid, and never the win bonus with bots around
-        assert [(r.reason, r.amount) for r in rewards] == [
-            ("played", get_game("nightwatch").coins_play)
+        # Only Alice is paid, a quarter of what the game pays among people
+        game = get_game("nightwatch")
+        won = rewards[0].reason == "win"
+        assert [r.amount for r in rewards] == [
+            game_coins(game, won, bot_game=True)
         ]
-        # Practice: no stats or badges
-        assert SessionPlayer.query.filter_by(session_id=session["id"]).count() == 0
+        # Played on her card, kept away from badges; bots keep no record
+        rows = SessionPlayer.query.filter_by(session_id=session["id"]).all()
+        assert [(str(r.user_id), r.with_bots) for r in rows] == [(alice["id"], True)]
 
 
 def test_bots_come_along_to_a_rematch(client, make_user):

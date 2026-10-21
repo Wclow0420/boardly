@@ -53,6 +53,26 @@ def bots_available(room) -> bool:
     return bool(current_app.config.get("BOTS_ENABLED")) and game.has_bots
 
 
+# How many bots a practice table seats, by game (with me, the table
+# is one more): enough for the game as it is meant to be played. A game
+# not listed gets its smallest table.
+PRACTICE_BOTS = {
+    "nightwatch": 5,
+    "avalon": 4,
+    "coup": 3,
+    "liarsdice": 3,
+    "tictactoe": 1,
+    "shelter": 4,
+    "manor": 4,
+}
+
+
+def practice_bots(game) -> int:
+    """Bots for a practice table of `game`, kept within its seats."""
+    count = PRACTICE_BOTS.get(game.key, game.min_players - 1)
+    return max(1, min(count, game.max_players - 1))
+
+
 def has_bots(room) -> bool:
     return any(p.user is not None and p.user.is_bot for p in room.players)
 

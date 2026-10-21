@@ -8,8 +8,9 @@
 // ride there); in the middle, through the folding gate, the floor itself
 // (LiftShaft): the game's world with its lead standing in front; under it
 // the floor's plaque, its name, how many play, a line about it, and the
-// ways out: open a table, or read the rules. Swipe up or down to ride a
-// floor at a time (a clear stop at each, a lurch and a ding on arrival),
+// ways out: open a table (in practice mode one filled with bots), or read
+// the rules. Swipe up or down to ride a floor at a time (a clear stop at
+// each, a lurch and a ding on arrival),
 // tap a number on the dial to ride straight there; riding into another
 // bank turns the dial over like an odometer. Choosing how many are
 // playing darkens the floors whose game doesn't take that many, and
@@ -95,6 +96,10 @@ export interface LiftPageProps {
   initialCount?: number | null;
   /** Open with the directory showing (dev previews). */
   initialDirectory?: boolean;
+  /** Practice mode (the Games tab opened with `practice=1`): the sign
+   *  reads "Practice" and stepping out opens a table already filled
+   *  with bots. */
+  practice?: boolean;
 }
 
 const NO_PLAYS: Record<string, number> = {};
@@ -113,6 +118,7 @@ export function LiftPage({
   onShown,
   initialCount = null,
   initialDirectory = false,
+  practice = false,
 }: LiftPageProps) {
   const { t, i18n } = useTranslation();
   const gameName = useGameName();
@@ -564,6 +570,7 @@ export function LiftPage({
               onRide={onRide}
               onBank={onBank}
               onDirectory={openDirectory}
+              sign={practice ? t("games.lift.practice") : undefined}
             />
           </LayoutAnimationConfig>
           <Directory
@@ -616,7 +623,7 @@ export function LiftPage({
                     onPress={() => onRules(game)}
                   />
                   <Button
-                    label={t("games.lift.stepOut")}
+                    label={t(practice ? "games.lift.practiceStepOut" : "games.lift.stepOut")}
                     size="md"
                     style={[styles.grow, narrow && styles.tight]}
                     loading={busy}

@@ -1,5 +1,5 @@
-"""Coins: earned when a game ends, claimed by the player, spent on
-profile borders."""
+"""Coins: paid straight onto the balance when a game ends (nothing to
+claim), spent on profile borders."""
 
 from tests.test_rematch import _finish, _finished_game
 
@@ -12,8 +12,8 @@ def _me(client, user):
     return client.get(f"{AUTH}/me", headers=user["headers"]).get_json()["user"]
 
 
-def _claim(client, user):
-    return client.post(f"{REWARDS}/claim", headers=user["headers"]).get_json()
+def _rewards(client, user):
+    return client.get(REWARDS, headers=user["headers"]).get_json()
 
 
 def test_new_players_start_with_nothing(client, make_user):
@@ -21,51 +21,46 @@ def test_new_players_start_with_nothing(client, make_user):
     me = _me(client, alice)
     assert me["coins"] == 0
     assert me["ownedBorders"] == []
-    assert client.get(REWARDS, headers=alice["headers"]).get_json() == {
-        "rewards": [],
-        "total": 0,
-    }
+    assert _rewards(client, alice) == {"rewards": [], "total": 0, "recent": []}
 
 
-def test_finishing_a_game_pays_winner_and_loser(client, make_user):
+def test_finishing_a_game_pays_winner_and_loser_straight_away(client, make_user):
     alice, bob, room = _finished_game(client, make_user)
     # nothing while the game is still running
-    assert client.get(REWARDS, headers=alice["headers"]).get_json()["total"] == 0
+    assert _me(client, alice)["coins"] == 0
 
     _finish(client, room, alice, bob)
 
-    won = client.get(REWARDS, headers=alice["headers"]).get_json()
-    lost = client.get(REWARDS, headers=bob["headers"]).get_json()
-    assert (won["total"], won["rewards"][0]["reason"]) == (6, "win")
-    assert (lost["total"], lost["rewards"][0]["reason"]) == (2, "played")
-    assert won["rewards"][0]["gameType"] == "tictactoe"
-    # waiting rewards are not on the balance yet
-    assert _me(client, alice)["coins"] == 0
+    # on the balance at once
+    assert (_me(client, alice)["coins"], _me(client, bob)["coins"]) == (6, 2)
+    won, lost = _rewards(client, alice), _rewards(client, bob)
+    # nothing waits to be claimed; the payment is on record
+    assert (won["total"], won["rewards"]) == (0, [])
+    assert [(r["reason"], r["amount"], r["gameType"]) for r in won["recent"]] == [
+        ("win", 6, "tictactoe")
+    ]
+    assert [(r["reason"], r["amount"]) for r in lost["recent"]] == [("played", 2)]
 
 
-def test_claiming_moves_coins_to_the_balance_once(client, make_user):
+def test_an_old_app_claiming_gets_nothing_twice(client, make_user):
     alice, bob, room = _finished_game(client, make_user)
     _finish(client, room, alice, bob)
 
-    first = _claim(client, alice)
-    assert first["claimed"] == 6
-    assert first["user"]["coins"] == 6
-
-    again = _claim(client, alice)
-    assert again["claimed"] == 0
-    assert again["user"]["coins"] == 6
-    assert client.get(REWARDS, headers=alice["headers"]).get_json()["total"] == 0
-    # bob's coins are his own
-    assert _me(client, bob)["coins"] == 0
+    claimed = client.post(f"{REWARDS}/claim", headers=alice["headers"]).get_json()
+    assert claimed["claimed"] == 0
+    assert claimed["user"]["coins"] == 6
 
 
 def test_walking_out_pays_no_win_and_nothing_to_the_leaver(client, make_user):
     alice, bob, room = _finished_game(client, make_user)
     client.post(f"{ROOMS}/{room['id']}/leave", headers=bob["headers"])
 
-    stayed = client.get(REWARDS, headers=alice["headers"]).get_json()
-    assert (stayed["total"], stayed["rewards"][0]["reason"]) == (2, "played")
-    assert client.get(REWARDS, headers=bob["headers"]).get_json()["total"] == 0
+    assert [(r["reason"], r["amount"]) for r in _rewards(client, alice)["recent"]] == [
+        ("played", 2)
+    ]
+    assert _me(client, alice)["coins"] == 2
+    assert _rewards(client, bob)["recent"] == []
+    assert _me(client, bob)["coins"] == 0
 
 
 def test_coins_stay_private(client, make_user):

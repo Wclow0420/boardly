@@ -1,9 +1,9 @@
 // Deep-link landing: https://boardly.lol/join/CODE in the store app,
 // boardly-dev://join/CODE in development (and the "Join with code"
 // share links). Shows a table preview and handles every conflict case:
-// already a member -> open it; already at another table -> offer to
-// leave (forfeiting a running game) and join; full/started/not found ->
-// clear error states.
+// already a member -> open it; already at another table -> the one-table
+// sheet (go back to it, or leave it and join this one; useOneTable);
+// full/started/not found -> clear error states.
 
 import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -23,8 +23,8 @@ import {
   TableBackdrop,
 } from "@/components/ui";
 import { useSession } from "@/context/SessionContext";
-import { useJoinRoom, useMyTables } from "@/features/home/hooks";
-import { useLeaveRoom } from "@/features/lobby/hooks";
+import { useJoinRoom } from "@/features/home/hooks";
+import { useOneTable } from "@/features/home/OneTable";
 import { GameBadge } from "@/features/games/GameBadge";
 import { useGameName } from "@/games/names";
 import { fontFamily, useTheme } from "@/theme";
@@ -45,40 +45,30 @@ export default function JoinScreen() {
     queryFn: async () => (await api.getRoomByCode(roomCode)).room,
     enabled: roomCode.length > 0,
   });
-  const { tables } = useMyTables();
   const join = useJoinRoom();
+  const oneTable = useOneTable();
 
   const room = preview.data;
   const isMember = room?.players.some((p) => p.userId === user?.id) ?? false;
-  // My active table, if it's a different one than this link points to
-  const otherTable = tables.find((table) => table.code !== roomCode);
-  const leaveOther = useLeaveRoom(otherTable?.id);
-
   const goToRoom = () => router.replace(`/lobby/${roomCode}`);
 
   const handleJoin = () => {
     setError(null);
-    join.mutate(
-      { code: roomCode },
-      {
-        onSuccess: goToRoom,
-        onError: (err) => {
-          setError(
-            err instanceof ApiError
-              ? t([`errors.${err.code}`, err.message])
-              : t("common.errorTitle")
-          );
+    oneTable
+      .run(
+        async () => {
+          await join.mutateAsync({ code: roomCode });
+          goToRoom();
         },
-      }
-    );
-  };
-
-  const handleLeaveAndJoin = () => {
-    setError(null);
-    leaveOther.mutate(undefined, {
-      onSuccess: handleJoin,
-      onError: () => setError(t("common.errorTitle")),
-    });
+        { except: roomCode }
+      )
+      .catch((err: unknown) => {
+        setError(
+          err instanceof ApiError
+            ? t([`errors.${err.code}`, err.message])
+            : t("common.errorTitle")
+        );
+      });
   };
 
   if (preview.isPending) {
@@ -105,7 +95,6 @@ export default function JoinScreen() {
 
   const host = room.players.find((p) => p.userId === room.hostId);
   const joinable = room.status === "waiting" && !isMember;
-  const blockedByOtherTable = joinable && otherTable !== undefined;
 
   return (
     <Screen backdrop={<TableBackdrop dim={0.45} />}>
@@ -165,25 +154,6 @@ export default function JoinScreen() {
               label={t("game.backHome")}
               variant="secondary"
               onPress={() => router.dismissTo("/")}
-            />
-          </>
-        ) : blockedByOtherTable ? (
-          <>
-            <AppText variant="body" color="textSubtle" align="center">
-              {t("join.alreadyMessage", {
-                game: gameName(otherTable.gameKey, otherTable.gameName),
-              })}
-            </AppText>
-            <Button
-              label={t("join.leaveAndJoin")}
-              variant="danger"
-              loading={leaveOther.isPending || join.isPending}
-              onPress={handleLeaveAndJoin}
-            />
-            <Button
-              label={t("join.backToMine")}
-              variant="secondary"
-              onPress={() => router.replace(`/lobby/${otherTable.code}`)}
             />
           </>
         ) : (

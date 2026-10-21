@@ -1,6 +1,7 @@
 // Mounted once while signed in. Keeps friends data live
 // (`friends_updated`) and surfaces table invites (`table_invite`) as a
-// bottom sheet on whatever screen the user is on.
+// bottom sheet on whatever screen the user is on (and keeps them in the
+// Me page's mailbox).
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -10,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import type { TableInvite } from "@/api/client";
 import { getSocket } from "@/api/socket";
 import { ConfirmSheet, GorhomBottomSheetModal } from "@/components/ui";
+import { addInvite } from "@/features/me/mailbox";
 import { useGameName } from "@/games/names";
 import { successHaptic } from "@/utils/haptics";
 
@@ -30,6 +32,8 @@ export function FriendsRealtime() {
     };
     const onInvite = (payload: TableInvite) => {
       successHaptic();
+      // kept in the Me page's mailbox too, for after the sheet is gone
+      addInvite(payload);
       setInvite(payload);
       sheetRef.current?.present();
     };

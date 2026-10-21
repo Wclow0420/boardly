@@ -1,105 +1,109 @@
-// Your mascot's home: it stands on its stage, breathing, and hops when
-// tapped; the wardrobe slides up from here. Room to grow: things to do
-// with it, and mini-games that earn coins.
+// The Me tab, where the app opens: my meeple centre stage in the lobby of
+// the Boardly building (features/me). This gathers what the page shows
+// from what the app has (my session and card, my table and its floor,
+// friends on now, the games) and where each of its buttons goes. A code
+// joins through the join sheet, which asks first (go back or leave) when
+// I'm still at another table (useOneTable).
 
-import { LinearGradient } from "expo-linear-gradient";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { useMemo } from "react";
-import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Emblem } from "@/components/icons";
-import {
-  AppText,
-  BezelOverlay,
-  Frame,
-  LightSweep,
-  TitlePlaque,
-  Texture,
-} from "@/components/ui";
+import type { GorhomBottomSheetModal } from "@/components/ui";
 import { useSession } from "@/context/SessionContext";
-import { CoinPill } from "@/features/coins/CoinPill";
+import { useGamesQuery } from "@/features/games/hooks";
+import { floorOfGame } from "@/features/games/lift/banks";
+import { isNewGame, useLiftBuilding } from "@/features/games/lift/building";
+import { JoinTableSheet } from "@/features/home/JoinTableSheet";
+import { useMyTables, useOnlineFriends } from "@/features/home/hooks";
+import { tablePath } from "@/features/home/OneTable";
+import { useLiftFloor } from "@/features/lobby/floor/useLiftFloor";
 import { asLook } from "@/features/mascot/dress";
-import { MascotStage } from "@/features/mascot/MascotStage";
 import { useMeepleTransition } from "@/features/mascot/MeepleTransition";
-import { Stage } from "@/features/mascot/Stage";
-import { TABLE, fontFamily } from "@/theme";
-import { tapHaptic } from "@/utils/haptics";
+import { MailboxPopup } from "@/features/me/MailboxPopup";
+import { markMailSeen, useMailbox } from "@/features/me/mailbox";
+import { marqueeLines } from "@/features/me/marquee";
+import { MePage } from "@/features/me/MePage";
+import { statsQuery } from "@/features/profile/warm";
+import { useGameName } from "@/games/names";
 
-export default function MascotTab() {
+export default function MeTab() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { width } = useWindowDimensions();
   const { user } = useSession();
   const look = useMemo(() => asLook(user?.mascot), [user?.mascot]);
   const go = useMeepleTransition();
+  const gameName = useGameName();
+
+  // my record, under my name
+  const stats = useQuery({ ...statsQuery(user?.id), staleTime: 30_000 }).data;
+  const title = stats && stats.gamesPlayed > 0 ? t("me.record", { wins: stats.wins, count: stats.gamesPlayed }) : null;
+
+  // the table I'm at, by its floor
+  const { tables } = useMyTables();
+  const table = tables[0] ?? null;
+  const { floor } = useLiftFloor(table?.gameKey);
+  const tableLabel = table ? t("me.backTo", { floor, game: gameName(table.gameKey, table.gameName) }) : null;
+
+  // the marquee's lines
+  const games = useGamesQuery().data;
+  const friends = useOnlineFriends();
+  const building = useLiftBuilding();
+  const friendsKey = JSON.stringify(friends.map((f) => [f.id, f.presence, f.playing]));
+  const gamesKey = (games ?? []).map((g) => g.id).join(",");
+  const marquee = useMemo(
+    () =>
+      marqueeLines({
+        t,
+        gameName,
+        games: games ?? [],
+        friends,
+        isNew: isNewGame,
+        floorOf: (id) => floorOfGame(building, id),
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- by what the lines say
+    [t, gameName, gamesKey, friendsKey, building],
+  );
+
+  const mail = useMailbox();
+  const [mailOpen, setMailOpen] = useState(false);
+  const joinRef = useRef<GorhomBottomSheetModal>(null);
+
+  // the wardrobe opens through my meeple where it stands
+  const wardrobe = useCallback((chest: number) => go(() => router.push("/wardrobe"), { from: chest }), [go, router]);
 
   return (
-    <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: TABLE.table[1] }}>
-      <LinearGradient colors={TABLE.table} style={StyleSheet.absoluteFill} />
-      <View style={styles.header}>
-        <TitlePlaque label={t("mascot.tab")} />
-        <View style={{ flex: 1 }} />
-        <CoinPill amount={user?.coins ?? 0} />
-      </View>
-      <ScrollView contentContainerStyle={styles.body}>
-        <AppText style={styles.hello}>{t("mascot.hello", { name: user?.username ?? "" })}</AppText>
-        <Stage width={width - 32}>
-          <MascotStage look={look} width={Math.min(220, width * 0.52)} />
-        </Stage>
-        <AppText style={styles.hint}>{t("mascot.tapToHop")}</AppText>
-
-        {/* the wardrobe: it slides up over everything */}
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => {
-            tapHaptic();
-            go(() => router.push("/wardrobe"));
-          }}
-          style={({ pressed }) => [styles.wardrobe, pressed && { opacity: 0.8 }]}
-        >
-          <LinearGradient colors={TABLE.button} style={styles.wardrobeFill}>
-            <Texture radius={16} />
-            <BezelOverlay r={16} t={4} />
-            <LightSweep r={16} />
-            <Emblem emoji="👗" size={40} />
-            <AppText style={styles.wardrobeText}>{t("mascot.open")}</AppText>
-          </LinearGradient>
-        </Pressable>
-
-        <Frame tone="wood" style={styles.soon}>
-          <Emblem emoji="🎲" size={30} />
-          <AppText style={styles.soonText}>{t("mascot.soon")}</AppText>
-        </Frame>
-      </ScrollView>
-    </SafeAreaView>
+    <>
+      <MePage
+        name={user?.username ?? ""}
+        title={title}
+        avatarUrl={user?.avatarUrl}
+        borderId={user?.borderId}
+        mascot={user?.mascot}
+        look={look}
+        coins={user?.coins ?? 0}
+        marquee={marquee}
+        unread={mail.unread}
+        table={tableLabel}
+        onTable={() =>
+          // back to my table: its lobby while it waits, the game once it plays
+          table && router.push(tablePath({ code: table.code, status: table.status === "inProgress" ? "playing" : "waiting" }) as never)
+        }
+        onProfile={() => router.push("/profile")}
+        onMascot={wardrobe}
+        onWardrobe={wardrobe}
+        onMailbox={() => {
+          markMailSeen();
+          setMailOpen(true);
+        }}
+        onCode={() => joinRef.current?.present()}
+        onPractice={() => router.push("/(tabs)/games?practice=1")}
+        onPlay={() => router.push("/games")}
+        paused={mailOpen}
+      />
+      <MailboxPopup visible={mailOpen} mail={mail} onClose={() => setMailOpen(false)} />
+      <JoinTableSheet ref={joinRef} />
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingTop: 4 },
-  body: { alignItems: "center", paddingHorizontal: 16, paddingBottom: 32, gap: 6 },
-  hello: { color: TABLE.cream, fontFamily: fontFamily.bold, fontSize: 18, marginTop: 8 },
-  hint: { color: TABLE.creamMuted, fontSize: 11, marginTop: -4 },
-  wardrobe: {
-    marginTop: 12,
-    alignSelf: "stretch",
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 3 },
-  },
-  wardrobeFill: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    paddingVertical: 14,
-    borderRadius: 16,
-  },
-  wardrobeText: { color: "#FFFFFF", fontFamily: fontFamily.bold, fontSize: 18 },
-  soon: { marginTop: 14, alignSelf: "stretch", flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
-  soonText: { flex: 1, color: TABLE.cream, fontSize: 13 },
-});

@@ -31,7 +31,7 @@
     "games": "Permainan",
     "friends": "Rakan",
     "profile": "Profil",
-    "mascot": "Maskot"
+    "mascot": "Saya"
   },
   "home": {
     "greeting": "Hai, {{name}}!",
@@ -58,10 +58,7 @@
     "codeLabel": "Kod Meja",
     "cta": "Sertai Meja",
     "hostedBy": "Hos: {{name}}",
-    "openTable": "Buka Meja",
-    "alreadyMessage": "Anda sudah berada di meja {{game}}. Tinggalkannya untuk sertai meja ini.",
-    "leaveAndJoin": "Tinggal & Sertai",
-    "backToMine": "Kembali ke Meja Saya"
+    "openTable": "Buka Meja"
   },
   "games": {
     "title": "Permainan",
@@ -123,7 +120,9 @@
         "party": "Parti",
         "duel": "Duel",
         "classic": "Klasik"
-      }
+      },
+      "practice": "Latihan",
+      "practiceStepOut": "Berlatih dengan bot"
     }
   },
   "gameNames": {
@@ -229,7 +228,7 @@
     "settingsHostOnly": "Hanya hos boleh menukarnya.",
     "bots": {
       "title": "Pemain bot",
-      "hint": "Kurang seorang dua pemain? Isi kerusi kosong dengan bot. Mereka terus sedia dan pelayan bermain untuk mereka. Permainan dengan bot ialah latihan: anda dapat syiling bermain, tetapi tiada bonus menang, statistik atau lencana.",
+      "hint": "Kurang seorang dua? Isi tempat kosong dengan bot. Mereka duduk sedia dan pelayan memainkan langkah mereka. Permainan dengan bot memberi suku syiling sahaja dan tiada lencana, tetapi masih dikira dalam kad anda.",
       "fewer": "Kurangkan bot",
       "more": "Tambah bot",
       "add_one": "Tambah {{count}} bot",
@@ -2320,12 +2319,9 @@
     "earnedSection": "Dapat dengan lencana"
   },
   "coins": {
-    "earned_one": "Anda dapat {{count}} syiling!",
-    "earned_other": "Anda dapat {{count}} syiling!",
-    "fromGames": "Daripada permainan yang selesai",
-    "claim": "Tuntut",
-    "waiting_one": "+{{count}} syiling — tuntut di Laman Utama",
-    "waiting_other": "+{{count}} syiling — tuntut di Laman Utama"
+    "added_one": "+{{count}} syiling masuk ke dompet anda",
+    "added_other": "+{{count}} syiling masuk ke dompet anda",
+    "botGame": "Ada bot di meja: suku syiling sahaja, tiada lencana"
   },
   "gameOptions": {
     "liarsdice": {
@@ -2812,6 +2808,47 @@
       "6": "bawah kiri",
       "7": "bawah tengah",
       "8": "bawah kanan"
+    }
+  },
+  "oneTable": {
+    "title": "Sudah di sebuah meja",
+    "where": "Anda di {{sign}} ({{count}}/{{max}} · {{status}}).",
+    "waiting": "menunggu",
+    "playing": "sedang bermain",
+    "question": "Kembali ke meja itu, atau tinggalkannya?",
+    "playingWarning": "Permainan di sana sedang berjalan: jika anda keluar, permainan tamat untuk semua orang di meja dan anda tidak mendapat apa-apa.",
+    "hostWarning": "Anda hos: jika anda keluar, meja ditutup untuk semua orang.",
+    "back": "Kembali ke meja itu",
+    "leave": "Tinggalkan dan teruskan",
+    "leaveGame": "Tinggalkan dan tamatkan permainan itu"
+  },
+  "me": {
+    "play": "MAIN",
+    "mailbox": "Peti Surat",
+    "code": "Kod",
+    "practice": "Latihan",
+    "wardrobe": "Almari",
+    "close": "Tutup",
+    "record_one": "{{wins}} menang · {{count}} permainan",
+    "record_other": "{{wins}} menang · {{count}} permainan",
+    "backTo": "{{floor}}F · {{game}} · kembali",
+    "news": {
+      "manorMap": "Rumah Agam: peta baharu"
+    },
+    "marquee": {
+      "playing": "{{name}} sedang main {{game}}",
+      "online_one": "{{name}} dalam talian",
+      "online_other": "{{count}} rakan dalam talian",
+      "newGame": "Baharu di {{floor}}F: {{game}}",
+      "ofTheDay": "Permainan hari ini: {{game}}",
+      "welcome": "Selamat datang ke Boardly"
+    },
+    "mail": {
+      "empty": "Tiada surat",
+      "emptyHint": "Jemputan meja dan permintaan rakan sampai di sini.",
+      "invite": "menjemput anda main {{game}}",
+      "request": "mahu berkawan",
+      "accept": "Terima"
     }
   }
 }

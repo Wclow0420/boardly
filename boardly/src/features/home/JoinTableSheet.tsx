@@ -12,7 +12,8 @@ import {
   SheetTextInput,
   TextField,
 } from "@/components/ui";
-import { useAlreadyInRoomRedirect, useJoinRoom } from "./hooks";
+import { useJoinRoom } from "./hooks";
+import { useOneTable } from "./OneTable";
 
 /** Bottom sheet: enter a table code to join a friend's room. */
 export const JoinTableSheet = forwardRef<GorhomBottomSheetModal>(
@@ -20,36 +21,35 @@ export const JoinTableSheet = forwardRef<GorhomBottomSheetModal>(
     const { t } = useTranslation();
     const router = useRouter();
     const join = useJoinRoom();
-    const redirectIfInRoom = useAlreadyInRoomRedirect();
+    const oneTable = useOneTable();
 
     const [code, setCode] = useState("");
     const [error, setError] = useState<string | null>(null);
     // ref to dismiss after a successful join
     const selfRef = useRef<GorhomBottomSheetModal | null>(null);
 
+    // A player still at another table is asked first (go back to it, or
+    // leave it and join this one): this sheet steps aside for that
     const handleJoin = () => {
       setError(null);
-      join.mutate(
-        { code: code.trim().toUpperCase() },
-        {
-          onSuccess: ({ room }) => {
+      const target = code.trim().toUpperCase();
+      oneTable
+        .run(
+          async () => {
+            const { room } = await join.mutateAsync({ code: target });
             selfRef.current?.dismiss();
             setCode("");
             router.push(`/lobby/${room.code}`);
           },
-          onError: async (err) => {
-            if (await redirectIfInRoom(err)) {
-              selfRef.current?.dismiss();
-              return;
-            }
-            if (err instanceof ApiError) {
-              setError(t([`errors.${err.code}`, err.message]));
-            } else {
-              setError(t("common.errorTitle"));
-            }
-          },
-        }
-      );
+          { except: target, onConflict: () => selfRef.current?.dismiss() },
+        )
+        .catch((err: unknown) => {
+          if (err instanceof ApiError) {
+            setError(t([`errors.${err.code}`, err.message]));
+          } else {
+            setError(t("common.errorTitle"));
+          }
+        });
     };
 
     return (
