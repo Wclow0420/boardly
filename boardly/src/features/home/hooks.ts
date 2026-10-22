@@ -4,10 +4,9 @@
 // request bodies.
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 
-import { api, ApiError, type RoomInfo } from "@/api/client";
+import { api, type RoomInfo } from "@/api/client";
 import { useSession } from "@/context/SessionContext";
 import type { Friend, TableSummary } from "@/data/types";
 import { useFriendsQuery } from "@/features/friends/hooks";
@@ -45,11 +44,17 @@ export function useMyTables() {
   };
 }
 
+/** Open a table: a game's key, or `{ gameType, practice: true }` for a
+ *  practice table (already filled with bots). Run it through
+ *  useOneTable().run so a player at another table is asked first. */
 export function useCreateRoom() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (gameType: string) => api.createRoom(gameType),
+    mutationFn: (input: string | { gameType: string; practice?: boolean }) =>
+      typeof input === "string"
+        ? api.createRoom(input)
+        : api.createRoom(input.gameType, { practice: input.practice }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["myTables"] });
     },
@@ -65,25 +70,6 @@ export function useJoinRoom() {
       queryClient.invalidateQueries({ queryKey: ["myTables"] });
     },
   });
-}
-
-/** One table at a time: when the backend answers already_in_room,
- *  send the user to their active table instead of showing an error. */
-export function useAlreadyInRoomRedirect() {
-  const router = useRouter();
-  return useCallback(
-    async (err: unknown): Promise<boolean> => {
-      if (err instanceof ApiError && err.code === "already_in_room") {
-        const { rooms } = await api.myRooms().catch(() => ({ rooms: [] }));
-        if (rooms[0]) {
-          router.push(`/lobby/${rooms[0].code}`);
-          return true;
-        }
-      }
-      return false;
-    },
-    [router]
-  );
 }
 
 export function useOnlineFriends(): Friend[] {

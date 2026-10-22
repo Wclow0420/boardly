@@ -31,7 +31,7 @@
     "games": "Games",
     "friends": "Friends",
     "profile": "Profile",
-    "mascot": "Mascot"
+    "mascot": "Me"
   },
   "home": {
     "greeting": "Hey, {{name}}!",
@@ -58,10 +58,7 @@
     "codeLabel": "Table Code",
     "cta": "Join Table",
     "hostedBy": "Hosted by {{name}}",
-    "openTable": "Open Table",
-    "alreadyMessage": "You're already at a {{game}} table. Leave it to join this one.",
-    "leaveAndJoin": "Leave & Join",
-    "backToMine": "Back to My Table"
+    "openTable": "Open Table"
   },
   "games": {
     "title": "Games",
@@ -116,14 +113,15 @@
       "lit_one": "{{count}} of {{total}} floors lit",
       "lit_other": "{{count}} of {{total}} floors lit",
       "banks": {
-        "often": "Your floors",
         "deduction": "Deduction",
         "bluff": "Bluff",
         "strategy": "Strategy",
         "party": "Party",
         "duel": "Duel",
         "classic": "Classic"
-      }
+      },
+      "practice": "Practice",
+      "practiceStepOut": "Practice with bots"
     }
   },
   "gameNames": {
@@ -229,7 +227,7 @@
     "settingsHostOnly": "Only the host can change these.",
     "bots": {
       "title": "Bot players",
-      "hint": "A player or two short? Fill empty seats with bots. They sit down ready and the server plays their moves. A game with bots is practice: you earn the coins for playing, but no win bonus, stats or badges.",
+      "hint": "A player or two short? Fill empty seats with bots. They sit down ready and the server plays their moves. A game with bots pays a quarter of the coins and earns no badges; it still counts on your card.",
       "fewer": "Fewer bots",
       "more": "More bots",
       "add_one": "Add {{count}} bot",
@@ -260,7 +258,19 @@
       "waitingOn": "Waiting on {{names}} to be ready",
       "canStart": "Everyone's ready: hold to start",
       "waitingHost": "Everyone's ready. Waiting for {{host}} to start",
-      "starting": "The lamps go down: here we go…"
+      "starting": "The lamps go down: here we go…",
+      "player": {
+        "profile": "View profile",
+        "remove": "Remove from table",
+        "removeAsk": "Remove {{name}} from the table?",
+        "removeHint": "They can join again with the table code.",
+        "removeConfirm": "Remove",
+        "bot": "Bot"
+      }
+    },
+    "removed": {
+      "title": "Removed",
+      "message": "You were removed from the table."
     }
   },
   "table": {
@@ -276,7 +286,6 @@
     "youWin": "You win! 🎉",
     "winner": "{{name}} wins!",
     "draw": "It's a draw!",
-    "backHome": "Back to Home",
     "playAgain": "Play Again",
     "joinRematch": "Join Rematch",
     "rematchOpen": "A rematch table is open — join in!",
@@ -2322,12 +2331,9 @@
     "earnedSection": "Earned with a badge"
   },
   "coins": {
-    "earned_one": "You earned {{count}} coin!",
-    "earned_other": "You earned {{count}} coins!",
-    "fromGames": "From your finished games",
-    "claim": "Claim",
-    "waiting_one": "+{{count}} coin — claim it on Home",
-    "waiting_other": "+{{count}} coins — claim them on Home"
+    "added_one": "+{{count}} coin in your purse",
+    "added_other": "+{{count}} coins in your purse",
+    "botGame": "Bots at the table: a quarter of the coins, no badges"
   },
   "gameOptions": {
     "liarsdice": {
@@ -2814,6 +2820,47 @@
       "6": "bottom left",
       "7": "bottom middle",
       "8": "bottom right"
+    }
+  },
+  "oneTable": {
+    "title": "Already at a table",
+    "where": "You're at {{sign}} ({{count}}/{{max}} · {{status}}).",
+    "waiting": "waiting",
+    "playing": "playing",
+    "question": "Go back to that table, or leave it?",
+    "playingWarning": "The game there is under way: leaving ends it for everyone at the table, and you earn nothing from it.",
+    "hostWarning": "You're the host: leaving closes the table for everyone.",
+    "back": "Go back to that table",
+    "leave": "Leave it and carry on",
+    "leaveGame": "Leave and end that game"
+  },
+  "me": {
+    "play": "PLAY",
+    "mailbox": "Mailbox",
+    "code": "Code",
+    "practice": "Practice",
+    "wardrobe": "Wardrobe",
+    "close": "Close",
+    "record_one": "{{wins}} wins · {{count}} game",
+    "record_other": "{{wins}} wins · {{count}} games",
+    "backTo": "{{floor}}F · {{game}} · back",
+    "news": {
+      "manorMap": "Seal the Manor: new maps"
+    },
+    "marquee": {
+      "playing": "{{name}} is playing {{game}}",
+      "online_one": "{{name}} is online",
+      "online_other": "{{count}} friends online",
+      "newGame": "New on {{floor}}F: {{game}}",
+      "ofTheDay": "Game of the day: {{game}}",
+      "welcome": "Welcome to Boardly"
+    },
+    "mail": {
+      "empty": "No mail",
+      "emptyHint": "Table invites and friend requests land here.",
+      "invite": "invites you to {{game}}",
+      "request": "wants to be friends",
+      "accept": "Accept"
     }
   }
 }

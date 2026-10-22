@@ -7,8 +7,9 @@ from app.extensions import db
 
 
 class CoinReward(db.Model):
-    """Coins a player earned from one finished game. They sit here until
-    the player claims them, which moves them onto User.coins."""
+    """Coins a player earned from one finished game: the record of a
+    payment. They go onto User.coins the moment the game ends, so
+    `claimed_at` is set then (rows from before that waited for a claim)."""
 
     __tablename__ = "coin_rewards"
     __table_args__ = (

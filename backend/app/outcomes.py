@@ -13,6 +13,7 @@ from app.extensions import db
 from app.games import GAMES, get_game
 from app.games.base import TIERS
 from app.models import GameSession, SessionPlayer
+from app.rewards import is_bot_game
 
 
 def _outcome(game, state: dict, seat: int) -> dict:
@@ -25,14 +26,17 @@ def _outcome(game, state: dict, seat: int) -> dict:
 
 def record_outcomes(room, session, abandoned=False, exclude=None):
     """Write how every seated player did (`exclude` walked out). Does not
-    commit. Call once, when the session finishes. Games with a bot at
-    the table are practice: they count towards no stats or badges."""
-    if any(p.user is not None and p.user.is_bot for p in room.players):
-        return
+    commit. Call once, when the session finishes. A bot game (see
+    app/rewards.py) counts as played and won on the card but towards no
+    badge: its rows are marked `with_bots`. Bots themselves keep no
+    record."""
     game = get_game(session.game_type)
     winners = set(session.winner_user_ids or [])
     finished = session.finished_at or datetime.now(timezone.utc)
+    bot_game = is_bot_game(room)
     for player in room.players:
+        if player.user is not None and player.user.is_bot:
+            continue
         left = player.user_id == exclude
         outcome = _outcome(game, session.state, player.seat)
         db.session.add(
@@ -47,6 +51,7 @@ def record_outcomes(room, session, abandoned=False, exclude=None):
                 won=str(player.user_id) in winners and not left,
                 abandoned=abandoned,
                 left_game=left,
+                with_bots=bot_game,
                 facts=outcome.get("facts") or {},
                 finished_at=finished,
             )
@@ -124,21 +129,26 @@ def player_card(user_id, chosen=None) -> dict:
             side["wins"] += int(row.won)
     by_game = sorted(games.values(), key=lambda g: (-g["played"], g["gameType"]))
 
+    # Badges only ever count games among people (the bot-game rule,
+    # app/rewards.py): the streak and the players met are measured
+    # over those alone
+    counted = [r for r in played if not r.with_bots]
+    _, counted_best, counted_reached = _streaks(counted)
     ctx = {
-        "rows": played,
-        "best_streak": best,
-        "streak_reached": reached,
-        "co_players": _co_players(user_id, played),
+        "rows": counted,
+        "best_streak": counted_best,
+        "streak_reached": counted_reached,
+        "co_players": _co_players(user_id, counted),
     }
     badges = []
     for badge in GENERAL_BADGES:
         if badge.key in MEASURED:
             progress, times = MEASURED[badge.key](ctx)
         else:
-            progress, times = _count(played, badge.match)
+            progress, times = _count(counted, badge.match)
         badges.append(_badge(badge, None, progress, times))
     for key, game in GAMES.items():
-        mine = [r for r in played if r.game_type == key and not r.abandoned]
+        mine = [r for r in counted if r.game_type == key and not r.abandoned]
         for badge in game.badges:
             progress, times = _count(mine, badge.match)
             badges.append(_badge(badge, key, progress, times))

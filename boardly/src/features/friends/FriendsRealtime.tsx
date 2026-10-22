@@ -1,6 +1,8 @@
 // Mounted once while signed in. Keeps friends data live
 // (`friends_updated`) and surfaces table invites (`table_invite`) as a
-// bottom sheet on whatever screen the user is on.
+// bottom sheet on whatever screen the user is on (and keeps them in the
+// Me page's mailbox). Being taken off a waiting table by its host
+// (`removed_from_room`) leaves a word for the Me tab.
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -10,6 +12,8 @@ import { useTranslation } from "react-i18next";
 import type { TableInvite } from "@/api/client";
 import { getSocket } from "@/api/socket";
 import { ConfirmSheet, GorhomBottomSheetModal } from "@/components/ui";
+import { addInvite } from "@/features/me/mailbox";
+import { noteRemoved } from "@/features/me/notice";
 import { useGameName } from "@/games/names";
 import { successHaptic } from "@/utils/haptics";
 
@@ -30,17 +34,25 @@ export function FriendsRealtime() {
     };
     const onInvite = (payload: TableInvite) => {
       successHaptic();
+      // kept in the Me page's mailbox too, for after the sheet is gone
+      addInvite(payload);
       setInvite(payload);
       sheetRef.current?.present();
     };
+    const onRemoved = (payload: { roomId: string; code: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["myTables"] });
+      noteRemoved(payload.code);
+    };
     socket.on("friends_updated", refresh);
     socket.on("table_invite", onInvite);
+    socket.on("removed_from_room", onRemoved);
     // Presence may have changed while the connection was down
     socket.on("connect", refresh);
 
     return () => {
       socket.off("friends_updated", refresh);
       socket.off("table_invite", onInvite);
+      socket.off("removed_from_room", onRemoved);
       socket.off("connect", refresh);
     };
   }, [queryClient]);

@@ -193,6 +193,8 @@ export interface RoomInfo {
   rematchCode: string | null;
   /** The host can fill seats with bot players (see backend/app/bots.py). */
   botsAvailable?: boolean;
+  /** A practice table: opened already filled with bots. */
+  practice?: boolean;
   session?: GameSessionInfo | null;
 }
 
@@ -389,14 +391,10 @@ export const api = {
   },
 
   rewards: {
-    list: () =>
-      request<{ rewards: CoinRewardInfo[]; total: number }>("/rewards"),
-
-    /** Moves every waiting reward onto the coin balance. */
-    claim: () =>
-      request<{ claimed: number; user: AuthUser }>("/rewards/claim", {
-        method: "POST",
-      }),
+    /** What my latest games paid, newest first. The coins went onto the
+     *  balance when each game ended: there is nothing to claim. */
+    recent: async () =>
+      (await request<{ recent: CoinRewardInfo[] }>("/rewards")).recent,
   },
 
   friends: {
@@ -439,10 +437,14 @@ export const api = {
 
   listGames: () => request<{ games: GameInfo[] }>("/games"),
 
-  createRoom: (gameType: string) =>
+  /** Open a table (I host it). `practice`: it comes already filled with
+   *  bots, all ready (see backend PRACTICE_BOTS). */
+  createRoom: (gameType: string, options?: { practice?: boolean }) =>
     request<{ room: RoomInfo }>("/rooms", {
       method: "POST",
-      body: JSON.stringify({ gameType }),
+      body: JSON.stringify(
+        options?.practice ? { gameType, practice: true } : { gameType }
+      ),
     }),
 
   joinRoom: (code: string) =>
@@ -475,8 +477,9 @@ export const api = {
       body: JSON.stringify({ count }),
     }),
 
-  removeBot: (roomId: string, userId: string) =>
-    request<{ room: RoomInfo }>(`/rooms/${roomId}/bots/${userId}`, {
+  /** The host takes anyone (a person or a bot) off a waiting table. */
+  removePlayer: (roomId: string, userId: string) =>
+    request<{ room: RoomInfo }>(`/rooms/${roomId}/players/${userId}`, {
       method: "DELETE",
     }),
 

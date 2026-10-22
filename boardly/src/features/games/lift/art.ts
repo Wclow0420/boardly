@@ -433,29 +433,13 @@ export const dialRim = (L: LiftLayout) => band(L.cx, L.cy, L.R - 7, L.R, -90, 90
 
 // ------------------------------------------------------------- the banks
 
-/** A five-pointed star at (x, y), `r` to its points. */
-export function starPath(x: number, y: number, r: number) {
-  const pts = Array.from({ length: 10 }, (_, i) => {
-    const a = ((i * 36 - 90) * Math.PI) / 180;
-    const rr = i % 2 ? r * 0.45 : r;
-    return `${f(x + Math.cos(a) * rr)} ${f(y + Math.sin(a) * rr)}`;
-  });
-  return `M${pts.join("L")}Z`;
-}
-
-/** A gold star, as markup (for the dial's face and the directory). */
-export const starMark = (x: number, y: number, r: number, id: string) =>
-  `<defs>${radial(id, ["#FFF6D0", "#F0CC72", "#9A6B1E"], undefined, 0.38, 0.3, 0.75)}</defs><path d="${starPath(x, y + 0.8, r)}" fill="#000" fill-opacity="0.5"/><path d="${starPath(x, y, r)}" fill="url(#${id})" stroke="${INK}" stroke-width="${f(Math.max(0.6, r * 0.14))}" stroke-linejoin="round"/><path d="M${f(x - r * 0.18)} ${f(y - r * 0.55)}L${f(x - r * 0.42)} ${f(y - r * 0.08)}" stroke="#fff" stroke-width="${f(r * 0.14)}" stroke-linecap="round"/>`;
-
 export interface FaceMark {
   data: EmblemData;
   tint?: string;
-  /** One of the games I play most: a star by it. */
-  often: boolean;
 }
 
 /** A bank's face of the dial: each floor's emblem in a soft light where
- *  it sits round the dial, a star by the ones I play most. The box is
+ *  it sits round the dial. The box is
  *  the dial's half disc, 2R × R, its corner at (cx − R, cy − R). Baked
  *  once per bank and turned over with the numbers. */
 export function faceArt(L: LiftLayout, marks: (FaceMark | null)[]) {
@@ -469,8 +453,7 @@ export function faceArt(L: LiftLayout, marks: (FaceMark | null)[]) {
       if (!m) return "";
       const x = s.emblem.x - ox;
       const y = s.emblem.y - oy;
-      const star = m.often ? starMark(x + emblem * 0.42, y + emblem * 0.34, Math.max(4.4, emblem * 0.24), `fs${i}`) : "";
-      return `<circle cx="${f(x)}" cy="${f(y)}" r="${f(emblem * 0.62)}" fill="url(#fglow)"/><g transform="translate(${f(x - emblem / 2)} ${f(y - emblem / 2)}) scale(${f(k)})">${toSvgBody(m.data, m.tint, `fe${i}`)}</g>${star}`;
+      return `<circle cx="${f(x)}" cy="${f(y)}" r="${f(emblem * 0.62)}" fill="url(#fglow)"/><g transform="translate(${f(x - emblem / 2)} ${f(y - emblem / 2)}) scale(${f(k)})">${toSvgBody(m.data, m.tint, `fe${i}`)}</g>`;
     })
     .join("");
   return svg(2 * R, R, `<defs>${radial("fglow", ["#FFE7B0", "#FFE7B0"], [0.34, 0], 0.5, 0.5, 0.5)}</defs>${body}`);
@@ -552,13 +535,8 @@ ${knob(w - r - 1, true)}`,
   );
 }
 
-/** A floor's emblem for the directory's rows, `s` square, with a star
- *  in its corner if it's one of the games I play most. */
-export function rowEmblemArt(data: EmblemData, tint: string | undefined, often: boolean, s: number) {
+/** A floor's emblem for the directory's rows, `s` square. */
+export function rowEmblemArt(data: EmblemData, tint: string | undefined, s: number) {
   const k = (s * 0.86) / 48;
-  return svg(
-    s,
-    s,
-    `<g transform="translate(${f(s * 0.02)} ${f(s * 0.02)}) scale(${f(k)})">${toSvgBody(data, tint, "re")}</g>${often ? starMark(s * 0.8, s * 0.78, s * 0.19, "rs") : ""}`,
-  );
+  return svg(s, s, `<g transform="translate(${f(s * 0.02)} ${f(s * 0.02)}) scale(${f(k)})">${toSvgBody(data, tint, "re")}</g>`);
 }

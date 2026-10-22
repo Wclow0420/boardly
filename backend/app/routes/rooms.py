@@ -1,10 +1,11 @@
 from datetime import datetime, timezone
 
 from flask import Blueprint, current_app, g, request
+from flask_socketio import leave_room as sio_leave_room
 
 from app import presence
 from app.auth import require_auth
-from app.bots import bots_available, nudge, seat_bots
+from app.bots import bots_available, nudge, practice_bots, seat_bots
 from app.extensions import db, socketio
 from app.games import GameError, get_game
 from app.models import GameSession, Room, RoomPlayer
@@ -72,12 +73,16 @@ def _broadcast_room(room: Room):
 @rooms_bp.post("")
 @require_auth
 def create_room():
-    """Body: {"gameType": "tictactoe", "options"?: {...}} — creator
-    becomes host."""
+    """Body: {"gameType": "tictactoe", "options"?: {...}, "practice"?:
+    true} — creator becomes host. A practice table comes already filled
+    with bots, all ready (app/bots.py PRACTICE_BOTS): the host can still
+    add or take off bots, change the settings and start when they like.
+    Like every table it is private: friends join it only by its code."""
     data = request.get_json() or {}
     game_type = data.get("gameType")
     if not game_type:
         return api_error("invalid_request", "gameType is required", 400)
+    practice = data.get("practice") is True
 
     if _active_membership(g.current_user.id) is not None:
         return api_error(
@@ -89,12 +94,17 @@ def create_room():
         game_type=game.key,
         host_id=g.current_user.id,
         options=game.clean_options(data.get("options")),
+        practice=practice,
     )
+    if practice and not bots_available(room):
+        return api_error("no_bots", "There are no bots for this game yet", 409)
     db.session.add(room)
     db.session.flush()
-    db.session.add(
+    room.players.append(
         RoomPlayer(room_id=room.id, user_id=g.current_user.id, seat=0, ready=True)
     )
+    if practice:
+        seat_bots(room, practice_bots(game))
     db.session.commit()
     return {"room": _room_payload(room, g.current_user.id)}, 201
 
@@ -239,6 +249,43 @@ def remove_bot(room_id, user_id):
     db.session.flush()
     _reseat(room)
     db.session.commit()
+    _broadcast_room(room)
+    return {"room": _room_payload(room, g.current_user.id)}
+
+
+@rooms_bp.delete("/<uuid:room_id>/players/<uuid:user_id>")
+@require_auth
+def remove_player(room_id, user_id):
+    """The host takes anyone (a person or a bot) off a waiting table, not
+    themselves (they leave, which closes it). The seats close up, the
+    table hears it, and the one removed gets `removed_from_room` on their
+    own channel and stops hearing the table."""
+    room = db.session.get(Room, room_id, with_for_update=True)
+    if room is None:
+        return api_error("room_not_found", "Room not found", 404)
+    if room.host_id != g.current_user.id:
+        return api_error("not_host", "Only the host can remove players", 403)
+    if room.status != "waiting":
+        return api_error("game_started", "Game already started", 409)
+    if user_id == g.current_user.id:
+        return api_error("cannot_remove_self", "Leave the table instead", 400)
+    player = next((p for p in room.players if p.user_id == user_id), None)
+    if player is None:
+        return api_error("not_found", "No such player at this table", 404)
+    is_bot = player.user.is_bot
+    room.players.remove(player)  # deleted as an orphan
+    db.session.flush()
+    _reseat(room)
+    db.session.commit()
+    if not is_bot:
+        channel = f"room:{room.id}"
+        for sid in presence.sids_of(user_id):
+            sio_leave_room(channel, sid=sid, namespace="/")
+        socketio.emit(
+            "removed_from_room",
+            {"roomId": str(room.id), "code": room.code},
+            to=f"user:{user_id}",
+        )
     _broadcast_room(room)
     return {"room": _room_payload(room, g.current_user.id)}
 
@@ -444,7 +491,10 @@ def rematch(room_id):
     game = get_game(room.game_type)
     if target is None:
         target = Room(
-            game_type=room.game_type, host_id=me.id, options=dict(room.options or {})
+            game_type=room.game_type,
+            host_id=me.id,
+            options=dict(room.options or {}),
+            practice=bool(room.practice),
         )
         db.session.add(target)
         db.session.flush()

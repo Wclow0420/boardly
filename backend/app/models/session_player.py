@@ -37,5 +37,8 @@ class SessionPlayer(db.Model):
     abandoned = db.Column(db.Boolean, nullable=False, default=False)
     # This player is the one who walked out
     left_game = db.Column(db.Boolean, nullable=False, default=False)
+    # A bot was at the table: counts as played (and won) on the card,
+    # never towards a badge (see app/rewards.py)
+    with_bots = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
     facts = db.Column(JSONB, nullable=True)
     finished_at = db.Column(db.DateTime(timezone=True), nullable=False)

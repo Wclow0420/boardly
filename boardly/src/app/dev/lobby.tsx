@@ -419,7 +419,7 @@ function Table({ sample, onShown }: { sample: Sample; onShown: () => void }) {
           setTimeout(() => setStarting(false), 4000);
         }}
         starting={starting}
-        onRemoveBot={(id) => setRoom((was) => ({ ...was, players: was.players.filter((p) => p.userId !== id) }))}
+        onRemovePlayer={(id) => setRoom((was) => ({ ...was, players: was.players.filter((p) => p.userId !== id) }))}
         onSetOption={(name, choice) => setRoom((was) => ({ ...was, options: { ...was.options, [name]: choice } }))}
         onInvite={() => invite.current?.present()}
         onBots={() => bots.current?.present()}

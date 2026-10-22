@@ -151,6 +151,9 @@ export interface LiftDialProps {
   onRide: (dir: 1 | -1) => void;
   onBank: (dir: 1 | -1) => void;
   onDirectory: () => void;
+  /** Words for the sign under the dial in place of the bank's floors
+   *  (practice mode: "Practice"). */
+  sign?: string;
 }
 
 /** How long after the one before each drum starts to roll (ms). */
@@ -199,6 +202,7 @@ export const LiftDial = memo(function LiftDial({
   onRide,
   onBank,
   onDirectory,
+  sign,
 }: LiftDialProps) {
   const { t } = useTranslation();
   const P = useMemo(() => makeParts(L), [L]);
@@ -310,8 +314,9 @@ export const LiftDial = memo(function LiftDial({
   }, [P, L, dimKey, turn, faceX, faceY]);
 
   const { left, right } = L.panels;
-  const range =
-    size <= 1
+  const range = sign
+    ? sign
+    : size <= 1
       ? t("games.lift.bankOne", { from: start + 1 })
       : t("games.lift.bankRange", { from: start + 1, to: start + size });
 
@@ -373,7 +378,7 @@ export const LiftDial = memo(function LiftDial({
 
       {/* the bank's floors on the sign, the studs either side */}
       <View pointerEvents="none" style={[styles.sign, { left: L.sign.x + 4, top: L.sign.y + 4, width: L.sign.w - 8, height: L.sign.h - 8 }]}>
-        <Animated.View key={`s${turn.bank}`} entering={FadeIn.duration(220)}>
+        <Animated.View key={sign ? "s-sign" : `s${turn.bank}`} entering={FadeIn.duration(220)}>
           <AppText style={styles.title} numberOfLines={1}>
             {range}
           </AppText>

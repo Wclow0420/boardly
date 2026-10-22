@@ -1,6 +1,6 @@
 // The Games tab as a brass lift: one floor per game, the floors grouped
-// into banks by kind (banks.ts: Your floors first, the games I play most,
-// then deduction, bluff…, seven floors a bank, the floors counting up
+// into banks by kind (banks.ts: deduction, bluff, strategy…, seven
+// floors a bank, the floors counting up
 // through the building). At the top the floor dial (LiftDial) showing one
 // bank, its needle on the floor the cab is at, a stud either side of the
 // bank's sign to flip banks, the ride buttons and the way to the
@@ -8,8 +8,9 @@
 // ride there); in the middle, through the folding gate, the floor itself
 // (LiftShaft): the game's world with its lead standing in front; under it
 // the floor's plaque, its name, how many play, a line about it, and the
-// ways out: open a table, or read the rules. Swipe up or down to ride a
-// floor at a time (a clear stop at each, a lurch and a ding on arrival),
+// ways out: open a table (in practice mode one filled with bots), or read
+// the rules. Swipe up or down to ride a floor at a time (a clear stop at
+// each, a lurch and a ding on arrival),
 // tap a number on the dial to ride straight there; riding into another
 // bank turns the dial over like an odometer. Choosing how many are
 // playing darkens the floors whose game doesn't take that many, and
@@ -83,9 +84,6 @@ export interface LiftPageProps {
    *  it couldn't (the gate then closes again). */
   onOpenTable: (game: GameCatalogEntry) => Promise<void>;
   onRules: (game: GameCatalogEntry) => void;
-  /** How many times I've played each game, by id (my stats): the games
-   *  I play most make the first bank, Your floors. */
-  played?: Record<string, number>;
   meta?: Record<string, LiftMeta>;
   /** Where the floor is remembered on the device. */
   storageKey?: string;
@@ -95,9 +93,11 @@ export interface LiftPageProps {
   initialCount?: number | null;
   /** Open with the directory showing (dev previews). */
   initialDirectory?: boolean;
+  /** Practice mode (the Games tab opened with `practice=1`): the sign
+   *  reads "Practice" and stepping out opens a table already filled
+   *  with bots. */
+  practice?: boolean;
 }
-
-const NO_PLAYS: Record<string, number> = {};
 
 export function LiftPage({
   games: catalogue,
@@ -107,12 +107,12 @@ export function LiftPage({
   busy,
   onOpenTable,
   onRules,
-  played = NO_PLAYS,
   meta,
   storageKey = "boardly.games.floor",
   onShown,
   initialCount = null,
   initialDirectory = false,
+  practice = false,
 }: LiftPageProps) {
   const { t, i18n } = useTranslation();
   const gameName = useGameName();
@@ -123,15 +123,13 @@ export function LiftPage({
   const clock = useIsoClock(!onScreen || reduced);
 
   // the building: the floors by bank (memoized by what's in it)
-  const playedKey = JSON.stringify(played);
   const building = useMemo(
     () =>
       buildBanks(catalogue, {
         typeOf: (g) => meta?.[g.id]?.category ?? typeOfGame(g),
-        played: JSON.parse(playedKey) as Record<string, number>,
         isNew: (g) => meta?.[g.id]?.isNew ?? isNewGame(g),
       }),
-    [catalogue, meta, playedKey],
+    [catalogue, meta],
   );
   const games = useMemo(() => building.floors.map((f) => f.game), [building]);
   const n = games.length;
@@ -161,10 +159,9 @@ export function LiftPage({
         if (s >= b.size) return null;
         const i = b.start + s;
         const e = emblemData(arts[i].emblem);
-        // (on Your floors every one is, so no stars there)
-        return e ? { data: e.data, tint: e.tint, often: b.kind !== "often" && building.floors[i].often } : null;
+        return e ? { data: e.data, tint: e.tint } : null;
       });
-      const key = Array.from({ length: b.size }, (_, s) => `${arts[b.start + s].emblem}${b.kind !== "often" && building.floors[b.start + s].often ? "*" : ""}`).join(",");
+      const key = Array.from({ length: b.size }, (_, s) => arts[b.start + s].emblem).join(",");
       return bakedSvg(`lift-face|${L.R}|${key}`, 2 * L.R, L.R, () => faceArt(L, marks));
     },
     [L, building, arts],
@@ -264,8 +261,8 @@ export function LiftPage({
   }, [storageKey]);
   const [placed, setPlaced] = useState<Building | null>(null);
   if (placed !== building && saved !== null && n > 0) {
-    // placing the lift, or the building changed under it (my stats came
-    // in and Your floors opened): the same floor, found again
+    // placing the lift, or the building changed under it (the catalogue
+    // came in): the same floor, found again
     const i = placed ? findFloor(building, floorKey(placed, floor)) : findFloor(building, saved);
     setPlaced(building);
     setFloor(i);
@@ -408,6 +405,35 @@ export function LiftPage({
   useEffect(() => {
     if (onScreen) gate.set(0);
   }, [onScreen, gate]);
+
+  // every time the page comes into view the lift arrives: the needle
+  // sweeps up from the bank's first floor to this one while the cab rises
+  // the last bit, then the lurch and the ding (short; reduce motion: none)
+  // (from the floor the page knows, not pos.get(): a value set on the UI
+  // thread a moment ago may not have reached this thread yet)
+  const placedNow = placed !== null;
+  useEffect(() => {
+    if (!onScreen || !placed || reduced) return;
+    const at = floor;
+    // from its rest (lying a little below the first stop), so even the
+    // bank's first floor gets a sweep you can see
+    swingFrom.set(-0.7);
+    swing.set(0);
+    swing.set(withTiming(1, { duration: 620, easing: Easing.out(Easing.cubic) }));
+    pos.set(at + 0.35);
+    pos.set(
+      withSequence(
+        withTiming(at - 0.04, { duration: 620, easing: Easing.out(Easing.cubic) }, (done) => {
+          if (!done) return;
+          arrived.set(clock.get());
+          scheduleOnRN(heavyHaptic);
+        }),
+        withSpring(at, { damping: 8, stiffness: 240, mass: 0.7 }),
+      ),
+    );
+    // only on arriving: the ride moves it from then on
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onScreen, placedNow]);
   const game = games[floor];
   const stepOut = () => {
     if (!game || busy) return;
@@ -564,6 +590,7 @@ export function LiftPage({
               onRide={onRide}
               onBank={onBank}
               onDirectory={openDirectory}
+              sign={practice ? t("games.lift.practice") : undefined}
             />
           </LayoutAnimationConfig>
           <Directory
@@ -616,7 +643,7 @@ export function LiftPage({
                     onPress={() => onRules(game)}
                   />
                   <Button
-                    label={t("games.lift.stepOut")}
+                    label={t(practice ? "games.lift.practiceStepOut" : "games.lift.stepOut")}
                     size="md"
                     style={[styles.grow, narrow && styles.tight]}
                     loading={busy}

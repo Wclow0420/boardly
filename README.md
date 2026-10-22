@@ -185,9 +185,17 @@ sit down ready; the host can take one off again before starting.
   waiting on a bot, a background task makes its move from the bot's own
   view (the game's `bot_move`), a moment apart so players can follow.
   Loading the table nudges it again, so bots carry on after a restart.
-- A game with any bot at the table is practice: people earn only the
-  "played" coins (never the win bonus), bots earn nothing, and it counts
-  towards no stats or badges.
+- **The bot-game rule** (`backend/app/rewards.py`): a game with any bot
+  at the table pays a quarter of the coins the same game pays among
+  people (`BOT_GAME_COINS`, rounded, at least 1), bots earn nothing, and
+  it counts towards no badge (so no earned border); it still counts as
+  played and won on the player card.
+- **Practice tables**: `POST /rooms {gameType, practice: true}` opens a
+  table already filled with ready bots (`PRACTICE_BOTS` in
+  `backend/app/bots.py`); it is an ordinary private lobby otherwise
+  (friends join by code, the host adds or removes bots and starts). The
+  app opens one from the Games tab in practice mode
+  (`/(tabs)/games?practice=1`).
 - "Play again" brings the same bots to the new table.
 - On everywhere, production included; `BOTS_ENABLED=0` turns it off.
 
@@ -202,7 +210,8 @@ Auth: `POST /auth/register` / `POST /auth/login` `{username, password}` →
 `Authorization: Bearer <accessToken>` — identity always comes from the
 token.
 
-1. `POST /rooms` `{gameType}` → room + 6-char invite code (caller = host)
+1. `POST /rooms` `{gameType, practice?}` → room + 6-char invite code
+   (caller = host; one table at a time, else `409 already_in_room`)
 2. Friend: `POST /rooms/join` `{code}`
 3. Clients: socket `authenticate {token}`, then `join_room {roomId}` (players at that table only) → receive `room_updated`, `game_started`, `game_updated`
 4. Host only: `POST /rooms/<id>/start`
@@ -213,7 +222,8 @@ token.
    The finished room reports it as `rematchCode`.
 
 Also: `GET /rooms/mine`, `GET /rooms/code/<code>`, `GET /games`,
-`GET /auth/me/stats`.
+`GET /auth/me/stats`, `GET /rewards` (`recent`: what my latest games
+paid; coins go onto the balance by themselves when a game ends).
 
 Account: `POST /auth/password` `{currentPassword, newPassword}` (signs
 out other devices) and `DELETE /auth/me` `{password}` (deletes the

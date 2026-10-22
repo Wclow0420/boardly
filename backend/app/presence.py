@@ -54,6 +54,12 @@ def user_for(sid):
     return _sid_user.get(sid)
 
 
+def sids_of(user_id) -> list:
+    """The sockets a user is connected on right now."""
+    with _lock:
+        return list(_user_sids.get(user_id, ()))
+
+
 def is_online(user_id) -> bool:
     return user_id in _user_sids
 

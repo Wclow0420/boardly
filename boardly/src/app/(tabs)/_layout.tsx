@@ -7,7 +7,9 @@ export default function TabsLayout() {
   // the profile made ready in the background once the app has settled
   useWarmProfile();
   return (
+    // the app opens on Me (the mascot tab); Home stays where it is
     <Tabs
+      initialRouteName="mascot"
       tabBar={(props) => <TabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >

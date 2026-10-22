@@ -1,7 +1,8 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -28,8 +29,9 @@ import {
   useHasRules,
 } from "@/features/game/RulesSheet";
 import { GameOverBadges } from "@/features/badges/GameOverBadges";
-import { useAlreadyInRoomRedirect } from "@/features/home/hooks";
+import { useOneTable } from "@/features/home/OneTable";
 import { useLeaveRoom, useRoom } from "@/features/lobby/hooks";
+import { ME } from "@/features/me/notice";
 import { useGameName } from "@/games/names";
 import type { StageChrome } from "@/games/types";
 import { cloneElement, type ReactElement } from "react";
@@ -79,7 +81,23 @@ function GameScreenBody({
   const [rulesOpen, setRulesOpen] = useState(false);
   const gameName = useGameName();
   const hasRules = useHasRules(room?.gameType);
-  const redirectIfInRoom = useAlreadyInRoomRedirect();
+  const oneTable = useOneTable();
+  // Play again: a player who has sat down at another table meanwhile is
+  // asked first (go back to it, or leave it); already at the rematch
+  // table is no conflict
+  const rematchCode = room?.rematchCode ?? null;
+  const rematchMutate = rematch.mutateAsync;
+  const playAgain = useCallback(() => {
+    oneTable
+      .run(
+        async () => {
+          const next = await rematchMutate();
+          router.replace(`/lobby/${next.code}`);
+        },
+        { except: rematchCode },
+      )
+      .catch(() => {});
+  }, [oneTable, rematchMutate, rematchCode, router]);
 
   const gameDef = room ? getGame(room.gameType) : undefined;
 
@@ -93,6 +111,11 @@ function GameScreenBody({
       else tapHaptic();
     }
   }, [sessionStatus, iWon]);
+  // and the table is no longer mine to go back to (the Me tab's room key)
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (sessionStatus === "finished") queryClient.invalidateQueries({ queryKey: ["myTables"] });
+  }, [sessionStatus, queryClient]);
 
   // A move that timed out on a slow line may still have gone through: once
   // the table has moved on from where it was sent, its "something went
@@ -134,6 +157,8 @@ function GameScreenBody({
   const currentSeat = gameDef.currentSeat(state);
   const currentPlayer = room.players.find((p) => p.seat === currentSeat);
   const inProgress = session.status === "in_progress";
+  // a bot at the table: the game pays less and counts towards no badge
+  const withBots = room.players.some((p) => p.isBot);
   const isMyTurn = inProgress && mySeat === currentSeat;
 
   const winner =
@@ -142,11 +167,11 @@ function GameScreenBody({
       : null;
 
   // The game screen replaces the lobby, so there is no screen to go
-  // "back" to — the arrow always leads home. Walking out of a running
+  // "back" to — the arrow always leads to the Me tab. Walking out of a running
   // game ends it for the table, so that needs a confirmation first.
   const handleBack = () => {
     if (inProgress && mySeat >= 0) leaveSheetRef.current?.present();
-    else router.dismissTo("/");
+    else router.dismissTo(ME);
   };
 
   const leaveSheet = (
@@ -162,7 +187,7 @@ function GameScreenBody({
         leaveRoom.mutate(undefined, {
           onSuccess: () => {
             leaveSheetRef.current?.dismiss();
-            router.dismissTo("/");
+            router.dismissTo(ME);
           },
         })
       }
@@ -324,7 +349,7 @@ function GameScreenBody({
     <View style={{ marginTop: spacing.xxl, gap: spacing.md }}>
       {mySeat >= 0 ? (
         <>
-          <EarnedCoins sessionId={session.id} />
+          <EarnedCoins sessionId={session.id} withBots={withBots} />
           <GameOverBadges gameType={room.gameType} />
           {room.rematchCode ? (
             <AppText variant="caption" color="textMuted" align="center">
@@ -334,12 +359,7 @@ function GameScreenBody({
           <Button
             label={t(room.rematchCode ? "game.joinRematch" : "game.playAgain")}
             loading={rematch.isPending}
-            onPress={() =>
-              rematch.mutate(undefined, {
-                onSuccess: (next) => router.replace(`/lobby/${next.code}`),
-                onError: (err) => redirectIfInRoom(err),
-              })
-            }
+            onPress={playAgain}
           />
           {rematch.isError ? (
             <AppText variant="caption" color="danger" align="center">
@@ -351,9 +371,9 @@ function GameScreenBody({
         </>
       ) : null}
       <Button
-        label={t("game.backHome")}
+        label={t("common.back")}
         variant={mySeat >= 0 ? "secondary" : "primary"}
-        onPress={() => router.dismissTo("/")}
+        onPress={() => router.dismissTo(ME)}
       />
     </View>
   ) : null;
@@ -363,7 +383,7 @@ function GameScreenBody({
   const earned =
     !inProgress && mySeat >= 0 ? (
       <View style={{ gap: spacing.md }}>
-        <EarnedCoins sessionId={session.id} />
+        <EarnedCoins sessionId={session.id} withBots={withBots} />
         <GameOverBadges gameType={room.gameType} />
       </View>
     ) : null;
@@ -382,24 +402,19 @@ function GameScreenBody({
       ) : null}
       <View style={{ flexDirection: "row", gap: spacing.md }}>
         <Button
-          label={t("game.backHome")}
+          label={t("common.back")}
           variant={mySeat >= 0 ? "secondary" : "primary"}
-          // two side by side on the plinth: a slimmer edge keeps "Back to
-          // Home" on one line
+          // two side by side on the plinth: a slimmer edge keeps each label
+          // on one line
           style={{ flex: 1, paddingHorizontal: 12 }}
-          onPress={() => router.dismissTo("/")}
+          onPress={() => router.dismissTo(ME)}
         />
         {mySeat >= 0 ? (
           <Button
             label={t(room.rematchCode ? "game.joinRematch" : "game.playAgain")}
             style={{ flex: 1, paddingHorizontal: 12 }}
             loading={rematch.isPending}
-            onPress={() =>
-              rematch.mutate(undefined, {
-                onSuccess: (next) => router.replace(`/lobby/${next.code}`),
-                onError: (err) => redirectIfInRoom(err),
-              })
-            }
+            onPress={playAgain}
           />
         ) : null}
       </View>

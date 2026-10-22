@@ -1,6 +1,6 @@
 import type { GameCatalogEntry } from "@/data/types";
 import type { GameType } from "@/games/types";
-import { BANK_SIZE, bankEntry, buildBanks, findFloor, floorKey, floorOfGame, oftenPlayed } from "../banks";
+import { BANK_SIZE, bankEntry, buildBanks, findFloor, floorKey, floorOfGame } from "../banks";
 
 const game = (id: string, type: GameType): GameCatalogEntry & { type: GameType } => ({
   id,
@@ -37,25 +37,27 @@ describe("the lift's banks", () => {
     expect(b.floors[8]).toMatchObject({ bank: 1, slot: 1 });
   });
 
-  it("puts the games I play most first, also on their own banks", () => {
-    const played = { coup: 9, ttt: 3, d4: 3, manor: 0 };
-    expect(oftenPlayed(games, played).map((g) => g.id)).toEqual(["coup", "ttt", "d4"]);
-    const b = buildBanks(games, { typeOf, played });
-    expect(b.banks[0]).toMatchObject({ kind: "often", start: 0, size: 3 });
-    expect(b.floors.length).toBe(games.length + 3);
-    expect(b.floors.filter((f) => f.game.id === "coup").map((f) => f.often)).toEqual([true, true]);
-    expect(b.floors.find((f) => f.game.id === "manor")?.often).toBe(false);
-    // nothing played: no Your floors
-    expect(buildBanks(games, { typeOf, played: {} }).banks[0].kind).toBe("deduction");
+  it("has only banks by kind, each game on one floor", () => {
+    const b = buildBanks(games, { typeOf });
+    expect(b.floors.length).toBe(games.length);
+    expect(b.banks.every((k) => k.kind !== ("often" as string))).toBe(true);
+    expect(new Set(b.floors.map((f) => f.game.id)).size).toBe(games.length);
   });
 
   it("finds a remembered floor again, also from before the banks", () => {
-    const b = buildBanks(games, { typeOf, played: { coup: 2 } });
-    const i = b.floors.findIndex((f, k) => k > 0 && f.game.id === "coup");
-    expect(findFloor(b, floorKey(b, i))).toBe(i);
+    const b = buildBanks(games, { typeOf });
+    const coup = b.floors.findIndex((f) => f.game.id === "coup");
+    expect(findFloor(b, floorKey(b, coup))).toBe(coup);
     expect(findFloor(b, floorKey(b, 0))).toBe(0);
-    expect(findFloor(b, "coup")).toBe(0);
+    expect(findFloor(b, "coup")).toBe(coup);
     expect(findFloor(b, "gone|nothing")).toBe(0);
+    expect(findFloor(b, null)).toBe(0);
+  });
+
+  it("finds a floor saved on the old often-played bank on its own kind's bank", () => {
+    const b = buildBanks(games, { typeOf });
+    expect(findFloor(b, "often|coup")).toBe(b.floors.findIndex((f) => f.game.id === "coup"));
+    expect(b.banks[b.floors[findFloor(b, "often|ttt")].bank].kind).toBe("duel");
   });
 
   it("flips to the first floor that fits on the next bank that has one", () => {
@@ -70,11 +72,11 @@ describe("the lift's banks", () => {
 });
 
 describe("a game's floor", () => {
-  it("is its place on its own kind's bank, not on Your floors", () => {
+  it("is its place in the building, counting up through the banks", () => {
     const games = [game("a", "deduction"), game("b", "bluff"), game("c", "duel")];
-    const b = buildBanks(games, { typeOf, played: { c: 4 } });
-    expect(floorOfGame(b, "c")).toBe(4);
-    expect(floorOfGame(b, "b")).toBe(3);
+    const b = buildBanks(games, { typeOf });
+    expect(floorOfGame(b, "c")).toBe(3);
+    expect(floorOfGame(b, "b")).toBe(2);
     expect(floorOfGame(b, "zzz")).toBe(1);
   });
 });

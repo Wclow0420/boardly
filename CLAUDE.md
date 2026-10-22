@@ -91,7 +91,7 @@ in the app's own world and palette).
   diamonds, slim straps): a dense gate hid the floor and was rejected.
 - **Many games:** banks of 7 by type (`category` in each GameDefinition:
   deduction, bluff, strategy, party, duel, classic; `lift/banks.ts`),
-  the first bank "Your floors" (most played, from my stats). The dial
+  by type only (no "often played" bank, no stars). The dial
   shows one bank; its number drums roll over like an odometer between
   banks, studs jump banks. The Floors plate opens the letter-board
   directory (every floor by bank, players count, "new" tags, search past

@@ -3,7 +3,7 @@
 // (&count=5 to start with the players counter set, &perf=1 for the frame
 // rate and how long it took to open, &w=375&h=700 for a smaller phone,
 // &lang=zh for another language, &many=1 for a building of 24 games in
-// five banks with a player's stats, so Your floors opens, &dir=1 to open
+// several banks, &dir=1 to open
 // on the directory). Stepping out folds the gate open and, here, shuts it
 // again.
 
@@ -127,16 +127,6 @@ const MANY: GameCatalogEntry[] = [
 const MANY_META: Record<string, LiftMeta> = Object.fromEntries(
   MORE.map(([, art, category, , , isNew], i) => [`${art}~${i}`, { art, category, isNew }]),
 );
-/** A player's stats for &many=1: the games they've played, by id. */
-const MANY_PLAYED: Record<string, number> = {
-  coup: 14,
-  nightwatch: 9,
-  liarsdice: 6,
-  avalon: 4,
-  "coup~5": 3,
-  tictactoe: 2,
-};
-
 /** Frames drawn in the last second, counted on the UI thread. */
 function useFps(on: boolean) {
   const [fps, setFps] = useState(0);
@@ -188,7 +178,6 @@ export default function LiftPreview() {
         <LiftPage
           games={many === "1" ? MANY : SAMPLE}
           meta={many === "1" ? MANY_META : undefined}
-          played={many === "1" ? MANY_PLAYED : undefined}
           initialDirectory={dir === "1"}
           storageKey={many === "1" ? "boardly.dev.lift.many" : "boardly.dev.lift.floor"}
           initialCount={count ? Number(count) : null}

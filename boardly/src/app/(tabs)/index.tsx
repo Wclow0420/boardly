@@ -20,8 +20,6 @@ import {
 import { Die, type DieHandle } from "@/components/tabletop/Die";
 import { AvatarBorder } from "@/features/cosmetics/AvatarBorder";
 import { useSession } from "@/context/SessionContext";
-import { ClaimRewards } from "@/features/coins/ClaimRewards";
-import { CoinFly, type CoinFlyHandle } from "@/features/coins/CoinFly";
 import { CoinPill } from "@/features/coins/CoinPill";
 import {
   CHAIR,
@@ -36,11 +34,11 @@ import { Frame, SectionTitle } from "@/features/home/frames";
 import { JoinTableSheet } from "@/features/home/JoinTableSheet";
 import { TableCard } from "@/features/home/TableCard";
 import {
-  useAlreadyInRoomRedirect,
   useCreateRoom,
   useMyTables,
   useOnlineFriends,
 } from "@/features/home/hooks";
+import { useOneTable } from "@/features/home/OneTable";
 import { useGamesQuery } from "@/features/games/hooks";
 import { useGameName } from "@/games/names";
 import { fontFamily, useTheme } from "@/theme";
@@ -55,10 +53,9 @@ export default function HomeScreen() {
   const onlineFriends = useOnlineFriends();
   const games = useGamesQuery();
   const createRoom = useCreateRoom();
-  const redirectIfInRoom = useAlreadyInRoomRedirect();
+  const oneTable = useOneTable();
   const joinSheetRef = useRef<GorhomBottomSheetModal>(null);
   const coinPillRef = useRef<View>(null);
-  const coinFlyRef = useRef<CoinFlyHandle>(null);
 
   const gameName = useGameName();
   const dieRef = useRef<DieHandle>(null);
@@ -67,36 +64,42 @@ export default function HomeScreen() {
   const [rolled, setRolled] = useState<string | null>(null);
 
   // Quick play throws the die: the table is opened while it tumbles,
-  // and we sit down once it has landed on the game.
+  // and we sit down once it has landed on the game. A player still at a
+  // table is asked first: go back to it, or leave it (useOneTable).
   const quickPlay = () => {
     const catalogue = games.data ?? [];
     if (catalogue.length === 0 || createRoom.isPending || rolling) return;
     tapHaptic();
     const game = catalogue[Math.floor(Math.random() * catalogue.length)];
-    setRolling(true);
-    setRolled(null);
-    const landed = (dieRef.current?.roll() ?? Promise.resolve()).then(() => {
-      setRolled(gameName(game.id, game.name));
-    });
-    const settle = () => {
-      setRolling(false);
-      setRolled(null);
-    };
-    createRoom.mutate(game.id, {
-      onSuccess: ({ room }) => {
-        // a beat on the result before the lobby opens
-        landed
-          .then(() => new Promise((done) => setTimeout(done, 450)))
-          .then(() => {
-            settle();
-            router.push(`/lobby/${room.code}`);
-          });
-      },
-      onError: (err) => {
-        landed.then(settle);
-        redirectIfInRoom(err);
-      },
-    });
+    const throwDie = () =>
+      new Promise<void>((resolve, reject) => {
+        setRolling(true);
+        setRolled(null);
+        const landed = (dieRef.current?.roll() ?? Promise.resolve()).then(() => {
+          setRolled(gameName(game.id, game.name));
+        });
+        const settle = () => {
+          setRolling(false);
+          setRolled(null);
+        };
+        createRoom.mutate(game.id, {
+          onSuccess: ({ room }) => {
+            // a beat on the result before the lobby opens
+            landed
+              .then(() => new Promise((done) => setTimeout(done, 450)))
+              .then(() => {
+                settle();
+                router.push(`/lobby/${room.code}`);
+                resolve();
+              });
+          },
+          onError: (err) => {
+            landed.then(settle);
+            reject(err);
+          },
+        });
+      });
+    oneTable.run(throwDie).catch(() => {});
   };
 
   const quickContent = (
@@ -169,9 +172,6 @@ export default function HomeScreen() {
           <View style={styles.badge} />
         </View>
       </View>
-
-      {/* Winnings waiting to be claimed */}
-      <ClaimRewards target={coinPillRef} fly={coinFlyRef} />
 
       {/* Quick start */}
       <View style={{ marginTop: spacing.md }}>
@@ -392,8 +392,6 @@ export default function HomeScreen() {
       </View>
 
       <JoinTableSheet ref={joinSheetRef} />
-      {/* Coins fly across this layer when winnings are claimed */}
-      <CoinFly ref={coinFlyRef} />
     </Screen>
   );
 }

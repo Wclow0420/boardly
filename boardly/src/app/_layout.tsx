@@ -32,6 +32,7 @@ import { WebFrame } from "@/components/ui";
 import { BorderClockProvider } from "@/features/cosmetics/art";
 import { SessionProvider, useSession } from "@/context/SessionContext";
 import { FriendsRealtime } from "@/features/friends/FriendsRealtime";
+import { OneTableProvider } from "@/features/home/OneTable";
 import { MeepleTransitionProvider } from "@/features/mascot/MeepleTransition";
 import { PlayerCardProvider } from "@/features/players/PlayerCardProvider";
 import { useOtaUpdates } from "@/hooks/useOtaUpdates";
@@ -199,7 +200,10 @@ export default function RootLayout() {
                           {/* moving between some screens goes through the meeple,
                               over everything (MeepleTransition) */}
                           <MeepleTransitionProvider>
-                            <RootNavigator />
+                            {/* one table at a time: "go back or leave?" */}
+                            <OneTableProvider>
+                              <RootNavigator />
+                            </OneTableProvider>
                           </MeepleTransitionProvider>
                         </PlayerCardProvider>
                       </BottomSheetModalProvider>

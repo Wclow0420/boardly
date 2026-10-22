@@ -1,48 +1,63 @@
 // The Games tab: a brass lift with one floor per game (features/games/
 // lift). Ride to a game, step out to open a table of it (the lobby), or
-// read its rules. The games I've played most (my stats) make the lift's
-// first bank.
+// read its rules. The floors come in banks by kind of game.
+//
+// Practice mode: opened as `/(tabs)/games?practice=1` (the Me page's
+// Practice button), the lift's sign reads "Practice" and stepping out
+// opens a table already filled with bots, ready to start. Tapping the
+// Games tab again leaves practice mode.
 
-import { useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 
 import type { GameCatalogEntry } from "@/data/types";
 import { RulesSheet } from "@/features/game/RulesSheet";
 import { useGamesQuery } from "@/features/games/hooks";
-import { usePlayed } from "@/features/games/lift/building";
 import { LiftPage } from "@/features/games/lift/LiftPage";
-import { useAlreadyInRoomRedirect, useCreateRoom } from "@/features/home/hooks";
+import { useCreateRoom } from "@/features/home/hooks";
+import { useOneTable } from "@/features/home/OneTable";
 import { useGameName } from "@/games/names";
 
 const NONE: GameCatalogEntry[] = [];
 
 export default function GamesScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
+  const { practice: practiceParam } = useLocalSearchParams<{ practice?: string }>();
+  const practice = practiceParam === "1";
   const games = useGamesQuery();
   const createRoom = useCreateRoom();
-  const redirectIfInRoom = useAlreadyInRoomRedirect();
+  const oneTable = useOneTable();
   const gameName = useGameName();
   const [rulesFor, setRulesFor] = useState<GameCatalogEntry | null>(null);
   const [rulesOpen, setRulesOpen] = useState(false);
-  const { isPending, mutate } = createRoom;
-  const played = usePlayed();
+  const { isPending, mutateAsync } = createRoom;
+
+  // Coming back to the tab through its button: the lift as ever
+  useEffect(
+    () =>
+      navigation.addListener("tabPress" as never, () => {
+        navigation.setParams({ practice: undefined } as never);
+      }),
+    [navigation],
+  );
 
   const openTable = useCallback(
-    (game: GameCatalogEntry) =>
-      new Promise<void>((resolve, reject) => {
-        if (isPending) return reject(new Error("busy"));
-        mutate(game.id, {
-          onSuccess: ({ room }) => {
-            resolve();
-            router.push(`/lobby/${room.code}`);
-          },
-          onError: (err) => {
-            reject(err);
-            redirectIfInRoom(err);
-          },
-        });
-      }),
-    [isPending, mutate, router, redirectIfInRoom],
+    async (game: GameCatalogEntry) => {
+      if (isPending) throw new Error("busy");
+      let code: string | null = null;
+      const outcome = await oneTable.run(async () => {
+        const { room } = await mutateAsync(
+          practice ? { gameType: game.id, practice: true } : game.id,
+        );
+        code = room.code;
+      });
+      // gone back to the table I was at, or thought better of it: the
+      // gate closes again behind me
+      if (outcome !== "done" || code === null) throw new Error(outcome);
+      router.push(`/lobby/${code}`);
+    },
+    [isPending, mutateAsync, oneTable, practice, router],
   );
 
   return (
@@ -53,7 +68,7 @@ export default function GamesScreen() {
         error={games.isError}
         onRetry={() => games.refetch()}
         busy={isPending}
-        played={played}
+        practice={practice}
         onOpenTable={openTable}
         onRules={(game) => {
           setRulesFor(game);

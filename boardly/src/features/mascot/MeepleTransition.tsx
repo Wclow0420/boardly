@@ -3,8 +3,10 @@
 // the move happens in the dark, and the next screen opens back out of it
 // (zoom out). Always both, one after the other. One layer over the whole
 // app, tab bar and all; `go(move)` runs a move through it, in 1.5
-// seconds (0.6 in, 0.9 out). On the UI
-// thread; with reduced motion, the move simply happens.
+// seconds (0.6 in, 0.9 out). Always at the middle of the screen, both
+// ways, where the opening's meeple stands (a centred picture's chest),
+// whoever calls it and wherever their own meeple is. On the UI thread;
+// with reduced motion, the move simply happens.
 
 import { Canvas, Group, Image, Rect, useImage } from "@shopify/react-native-skia";
 import {
@@ -99,11 +101,13 @@ export function MeepleTransitionProvider({ children }: { children: ReactNode }) 
     [still, image, progress],
   );
 
-  const x = (width - SIZE) / 2;
-  // the window closes to and opens from where the mascot stands
-  const y = height * 0.32 - SIZE * CHEST.y;
-  const origin = { x: x + SIZE * CHEST.x, y: y + SIZE * CHEST.y };
+  // the window closes to and opens from the middle: the chest of a meeple
+  // picture centred on the screen, as the app's opening draws it
+  const cx = width / 2;
+  const cy = height / 2 + SIZE * (CHEST.y - 0.5);
   const transform = useDerivedValue(() => [
+    { translateX: cx },
+    { translateY: cy },
     { scale: Math.exp(SHUT + (OPEN - SHUT) * progress.get()) },
   ]);
 
@@ -115,8 +119,8 @@ export function MeepleTransitionProvider({ children }: { children: ReactNode }) 
         <Canvas style={StyleSheet.absoluteFill} pointerEvents="auto">
           <Group layer>
             <Rect x={0} y={0} width={width} height={height} color={TABLE.table[1]} />
-            <Group transform={transform} origin={origin}>
-              <Image image={image} x={x} y={y} width={SIZE} height={SIZE} blendMode="dstOut" />
+            <Group transform={transform}>
+              <Image image={image} x={-SIZE * CHEST.x} y={-SIZE * CHEST.y} width={SIZE} height={SIZE} blendMode="dstOut" />
             </Group>
           </Group>
         </Canvas>

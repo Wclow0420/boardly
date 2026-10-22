@@ -1,6 +1,7 @@
 // Lobby data: room-by-code query kept live by Socket.IO — the backend
 // broadcasts room_updated / game_started / game_updated to the room
-// channel, and each event invalidates the query.
+// channel, and each event invalidates the query (as does
+// removed_from_room, sent to me alone when the host takes me off).
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -64,12 +65,15 @@ export function useRoom(code: string) {
     socket.on("game_started", refresh);
     socket.on("game_updated", moved);
     socket.on("room_closed", refresh);
+    // the host took me off: the room, fetched again, no longer has me
+    socket.on("removed_from_room", refresh);
 
     return () => {
       socket.off("room_updated", refresh);
       socket.off("game_started", refresh);
       socket.off("game_updated", moved);
       socket.off("room_closed", refresh);
+      socket.off("removed_from_room", refresh);
       leaveRoomChannel(roomId);
     };
   }, [roomId, code, queryClient, me]);
@@ -133,17 +137,18 @@ export function useAddBots(roomId: string) {
   });
 }
 
-/** The host takes a bot off the table before the game starts. */
-export function useRemoveBot(roomId: string | undefined) {
+/** The host takes someone (a person or a bot) off the table before the
+ *  game starts; the room comes back without them. */
+export function useRemovePlayer(roomId: string | undefined, code: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (userId: string) => {
       if (roomId === undefined) throw new Error("Room not loaded");
-      return api.removeBot(roomId, userId);
+      return api.removePlayer(roomId, userId);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["room"] });
+    onSuccess: ({ room }) => {
+      queryClient.setQueryData(["room", code], room);
     },
   });
 }

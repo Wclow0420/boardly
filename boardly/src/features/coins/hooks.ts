@@ -1,22 +1,17 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 import { api } from "@/api/client";
 import { useSession } from "@/context/SessionContext";
 
-/** Coins earned from finished games that haven't been claimed yet. */
-export function useRewards() {
+/** What my latest games paid. The coins are already on the balance:
+ *  they go there by themselves when a game ends. */
+export function useRecentRewards() {
   const { user, status } = useSession();
   return useQuery({
     queryKey: ["rewards", user?.id],
-    queryFn: () => api.rewards.list(),
+    queryFn: () => api.rewards.recent(),
     enabled: status === "signedIn",
-    // Rewards appear when a game ends, so always look again on return
+    // A payment appears when a game ends, so always look again
     staleTime: 0,
   });
-}
-
-/** Re-checks waiting rewards, e.g. right after a game finishes. */
-export function useRefreshRewards() {
-  const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: ["rewards"] });
 }
