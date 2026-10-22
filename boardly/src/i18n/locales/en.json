@@ -113,7 +113,6 @@
       "lit_one": "{{count}} of {{total}} floors lit",
       "lit_other": "{{count}} of {{total}} floors lit",
       "banks": {
-        "often": "Your floors",
         "deduction": "Deduction",
         "bluff": "Bluff",
         "strategy": "Strategy",
@@ -259,7 +258,19 @@
       "waitingOn": "Waiting on {{names}} to be ready",
       "canStart": "Everyone's ready: hold to start",
       "waitingHost": "Everyone's ready. Waiting for {{host}} to start",
-      "starting": "The lamps go down: here we go…"
+      "starting": "The lamps go down: here we go…",
+      "player": {
+        "profile": "View profile",
+        "remove": "Remove from table",
+        "removeAsk": "Remove {{name}} from the table?",
+        "removeHint": "They can join again with the table code.",
+        "removeConfirm": "Remove",
+        "bot": "Bot"
+      }
+    },
+    "removed": {
+      "title": "Removed",
+      "message": "You were removed from the table."
     }
   },
   "table": {
@@ -275,7 +286,6 @@
     "youWin": "You win! 🎉",
     "winner": "{{name}} wins!",
     "draw": "It's a draw!",
-    "backHome": "Back to Home",
     "playAgain": "Play Again",
     "joinRematch": "Join Rematch",
     "rematchOpen": "A rematch table is open — join in!",

@@ -26,6 +26,7 @@ import { useSession } from "@/context/SessionContext";
 import { useJoinRoom } from "@/features/home/hooks";
 import { useOneTable } from "@/features/home/OneTable";
 import { GameBadge } from "@/features/games/GameBadge";
+import { ME } from "@/features/me/notice";
 import { useGameName } from "@/games/names";
 import { fontFamily, useTheme } from "@/theme";
 
@@ -86,8 +87,8 @@ export default function JoinScreen() {
         <EmptyState
           emoji="🔍"
           title={t("errors.room_not_found")}
-          actionLabel={t("game.backHome")}
-          onAction={() => router.dismissTo("/")}
+          actionLabel={t("common.back")}
+          onAction={() => router.dismissTo(ME)}
         />
       </Screen>
     );
@@ -151,9 +152,9 @@ export default function JoinScreen() {
               {t("errors.game_started")}
             </AppText>
             <Button
-              label={t("game.backHome")}
+              label={t("common.back")}
               variant="secondary"
-              onPress={() => router.dismissTo("/")}
+              onPress={() => router.dismissTo(ME)}
             />
           </>
         ) : (

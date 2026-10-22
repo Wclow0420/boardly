@@ -1,7 +1,6 @@
 // The Games tab: a brass lift with one floor per game (features/games/
 // lift). Ride to a game, step out to open a table of it (the lobby), or
-// read its rules. The games I've played most (my stats) make the lift's
-// first bank.
+// read its rules. The floors come in banks by kind of game.
 //
 // Practice mode: opened as `/(tabs)/games?practice=1` (the Me page's
 // Practice button), the lift's sign reads "Practice" and stepping out
@@ -14,7 +13,6 @@ import { useCallback, useEffect, useState } from "react";
 import type { GameCatalogEntry } from "@/data/types";
 import { RulesSheet } from "@/features/game/RulesSheet";
 import { useGamesQuery } from "@/features/games/hooks";
-import { usePlayed } from "@/features/games/lift/building";
 import { LiftPage } from "@/features/games/lift/LiftPage";
 import { useCreateRoom } from "@/features/home/hooks";
 import { useOneTable } from "@/features/home/OneTable";
@@ -34,7 +32,6 @@ export default function GamesScreen() {
   const [rulesFor, setRulesFor] = useState<GameCatalogEntry | null>(null);
   const [rulesOpen, setRulesOpen] = useState(false);
   const { isPending, mutateAsync } = createRoom;
-  const played = usePlayed();
 
   // Coming back to the tab through its button: the lift as ever
   useEffect(
@@ -71,7 +68,6 @@ export default function GamesScreen() {
         error={games.isError}
         onRetry={() => games.refetch()}
         busy={isPending}
-        played={played}
         practice={practice}
         onOpenTable={openTable}
         onRules={(game) => {

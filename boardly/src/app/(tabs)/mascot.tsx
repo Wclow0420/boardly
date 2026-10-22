@@ -3,7 +3,8 @@
 // from what the app has (my session and card, my table and its floor,
 // friends on now, the games) and where each of its buttons goes. A code
 // joins through the join sheet, which asks first (go back or leave) when
-// I'm still at another table (useOneTable).
+// I'm still at another table (useOneTable). Taken off a table by its
+// host, I land here and a word says so (RemovedPopup).
 
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -25,8 +26,11 @@ import { MailboxPopup } from "@/features/me/MailboxPopup";
 import { markMailSeen, useMailbox } from "@/features/me/mailbox";
 import { marqueeLines } from "@/features/me/marquee";
 import { MePage } from "@/features/me/MePage";
+import { clearRemoved, useRemovedNotice } from "@/features/me/notice";
+import { RemovedPopup } from "@/features/me/RemovedPopup";
 import { statsQuery } from "@/features/profile/warm";
 import { useGameName } from "@/games/names";
+import { useOnScreen } from "@/hooks/useOnScreen";
 
 export default function MeTab() {
   const { t } = useTranslation();
@@ -69,9 +73,12 @@ export default function MeTab() {
   const mail = useMailbox();
   const [mailOpen, setMailOpen] = useState(false);
   const joinRef = useRef<GorhomBottomSheetModal>(null);
+  // the word from a table I was taken off, once I'm here to read it
+  const onScreen = useOnScreen();
+  const removed = useRemovedNotice() !== null && onScreen;
 
-  // the wardrobe opens through my meeple where it stands
-  const wardrobe = useCallback((chest: number) => go(() => router.push("/wardrobe"), { from: chest }), [go, router]);
+  // the wardrobe opens through the meeple, at the middle like the opening
+  const wardrobe = useCallback(() => go(() => router.push("/wardrobe")), [go, router]);
 
   return (
     <>
@@ -100,10 +107,11 @@ export default function MeTab() {
         onCode={() => joinRef.current?.present()}
         onPractice={() => router.push("/(tabs)/games?practice=1")}
         onPlay={() => router.push("/games")}
-        paused={mailOpen}
+        paused={mailOpen || removed}
       />
       <MailboxPopup visible={mailOpen} mail={mail} onClose={() => setMailOpen(false)} />
       <JoinTableSheet ref={joinRef} />
+      <RemovedPopup visible={removed} onClose={clearRemoved} />
     </>
   );
 }

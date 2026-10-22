@@ -59,12 +59,12 @@ export interface MePageProps {
   table: string | null;
   onTable: () => void;
   onProfile: () => void;
-  /** Tapped my meeple: where its chest is, points down the page. */
-  onMascot: (chest: number) => void;
+  /** Tapped my meeple (the wardrobe). */
+  onMascot: () => void;
   onMailbox: () => void;
   onCode: () => void;
   onPractice: () => void;
-  onWardrobe: (chest: number) => void;
+  onWardrobe: () => void;
   onPlay: () => void;
   /** Something is over the page (a popup): the lobby stands still. */
   paused?: boolean;
@@ -136,7 +136,7 @@ function Lobby({ L, ...p }: MePageProps & { L: MeLayout }) {
           accessibilityLabel={t("me.wardrobe")}
           onPress={() => {
             tapHaptic();
-            p.onMascot(M.y + M.h * 0.56);
+            p.onMascot();
           }}
           style={[styles.abs, { left: M.x, top: M.y, width: M.w, height: M.h }]}
         >
@@ -149,7 +149,7 @@ function Lobby({ L, ...p }: MePageProps & { L: MeLayout }) {
           <WallButton at={L.left[0]} size={L.button} face={FACE.mail} emoji="✉" label={t("me.mailbox")} dot={p.unread} onPress={p.onMailbox} />
           <WallButton at={L.left[1]} size={L.button} face={FACE.code} emoji="🎟" label={t("me.code")} onPress={p.onCode} />
           <WallButton at={L.left[2]} size={L.button} face={FACE.practice} emoji="🤖" label={t("me.practice")} onPress={p.onPractice} />
-          <WallButton at={L.right[0]} size={L.button} face={FACE.wardrobe} emoji="👗" label={t("me.wardrobe")} onPress={() => p.onWardrobe(M.y + M.h * 0.56)} />
+          <WallButton at={L.right[0]} size={L.button} face={FACE.wardrobe} emoji="👗" label={t("me.wardrobe")} onPress={p.onWardrobe} />
           {p.table ? <RoomKey L={L} label={p.table} onPress={p.onTable} /> : null}
           <PlayButton L={L} label={t("me.play")} onPress={p.onPlay} />
         </>

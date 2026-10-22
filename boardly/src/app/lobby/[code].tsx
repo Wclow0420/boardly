@@ -1,7 +1,9 @@
 // A table's lobby: the game's own floor of the lift (features/lobby/floor).
 // This screen holds the server's side (the room's query and socket, the
 // moves) and the sheets; FloorLobby draws the floor. When the table
-// starts, the lamps go down and everyone moves on to the game.
+// starts, the lamps go down and everyone moves on to the game. Leaving
+// lands on the Me tab; so does being taken off the table by the host,
+// with a word saying so there.
 
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -27,13 +29,14 @@ import { FloorLobby } from "@/features/lobby/floor/FloorLobby";
 import { useLiftFloor } from "@/features/lobby/floor/useLiftFloor";
 import {
   useLeaveRoom,
-  useRemoveBot,
+  useRemovePlayer,
   useRoom,
   useSetReady,
   useSetRoomOptions,
   useStartGame,
 } from "@/features/lobby/hooks";
 import { InviteFriendsSheet } from "@/features/lobby/InviteFriendsSheet";
+import { ME, noteRemoved } from "@/features/me/notice";
 import { usePlayerCard } from "@/features/players/PlayerCardProvider";
 import { useGameName } from "@/games/names";
 import { useTheme } from "@/theme";
@@ -63,7 +66,7 @@ export default function LobbyScreen() {
   const setReady = useSetReady(room?.id, roomCode);
   const setOptions = useSetRoomOptions(room?.id, roomCode);
   const leaveRoom = useLeaveRoom(room?.id);
-  const removeBot = useRemoveBot(room?.id);
+  const removePlayer = useRemovePlayer(room?.id, roomCode);
   const { floor, floors } = useLiftFloor(room?.gameType);
 
   const hasRules = useHasRules(room?.gameType);
@@ -92,6 +95,21 @@ export default function LobbyScreen() {
     return () => clearTimeout(go);
   }, [status, isMember, sawWaiting, roomCode, router]);
 
+  // Taken off the table by the host: seated once, gone now while the table
+  // still waits, and not because I left. Off to the Me tab, told why.
+  const [leaving, setLeaving] = useState(false);
+  const [wasMember, setWasMember] = useState(false);
+  if (isMember && !wasMember) setWasMember(true);
+  const removed = wasMember && !isMember && status === "waiting" && !leaving;
+  const hideCard = playerCard.hide;
+  useEffect(() => {
+    if (!removed) return;
+    noteRemoved(roomCode);
+    // a player's card opened here goes with the table
+    hideCard();
+    router.dismissTo(ME);
+  }, [removed, roomCode, router, hideCard]);
+
   const name = room ? gameName(room.gameType, room.game?.name) : "";
   const link = useMemo(() => inviteLink(roomCode), [roomCode]);
 
@@ -116,16 +134,18 @@ export default function LobbyScreen() {
       router.back();
     } else {
       // Opened directly (web link / refresh): nothing to go back to
-      router.replace("/");
+      router.replace(ME);
     }
   };
 
   const confirmLeave = () => {
+    setLeaving(true);
     leaveRoom.mutate(undefined, {
       onSuccess: () => {
         leaveSheetRef.current?.dismiss();
-        router.dismissTo("/");
+        router.dismissTo(ME);
       },
+      onError: () => setLeaving(false),
     });
   };
 
@@ -156,7 +176,7 @@ export default function LobbyScreen() {
           readyBusy={setReady.isPending}
           onStart={() => startGame.mutate()}
           startBusy={startGame.isPending}
-          onRemoveBot={(id) => removeBot.mutate(id)}
+          onRemovePlayer={(id) => removePlayer.mutate(id)}
           onSetOption={(option, choice) => setOptions.mutate({ [option]: choice })}
           optionsBusy={setOptions.isPending}
           onInvite={() => inviteSheetRef.current?.present()}
@@ -182,8 +202,8 @@ export default function LobbyScreen() {
               emoji="🚪"
               title={t("lobby.closedTitle")}
               subtitle={t("lobby.closedSubtitle")}
-              actionLabel={t("game.backHome")}
-              onAction={() => router.dismissTo("/")}
+              actionLabel={t("common.back")}
+              onAction={() => router.dismissTo(ME)}
             />
           )}
         </LobbyMessage>

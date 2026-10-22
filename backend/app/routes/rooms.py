@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from flask import Blueprint, current_app, g, request
+from flask_socketio import leave_room as sio_leave_room
 
 from app import presence
 from app.auth import require_auth
@@ -248,6 +249,43 @@ def remove_bot(room_id, user_id):
     db.session.flush()
     _reseat(room)
     db.session.commit()
+    _broadcast_room(room)
+    return {"room": _room_payload(room, g.current_user.id)}
+
+
+@rooms_bp.delete("/<uuid:room_id>/players/<uuid:user_id>")
+@require_auth
+def remove_player(room_id, user_id):
+    """The host takes anyone (a person or a bot) off a waiting table, not
+    themselves (they leave, which closes it). The seats close up, the
+    table hears it, and the one removed gets `removed_from_room` on their
+    own channel and stops hearing the table."""
+    room = db.session.get(Room, room_id, with_for_update=True)
+    if room is None:
+        return api_error("room_not_found", "Room not found", 404)
+    if room.host_id != g.current_user.id:
+        return api_error("not_host", "Only the host can remove players", 403)
+    if room.status != "waiting":
+        return api_error("game_started", "Game already started", 409)
+    if user_id == g.current_user.id:
+        return api_error("cannot_remove_self", "Leave the table instead", 400)
+    player = next((p for p in room.players if p.user_id == user_id), None)
+    if player is None:
+        return api_error("not_found", "No such player at this table", 404)
+    is_bot = player.user.is_bot
+    room.players.remove(player)  # deleted as an orphan
+    db.session.flush()
+    _reseat(room)
+    db.session.commit()
+    if not is_bot:
+        channel = f"room:{room.id}"
+        for sid in presence.sids_of(user_id):
+            sio_leave_room(channel, sid=sid, namespace="/")
+        socketio.emit(
+            "removed_from_room",
+            {"roomId": str(room.id), "code": room.code},
+            to=f"user:{user_id}",
+        )
     _broadcast_room(room)
     return {"room": _room_payload(room, g.current_user.id)}
 

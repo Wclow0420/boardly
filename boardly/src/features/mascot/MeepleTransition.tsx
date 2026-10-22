@@ -3,10 +3,10 @@
 // the move happens in the dark, and the next screen opens back out of it
 // (zoom out). Always both, one after the other. One layer over the whole
 // app, tab bar and all; `go(move)` runs a move through it, in 1.5
-// seconds (0.6 in, 0.9 out); `go(move, { from })` closes down onto a
-// meeple standing elsewhere on the screen (its chest `from` points down)
-// and opens out where the next screen's stands. On the UI thread; with
-// reduced motion, the move simply happens.
+// seconds (0.6 in, 0.9 out). Always at the middle of the screen, both
+// ways, where the opening's meeple stands (a centred picture's chest),
+// whoever calls it and wherever their own meeple is. On the UI thread;
+// with reduced motion, the move simply happens.
 
 import { Canvas, Group, Image, Rect, useImage } from "@shopify/react-native-skia";
 import {
@@ -44,7 +44,7 @@ const OPEN = Math.log(14);
 const at = (size: number) => (size - SHUT) / (OPEN - SHUT);
 const AT_SMALL = at(SMALL);
 
-type Go = (move: () => void, at?: { from?: number }) => void;
+type Go = (move: () => void) => void;
 const Context = createContext<Go>((move) => move());
 
 /** Runs a move (a navigation) through the meeple. */
@@ -55,13 +55,11 @@ export function MeepleTransitionProvider({ children }: { children: ReactNode }) 
   const { width, height } = useWindowDimensions();
   const image = useImage(meeple);
   const progress = useSharedValue(1);
-  // where the window closes to and opens from: the mascot's chest
-  const chest = useSharedValue(height * 0.32);
   const [moving, setMoving] = useState(false);
   const busy = useRef(false);
 
   const go = useCallback<Go>(
-    (move, at) => {
+    (move) => {
       if (still || !image) {
         move();
         return;
@@ -76,7 +74,6 @@ export function MeepleTransitionProvider({ children }: { children: ReactNode }) 
       // the next screen gets a moment in the dark to draw itself
       const thenOpen = () => {
         move();
-        chest.set(height * 0.32);
         setTimeout(() => {
           progress.set(
             withSequence(
@@ -91,7 +88,6 @@ export function MeepleTransitionProvider({ children }: { children: ReactNode }) 
         }, 50);
       };
       // zoom in: the screen closes down into the meeple
-      chest.set(at?.from ?? height * 0.32);
       progress.set(1);
       progress.set(
         withSequence(
@@ -102,14 +98,16 @@ export function MeepleTransitionProvider({ children }: { children: ReactNode }) 
         ),
       );
     },
-    [still, image, progress, chest, height],
+    [still, image, progress],
   );
 
-  // the window closes to and opens from where the mascot stands
+  // the window closes to and opens from the middle: the chest of a meeple
+  // picture centred on the screen, as the app's opening draws it
   const cx = width / 2;
+  const cy = height / 2 + SIZE * (CHEST.y - 0.5);
   const transform = useDerivedValue(() => [
     { translateX: cx },
-    { translateY: chest.get() },
+    { translateY: cy },
     { scale: Math.exp(SHUT + (OPEN - SHUT) * progress.get()) },
   ]);
 

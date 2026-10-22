@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -30,6 +31,7 @@ import {
 import { GameOverBadges } from "@/features/badges/GameOverBadges";
 import { useOneTable } from "@/features/home/OneTable";
 import { useLeaveRoom, useRoom } from "@/features/lobby/hooks";
+import { ME } from "@/features/me/notice";
 import { useGameName } from "@/games/names";
 import type { StageChrome } from "@/games/types";
 import { cloneElement, type ReactElement } from "react";
@@ -109,6 +111,11 @@ function GameScreenBody({
       else tapHaptic();
     }
   }, [sessionStatus, iWon]);
+  // and the table is no longer mine to go back to (the Me tab's room key)
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (sessionStatus === "finished") queryClient.invalidateQueries({ queryKey: ["myTables"] });
+  }, [sessionStatus, queryClient]);
 
   // A move that timed out on a slow line may still have gone through: once
   // the table has moved on from where it was sent, its "something went
@@ -160,11 +167,11 @@ function GameScreenBody({
       : null;
 
   // The game screen replaces the lobby, so there is no screen to go
-  // "back" to — the arrow always leads home. Walking out of a running
+  // "back" to — the arrow always leads to the Me tab. Walking out of a running
   // game ends it for the table, so that needs a confirmation first.
   const handleBack = () => {
     if (inProgress && mySeat >= 0) leaveSheetRef.current?.present();
-    else router.dismissTo("/");
+    else router.dismissTo(ME);
   };
 
   const leaveSheet = (
@@ -180,7 +187,7 @@ function GameScreenBody({
         leaveRoom.mutate(undefined, {
           onSuccess: () => {
             leaveSheetRef.current?.dismiss();
-            router.dismissTo("/");
+            router.dismissTo(ME);
           },
         })
       }
@@ -364,9 +371,9 @@ function GameScreenBody({
         </>
       ) : null}
       <Button
-        label={t("game.backHome")}
+        label={t("common.back")}
         variant={mySeat >= 0 ? "secondary" : "primary"}
-        onPress={() => router.dismissTo("/")}
+        onPress={() => router.dismissTo(ME)}
       />
     </View>
   ) : null;
@@ -395,12 +402,12 @@ function GameScreenBody({
       ) : null}
       <View style={{ flexDirection: "row", gap: spacing.md }}>
         <Button
-          label={t("game.backHome")}
+          label={t("common.back")}
           variant={mySeat >= 0 ? "secondary" : "primary"}
-          // two side by side on the plinth: a slimmer edge keeps "Back to
-          // Home" on one line
+          // two side by side on the plinth: a slimmer edge keeps each label
+          // on one line
           style={{ flex: 1, paddingHorizontal: 12 }}
-          onPress={() => router.dismissTo("/")}
+          onPress={() => router.dismissTo(ME)}
         />
         {mySeat >= 0 ? (
           <Button

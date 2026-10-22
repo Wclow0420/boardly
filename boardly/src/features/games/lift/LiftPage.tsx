@@ -1,6 +1,6 @@
 // The Games tab as a brass lift: one floor per game, the floors grouped
-// into banks by kind (banks.ts: Your floors first, the games I play most,
-// then deduction, bluff…, seven floors a bank, the floors counting up
+// into banks by kind (banks.ts: deduction, bluff, strategy…, seven
+// floors a bank, the floors counting up
 // through the building). At the top the floor dial (LiftDial) showing one
 // bank, its needle on the floor the cab is at, a stud either side of the
 // bank's sign to flip banks, the ride buttons and the way to the
@@ -84,9 +84,6 @@ export interface LiftPageProps {
    *  it couldn't (the gate then closes again). */
   onOpenTable: (game: GameCatalogEntry) => Promise<void>;
   onRules: (game: GameCatalogEntry) => void;
-  /** How many times I've played each game, by id (my stats): the games
-   *  I play most make the first bank, Your floors. */
-  played?: Record<string, number>;
   meta?: Record<string, LiftMeta>;
   /** Where the floor is remembered on the device. */
   storageKey?: string;
@@ -102,8 +99,6 @@ export interface LiftPageProps {
   practice?: boolean;
 }
 
-const NO_PLAYS: Record<string, number> = {};
-
 export function LiftPage({
   games: catalogue,
   loading,
@@ -112,7 +107,6 @@ export function LiftPage({
   busy,
   onOpenTable,
   onRules,
-  played = NO_PLAYS,
   meta,
   storageKey = "boardly.games.floor",
   onShown,
@@ -129,15 +123,13 @@ export function LiftPage({
   const clock = useIsoClock(!onScreen || reduced);
 
   // the building: the floors by bank (memoized by what's in it)
-  const playedKey = JSON.stringify(played);
   const building = useMemo(
     () =>
       buildBanks(catalogue, {
         typeOf: (g) => meta?.[g.id]?.category ?? typeOfGame(g),
-        played: JSON.parse(playedKey) as Record<string, number>,
         isNew: (g) => meta?.[g.id]?.isNew ?? isNewGame(g),
       }),
-    [catalogue, meta, playedKey],
+    [catalogue, meta],
   );
   const games = useMemo(() => building.floors.map((f) => f.game), [building]);
   const n = games.length;
@@ -167,10 +159,9 @@ export function LiftPage({
         if (s >= b.size) return null;
         const i = b.start + s;
         const e = emblemData(arts[i].emblem);
-        // (on Your floors every one is, so no stars there)
-        return e ? { data: e.data, tint: e.tint, often: b.kind !== "often" && building.floors[i].often } : null;
+        return e ? { data: e.data, tint: e.tint } : null;
       });
-      const key = Array.from({ length: b.size }, (_, s) => `${arts[b.start + s].emblem}${b.kind !== "often" && building.floors[b.start + s].often ? "*" : ""}`).join(",");
+      const key = Array.from({ length: b.size }, (_, s) => arts[b.start + s].emblem).join(",");
       return bakedSvg(`lift-face|${L.R}|${key}`, 2 * L.R, L.R, () => faceArt(L, marks));
     },
     [L, building, arts],
@@ -270,8 +261,8 @@ export function LiftPage({
   }, [storageKey]);
   const [placed, setPlaced] = useState<Building | null>(null);
   if (placed !== building && saved !== null && n > 0) {
-    // placing the lift, or the building changed under it (my stats came
-    // in and Your floors opened): the same floor, found again
+    // placing the lift, or the building changed under it (the catalogue
+    // came in): the same floor, found again
     const i = placed ? findFloor(building, floorKey(placed, floor)) : findFloor(building, saved);
     setPlaced(building);
     setFloor(i);

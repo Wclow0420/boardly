@@ -6,8 +6,7 @@
 // don't take that many are dimmed here, on the dial and behind the gate,
 // and riding passes them by); past twenty games a field to find one by
 // name. Then every floor by bank: the bank's name in gold, each floor a
-// row of white letters, its number, the game's emblem (a star by the
-// ones I play most), its name, "New" in red letters on a new game, how
+// row of white letters, its number, the game's emblem, its name, "New" in red letters on a new game, how
 // many play. Tap a row and the board closes and the lift rides there.
 // The rows are a FlashList: only those on screen are drawn, each emblem
 // one baked image.
@@ -187,7 +186,6 @@ export function Directory({
                       emoji={emblems[item.index]}
                       name={names[item.index] ?? ""}
                       players={players(building, item.index)}
-                      often={building.floors[item.index].often && building.banks[building.floors[item.index].bank].kind !== "often"}
                       isNew={building.floors[item.index].isNew}
                       newLabel={t("games.lift.new")}
                       fits={fits[item.index] ?? true}
@@ -248,7 +246,6 @@ const FloorRow = memo(function FloorRow({
   emoji,
   name,
   players,
-  often,
   isNew,
   newLabel,
   fits,
@@ -259,7 +256,6 @@ const FloorRow = memo(function FloorRow({
   emoji: string;
   name: string;
   players: string;
-  often: boolean;
   isNew: boolean;
   newLabel: string;
   fits: boolean;
@@ -268,7 +264,7 @@ const FloorRow = memo(function FloorRow({
 }) {
   const found = emblemData(emoji);
   const icon = found
-    ? bakedSvg(`lift-row|${emoji}|${often ? 1 : 0}`, ICON, ICON, () => rowEmblemArt(found.data, found.tint, often, ICON))
+    ? bakedSvg(`lift-row|${emoji}`, ICON, ICON, () => rowEmblemArt(found.data, found.tint, ICON))
     : null;
   return (
     <Pressable

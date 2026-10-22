@@ -113,7 +113,6 @@
       "lit_one": "{{count}} daripada {{total}} tingkat menyala",
       "lit_other": "{{count}} daripada {{total}} tingkat menyala",
       "banks": {
-        "often": "Kegemaran",
         "deduction": "Deduksi",
         "bluff": "Bluf",
         "strategy": "Strategi",
@@ -259,7 +258,19 @@
       "waitingOn": "Menunggu {{names}} bersedia",
       "canStart": "Semua sudah bersedia: tekan lama untuk mula",
       "waitingHost": "Semua sudah bersedia. Menunggu {{host}} memulakan",
-      "starting": "Lampu dipadam: permainan bermula…"
+      "starting": "Lampu dipadam: permainan bermula…",
+      "player": {
+        "profile": "Lihat profil",
+        "remove": "Keluarkan dari meja",
+        "removeAsk": "Keluarkan {{name}} dari meja?",
+        "removeHint": "Mereka boleh sertai semula dengan kod meja.",
+        "removeConfirm": "Keluarkan",
+        "bot": "Bot"
+      }
+    },
+    "removed": {
+      "title": "Dikeluarkan",
+      "message": "Anda telah dikeluarkan dari meja."
     }
   },
   "table": {
@@ -275,7 +286,6 @@
     "youWin": "Anda menang! 🎉",
     "winner": "{{name}} menang!",
     "draw": "Seri!",
-    "backHome": "Kembali ke Utama",
     "playAgain": "Main Lagi",
     "joinRematch": "Sertai Perlawanan Semula",
     "rematchOpen": "Meja perlawanan semula sudah dibuka — sertai!",

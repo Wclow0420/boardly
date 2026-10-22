@@ -8,7 +8,9 @@
 // spots a dashed meeple to invite someone to). A new arrival walks out of
 // the lift, once per phone. One line over the plinth says what the table
 // is waiting for; on the plinth the host's bot bell and Hold to start, or
-// everyone else's Ready. Starting puts the lamps out.
+// everyone else's Ready. Starting puts the lamps out. The host taps
+// someone for what they can do (their card, or taking them off the
+// table: PlayerPopup); everyone else sees the player's card.
 //
 // Presentational: the lobby screen hands it the room and the moves (see
 // app/dev/lobby.tsx for every moment with sample tables).
@@ -36,6 +38,7 @@ import { heavyHaptic, tapHaptic } from "@/utils/haptics";
 import { knobArt } from "./art";
 import { roomLayout, signLayout } from "./layout";
 import { LandingSign } from "./LandingSign";
+import { PlayerPopup } from "./PlayerPopup";
 import { QrPopup } from "./QrPopup";
 import { roomLook } from "./rooms";
 import { RoomScene, type RoomPerson } from "./RoomScene";
@@ -64,7 +67,8 @@ export interface FloorLobbyProps {
   readyBusy?: boolean;
   onStart: () => void;
   startBusy?: boolean;
-  onRemoveBot: (userId: string) => void;
+  /** The host takes someone (a person or a bot) off the waiting table. */
+  onRemovePlayer: (userId: string) => void;
   onSetOption: (name: string, choice: string) => void;
   optionsBusy?: boolean;
   /** Invite someone to a free spot (the friends sheet). */
@@ -96,7 +100,7 @@ export function FloorLobby({
   readyBusy,
   onStart,
   startBusy,
-  onRemoveBot,
+  onRemovePlayer,
   onSetOption,
   optionsBusy,
   onInvite,
@@ -112,9 +116,11 @@ export function FloorLobby({
   const insets = useSafeAreaInsets();
   const [{ w, h }, setSize] = useState({ w: 0, h: 0 });
   const [popup, setPopup] = useState<"qr" | "rules" | null>(initialPopup);
+  // the host's popup for someone in the room (and whether it opens on the ask)
+  const [chosen, setChosen] = useState<{ id: string; asking: boolean } | null>(null);
   const onScreen = useOnScreen();
   const reduced = useReducedMotion();
-  const still = !onScreen || reduced || popup !== null;
+  const still = !onScreen || reduced || popup !== null || chosen !== null;
   const clock = useIsoClock(still);
 
   const min = room.game?.minPlayers ?? 2;
@@ -160,25 +166,42 @@ export function FloorLobby({
   const summary = rulesSummary(room, notes, t);
 
   // the latest handlers, so the room needn't redraw when they change
-  const handlers = useRef({ onPlayer, onRemoveBot, players, isHost, waiting });
+  const handlers = useRef({ onPlayer, onRemovePlayer, players, isHost, waiting });
   useEffect(() => {
-    handlers.current = { onPlayer, onRemoveBot, players, isHost, waiting };
+    handlers.current = { onPlayer, onRemovePlayer, players, isHost, waiting };
   });
-  const onPerson = useCallback((p: RoomPerson) => {
+  const showCard = useCallback((p: RoomPerson) => {
     const { players: all, onPlayer: show } = handlers.current;
-    if (p.bot) return;
     const player = all.find((x) => x.userId === p.id);
-    if (player) {
+    if (player) show(player);
+  }, []);
+  // the host, while the table waits, gets a popup for anyone but themselves;
+  // otherwise a person's card (a bot has none)
+  const onPerson = useCallback(
+    (p: RoomPerson) => {
+      const { isHost: host, waiting: open } = handlers.current;
+      if (host && open && !p.me) {
+        tapHaptic();
+        setChosen({ id: p.id, asking: false });
+        return;
+      }
+      if (p.bot) return;
       tapHaptic();
-      show(player);
-    }
-  }, []);
+      showCard(p);
+    },
+    [showCard],
+  );
+  // the long press, the host's shortcut: a bot goes at once, a person is asked about
   const onHoldPerson = useCallback((p: RoomPerson) => {
-    const { isHost: host, waiting: open, onRemoveBot: remove } = handlers.current;
-    if (!host || !open || !p.bot) return;
+    const { isHost: host, waiting: open, onRemovePlayer: remove } = handlers.current;
+    if (!host || !open || p.me) return;
     heavyHaptic();
-    remove(p.id);
+    if (p.bot) remove(p.id);
+    else setChosen({ id: p.id, asking: true });
   }, []);
+  // gone from the room (or the table moved on): the popup shuts
+  const chosenPerson = chosen && isHost && waiting ? (people.find((p) => p.id === chosen.id) ?? null) : null;
+  if (chosen && !chosenPerson) setChosen(null);
 
   // the lamps going out as the game starts: the room dims
   const dark = useSharedValue(0);
@@ -315,6 +338,20 @@ export function FloorLobby({
             look={look}
             shared={shared}
             onShare={onShare}
+          />
+          <PlayerPopup
+            person={chosenPerson}
+            asking={chosen?.asking}
+            look={look}
+            onClose={() => setChosen(null)}
+            onProfile={(p) => {
+              setChosen(null);
+              showCard(p);
+            }}
+            onRemove={(p) => {
+              setChosen(null);
+              onRemovePlayer(p.id);
+            }}
           />
           <HouseRulesPopup
             visible={popup === "rules"}

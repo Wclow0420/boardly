@@ -71,7 +71,8 @@ export interface RoomSceneProps {
   walking: Record<string, number>;
   onArrived: (id: string) => void;
   onPerson: (person: RoomPerson) => void;
-  /** A long press on someone (the host taking a bot off). */
+  /** A long press on someone (the host's shortcut: a bot off at once, a
+   *  person straight to the ask). */
   onHoldPerson?: (person: RoomPerson) => void;
   onEmpty: () => void;
   clock: SharedValue<number>;

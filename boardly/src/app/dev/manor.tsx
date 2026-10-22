@@ -365,7 +365,7 @@ function ManorSamples() {
               // stand-ins for the game screen's own
               onward: (
                 <View style={{ flexDirection: "row", gap: 12, alignSelf: "stretch" }}>
-                  <Button label="Back to Home" variant="secondary" style={{ flex: 1 }} onPress={() => router.back()} />
+                  <Button label="Back" variant="secondary" style={{ flex: 1 }} onPress={() => router.back()} />
                   <Button label="Play Again" style={{ flex: 1 }} onPress={() => {}} />
                 </View>
               ),

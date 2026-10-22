@@ -1,6 +1,7 @@
 // One player card for the whole app: any screen can show who someone is
 // — a friend, someone at my table, someone I played with — by calling
-// usePlayerCard().show(person). Tapping myself opens my own profile.
+// usePlayerCard().show(person), and put it away with hide() (a screen
+// leaving under it). Tapping myself opens my own profile.
 // Removing a friend asks first; inviting goes to the table I'm waiting
 // at, or to the shelf to open one.
 
@@ -26,9 +27,10 @@ import { PlayerCardSheet, type CardPerson } from "./PlayerCardSheet";
 
 interface PlayerCardApi {
   show: (person: CardPerson) => void;
+  hide: () => void;
 }
 
-const PlayerCardContext = createContext<PlayerCardApi>({ show: () => {} });
+const PlayerCardContext = createContext<PlayerCardApi>({ show: () => {}, hide: () => {} });
 
 export function usePlayerCard() {
   return useContext(PlayerCardContext);
@@ -57,7 +59,8 @@ export function PlayerCardProvider({ children }: { children: ReactNode }) {
     },
     [router, user?.id],
   );
-  const value = useMemo(() => ({ show }), [show]);
+  const hide = useCallback(() => sheetRef.current?.dismiss(), []);
+  const value = useMemo(() => ({ show, hide }), [show, hide]);
 
   const waiting = tables.some((table) => table.status === "waiting");
 

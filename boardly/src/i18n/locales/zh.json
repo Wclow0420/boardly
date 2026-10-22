@@ -113,7 +113,6 @@
       "lit_one": "{{total}} 层中亮着 {{count}} 层",
       "lit_other": "{{total}} 层中亮着 {{count}} 层",
       "banks": {
-        "often": "常玩",
         "deduction": "推理",
         "bluff": "诈唬",
         "strategy": "策略",
@@ -258,7 +257,19 @@
       "waitingOn": "等待 {{names}} 准备",
       "canStart": "全员已准备：长按开始",
       "waitingHost": "全员已准备，等待 {{host}} 开始",
-      "starting": "熄灯，游戏开始…"
+      "starting": "熄灯，游戏开始…",
+      "player": {
+        "profile": "查看资料",
+        "remove": "移出牌桌",
+        "removeAsk": "把{{name}}移出牌桌？",
+        "removeHint": "对方仍可用牌桌代码重新加入。",
+        "removeConfirm": "移出",
+        "bot": "机器人"
+      }
+    },
+    "removed": {
+      "title": "已被移出",
+      "message": "你已被房主移出牌桌。"
     }
   },
   "table": {
@@ -274,7 +285,6 @@
     "youWin": "你赢了！🎉",
     "winner": "{{name}} 获胜！",
     "draw": "平局！",
-    "backHome": "返回首页",
     "playAgain": "再来一局",
     "joinRematch": "加入再来一局",
     "rematchOpen": "有人开了新的一局 — 快加入！",

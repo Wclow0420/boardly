@@ -477,8 +477,9 @@ export const api = {
       body: JSON.stringify({ count }),
     }),
 
-  removeBot: (roomId: string, userId: string) =>
-    request<{ room: RoomInfo }>(`/rooms/${roomId}/bots/${userId}`, {
+  /** The host takes anyone (a person or a bot) off a waiting table. */
+  removePlayer: (roomId: string, userId: string) =>
+    request<{ room: RoomInfo }>(`/rooms/${roomId}/players/${userId}`, {
       method: "DELETE",
     }),
 
