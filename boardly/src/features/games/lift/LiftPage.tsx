@@ -405,6 +405,35 @@ export function LiftPage({
   useEffect(() => {
     if (onScreen) gate.set(0);
   }, [onScreen, gate]);
+
+  // every time the page comes into view the lift arrives: the needle
+  // sweeps up from the bank's first floor to this one while the cab rises
+  // the last bit, then the lurch and the ding (short; reduce motion: none)
+  // (from the floor the page knows, not pos.get(): a value set on the UI
+  // thread a moment ago may not have reached this thread yet)
+  const placedNow = placed !== null;
+  useEffect(() => {
+    if (!onScreen || !placed || reduced) return;
+    const at = floor;
+    // from its rest (lying a little below the first stop), so even the
+    // bank's first floor gets a sweep you can see
+    swingFrom.set(-0.7);
+    swing.set(0);
+    swing.set(withTiming(1, { duration: 620, easing: Easing.out(Easing.cubic) }));
+    pos.set(at + 0.35);
+    pos.set(
+      withSequence(
+        withTiming(at - 0.04, { duration: 620, easing: Easing.out(Easing.cubic) }, (done) => {
+          if (!done) return;
+          arrived.set(clock.get());
+          scheduleOnRN(heavyHaptic);
+        }),
+        withSpring(at, { damping: 8, stiffness: 240, mass: 0.7 }),
+      ),
+    );
+    // only on arriving: the ride moves it from then on
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onScreen, placedNow]);
   const game = games[floor];
   const stepOut = () => {
     if (!game || busy) return;
