@@ -170,8 +170,10 @@ export function meLayout(w: number, h: number, top: number): MeLayout {
   // the round buttons: small, in two neat columns under the header
   const button = wide ? 48 : 44;
   const col = 16 + button / 2 + 4;
-  const first = top + 76 + button / 2;
-  const step = button + 30;
+  // a little way down from the header, packed close (each label's plate
+  // hangs under its medallion, then a small gap)
+  const first = top + 100 + button / 2;
+  const step = button + 18;
   const left = [0, 1, 2].map((i) => ({ x: col, y: first + i * step }));
   const right = [0, 1, 2].map((i) => ({ x: w - col, y: first + i * step }));
 
